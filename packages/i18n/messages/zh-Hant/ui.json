@@ -1,0 +1,81 @@
+{
+  "site": {
+    "name": "SoK 遊戲月曆",
+    "tagline": "遊戲上市月曆與資料庫"
+  },
+  "nav": {
+    "calendar": "月曆",
+    "timeline": "時間軸",
+    "games": "遊戲",
+    "platforms": "平台",
+    "events": "活動"
+  },
+  "language": {
+    "menuLabel": "語言",
+    "current": "目前語言：{name}"
+  },
+  "common": {
+    "close": "關閉",
+    "open": "開啟",
+    "loading": "載入中…",
+    "loadMore": "載入更多",
+    "showMore": "顯示更多",
+    "showLess": "收合",
+    "back": "返回",
+    "home": "首頁",
+    "noData": "尚無資料"
+  },
+  "releaseLabel": {
+    "quarter": "{year} 年第 {quarter} 季",
+    "year": "{year} 年",
+    "tbd": "日期未定"
+  },
+  "calendar": {
+    "title": "上市月曆",
+    "prevMonth": "上個月",
+    "nextMonth": "下個月",
+    "today": "今天",
+    "thisMonth": "本月",
+    "undatedThisMonth": "本月未定日",
+    "undatedDescription": "上市日只確定到月份、季或年份的遊戲",
+    "moreItems": "＋{count} 更多",
+    "gamesCount": "{count} 款遊戲",
+    "noReleases": "這個月沒有符合條件的遊戲",
+    "release": "上市",
+    "event": "活動",
+    "showReleases": "顯示上市",
+    "showEvents": "顯示活動",
+    "viewGame": "查看遊戲詳情"
+  },
+  "game": {
+    "sections": {
+      "overview": "簡介",
+      "platforms": "平台",
+      "releaseDates": "上市日期",
+      "ratings": "評分",
+      "companies": "開發與發行",
+      "developers": "開發商",
+      "publishers": "發行商",
+      "links": "商店與官網",
+      "franchise": "同系列作品",
+      "similar": "相似遊戲",
+      "dlc": "DLC 與額外內容",
+      "events": "即將亮相的活動",
+      "languages": "語言支援",
+      "ageRatings": "年齡分級",
+      "media": "截圖與預告片",
+      "genres": "類型",
+      "themes": "主題"
+    },
+    "originalText": "原文（English）",
+    "releaseHistory": "延期紀錄",
+    "previouslyAnnounced": "先前公布：{date}",
+    "noRatings": "尚無評分",
+    "reportError": "回報資料有誤",
+    "brokenLink": "連結可能已失效"
+  },
+  "footer": {
+    "dataAttribution": "Data from IGDB.com",
+    "copyright": "© {year} SoK Studio"
+  }
+}

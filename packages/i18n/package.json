@@ -1,0 +1,14 @@
+{
+  "name": "@sok/i18n",
+  "version": "0.1.0",
+  "private": true,
+  "description": "SoK 共用 i18n：字典、語系協商、Intl 格式化（只依賴 Intl；網站與 Bot 共用，spec 06 §多語系、D38）",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p .",
+    "i18n:check": "tsx scripts/i18n-check.ts"
+  }
+}

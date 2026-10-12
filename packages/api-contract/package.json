@@ -1,0 +1,16 @@
+{
+  "name": "@sok/api-contract",
+  "version": "0.1.0",
+  "private": true,
+  "description": "SoK API 契約：zod DTO 與 FilterSpec（spec 06 §篩選、07 §契約、D44）",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p ."
+  },
+  "dependencies": {
+    "zod": "^4.6.6"
+  }
+}

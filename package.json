@@ -19,8 +19,9 @@
     "job": "npm -w apps/web run job --",
     "lint": "npm -w apps/web run lint",
     "lint:arch": "npm -w apps/web run lint:arch",
-    "typecheck": "npm -w apps/web run typecheck",
-    "test": "npm -w apps/web run test"
+    "typecheck": "npm -w apps/web run typecheck && npm -w packages/i18n run typecheck && npm -w packages/api-contract run typecheck",
+    "test": "npm -w apps/web run test",
+    "i18n:check": "npm -w apps/web run i18n:check"
   },
   "allowScripts": {
     "esbuild@0.18.20": true,

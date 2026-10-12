@@ -1,0 +1,22 @@
+{
+  "title": "篩選",
+  "titleWithCount": "篩選（{count}）",
+  "show": "顯示篩選",
+  "hide": "隱藏篩選",
+  "clear": "清除",
+  "clearAll": "全部清除",
+  "apply": "套用",
+  "active": "已套用的條件",
+  "remove": "移除「{label}」",
+  "dimensions": {
+    "platform": "平台",
+    "platformKind": "平台類型",
+    "genre": "類型",
+    "stage": "上市階段"
+  },
+  "resultsCount": "共 {count} 筆結果",
+  "emptyResult": "沒有符合條件的結果",
+  "emptyResultHint": "以下條件造成沒有結果，可以逐一移除：",
+  "invalidValues": "已忽略無法辨識的條件：{values}",
+  "tooManyValues": "「{dimension}」最多只能選 {max} 個，已忽略此條件"
+}

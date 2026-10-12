@@ -1,0 +1,22 @@
+{
+  "title": "Filters",
+  "titleWithCount": "Filters ({count})",
+  "show": "Show filters",
+  "hide": "Hide filters",
+  "clear": "Clear",
+  "clearAll": "Clear all",
+  "apply": "Apply",
+  "active": "Active filters",
+  "remove": "Remove “{label}”",
+  "dimensions": {
+    "platform": "Platform",
+    "platformKind": "Platform type",
+    "genre": "Genre",
+    "stage": "Release stage"
+  },
+  "resultsCount": "{count} results",
+  "emptyResult": "No results match your filters",
+  "emptyResultHint": "These filters produced no results. Remove them one at a time:",
+  "invalidValues": "Ignored unrecognized filters: {values}",
+  "tooManyValues": "“{dimension}” allows at most {max} values; this filter was ignored"
+}

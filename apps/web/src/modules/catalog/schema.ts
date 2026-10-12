@@ -171,15 +171,20 @@ export const releaseEvents = pgTable(
   ],
 );
 
-export const releaseDateHistory = pgTable("release_date_history", {
-  id: serial("id").primaryKey(),
-  releaseEventId: integer("release_event_id").notNull().references(() => releaseEvents.id, { onDelete: "cascade" }),
-  oldDate: date("old_date"),
-  oldPrecision: datePrecisionEnum("old_precision"),
-  newDate: date("new_date"),
-  newPrecision: datePrecisionEnum("new_precision"),
-  changedAt: timestamp("changed_at", tz).defaultNow(),
-});
+export const releaseDateHistory = pgTable(
+  "release_date_history",
+  {
+    id: serial("id").primaryKey(),
+    releaseEventId: integer("release_event_id").notNull().references(() => releaseEvents.id, { onDelete: "cascade" }),
+    oldDate: date("old_date"),
+    oldPrecision: datePrecisionEnum("old_precision"),
+    newDate: date("new_date"),
+    newPrecision: datePrecisionEnum("new_precision"),
+    changedAt: timestamp("changed_at", tz).defaultNow(),
+  },
+  // 詳情頁依上市事件讀改期紀錄（Phase 3a，2026-10-13 使用者同意）
+  (t) => [index("release_date_history_event_idx").on(t.releaseEventId)],
+);
 
 // ── 評分 ─────────────────────────────────────────────────────────────────
 export const ratings = pgTable(

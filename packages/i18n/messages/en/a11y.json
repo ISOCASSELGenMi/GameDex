@@ -1,0 +1,19 @@
+{
+  "skipToContent": "Skip to main content",
+  "mainNavigation": "Main navigation",
+  "languageMenu": "Choose language",
+  "breadcrumb": "Breadcrumb",
+  "calendarGrid": "Release calendar for {month}",
+  "previousMonth": "Previous month: {month}",
+  "nextMonth": "Next month: {month}",
+  "dayCell": "{date}, {count} games",
+  "dayCellEmpty": "{date}, no games",
+  "moreInDay": "{count} more on {date}, expand",
+  "today": "Today",
+  "releaseIcon": "Release",
+  "eventIcon": "Event",
+  "openPreview": "Open preview of “{name}”",
+  "closePreview": "Close preview",
+  "opensInNewWindow": "(opens in a new window)",
+  "resultsUpdated": "Updated: {count} results"
+}

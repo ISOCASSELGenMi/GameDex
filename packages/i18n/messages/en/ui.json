@@ -1,0 +1,81 @@
+{
+  "site": {
+    "name": "SoK Game Calendar",
+    "tagline": "Game release calendar and database"
+  },
+  "nav": {
+    "calendar": "Calendar",
+    "timeline": "Timeline",
+    "games": "Games",
+    "platforms": "Platforms",
+    "events": "Events"
+  },
+  "language": {
+    "menuLabel": "Language",
+    "current": "Current language: {name}"
+  },
+  "common": {
+    "close": "Close",
+    "open": "Open",
+    "loading": "Loading…",
+    "loadMore": "Load more",
+    "showMore": "Show more",
+    "showLess": "Show less",
+    "back": "Back",
+    "home": "Home",
+    "noData": "No data yet"
+  },
+  "releaseLabel": {
+    "quarter": "Q{quarter} {year}",
+    "year": "{year}",
+    "tbd": "TBA"
+  },
+  "calendar": {
+    "title": "Release calendar",
+    "prevMonth": "Previous month",
+    "nextMonth": "Next month",
+    "today": "Today",
+    "thisMonth": "This month",
+    "undatedThisMonth": "No exact date this month",
+    "undatedDescription": "Games whose release date is only known to the month, quarter or year",
+    "moreItems": "+{count} more",
+    "gamesCount": "{count} games",
+    "noReleases": "No games match your filters this month",
+    "release": "Release",
+    "event": "Event",
+    "showReleases": "Show releases",
+    "showEvents": "Show events",
+    "viewGame": "View game details"
+  },
+  "game": {
+    "sections": {
+      "overview": "Overview",
+      "platforms": "Platforms",
+      "releaseDates": "Release dates",
+      "ratings": "Ratings",
+      "companies": "Developers & publishers",
+      "developers": "Developers",
+      "publishers": "Publishers",
+      "links": "Stores & official sites",
+      "franchise": "In the same series",
+      "similar": "Similar games",
+      "dlc": "DLC & additional content",
+      "events": "Upcoming events",
+      "languages": "Language support",
+      "ageRatings": "Age ratings",
+      "media": "Screenshots & trailers",
+      "genres": "Genres",
+      "themes": "Themes"
+    },
+    "originalText": "Original text (English)",
+    "releaseHistory": "Delay history",
+    "previouslyAnnounced": "Previously announced: {date}",
+    "noRatings": "No ratings yet",
+    "reportError": "Report incorrect data",
+    "brokenLink": "This link may be broken"
+  },
+  "footer": {
+    "dataAttribution": "Data from IGDB.com",
+    "copyright": "© {year} SoK Studio"
+  }
+}

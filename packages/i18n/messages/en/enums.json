@@ -1,0 +1,128 @@
+{
+  "releaseStatus": {
+    "scheduled": "Scheduled",
+    "delayed": "Delayed",
+    "released": "Released",
+    "cancelled": "Cancelled"
+  },
+  "releaseStage": {
+    "unspecified": "Unspecified",
+    "full": "Full release",
+    "early_access": "Early access",
+    "beta": "Beta",
+    "alpha": "Alpha",
+    "demo": "Demo",
+    "other": "Other"
+  },
+  "datePrecision": {
+    "day": "Exact date",
+    "month": "Month",
+    "quarter": "Quarter",
+    "year": "Year",
+    "tbd": "TBA"
+  },
+  "gameType": {
+    "main_game": "Main game",
+    "dlc_addon": "DLC / Add-on",
+    "expansion": "Expansion",
+    "bundle": "Bundle",
+    "standalone_expansion": "Standalone expansion",
+    "mod": "Mod",
+    "episode": "Episode",
+    "season": "Season",
+    "remake": "Remake",
+    "remaster": "Remaster",
+    "expanded_game": "Expanded game",
+    "port": "Port",
+    "fork": "Fork",
+    "pack": "Pack",
+    "update": "Update",
+    "other": "Other"
+  },
+  "gameStatus": {
+    "released": "Released",
+    "alpha": "Alpha",
+    "beta": "Beta",
+    "early_access": "Early access",
+    "offline": "Offline",
+    "cancelled": "Cancelled",
+    "rumored": "Rumored",
+    "delisted": "Delisted"
+  },
+  "platformKind": {
+    "console": "Console",
+    "handheld": "Handheld",
+    "hybrid": "Hybrid console",
+    "pc": "PC",
+    "arcade": "Arcade",
+    "mobile": "Mobile",
+    "other": "Other"
+  },
+  "platformStatus": {
+    "announced": "Announced",
+    "active": "Active",
+    "discontinued": "Discontinued"
+  },
+  "region": {
+    "WW": "Worldwide",
+    "US": "North America",
+    "EU": "Europe",
+    "JP": "Japan",
+    "KR": "Korea",
+    "CN": "China",
+    "AU": "Australia",
+    "ASIA": "Asia",
+    "BR": "Brazil",
+    "TW": "Taiwan"
+  },
+  "eventKind": {
+    "showcase": "Showcase",
+    "expo": "Expo",
+    "awards": "Awards",
+    "other": "Other"
+  },
+  "gameCompanyRole": {
+    "developer": "Developer",
+    "publisher": "Publisher",
+    "porting": "Porting",
+    "supporting": "Supporting"
+  },
+  "gameLinkType": {
+    "store": "Store",
+    "official": "Official site",
+    "social": "Social",
+    "media": "Media"
+  },
+  "linkCategory": {
+    "official_website": "Official website",
+    "community_wiki": "Community wiki",
+    "wikipedia": "Wikipedia",
+    "twitch": "Twitch",
+    "youtube": "YouTube",
+    "facebook": "Facebook",
+    "twitter": "X (Twitter)",
+    "instagram": "Instagram",
+    "subreddit": "Reddit",
+    "discord": "Discord",
+    "bluesky": "Bluesky",
+    "steam": "Steam",
+    "epic": "Epic Games Store",
+    "gog": "GOG",
+    "xbox_store": "Xbox Store",
+    "playstation_store": "PlayStation Store",
+    "nintendo_eshop": "Nintendo eShop",
+    "google_play": "Google Play",
+    "app_store": "App Store",
+    "itch": "itch.io",
+    "meta": "Meta Horizon Store",
+    "gamejolt": "Game Jolt",
+    "microsoft_store": "Microsoft Store",
+    "giantbomb": "Giant Bomb",
+    "other": "Other link"
+  },
+  "languageSupportType": {
+    "interface": "Interface",
+    "subtitles": "Subtitles",
+    "audio": "Audio"
+  }
+}
