@@ -28,6 +28,13 @@ const GAME_TYPE: Readonly<Record<number, GameType>> = {
   14: "update",
 };
 
+/** 我方名稱 → IGDB id（查詢條件用）；other 沒有對應 id。 */
+export function gameTypeIds(types: readonly GameType[]): number[] {
+  const ids: number[] = [];
+  for (const [id, name] of Object.entries(GAME_TYPE)) if (types.includes(name)) ids.push(Number(id));
+  return ids.sort((a, b) => a - b);
+}
+
 /** 空值視為 main_game（🧪 全庫無空值）；未知 id → other。 */
 export function mapGameType(id: number | null | undefined): Mapped<GameType> {
   if (id == null) return { value: "main_game", unmapped: false };

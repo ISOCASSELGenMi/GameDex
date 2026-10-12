@@ -20,6 +20,7 @@ import type {
 import type { GameDataProvider } from "./game-data-provider.interface";
 import { normalizeIgdbDate } from "./igdb/dates";
 import {
+  gameTypeIds,
   mapGameStatus,
   mapGameType,
   mapLanguageCode,
@@ -494,6 +495,13 @@ export function buildGamesWhere(q: FetchGamesQuery): string | null {
   if (q.updatedSince) conds.push(`updated_at > ${Math.floor(q.updatedSince.getTime() / 1000)}`);
   if (q.afterId != null) conds.push(`id > ${Math.trunc(q.afterId)}`);
   if (q.ids) conds.push(`id = (${q.ids.map((i) => Math.trunc(i)).join(",")})`);
+  if (q.firstReleaseFrom) conds.push(`first_release_date >= ${Math.floor(q.firstReleaseFrom.getTime() / 1000)}`);
+  if (q.firstReleaseMissingWithDates) conds.push("first_release_date = null & release_dates != null");
+  if (q.gameTypes) {
+    const ids = gameTypeIds(q.gameTypes);
+    // 空白名單（例如只給 other）→ 不可能命中的條件，而不是不加條件
+    conds.push(ids.length > 0 ? `game_type = (${ids.join(",")})` : "id = 0");
+  }
   return conds.length > 0 ? conds.join(" & ") : null;
 }
 

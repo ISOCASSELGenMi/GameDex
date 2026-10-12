@@ -5,9 +5,10 @@ import type { JobContext, ModuleManifestBase, ScheduledJob } from "../modules/ty
 
 export type JobOutcome = "succeeded" | "failed" | "skipped";
 
-function makeContext(job: ScheduledJob, startedAt: Date): JobContext {
+function makeContext(job: ScheduledJob, startedAt: Date, args: readonly string[]): JobContext {
   return {
     startedAt,
+    args,
     log: (message, extra) => console.log(`[job:${job.name}] ${message}`, extra ?? ""),
   };
 }
@@ -17,11 +18,11 @@ function makeContext(job: ScheduledJob, startedAt: Date): JobContext {
  * - 拿不到鎖（上一輪未結束或另一實例在跑）→ 安靜跳過。
  * - 結果寫入 sync_state 心跳；任務本身不處理鎖。
  */
-export async function runJobOnce(job: ScheduledJob): Promise<JobOutcome> {
+export async function runJobOnce(job: ScheduledJob, args: readonly string[] = []): Promise<JobOutcome> {
   const startedAt = new Date();
   const lock = job.lockMode === "session" ? withSessionLock : withXactLock;
   try {
-    const ran = await lock(job.name, () => job.run(makeContext(job, startedAt)));
+    const ran = await lock(job.name, () => job.run(makeContext(job, startedAt, args)));
     if (!ran) return "skipped";
     await recordJobSuccess(job.name);
     return "succeeded";
@@ -37,7 +38,8 @@ const g = globalThis as typeof globalThis & { __sokScheduler?: ScheduledTask[] }
 /** 收集已啟用模組的任務並註冊；重複呼叫（HMR）不會重複註冊。 */
 export function startScheduler(enabled: readonly ModuleManifestBase[]): ScheduledJob[] {
   if (g.__sokScheduler) return [];
-  const jobs = enabled.flatMap((m) => m.jobs ?? []);
+  // 沒有 cron 的任務只能手動執行
+  const jobs = enabled.flatMap((m) => m.jobs ?? []).filter((j): j is ScheduledJob & { cron: string } => !!j.cron);
   for (const job of jobs) {
     if (!cron.validate(job.cron)) throw new Error(`任務 ${job.name} 的 cron 無效：${job.cron}`);
   }

@@ -1,5 +1,7 @@
+import { getCoreEnv } from "@/kernel/config/env";
 import type { ModuleManifestBase } from "@/kernel/modules/types";
 import { getIgdbProvider } from "./providers/igdb";
+import { backfillGames, parseBackfillArgs } from "./use-cases/sync/backfill-games";
 import { syncGames } from "./use-cases/sync/sync-games";
 import { syncPlatforms } from "./use-cases/sync/sync-platforms";
 
@@ -29,8 +31,20 @@ export const catalogModule: ModuleManifest = {
     "genres", "themes", "game_genres", "game_themes", "game_localizations", "languages",
     "game_language_supports", "change_feed", "game_popularity_signals",
   ],
-  // 頻率見 04 §排程任務；Phase 2a 陸續加入 backfill_games…
+  // 頻率見 04 §排程任務
   jobs: [
+    {
+      // 手動：npm run job -- backfill_games [--max-batches N] [--restart]
+      name: "backfill_games",
+      lockMode: "session",
+      run: async (ctx) => {
+        const env = getCoreEnv();
+        await backfillGames(getIgdbProvider({ maxReqPerSec: env.BACKFILL_MAX_REQ_PER_SEC }), ctx, {
+          lookbackYears: env.BACKFILL_LOOKBACK_YEARS,
+          ...parseBackfillArgs(ctx.args),
+        });
+      },
+    },
     {
       name: "sync_games",
       cron: "10 * * * *", // 每小時

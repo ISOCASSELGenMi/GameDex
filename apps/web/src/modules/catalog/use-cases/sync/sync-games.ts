@@ -34,6 +34,8 @@ export interface GameBatchStats {
   updated: number;
   skippedMobileOnly: number;
   failed: number;
+  /** 寫入失敗的 igdbId（回填記進 sync_state.meta，供重試）。 */
+  failedIgdbIds: number[];
   releasesCreated: number;
   releasesUpdated: number;
   releasesRemoved: number;
@@ -51,6 +53,7 @@ export function emptyBatchStats(): GameBatchStats {
     updated: 0,
     skippedMobileOnly: 0,
     failed: 0,
+    failedIgdbIds: [],
     releasesCreated: 0,
     releasesUpdated: 0,
     releasesRemoved: 0,
@@ -66,6 +69,8 @@ export interface WriteContext {
   regionIds: Map<string, number>;
   today: IsoDate;
   log: Log;
+  /** 回填傳 false：只 upsert，不標 removed（04 §回填）。 */
+  markMissingRemoved?: boolean;
 }
 
 /** 讀一次參照資料（平台、地區）；平台表空的時候丟錯，提示先跑 sync_platforms。 */
@@ -191,7 +196,7 @@ export async function writeGameBatch(records: readonly GameRecord[], ctx: WriteC
       sourceUpdatedAt: r.sourceUpdatedAt,
     };
     try {
-      const res = await syncIgdbGame(input, ctx.today);
+      const res = await syncIgdbGame(input, { today: ctx.today, markMissingRemoved: ctx.markMissingRemoved });
       if (res.inserted) stats.inserted += 1;
       else stats.updated += 1;
       stats.releasesCreated += res.releases.created;
@@ -202,6 +207,7 @@ export async function writeGameBatch(records: readonly GameRecord[], ctx: WriteC
       stats.releaseDuplicatesDropped += res.releases.duplicatesDropped;
     } catch (err) {
       stats.failed += 1;
+      stats.failedIgdbIds.push(r.igdbId);
       ctx.log("遊戲寫入失敗", { igdbId: r.igdbId, name: r.name, error: err instanceof Error ? err.message : String(err) });
     }
   }

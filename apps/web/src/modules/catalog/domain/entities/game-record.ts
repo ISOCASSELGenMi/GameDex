@@ -107,5 +107,11 @@ export interface FetchGamesQuery {
   /** id 游標：只取 id 大於此值者，依 id 升冪。 */
   afterId?: number;
   ids?: number[];
+  /** 首發日（來源的 first_release_date）不早於此時刻。 */
+  firstReleaseFrom?: Date;
+  /** 沒有首發日、但至少有一筆上市日（04 §回填 Tier 1 (b)）。 */
+  firstReleaseMissingWithDates?: boolean;
+  /** 只取這些遊戲類型（白名單）。 */
+  gameTypes?: readonly GameType[];
   limit: number;
 }

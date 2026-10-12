@@ -10,6 +10,7 @@ import {
 import { buildSearchText, tokenizeForSearch } from "@/modules/catalog/domain/search-text";
 import { buildGamesWhere, toGameRecord } from "@/modules/catalog/providers/igdb";
 import {
+  gameTypeIds,
   mapGameStatus,
   mapGameType,
   mapLanguageCode,
@@ -17,6 +18,7 @@ import {
   mapReleaseStage,
 } from "@/modules/catalog/providers/igdb/game-mappings";
 import { buildGameLinks, steamAppIdOf } from "@/modules/catalog/providers/igdb/link-map";
+import { advanceCursor, lookbackFrom, parseBackfillArgs, parseCursor } from "@/modules/catalog/use-cases/sync/backfill-games";
 import { firstRelease, isMobileOnly, toDesiredReleases } from "@/modules/catalog/use-cases/sync/sync-games";
 
 const TODAY = "2026-10-12";
@@ -369,5 +371,40 @@ describe("sync-games 的轉換", () => {
     ).toEqual({ date: "2027-01-01", precision: "month" });
     expect(firstRelease([want({ ...tbd })])).toEqual({ date: null, precision: "tbd" });
     expect(firstRelease([])).toEqual({ date: null, precision: null });
+  });
+});
+
+describe("回填（Tier 1）", () => {
+  it("parseBackfillArgs", () => {
+    expect(parseBackfillArgs([])).toEqual({});
+    expect(parseBackfillArgs(["--max-batches", "3", "--restart"])).toEqual({ maxBatches: 3, restart: true });
+    expect(parseBackfillArgs(["--max-batches=2"])).toEqual({ maxBatches: 2 });
+    expect(() => parseBackfillArgs(["--max-batches", "0"])).toThrow();
+    expect(() => parseBackfillArgs(["--oops"])).toThrow();
+  });
+
+  it("lookbackFrom、parseCursor、advanceCursor", () => {
+    expect(lookbackFrom(new Date("2026-10-13T05:00:00Z"), 3).toISOString()).toBe("2023-10-13T00:00:00.000Z");
+    const c = { tier: 1 as const, phase: "recent" as const, afterId: 0, firstReleaseFrom: "2023-10-13T00:00:00.000Z", startedAt: "x" };
+    expect(parseCursor(JSON.stringify(c))).toEqual(c);
+    expect(parseCursor("not json")).toBeNull();
+    expect(parseCursor(JSON.stringify({ ...c, phase: "weird" }))).toBeNull();
+    expect(advanceCursor(c, 500, 900, 500)).toMatchObject({ phase: "recent", afterId: 900 });
+    expect(advanceCursor(c, 12, 900, 500)).toMatchObject({ phase: "undated", afterId: 0 });
+    expect(advanceCursor({ ...c, phase: "undated" }, 0, undefined, 500)).toMatchObject({ phase: "done" });
+  });
+
+  it("查詢條件：首發日下限、無首發日但有上市日、類型白名單", () => {
+    expect(gameTypeIds(["main_game", "standalone_expansion", "remake", "remaster", "port"])).toEqual([0, 4, 8, 9, 11]);
+    expect(
+      buildGamesWhere({ firstReleaseFrom: new Date("2023-10-13T00:00:00Z"), gameTypes: ["main_game", "port"], afterId: 5, limit: 500 }),
+    ).toBe("id > 5 & first_release_date >= 1697155200 & game_type = (0,11)");
+    expect(buildGamesWhere({ firstReleaseMissingWithDates: true, limit: 500 })).toBe("first_release_date = null & release_dates != null");
+    expect(buildGamesWhere({ gameTypes: ["other"], limit: 500 })).toBe("id = 0");
+  });
+
+  it("markMissingRemoved=false：來源沒給的既有列不標 removed", () => {
+    const e = have();
+    expect(planReleaseEventDiff([e], [], { ...opts, markMissingRemoved: false })).toMatchObject({ updates: [], unchanged: 1 });
   });
 });

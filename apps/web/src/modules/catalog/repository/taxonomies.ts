@@ -7,10 +7,11 @@ import { getDb, type DbOrTx } from "@/kernel/db/client";
 import type { FranchiseKind, LanguageRecord, TaxonomyRecord } from "../domain/entities";
 import { companies, franchises, genres, languages, themes } from "../schema";
 
+/** 去重並依鍵排序：多個 transaction 同時 upsert 時加鎖順序一致，避免 deadlock。 */
 function uniqueBy<T>(items: readonly T[], key: (t: T) => string | number): T[] {
   const m = new Map<string | number, T>();
   for (const it of items) if (!m.has(key(it))) m.set(key(it), it);
-  return [...m.values()];
+  return [...m.entries()].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)).map(([, v]) => v);
 }
 
 /** 已被「別的 igdbId」佔用的 slug 改名；批次內互撞也一併處理。 */

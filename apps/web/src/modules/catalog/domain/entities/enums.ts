@@ -52,6 +52,12 @@ export const GAME_TYPES = [
 ] as const;
 export type GameType = (typeof GAME_TYPES)[number];
 
+/**
+ * 白名單類型（04 §遊戲類型「預設顯示」、§回填 Tier 1／2）。
+ * 顯示用的 CALENDAR_VISIBLE_GAME_TYPES 是可調的環境變數；回填範圍固定用這份，不隨顯示設定變動。
+ */
+export const WHITELIST_GAME_TYPES: readonly GameType[] = ["main_game", "standalone_expansion", "remake", "remaster", "port"];
+
 /** games.gameStatus（04 §遊戲層級狀態）；NULL＝一般狀態。 */
 export const GAME_STATUSES = [
   "released", "alpha", "beta", "early_access", "offline", "cancelled", "rumored", "delisted",

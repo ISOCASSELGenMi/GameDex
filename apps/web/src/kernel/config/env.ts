@@ -29,6 +29,9 @@ export const coreEnvSchema = z.object({
   /** catalog 的 manifest 把兩者列為 requiredEnv，啟動時檢查；這裡設為可選，讓單元測試與 build 不需要憑證。 */
   IGDB_CLIENT_ID: z.preprocess(emptyToUndefined, z.string().optional()),
   IGDB_CLIENT_SECRET: z.preprocess(emptyToUndefined, z.string().optional()),
+  /** 回填（04 §回填、16）：Tier 1 往回幾年；回填額外限速（每秒請求數），額度留給增量同步。 */
+  BACKFILL_LOOKBACK_YEARS: z.preprocess(emptyToUndefined, z.coerce.number().int().min(1).max(50).default(3)),
+  BACKFILL_MAX_REQ_PER_SEC: z.preprocess(emptyToUndefined, z.coerce.number().positive().max(4).default(2)),
 });
 
 export type CoreEnv = z.infer<typeof coreEnvSchema>;

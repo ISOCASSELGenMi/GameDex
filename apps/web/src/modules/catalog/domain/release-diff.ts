@@ -43,6 +43,8 @@ export interface ReleaseDiffOptions {
   today: IsoDate;
   /** 遊戲層級 game_status = cancelled（P23）。 */
   gameCancelled: boolean;
+  /** 既有列這次沒看到 → 標 removed。回填只 upsert，傳 false（04 §回填）。預設 true。 */
+  markMissingRemoved?: boolean;
 }
 
 export interface ReleaseCreate extends ReleaseSlot, DateTriple {
@@ -214,7 +216,7 @@ export function planReleaseEventDiff(
 
   for (const e of existing) {
     if (matched.has(e.id)) continue;
-    if (e.sourceStatus === "removed") {
+    if (e.sourceStatus === "removed" || opts.markMissingRemoved === false) {
       plan.unchanged += 1;
       continue;
     }

@@ -70,15 +70,24 @@ export interface IgdbGameSyncResult {
 
 const uniq = <T>(xs: readonly T[]) => [...new Set(xs)];
 
-/**
- * @param today UTC 日期；diff 判斷「已過」與遊戲層級 cancelled 用（04）
- */
+export interface IgdbGameSyncOptions {
+  /** UTC 日期；diff 判斷「已過」與遊戲層級 cancelled 用（04）。 */
+  today: IsoDate;
+  /** 來源沒給的既有上市日標 removed；回填傳 false（只 upsert）。預設 true。 */
+  markMissingRemoved?: boolean;
+}
+
+/** 同一款遊戲的寫入互斥鎖（回填與增量同步可能同時寫同一款；release_events 刻意沒有 unique）。 */
+const GAME_WRITE_LOCK_SPACE = 0x50a6e;
+
 export async function syncIgdbGame(
   input: IgdbGameSyncInput,
-  today: IsoDate,
+  opts: IgdbGameSyncOptions,
   db: DbOrTx = getDb(),
 ): Promise<IgdbGameSyncResult> {
   return db.transaction(async (tx) => {
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(${GAME_WRITE_LOCK_SPACE}::int, ${input.igdbId}::int)`);
+
     // ── 遊戲本體 ──
     const [taken] = await tx.select({ igdbId: games.igdbId }).from(games).where(eq(games.slug, input.slug)).limit(1);
     const slug = taken && taken.igdbId !== input.igdbId ? `${input.slug}-${input.igdbId}` : input.slug;
@@ -145,8 +154,9 @@ export async function syncIgdbGame(
     // ── 上市事件 diff ──
     const existing = await listIgdbReleaseRows(gameId, tx);
     const plan = planReleaseEventDiff(existing, input.releases, {
-      today,
+      today: opts.today,
       gameCancelled: input.gameStatus === "cancelled",
+      markMissingRemoved: opts.markMissingRemoved,
     });
     const applied = await applyReleaseDiffPlan(tx, gameId, plan, input.sourceUpdatedAt);
 
