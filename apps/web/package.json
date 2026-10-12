@@ -14,6 +14,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx --import ./scripts/load-env.ts scripts/migrate.ts",
     "db:seed": "tsx --import ./scripts/load-env.ts src/modules/catalog/seed.ts",
+    "job": "tsx --import ./scripts/load-env.ts scripts/run-job.ts",
     "db:trgm-test": "tsx --import ./scripts/load-env.ts scripts/trgm-test.ts",
     "test:unit": "vitest run --project unit"
   },

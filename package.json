@@ -16,6 +16,7 @@
     "db:generate": "npm -w apps/web run db:generate",
     "db:migrate": "npm -w apps/web run db:migrate",
     "db:seed": "npm -w apps/web run db:seed",
+    "job": "npm -w apps/web run job --",
     "lint": "npm -w apps/web run lint",
     "lint:arch": "npm -w apps/web run lint:arch",
     "typecheck": "npm -w apps/web run typecheck",
