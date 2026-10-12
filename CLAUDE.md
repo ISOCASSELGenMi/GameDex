@@ -20,10 +20,10 @@
 ## 目前進度
 
 - ✅ Phase 0 環境、✅ Phase 1 kernel／catalog schema／lint:arch／core-only CI（2026-10-12）
-- ⏭ **Phase 2 IGDB 同步**（spec/04、spec/15 §Phase 2）——**2a 已完成**（2026-10-13）：sync-platforms、sync-games＋增量同步、Tier 1 回填（交接見 docs/handoff/2026-10-12-phase2a.md）；下一步 2b：
-  - 2a：`modules/catalog/providers/igdb.ts`（token 快取、4 req/s＋並發 8 節流）、`sync-platforms`、Tier 1 回填（近 2 年）、增量同步、上市階段、語言支援
-  - 2b：Tier 2 回填、相似遊戲／活動關聯批次解析（SQL 見 spec/03 §相似遊戲）、滾動校對
-  - 任務註冊在 `catalog/module.ts` 的 `jobs`；回填用 `lockMode: "session"`
+- ✅ **Phase 2a IGDB 同步**（2026-10-13）：sync_platforms、sync_games（每小時增量）、Tier 1 回填，真實資料已寫入本機 DB
+- ⏭ **Phase 2b**：resolve_relations（相似遊戲／活動關聯）、Tier 2 回填、sync_events、滾動校對、字典漂移偵測
+  - **開工前先讀 `docs/handoff/2026-10-13-phase2b.md`**（狀態、程式地圖、已定案判斷、待問事項、地雷）
+  - 任務註冊在 `catalog/module.ts` 的 `jobs`；長任務用 `lockMode: "session"`；遊戲寫入一律經 `writeGameBatch`
 
 ## 本機開發
 
