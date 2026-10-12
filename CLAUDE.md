@@ -22,9 +22,9 @@
 - ✅ Phase 0 環境、✅ Phase 1 kernel／catalog schema／lint:arch／core-only CI（2026-10-12）
 - ✅ **Phase 2a IGDB 同步**（2026-10-13）：sync_platforms、sync_games（每小時增量）、Tier 1 回填，真實資料已寫入本機 DB
 - ✅ **Phase 2b**（2026-10-13）：resolve_relations、Tier 2 回填（真實資料已跑完）、sync_events、rolling_refresh、字典漂移偵測
-  - 紀錄與使用者決定：`docs/handoff/2026-10-13-phase2b-done.md`；程式地圖與地雷：`docs/handoff/2026-10-13-phase2b.md`
+- ⏭ **Phase 3 網站**（3a：月曆＋詳情＋聚合＋基本篩選＋i18n 骨架）
+  - **開工前先讀 `docs/handoff/2026-10-13-phase3.md`**（目前狀態整合版：資料量、排程、程式地圖、全部已定案判斷、待使用者處理、地雷）
   - 任務註冊在 `catalog/module.ts` 的 `jobs`；長任務用 `lockMode: "session"`；遊戲寫入一律經 `writeGameBatch`
-- ⏭ 下一步：Phase 3（見 spec/15）
 
 ## 本機開發
 

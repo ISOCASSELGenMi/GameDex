@@ -237,7 +237,7 @@ describe("IGDB 遊戲對照", () => {
     expect(links[0].url).toBe("https://store.steampowered.com/app/1/slug");
     expect(unmapped).toEqual([
       { origin: "website", id: 99 },
-      { origin: "external_game", id: 20 },
+      // 20（Amazon）是刻意歸 other 的已知 id，不回報
     ]);
     expect(steamAppIdOf([{ external_game_source: 20, uid: "B0" }, { external_game_source: 1, uid: " 1245620 " }])).toBe("1245620");
   });

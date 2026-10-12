@@ -11,7 +11,7 @@
 | `ROLLING_REFRESH_PER_NIGHT` | **10000**（約 20 個請求；全庫約 43 天輪一遍） |
 | 滾動校對以 id 查不到的遊戲 | **保留遊戲；尚未上市（status ≠ released）的 igdb 上市列標 removed**（history／change_feed 照 diff），id 記進 meta |
 
-## 我自己定的（請使用者確認）
+## 我自己定的（使用者已於 2026-10-13 同意）
 
 - **`rolling_refresh_misses` 的「不在最近增量名單內」**：來源 `updated_at` ≤ 增量同步進度（`sync_state[igdb_games].lastSyncedAt`）。
   意思是「增量理應已抓過這個版本卻仍有差異」→ IGDB 改了上市日但沒推進 `games.updated_at`。

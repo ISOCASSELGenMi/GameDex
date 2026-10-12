@@ -457,7 +457,7 @@ export function toGameRecord(g: IgdbGame, warn: Warn = defaultWarn): GameRecord 
   }
 
   const { links, unmapped } = buildGameLinks(g.websites ?? [], g.external_games ?? []);
-  for (const u of unmapped) warn("外部連結分類未收錄，暫歸 other", { origin: u.origin, id: u.id });
+  for (const u of unmapped) warn("外部連結出現新的字典 id，暫歸 other（請更新 link-map.ts）", { origin: u.origin, id: u.id });
 
   const rating = g.aggregated_rating;
   const ratingCount = g.aggregated_rating_count ?? 0;

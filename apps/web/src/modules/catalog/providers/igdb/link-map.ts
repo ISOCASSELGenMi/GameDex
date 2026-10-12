@@ -78,7 +78,7 @@ export interface RawExternalGame {
 
 export interface BuildLinksResult {
   links: GameLinkRecord[];
-  /** 未收錄的字典 id（呼叫端彙整後記警告）。 */
+  /** 已知清單（KNOWN_*_IDS）以外的新字典 id（呼叫端記警告）；刻意歸 other 的已知 id 不列。 */
   unmapped: Array<{ origin: "website" | "external_game"; id: number }>;
 }
 
@@ -87,6 +87,9 @@ export interface BuildLinksResult {
  * 未收錄的 id → categoryLabel='other'、linkType 依來源（websites → official、external_games → store）。
  * 沒有網址的略過。
  */
+const knownWebsite = new Set(KNOWN_WEBSITE_TYPE_IDS);
+const knownSource = new Set(KNOWN_EXTERNAL_GAME_SOURCE_IDS);
+
 export function buildGameLinks(websites: readonly RawWebsite[], externalGames: readonly RawExternalGame[]): BuildLinksResult {
   const byLabel = new Map<string, GameLinkRecord>();
   const unmapped: BuildLinksResult["unmapped"] = [];
@@ -98,7 +101,7 @@ export function buildGameLinks(websites: readonly RawWebsite[], externalGames: r
     const url = w.url?.trim();
     if (!url || w.type == null) continue;
     const def = WEBSITE_TYPE_MAP[w.type];
-    if (!def) unmapped.push({ origin: "website", id: w.type });
+    if (!def && !knownWebsite.has(w.type)) unmapped.push({ origin: "website", id: w.type });
     const [categoryLabel, linkType] = def ?? ["other", "official"];
     add({ categoryLabel, linkType, url, igdbCategory: w.type, igdbOrigin: "website" });
   }
@@ -107,7 +110,7 @@ export function buildGameLinks(websites: readonly RawWebsite[], externalGames: r
     const src = e.external_game_source;
     if (!url || src == null || src === EXTERNAL_SOURCE_IGDB) continue;
     const def = EXTERNAL_GAME_SOURCE_MAP[src];
-    if (!def) unmapped.push({ origin: "external_game", id: src });
+    if (!def && !knownSource.has(src)) unmapped.push({ origin: "external_game", id: src });
     const [categoryLabel, linkType] = def ?? ["other", "store"];
     add({ categoryLabel, linkType, url, igdbCategory: src, igdbOrigin: "external_game" });
   }
