@@ -1,4 +1,6 @@
 import type { ModuleManifestBase } from "@/kernel/modules/types";
+import { getIgdbProvider } from "./providers/igdb";
+import { syncPlatforms } from "./use-cases/sync/sync-platforms";
 
 /**
  * catalog 的擴充點型別（02 §Manifest 與擴充點）。
@@ -17,7 +19,7 @@ export const catalogModule: ModuleManifest = {
   name: "catalog",
   kind: "core",
   requires: [],
-  requiredEnv: ["DATABASE_URL"],
+  requiredEnv: ["DATABASE_URL", "IGDB_CLIENT_ID", "IGDB_CLIENT_SECRET"],
   ownedTables: [
     "games", "platforms", "platform_families", "platform_release_dates", "regions", "game_platforms",
     "release_events", "release_date_history", "ratings", "score_snapshots", "external_ids",
@@ -26,6 +28,15 @@ export const catalogModule: ModuleManifest = {
     "genres", "themes", "game_genres", "game_themes", "game_localizations", "languages",
     "game_language_supports", "change_feed", "game_popularity_signals",
   ],
-  jobs: [], // Phase 2 起加入 sync_games、sync_events、sync_platforms…
+  // 頻率見 04 §排程任務；Phase 2a 陸續加入 sync_games、backfill_games…
+  jobs: [
+    {
+      name: "sync_platforms",
+      cron: "20 4 * * *", // 每日
+      run: async (ctx) => {
+        await syncPlatforms(getIgdbProvider(), ctx.log);
+      },
+    },
+  ],
   i18nNamespaces: ["catalog"],
 };

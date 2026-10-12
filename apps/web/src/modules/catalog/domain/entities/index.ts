@@ -3,3 +3,4 @@ export * from "./game";
 export * from "./release-event";
 export * from "./rating";
 export * from "./region";
+export * from "./platform";

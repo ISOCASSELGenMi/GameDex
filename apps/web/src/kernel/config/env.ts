@@ -26,6 +26,9 @@ export const coreEnvSchema = z.object({
   DEFAULT_REGION_PREF: z.preprocess(emptyToUndefined, z.string().default("WW")),
   /** 本機開發可設 false 關閉排程（例如同時開多個 dev server）。 */
   SCHEDULER_ENABLED: bool("true"),
+  /** catalog 的 manifest 把兩者列為 requiredEnv，啟動時檢查；這裡設為可選，讓單元測試與 build 不需要憑證。 */
+  IGDB_CLIENT_ID: z.preprocess(emptyToUndefined, z.string().optional()),
+  IGDB_CLIENT_SECRET: z.preprocess(emptyToUndefined, z.string().optional()),
 });
 
 export type CoreEnv = z.infer<typeof coreEnvSchema>;
