@@ -15,10 +15,15 @@ export interface PlatformFamilyRecord {
   slug: string;
 }
 
-/** 硬體上市日；同一平台同一地區可能有多筆（各版本），取最早由 Use Case 決定。 */
+/** 硬體上市日（某一版本、某一地區）。 */
 export interface PlatformReleaseDateRecord extends ReleaseDateSpan {
   /** regions.code（WW、US、EU、JP…）。 */
   regionCode: string;
+}
+
+/** 平台的一個硬體版本（初版、Slim、Pro…）；採用哪些版本由 Use Case 決定。 */
+export interface PlatformVersionRecord {
+  releaseDates: PlatformReleaseDateRecord[];
 }
 
 /** GameDataProvider.fetchPlatforms() 的回傳；來源格式已在 Provider 轉完。 */
@@ -33,5 +38,5 @@ export interface PlatformRecord {
   family: PlatformFamilyRecord | null;
   logoUrl: string | null;
   summary: string | null;
-  releaseDates: PlatformReleaseDateRecord[];
+  versions: PlatformVersionRecord[];
 }

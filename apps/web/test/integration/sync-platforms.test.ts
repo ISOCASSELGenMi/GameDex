@@ -33,7 +33,7 @@ function platform(over: Partial<PlatformRecord> & Pick<PlatformRecord, "igdbId" 
     family: null,
     logoUrl: null,
     summary: null,
-    releaseDates: [],
+    versions: [],
     ...over,
   };
 }
@@ -60,14 +60,17 @@ describe.skipIf(!enabled)("sync_platforms（整合）", () => {
     await closeDb();
   });
 
-  it("新增平台、家族與每地區最早上市日；重跑冪等", async () => {
+  it("新增平台、家族與原版機每地區最早上市日（改版機 WW 不混入）；重跑冪等", async () => {
     const records = [
       platform({
         igdbId: 990001,
         slug: "sp-ps-test",
         name: "PS Test",
         family: { igdbId: 990001, name: "Test Family", slug: "sp-test-family" },
-        releaseDates: [day("US", "2024-11-07"), day("US", "2020-11-12"), day("JP", "2020-11-12")],
+        versions: [
+          { releaseDates: [day("US", "2020-11-12"), day("JP", "2020-11-12"), day("US", "2020-12-01")] },
+          { releaseDates: [day("WW", "2024-11-07")] },
+        ],
       }),
     ];
     const first = await syncPlatforms(fakeProvider(records), noLog);
@@ -87,7 +90,7 @@ describe.skipIf(!enabled)("sync_platforms（整合）", () => {
   });
 
   it("IGDB 不再提供的地區刪除 igdb 列，人工上市日保留且不被覆蓋", async () => {
-    const records = [platform({ igdbId: 990002, slug: "sp-dates", releaseDates: [day("US", "2020-01-01"), day("JP", "2020-02-02")] })];
+    const records = [platform({ igdbId: 990002, slug: "sp-dates", versions: [{ releaseDates: [day("US", "2020-01-01"), day("JP", "2020-02-02")] }] })];
     await syncPlatforms(fakeProvider(records), noLog);
     const p = (await getPlatformByIgdbId(990002))!;
 
@@ -103,7 +106,7 @@ describe.skipIf(!enabled)("sync_platforms（整合）", () => {
       });
 
     // 這次 IGDB 只剩 JP（日期也變了）
-    records[0].releaseDates = [day("JP", "2020-05-05")];
+    records[0].versions = [{ releaseDates: [day("JP", "2020-05-05")] }];
     await syncPlatforms(fakeProvider(records), noLog);
     expect(await datesByRegion(p.id)).toEqual({
       JP: { date: "2019-12-31", source: "manual" },
@@ -114,7 +117,7 @@ describe.skipIf(!enabled)("sync_platforms（整合）", () => {
   it("source='manual' 的平台不覆蓋", async () => {
     await upsertPlatform({ igdbId: 990003, slug: "sp-manual", name: "人工命名", kind: "handheld", source: "manual" });
     const stats = await syncPlatforms(
-      fakeProvider([platform({ igdbId: 990003, slug: "sp-manual", name: "IGDB Name", releaseDates: [day("US", "2020-01-01")] })]),
+      fakeProvider([platform({ igdbId: 990003, slug: "sp-manual", name: "IGDB Name", versions: [{ releaseDates: [day("US", "2020-01-01")] }] })]),
       noLog,
     );
     expect(stats).toMatchObject({ manualSkipped: 1, inserted: 0, updated: 0 });

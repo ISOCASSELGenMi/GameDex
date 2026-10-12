@@ -1,8 +1,13 @@
 /**
  * sync_platforms（04 §平台同步）：每日一次，整表重抓平台、平台家族與硬體上市日。
- * 硬體上市日：同平台同地區取最早；`source='manual'` 不覆蓋。
+ * 硬體上市日：只採原版機（見 pickOriginalVersionDates），同地區取最早；`source='manual'` 不覆蓋。
  */
-import type { DatePrecision, PlatformFamilyRecord, PlatformReleaseDateRecord } from "../../domain/entities";
+import type {
+  DatePrecision,
+  PlatformFamilyRecord,
+  PlatformReleaseDateRecord,
+  PlatformVersionRecord,
+} from "../../domain/entities";
 import type { GameDataProvider } from "../../providers/game-data-provider.interface";
 import { syncIgdbPlatform, upsertIgdbPlatformFamilies } from "../../repository/platforms";
 import { listRegions } from "../../repository/regions";
@@ -33,6 +38,22 @@ export function pickEarliestPerRegion(dates: readonly PlatformReleaseDateRecord[
   return [...best.values()];
 }
 
+/**
+ * 原版機的上市日（使用者決定，2026-10-12）：IGDB 常把改版機（PS5 Pro、PS4 Slim）登記成 WW，
+ * 若各版本混在一起取最早，WW 會變成改版機的日期。原版＝含全平台最早日期的版本；並列時一起採用。
+ * 原版沒有的地區不從改版機補。沒有任何日期的版本不參與。
+ */
+export function pickOriginalVersionDates(versions: readonly PlatformVersionRecord[]): PlatformReleaseDateRecord[] {
+  let earliest: PlatformReleaseDateRecord | undefined;
+  for (const v of versions) for (const d of v.releaseDates) if (!earliest || isEarlier(d, earliest)) earliest = d;
+  if (!earliest) return [];
+  const first = earliest.periodStart;
+  const originals = versions.filter((v) =>
+    v.releaseDates.some((d) => (first === null ? d.periodStart === null : d.periodStart === first)),
+  );
+  return pickEarliestPerRegion(originals.flatMap((v) => v.releaseDates));
+}
+
 function isEarlier(a: PlatformReleaseDateRecord, b: PlatformReleaseDateRecord): boolean {
   if (a.periodStart === null) return false;
   if (b.periodStart === null) return true;
@@ -61,7 +82,7 @@ export async function syncPlatforms(provider: GameDataProvider, log: Log): Promi
 
   for (const r of records) {
     const releaseDates = [];
-    for (const d of pickEarliestPerRegion(r.releaseDates)) {
+    for (const d of pickOriginalVersionDates(r.versions)) {
       const regionId = regionIds.get(d.regionCode);
       if (regionId === undefined) {
         log("地區不在 regions 表（seed 未執行？），略過", { igdbId: r.igdbId, regionCode: d.regionCode });

@@ -8,7 +8,7 @@ import { IgdbClient, IgdbError, TwitchTokenCache, toPlatformRecord } from "@/mod
 import { normalizeIgdbDate } from "@/modules/catalog/providers/igdb/dates";
 import { igdbImageUrl, mapPlatformKind, mapReleaseRegion } from "@/modules/catalog/providers/igdb/mappings";
 import { RequestLimiter, Semaphore, TokenBucket } from "@/modules/catalog/providers/igdb/throttle";
-import { pickEarliestPerRegion } from "@/modules/catalog/use-cases/sync/sync-platforms";
+import { pickEarliestPerRegion, pickOriginalVersionDates } from "@/modules/catalog/use-cases/sync/sync-platforms";
 
 const ts = (iso: string) => Date.parse(iso) / 1000;
 
@@ -130,17 +130,19 @@ describe("toPlatformRecord", () => {
       logoUrl: "https://images.igdb.com/igdb/image/upload/t_logo_med/plmk.png",
       summary: null,
     });
-    expect(rec.releaseDates.map((d) => [d.regionCode, d.releaseDate])).toEqual([
-      ["US", "2020-11-12"],
-      ["EU", "2020-11-19"],
-      ["US", "2024-11-07"],
+    expect(rec.versions.map((v) => v.releaseDates.map((d) => [d.regionCode, d.releaseDate]))).toEqual([
+      [
+        ["US", "2020-11-12"],
+        ["EU", "2020-11-19"],
+      ],
+      [["US", "2024-11-07"]],
     ]);
     expect(warn).not.toHaveBeenCalled();
   });
   it("缺欄位不失敗：補名稱、slug，未對照種類記警告", () => {
     const warn = vi.fn();
     const rec = toPlatformRecord({ id: 777 }, warn);
-    expect(rec).toMatchObject({ name: "Platform 777", slug: "platform-777", kind: "other", family: null, releaseDates: [] });
+    expect(rec).toMatchObject({ name: "Platform 777", slug: "platform-777", kind: "other", family: null, versions: [] });
     expect(warn).toHaveBeenCalledOnce();
   });
 });
@@ -167,6 +169,45 @@ describe("pickEarliestPerRegion", () => {
     expect(pickEarliestPerRegion([rd("US", "2021-01-01", "year"), rd("US", null, "tbd")])[0].precision).toBe("year");
     expect(pickEarliestPerRegion([rd("US", "2021-01-01", "year"), rd("US", "2021-01-01", "day")])[0].precision).toBe("day");
     expect(pickEarliestPerRegion([rd("US", null, "tbd")])[0].precision).toBe("tbd");
+  });
+});
+
+describe("pickOriginalVersionDates", () => {
+  const d = (regionCode: string, date: string | null) => ({
+    regionCode,
+    periodStart: date,
+    releaseDate: date,
+    precision: date === null ? ("tbd" as const) : ("day" as const),
+  });
+  const codes = (out: PlatformReleaseDateRecord[]) =>
+    Object.fromEntries(out.map((x) => [x.regionCode, x.periodStart] as const));
+
+  it("只採含最早日期的版本：改版機的 WW 不混入（PS5 Pro 實例）", () => {
+    const out = pickOriginalVersionDates([
+      { releaseDates: [d("US", "2020-11-12"), d("EU", "2020-11-19")] },
+      { releaseDates: [d("WW", "2024-11-07")] },
+    ]);
+    expect(codes(out)).toEqual({ US: "2020-11-12", EU: "2020-11-19" });
+  });
+  it("版本順序不影響；原版沒有的地區不從改版機補", () => {
+    const out = pickOriginalVersionDates([
+      { releaseDates: [d("US", "2004-10-29"), d("BR", "2009-10-15")] },
+      { releaseDates: [d("JP", "2000-03-04"), d("US", "2000-10-26")] },
+    ]);
+    expect(codes(out)).toEqual({ JP: "2000-03-04", US: "2000-10-26" });
+  });
+  it("多個版本並列最早時一起採用，同地區仍取最早", () => {
+    const out = pickOriginalVersionDates([
+      { releaseDates: [d("WW", "2020-11-10")] },
+      { releaseDates: [d("WW", "2020-11-10"), d("JP", "2020-11-10")] },
+      { releaseDates: [] },
+    ]);
+    expect(codes(out)).toEqual({ WW: "2020-11-10", JP: "2020-11-10" });
+  });
+  it("沒有日期 → 空；全是 tbd 時保留 tbd", () => {
+    expect(pickOriginalVersionDates([])).toEqual([]);
+    expect(pickOriginalVersionDates([{ releaseDates: [] }])).toEqual([]);
+    expect(codes(pickOriginalVersionDates([{ releaseDates: [d("WW", null)] }]))).toEqual({ WW: null });
   });
 });
 

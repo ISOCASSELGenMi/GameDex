@@ -3,7 +3,7 @@
  * 只在伺服器端使用（IGDB 不開 CORS，瀏覽器呼叫也會洩漏 Client Secret）。直接用 fetch，不引入 igdb-api-node。
  */
 import { ConfigError, getCoreEnv } from "@/kernel/config/env";
-import type { PlatformFamilyRecord, PlatformRecord, PlatformReleaseDateRecord } from "../domain/entities";
+import type { PlatformFamilyRecord, PlatformRecord, PlatformVersionRecord } from "../domain/entities";
 import type { GameDataProvider } from "./game-data-provider.interface";
 import { normalizeIgdbDate } from "./igdb/dates";
 import { igdbImageUrl, mapPlatformKind, mapReleaseRegion } from "./igdb/mappings";
@@ -236,15 +236,14 @@ export function toPlatformRecord(p: IgdbPlatform, warn: Warn = defaultWarn): Pla
         }
       : null;
 
-  const releaseDates: PlatformReleaseDateRecord[] = [];
-  for (const v of p.versions ?? []) {
-    for (const rd of v.platform_version_release_dates ?? []) {
-      const span = normalizeIgdbDate(rd.date, rd.date_format, (f) =>
+  const versions: PlatformVersionRecord[] = (p.versions ?? []).map((v) => ({
+    releaseDates: (v.platform_version_release_dates ?? []).map((rd) => ({
+      ...normalizeIgdbDate(rd.date, rd.date_format, (f) =>
         warn("未知的 date_format，視為 tbd", { igdbPlatformId: p.id, dateFormat: f }),
-      );
-      releaseDates.push({ ...span, regionCode: mapReleaseRegion(rd.release_region) });
-    }
-  }
+      ),
+      regionCode: mapReleaseRegion(rd.release_region),
+    })),
+  }));
 
   return {
     igdbId: p.id,
@@ -257,7 +256,7 @@ export function toPlatformRecord(p: IgdbPlatform, warn: Warn = defaultWarn): Pla
     family,
     logoUrl: igdbImageUrl(p.platform_logo?.image_id),
     summary: blankToNull(p.summary),
-    releaseDates,
+    versions,
   };
 }
 
