@@ -20,7 +20,7 @@
 ## 目前進度
 
 - ✅ Phase 0 環境、✅ Phase 1 kernel／catalog schema／lint:arch／core-only CI（2026-10-12）
-- ⏭ **Phase 2 IGDB 同步**（spec/04、spec/15 §Phase 2）：
+- ⏭ **Phase 2 IGDB 同步**（spec/04、spec/15 §Phase 2）——2026-10-12 已完成：sync-platforms、sync-games＋增量同步（交接見 docs/handoff/2026-10-12-phase2a.md）；下一步 Tier 1 回填：
   - 2a：`modules/catalog/providers/igdb.ts`（token 快取、4 req/s＋並發 8 節流）、`sync-platforms`、Tier 1 回填（近 2 年）、增量同步、上市階段、語言支援
   - 2b：Tier 2 回填、相似遊戲／活動關聯批次解析（SQL 見 spec/03 §相似遊戲）、滾動校對
   - 任務註冊在 `catalog/module.ts` 的 `jobs`；回填用 `lockMode: "session"`

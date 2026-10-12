@@ -1,5 +1,6 @@
 import type { ModuleManifestBase } from "@/kernel/modules/types";
 import { getIgdbProvider } from "./providers/igdb";
+import { syncGames } from "./use-cases/sync/sync-games";
 import { syncPlatforms } from "./use-cases/sync/sync-platforms";
 
 /**
@@ -28,8 +29,15 @@ export const catalogModule: ModuleManifest = {
     "genres", "themes", "game_genres", "game_themes", "game_localizations", "languages",
     "game_language_supports", "change_feed", "game_popularity_signals",
   ],
-  // 頻率見 04 §排程任務；Phase 2a 陸續加入 sync_games、backfill_games…
+  // 頻率見 04 §排程任務；Phase 2a 陸續加入 backfill_games…
   jobs: [
+    {
+      name: "sync_games",
+      cron: "10 * * * *", // 每小時
+      run: async (ctx) => {
+        await syncGames(getIgdbProvider(), ctx);
+      },
+    },
     {
       name: "sync_platforms",
       cron: "20 4 * * *", // 每日

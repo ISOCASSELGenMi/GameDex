@@ -14,3 +14,12 @@ export async function appendChange(
 ): Promise<void> {
   await tx.insert(changeFeed).values(entry);
 }
+
+/** 批次版 appendChange；同樣只接受呼叫端的 tx。 */
+export async function appendChanges(
+  tx: DbOrTx,
+  entries: ReadonlyArray<{ entityType: ChangeEntityType; entityId: number; changeType: ChangeType; payload?: Record<string, unknown> }>,
+): Promise<void> {
+  if (entries.length === 0) return;
+  await tx.insert(changeFeed).values([...entries]);
+}

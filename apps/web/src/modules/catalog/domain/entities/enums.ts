@@ -44,3 +44,16 @@ export type DataSource = "igdb" | "manual";
 
 /** `YYYY-MM-DD`；資料庫 date 欄位以字串往返，避免時區位移。 */
 export type IsoDate = string;
+
+/** games.gameType（04 §遊戲類型）。月曆等預設只顯示 CALENDAR_VISIBLE_GAME_TYPES，其餘照存。 */
+export const GAME_TYPES = [
+  "main_game", "dlc_addon", "expansion", "bundle", "standalone_expansion", "mod", "episode", "season",
+  "remake", "remaster", "expanded_game", "port", "fork", "pack", "update", "other",
+] as const;
+export type GameType = (typeof GAME_TYPES)[number];
+
+/** games.gameStatus（04 §遊戲層級狀態）；NULL＝一般狀態。 */
+export const GAME_STATUSES = [
+  "released", "alpha", "beta", "early_access", "offline", "cancelled", "rumored", "delisted",
+] as const;
+export type GameStatus = (typeof GAME_STATUSES)[number];

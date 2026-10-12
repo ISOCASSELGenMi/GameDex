@@ -1,4 +1,4 @@
-import { and, eq, notInArray, sql } from "drizzle-orm";
+import { and, eq, isNotNull, notInArray, sql } from "drizzle-orm";
 import { getDb, type DbOrTx } from "@/kernel/db/client";
 import type { DatePrecision, IsoDate, PlatformFamilyRecord, PlatformKind } from "../domain/entities";
 import { platformFamilies, platformReleaseDates, platforms } from "../schema";
@@ -136,4 +136,13 @@ export async function syncIgdbPlatform(
     }
     return { kind: row.inserted ? "inserted" : "updated", platformId: row.id, slug };
   });
+}
+
+/** 遊戲同步用：IGDB 平台 id → 我方 id 與種類（mobile 的上市日不寫入，P35）。 */
+export async function listIgdbPlatformRefs(db: DbOrTx = getDb()): Promise<Map<number, { id: number; kind: PlatformKind }>> {
+  const rows = await db
+    .select({ id: platforms.id, igdbId: platforms.igdbId, kind: platforms.kind })
+    .from(platforms)
+    .where(isNotNull(platforms.igdbId));
+  return new Map(rows.map((r) => [r.igdbId!, { id: r.id, kind: r.kind }]));
 }

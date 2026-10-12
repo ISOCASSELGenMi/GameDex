@@ -3,9 +3,31 @@
  * 只在伺服器端使用（IGDB 不開 CORS，瀏覽器呼叫也會洩漏 Client Secret）。直接用 fetch，不引入 igdb-api-node。
  */
 import { ConfigError, getCoreEnv } from "@/kernel/config/env";
-import type { PlatformFamilyRecord, PlatformRecord, PlatformVersionRecord } from "../domain/entities";
+import type {
+  FetchGamesQuery,
+  FranchiseRecord,
+  GameCompanyRecord,
+  GameCompanyRole,
+  GameLanguageSupportRecord,
+  GameLocalizationRecord,
+  GameRecord,
+  GameReleaseDateRecord,
+  PlatformFamilyRecord,
+  PlatformRecord,
+  PlatformVersionRecord,
+  TaxonomyRecord,
+} from "../domain/entities";
 import type { GameDataProvider } from "./game-data-provider.interface";
 import { normalizeIgdbDate } from "./igdb/dates";
+import {
+  mapGameStatus,
+  mapGameType,
+  mapLanguageCode,
+  mapLanguageSupportType,
+  mapLocalizationRegion,
+  mapReleaseStage,
+} from "./igdb/game-mappings";
+import { buildGameLinks, steamAppIdOf, type RawExternalGame, type RawWebsite } from "./igdb/link-map";
 import { igdbImageUrl, mapPlatformKind, mapReleaseRegion } from "./igdb/mappings";
 import { RequestLimiter, TokenBucket, realSleep, type Sleep } from "./igdb/throttle";
 
@@ -260,8 +282,231 @@ export function toPlatformRecord(p: IgdbPlatform, warn: Warn = defaultWarn): Pla
   };
 }
 
+// ── games ─────────────────────────────────────────────────────────────────
+
+interface IgdbNamed {
+  id: number;
+  name?: string;
+  slug?: string;
+}
+
+interface IgdbGame {
+  id: number;
+  name?: string;
+  slug?: string;
+  summary?: string;
+  cover?: { image_id?: string };
+  game_type?: number;
+  game_status?: number;
+  parent_game?: number;
+  aggregated_rating?: number;
+  aggregated_rating_count?: number;
+  updated_at?: number;
+  screenshots?: Array<{ image_id?: string }>;
+  videos?: Array<{ video_id?: string }>;
+  alternative_names?: Array<{ name?: string; comment?: string }>;
+  game_localizations?: Array<{ name?: string; region?: number; cover?: { image_id?: string } }>;
+  language_supports?: Array<{
+    language?: { id: number; locale?: string; name?: string; native_name?: string };
+    language_support_type?: number;
+  }>;
+  release_dates?: Array<{ date?: number; date_format?: number; platform?: number; release_region?: number; status?: number }>;
+  platforms?: number[];
+  genres?: IgdbNamed[];
+  themes?: IgdbNamed[];
+  involved_companies?: Array<{
+    company?: IgdbNamed;
+    developer?: boolean;
+    publisher?: boolean;
+    porting?: boolean;
+    supporting?: boolean;
+  }>;
+  franchises?: IgdbNamed[];
+  collections?: IgdbNamed[];
+  similar_games?: number[];
+  websites?: RawWebsite[];
+  external_games?: RawExternalGame[];
+}
+
+/**
+ * 04 §核心查詢；一個 games 請求展開全部關聯。
+ * 與規格的差異：genres／themes 多取 slug（我方表 slug 必填）；platforms 只取 id；
+ * 不取 release_dates.human（標籤由我方產生）、age_ratings（對照表 ❓，Phase 3b）、hypes（熱度另案）。
+ */
+export const GAME_FIELDS = [
+  "name", "slug", "summary", "cover.image_id", "updated_at",
+  "genres.name", "genres.slug", "themes.name", "themes.slug",
+  "aggregated_rating", "aggregated_rating_count",
+  "game_type", "game_status", "parent_game",
+  "screenshots.image_id", "videos.video_id",
+  "alternative_names.name", "alternative_names.comment",
+  "game_localizations.name", "game_localizations.region", "game_localizations.cover.image_id",
+  "language_supports.language.locale", "language_supports.language.name",
+  "language_supports.language.native_name", "language_supports.language_support_type",
+  "release_dates.date", "release_dates.date_format", "release_dates.platform",
+  "release_dates.release_region", "release_dates.status",
+  "platforms",
+  "involved_companies.company.name", "involved_companies.company.slug",
+  "involved_companies.developer", "involved_companies.publisher",
+  "involved_companies.porting", "involved_companies.supporting",
+  "franchises.name", "franchises.slug", "collections.name", "collections.slug",
+  "similar_games",
+  "websites.url", "websites.type",
+  "external_games.url", "external_games.external_game_source", "external_games.uid",
+].join(",");
+
+/** 🧪 單款展開最多約 22 筆；超過記警告（不停止）。 */
+const RELEASE_DATES_WARN_THRESHOLD = 22;
+const SCREENSHOT_LIMIT = 6;
+
+const toTaxonomy = (x: IgdbNamed, kind: string): TaxonomyRecord => ({
+  igdbId: x.id,
+  name: x.name ?? `${kind} ${x.id}`,
+  slug: x.slug ?? `${kind}-${x.id}`,
+});
+
+function uniqueById<T extends { id: number }>(xs: readonly T[] | undefined): T[] {
+  const seen = new Set<number>();
+  const out: T[] = [];
+  for (const x of xs ?? []) {
+    if (!x || typeof x.id !== "number" || seen.has(x.id)) continue;
+    seen.add(x.id);
+    out.push(x);
+  }
+  return out;
+}
+
+export function toGameRecord(g: IgdbGame, warn: Warn = defaultWarn): GameRecord {
+  const gameType = mapGameType(g.game_type);
+  if (gameType.unmapped) warn("未知的 game_type，視為 other", { gameType: g.game_type });
+  const gameStatus = mapGameStatus(g.game_status);
+  if (gameStatus.unmapped) warn("未知的 game_status，視為一般狀態", { gameStatus: g.game_status });
+
+  const releaseDates: GameReleaseDateRecord[] = [];
+  for (const rd of g.release_dates ?? []) {
+    if (rd.platform == null) continue;
+    const stage = mapReleaseStage(rd.status);
+    if (stage.unmapped) warn("未知的 release_dates.status，視為 unspecified", { status: rd.status });
+    releaseDates.push({
+      ...normalizeIgdbDate(rd.date, rd.date_format, (f) => warn("未知的 date_format，視為 tbd", { dateFormat: f })),
+      platformIgdbId: rd.platform,
+      regionCode: mapReleaseRegion(rd.release_region),
+      stage: stage.value.stage,
+      cancelled: stage.value.cancelled,
+    });
+  }
+  if (releaseDates.length > RELEASE_DATES_WARN_THRESHOLD) {
+    warn("單款上市日筆數超過預期", { igdbGameId: g.id, count: releaseDates.length });
+  }
+
+  const companies = new Map<number, GameCompanyRecord>();
+  for (const ic of g.involved_companies ?? []) {
+    if (!ic.company || typeof ic.company.id !== "number") continue;
+    const roles: GameCompanyRole[] = [];
+    if (ic.developer) roles.push("developer");
+    if (ic.publisher) roles.push("publisher");
+    if (ic.porting) roles.push("porting");
+    if (ic.supporting) roles.push("supporting");
+    const cur = companies.get(ic.company.id);
+    if (cur) cur.roles = [...new Set([...cur.roles, ...roles])];
+    else companies.set(ic.company.id, { company: toTaxonomy(ic.company, "company"), roles });
+  }
+
+  const franchises: FranchiseRecord[] = [
+    ...uniqueById(g.franchises).map((f) => ({ ...toTaxonomy(f, "franchise"), kind: "franchise" as const })),
+    ...uniqueById(g.collections).map((c) => ({ ...toTaxonomy(c, "collection"), kind: "collection" as const })),
+  ];
+
+  const localizations: GameLocalizationRecord[] = [];
+  for (const l of g.game_localizations ?? []) {
+    const name = l.name?.trim();
+    if (!name) continue;
+    const locale = mapLocalizationRegion(l.region);
+    if (locale.unmapped) warn("未知的 game_localizations.region，略過", { region: l.region });
+    if (!locale.value || localizations.some((x) => x.localeCode === locale.value)) continue;
+    localizations.push({ localeCode: locale.value, name, coverUrl: igdbImageUrl(l.cover?.image_id, "t_cover_big", "jpg") });
+  }
+
+  const languageSupports: GameLanguageSupportRecord[] = [];
+  for (const ls of g.language_supports ?? []) {
+    const lang = ls.language;
+    const supportType = mapLanguageSupportType(ls.language_support_type);
+    if (!lang || typeof lang.id !== "number" || !supportType) continue;
+    if (languageSupports.some((x) => x.language.igdbId === lang.id && x.supportType === supportType)) continue;
+    languageSupports.push({
+      language: {
+        igdbId: lang.id,
+        code: mapLanguageCode(lang.locale, lang.name, lang.id),
+        name: lang.name ?? `Language ${lang.id}`,
+        nativeName: blankToNull(lang.native_name),
+      },
+      supportType,
+    });
+  }
+
+  const { links, unmapped } = buildGameLinks(g.websites ?? [], g.external_games ?? []);
+  for (const u of unmapped) warn("外部連結分類未收錄，暫歸 other", { origin: u.origin, id: u.id });
+
+  const rating = g.aggregated_rating;
+  const ratingCount = g.aggregated_rating_count ?? 0;
+  const firstVideo = (g.videos ?? []).find((v) => v.video_id)?.video_id;
+
+  return {
+    igdbId: g.id,
+    name: g.name ?? `Game ${g.id}`,
+    slug: g.slug ?? `game-${g.id}`,
+    summary: blankToNull(g.summary),
+    coverUrl: igdbImageUrl(g.cover?.image_id, "t_cover_big", "jpg"),
+    gameType: gameType.value,
+    gameStatus: gameStatus.value,
+    parentIgdbId: g.parent_game ?? null,
+    alternativeNames: (g.alternative_names ?? [])
+      .map((a) => ({ name: a.name?.trim() ?? "", comment: blankToNull(a.comment) }))
+      .filter((a) => a.name !== ""),
+    screenshotUrls: (g.screenshots ?? [])
+      .map((s) => igdbImageUrl(s.image_id, "t_screenshot_big", "jpg"))
+      .filter((u): u is string => u !== null)
+      .slice(0, SCREENSHOT_LIMIT),
+    trailerUrl: firstVideo ? `https://www.youtube.com/watch?v=${firstVideo}` : null,
+    // 05：count 為 0 或缺少 → 無分數，不可顯示成 0 分
+    criticScore:
+      rating != null && Number.isFinite(rating) && ratingCount > 0
+        ? { score: Math.round(rating), reviewCount: ratingCount }
+        : null,
+    sourceUpdatedAt: g.updated_at != null ? new Date(g.updated_at * 1000) : null,
+    platformIgdbIds: [...new Set(g.platforms ?? [])],
+    releaseDates,
+    genres: uniqueById(g.genres).map((x) => toTaxonomy(x, "genre")),
+    themes: uniqueById(g.themes).map((x) => toTaxonomy(x, "theme")),
+    companies: [...companies.values()],
+    franchises,
+    localizations,
+    languageSupports,
+    links,
+    steamAppId: steamAppIdOf(g.external_games ?? []),
+    similarIgdbIds: [...new Set(g.similar_games ?? [])],
+  };
+}
+
+/** Apicalypse where 條件；全是數字，不會有注入問題。 */
+export function buildGamesWhere(q: FetchGamesQuery): string | null {
+  const conds: string[] = [];
+  if (q.updatedSince) conds.push(`updated_at > ${Math.floor(q.updatedSince.getTime() / 1000)}`);
+  if (q.afterId != null) conds.push(`id > ${Math.trunc(q.afterId)}`);
+  if (q.ids) conds.push(`id = (${q.ids.map((i) => Math.trunc(i)).join(",")})`);
+  return conds.length > 0 ? conds.join(" & ") : null;
+}
+
 export class IgdbProvider implements GameDataProvider {
   readonly sourceName = "igdb";
+  /** 同一則警告（訊息＋內容相同）每個 Provider 實例只記一次，避免整批洗版。 */
+  private readonly warnedKeys = new Set<string>();
+  private readonly warnOnce: Warn = (message, extra) => {
+    const key = `${message}|${JSON.stringify(extra ?? {})}`;
+    if (this.warnedKeys.has(key)) return;
+    this.warnedKeys.add(key);
+    this.warn(message, extra);
+  };
 
   constructor(
     private readonly client: IgdbClient,
@@ -271,6 +516,16 @@ export class IgdbProvider implements GameDataProvider {
   async fetchPlatforms(): Promise<PlatformRecord[]> {
     const rows = await this.client.queryAll<IgdbPlatform>("platforms", PLATFORM_FIELDS);
     return rows.map((p) => toPlatformRecord(p, this.warn));
+  }
+
+  /** 一頁（最多 IGDB_PAGE_SIZE 筆），依 id 升冪；續頁用最後一筆的 igdbId 當 afterId。 */
+  async fetchGames(q: FetchGamesQuery): Promise<GameRecord[]> {
+    if (q.ids && q.ids.length === 0) return [];
+    const limit = Math.min(Math.max(1, Math.trunc(q.limit)), IGDB_PAGE_SIZE);
+    const where = buildGamesWhere(q);
+    const body = `fields ${GAME_FIELDS};${where ? ` where ${where};` : ""} sort id asc; limit ${limit};`;
+    const rows = await this.client.query<IgdbGame>("games", body);
+    return rows.map((g) => toGameRecord(g, this.warnOnce));
   }
 }
 

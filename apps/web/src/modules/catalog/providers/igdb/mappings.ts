@@ -67,7 +67,11 @@ export function mapPlatformKind(igdbPlatformId: number, platformType: number | n
 
 const IMAGE_BASE = "https://images.igdb.com/igdb/image/upload";
 
-/** 圖片 URL；前端依 viewport 換尺寸 token（06 §封面圖）。 */
-export function igdbImageUrl(imageId: string | null | undefined, size = "t_logo_med"): string | null {
-  return imageId ? `${IMAGE_BASE}/${size}/${imageId}.png` : null;
+/** 圖片 URL；前端依 viewport 換尺寸 token（06 §封面圖）。logo 用 png（透明背景），封面與截圖用 jpg。 */
+export function igdbImageUrl(
+  imageId: string | null | undefined,
+  size = "t_logo_med",
+  ext: "png" | "jpg" = "png",
+): string | null {
+  return imageId ? `${IMAGE_BASE}/${size}/${imageId}.${ext}` : null;
 }
