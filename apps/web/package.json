@@ -1,0 +1,48 @@
+{
+  "name": "@sok/web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "typecheck": "next typegen && tsc --noEmit",
+    "lint:arch": "depcruise src --config .dependency-cruiser.cjs",
+    "test": "vitest run",
+    "db:start": "tsx --import ./scripts/load-env.ts scripts/dev-db.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx --import ./scripts/load-env.ts scripts/migrate.ts",
+    "db:seed": "tsx --import ./scripts/load-env.ts src/modules/catalog/seed.ts",
+    "db:trgm-test": "tsx --import ./scripts/load-env.ts scripts/trgm-test.ts",
+    "test:unit": "vitest run --project unit"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.45.4",
+    "ical-generator": "^11.1.2",
+    "next": "16.4.0",
+    "node-cron": "^4.6.0",
+    "pg": "^8.23.1",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "slugify": "^1.6.9",
+    "zod": "^4.6.6"
+  },
+  "devDependencies": {
+    "@tailwindcss/turbopack": "^4",
+    "@types/node": "^22",
+    "@types/pg": "^8.23.1",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "dependency-cruiser": "^18.6.0",
+    "dotenv": "^18.0.7",
+    "drizzle-kit": "^0.31.11",
+    "embedded-postgres": "16.14.0-beta.17",
+    "eslint": "^9",
+    "eslint-config-next": "16.4.0",
+    "tailwindcss": "^4",
+    "tsx": "^4.23.15",
+    "typescript": "6.0.3",
+    "vitest": "^5.0.4"
+  }
+}

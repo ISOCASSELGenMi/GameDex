@@ -1,0 +1,19 @@
+node_modules/
+.next/
+out/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# 本機開發資料庫（embedded-postgres 資料目錄）
+.local/
+
+# 環境變數：只提交 .env.example
+.env
+.env.*
+!.env.example
+
+# OS / 編輯器
+.DS_Store
+Thumbs.db
+*.log

@@ -1,0 +1,56 @@
+# CLAUDE.md — SoK Game Calendar
+
+遊戲資料庫＋上市月曆／時間軸。使用者以繁體中文溝通：回覆簡明、照實說、沒把握不要亂做；不需要使用者介入的步驟直接做，進度與下一步寫在同一則訊息；只有缺少使用者指示、或要做破壞性操作（刪資料、git 強制推送、改本專案以外的檔案）時才停下來問。
+
+## 規格在哪裡
+
+規格書 v2.0 在 claude.ai Project「SoK-Game_Calendar」的 `spec/`（00~16、90、91、CHANGELOG），**不在本 repo**。
+動工前讀對應章節；本機沒有副本時請使用者貼上或匯出。關鍵章節：
+- 02 架構與模組（分層、模組邊界、manifest、排程）／03 資料模型／04 IGDB 同步／15 路線圖（每個 Phase 的完成標準）／16 部署與環境變數
+- 進度 checklist：Project 的 `claude/checklist.md`（做完打勾、新工作加進去並標日期）
+
+## 五個硬性原則（摘自 spec/00）
+
+1. 分層依賴方向不可逆：Presentation → Use Case → Repository／Provider → Domain。
+2. 外部格式（IGDB unix timestamp、數字 enum…）只存在 Provider 層，進 Repository／Domain 前轉成我方型別。
+3. 有法律或授權風險的整合（Metacritic）做成可獨立關閉、預設關閉的模組。
+4. 功能以模組為單位，邊界由 CI 強制；`catalog` 永遠不 import 可選模組。
+5. 同一份邏輯只實作一次（評分顯示、聚合、篩選、日期格式化）。
+
+## 目前進度
+
+- ✅ Phase 0 環境、✅ Phase 1 kernel／catalog schema／lint:arch／core-only CI（2026-10-12）
+- ⏭ **Phase 2 IGDB 同步**（spec/04、spec/15 §Phase 2）：
+  - 2a：`modules/catalog/providers/igdb.ts`（token 快取、4 req/s＋並發 8 節流）、`sync-platforms`、Tier 1 回填（近 2 年）、增量同步、上市階段、語言支援
+  - 2b：Tier 2 回填、相似遊戲／活動關聯批次解析（SQL 見 spec/03 §相似遊戲）、滾動校對
+  - 任務註冊在 `catalog/module.ts` 的 `jobs`；回填用 `lockMode: "session"`
+
+## 本機開發
+
+```bash
+npm run db:start        # 本機 PG 16（embedded-postgres，資料在 .local/pgdata），前景執行
+npm run db:migrate && npm run db:seed
+npm run dev             # /healthz、/readyz
+```
+停止資料庫：在 db:start 的終端機按 Ctrl+C；或 `node_modules\@embedded-postgres\windows-x64\native\bin\pg_ctl.exe stop -D .local\pgdata -m fast`。
+環境變數在 `apps/web/.env.local`（git 忽略）；完整清單見 `infra/.env.example`。**不要把 Secret 印到輸出或寫進其他檔案。**
+
+## 提交前必過
+
+```bash
+npm run typecheck   # next typegen && tsc --noEmit
+npm run lint
+npm run lint:arch   # 0 violations
+npm test            # 單元＋整合（整合測試用 TEST_DATABASE_URL，資料庫名必須以 _test 結尾，每次重建）
+```
+
+## 慣例與地雷
+
+- `db.select()`／drizzle／`getDb()` 只能出現在 `repository/` 與 `kernel/db/`；schema.ts 只給自己模組的 repository 用（`lint:arch` 會擋）。
+- 跨模組只能 import 對方的 `index.ts`；`kernel` 不 import 任何模組；只有 `modules/registry.ts` 與 `app/` 可 import 可選模組。
+- Domain 型別在 `domain/entities/`，零外部依賴；enum 值陣列也放這裡，schema 用它建 pgEnum。
+- `change_feed` 必須與變更在同一個 transaction 寫入（見 `repository/release-events.ts`）。
+- Next.js 16.4（`cacheComponents` 開啟）：讀 DB 的 GET route handler 先 `await connection()`。寫 Next 相關程式前先讀 `node_modules/next/dist/docs/`。
+- TypeScript 鎖 6.0.3（dependency-cruiser 需 < 7），不要升級。
+- npm 11 預設不跑 postinstall；新套件需要時用 `npm approve-scripts <pkg>`。
+- 新 migration：改 schema 後 `npm run db:generate`，檢查產生的 SQL 再 commit。
