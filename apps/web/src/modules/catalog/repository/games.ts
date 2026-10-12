@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { asc, eq, inArray, sql } from "drizzle-orm";
 import { getDb, type DbOrTx } from "@/kernel/db/client";
 import type { Game, GameInput } from "../domain/entities";
 import { games } from "../schema";
@@ -21,4 +21,22 @@ export async function upsertGame(input: GameInput, db: DbOrTx = getDb()): Promis
     .onConflictDoUpdate({ target: games.igdbId, set: { ...input, updatedAt: new Date() } })
     .returning();
   return row;
+}
+
+/** 滾動校對的對象：lastFullSyncAt 最舊的 N 款（從未完整同步的優先）。 */
+export async function listGamesForRefresh(
+  limit: number,
+  db: DbOrTx = getDb(),
+): Promise<Array<{ id: number; igdbId: number }>> {
+  return db
+    .select({ id: games.id, igdbId: games.igdbId })
+    .from(games)
+    .orderBy(sql`${games.lastFullSyncAt} ASC NULLS FIRST`, asc(games.id))
+    .limit(limit);
+}
+
+/** 校對過但沒有寫入的遊戲（例如變成只上手機）也推進 lastFullSyncAt，避免每晚重複挑到。 */
+export async function touchLastFullSync(gameIds: readonly number[], db: DbOrTx = getDb()): Promise<void> {
+  if (gameIds.length === 0) return;
+  await db.update(games).set({ lastFullSyncAt: new Date() }).where(inArray(games.id, [...gameIds]));
 }

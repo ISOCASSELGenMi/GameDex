@@ -2,6 +2,10 @@ import { getCoreEnv } from "@/kernel/config/env";
 import type { ModuleManifestBase } from "@/kernel/modules/types";
 import { getIgdbProvider } from "./providers/igdb";
 import { backfillGames, parseBackfillArgs } from "./use-cases/sync/backfill-games";
+import { checkDictionaryDrift } from "./use-cases/sync/dictionary-drift";
+import { resolveRelations } from "./use-cases/sync/resolve-relations";
+import { rollingRefresh } from "./use-cases/sync/rolling-refresh";
+import { syncEvents } from "./use-cases/sync/sync-events";
 import { syncGames } from "./use-cases/sync/sync-games";
 import { syncPlatforms } from "./use-cases/sync/sync-platforms";
 
@@ -34,7 +38,7 @@ export const catalogModule: ModuleManifest = {
   // 頻率見 04 §排程任務
   jobs: [
     {
-      // 手動：npm run job -- backfill_games [--max-batches N] [--restart]
+      // 手動：npm run job -- backfill_games [--tier 1|2] [--max-batches N] [--restart]
       name: "backfill_games",
       lockMode: "session",
       run: async (ctx) => {
@@ -57,6 +61,30 @@ export const catalogModule: ModuleManifest = {
       cron: "20 4 * * *", // 每日
       run: async (ctx) => {
         await syncPlatforms(getIgdbProvider(), ctx.log);
+      },
+    },
+    {
+      name: "sync_events",
+      cron: "25 */6 * * *", // 每 6 小時
+      run: async (ctx) => {
+        await syncEvents(getIgdbProvider(), ctx);
+      },
+    },
+    {
+      name: "resolve_relations",
+      cron: "40 4 * * *", // 每日（sync_platforms 之後）；回填每批後另外跑局部解析
+      run: async (ctx) => {
+        await resolveRelations(ctx);
+      },
+    },
+    {
+      name: "rolling_refresh",
+      cron: "30 3 * * *", // 每晚
+      lockMode: "session",
+      run: async (ctx) => {
+        const provider = getIgdbProvider({ maxReqPerSec: getCoreEnv().BACKFILL_MAX_REQ_PER_SEC });
+        await checkDictionaryDrift(provider, ctx.log);
+        await rollingRefresh(provider, ctx, { perNight: getCoreEnv().ROLLING_REFRESH_PER_NIGHT });
       },
     },
   ],

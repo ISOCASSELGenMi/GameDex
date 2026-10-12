@@ -40,6 +40,7 @@ function fakeProvider(records: () => GameRecord[]): GameDataProvider & { calls: 
     sourceName: "fake",
     calls: 0,
     fetchPlatforms: async () => [],
+    fetchEvents: async () => [],
     fetchGames: async (q: { afterId?: number; limit: number }) => {
       p.calls += 1;
       return records()

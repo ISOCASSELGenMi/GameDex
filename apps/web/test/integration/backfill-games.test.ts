@@ -31,6 +31,7 @@ const game = (id: number, dates: string[]) =>
 const incrementalSource = (records: GameRecord[]): GameDataProvider => ({
   sourceName: "fake",
   fetchPlatforms: async () => [],
+  fetchEvents: async () => [],
   fetchGames: async (q) => (q.afterId ? [] : records),
 });
 
@@ -41,6 +42,7 @@ function fakeBackfillSource(recent: GameRecord[], undated: GameRecord[]): GameDa
     sourceName: "fake",
     queries,
     fetchPlatforms: async () => [],
+    fetchEvents: async () => [],
     fetchGames: async (q) => {
       queries.push(q);
       const list = q.firstReleaseFrom ? recent : q.firstReleaseMissingWithDates ? undated : [];

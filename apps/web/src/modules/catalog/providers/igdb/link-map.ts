@@ -48,6 +48,24 @@ export const EXTERNAL_GAME_SOURCE_MAP: Readonly<Record<number, LinkDef>> = {
 const EXTERNAL_SOURCE_IGDB = 121;
 export const EXTERNAL_SOURCE_STEAM = 1;
 
+/**
+ * 字典漂移偵測（04 §外部連結）用的「已知 id」：對照表的鍵＋刻意不收錄（歸 other）的 id。
+ * 2026-10-13 對 website_types（23 個，全部收錄）與 external_game_sources（22 個）核對。
+ */
+export const KNOWN_WEBSITE_TYPE_IDS: readonly number[] = Object.keys(WEBSITE_TYPE_MAP).map(Number);
+export const KNOWN_EXTERNAL_GAME_SOURCE_IDS: readonly number[] = [
+  ...Object.keys(EXTERNAL_GAME_SOURCE_MAP).map(Number),
+  // Apple、Android、Amazon、Amazon Luna、Amazon ADG、Oculus、Utomik、Itchio、Kartridge、Focus Entertainment、
+  // Xbox Game Pass Ultimate Cloud、GameJolt、IGDB
+  13, 15, 20, 22, 23, 28, 29, 30, 32, 37, 54, 55, EXTERNAL_SOURCE_IGDB,
+];
+
+/** 字典裡出現、但不在已知清單的 id（升冪）。 */
+export function findNewDictionaryIds(known: readonly number[], current: readonly number[]): number[] {
+  const k = new Set(known);
+  return [...new Set(current.filter((id) => !k.has(id)))].sort((a, b) => a - b);
+}
+
 export interface RawWebsite {
   url?: string;
   type?: number;

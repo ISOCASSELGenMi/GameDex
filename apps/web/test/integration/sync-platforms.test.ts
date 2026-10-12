@@ -20,7 +20,7 @@ const enabled = !!process.env.TEST_DATABASE_URL;
 const noLog = () => {};
 
 function fakeProvider(records: PlatformRecord[]): GameDataProvider {
-  return { sourceName: "fake", fetchPlatforms: async () => records, fetchGames: async () => [] };
+  return { sourceName: "fake", fetchPlatforms: async () => records, fetchGames: async () => [], fetchEvents: async () => [] };
 }
 
 function platform(over: Partial<PlatformRecord> & Pick<PlatformRecord, "igdbId" | "slug">): PlatformRecord {

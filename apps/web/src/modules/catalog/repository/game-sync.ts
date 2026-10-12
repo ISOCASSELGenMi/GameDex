@@ -65,7 +65,12 @@ export interface IgdbGameSyncResult {
   gameId: number;
   inserted: boolean;
   slug: string;
-  releases: ReleaseDiffApplyStats & { unchanged: number; duplicatesDropped: number };
+  releases: ReleaseDiffApplyStats & {
+    unchanged: number;
+    duplicatesDropped: number;
+    /** 來源資料造成的變動筆數：新增、日期／階段改變、removed／restored（不含只有狀態推進）。滾動校對監控用。 */
+    sourceChanges: number;
+  };
 }
 
 const uniq = <T>(xs: readonly T[]) => [...new Set(xs)];
@@ -176,8 +181,36 @@ export async function syncIgdbGame(
       gameId,
       inserted: row.inserted,
       slug,
-      releases: { ...applied, unchanged: plan.unchanged, duplicatesDropped: plan.duplicatesDropped },
+      releases: {
+        ...applied,
+        unchanged: plan.unchanged,
+        duplicatesDropped: plan.duplicatesDropped,
+        sourceChanges:
+          plan.creates.length + plan.updates.filter((u) => u.dateChanged || u.stageChanged || u.sourceStatusChanged).length,
+      },
     };
+  });
+}
+
+/**
+ * 來源已查不到的遊戲（滾動校對以 id 重抓沒回來，2026-10-13 使用者決定）：
+ * 遊戲列保留（可能有收藏／追蹤），尚未上市（status ≠ released）的 igdb 上市列標 removed（history／change_feed 規則同 diff），
+ * 並更新 lastFullSyncAt，避免每晚重複挑到。
+ * @returns 標 removed 的筆數
+ */
+export async function markIgdbGameMissing(
+  gameId: number,
+  igdbId: number,
+  opts: Pick<IgdbGameSyncOptions, "today">,
+  db: DbOrTx = getDb(),
+): Promise<number> {
+  return db.transaction(async (tx) => {
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(${GAME_WRITE_LOCK_SPACE}::int, ${igdbId}::int)`);
+    const pending = (await listIgdbReleaseRows(gameId, tx)).filter((r) => r.status !== "released");
+    const plan = planReleaseEventDiff(pending, [], { today: opts.today, gameCancelled: false, markMissingRemoved: true });
+    const applied = await applyReleaseDiffPlan(tx, gameId, plan, null);
+    await tx.update(games).set({ lastFullSyncAt: new Date() }).where(eq(games.id, gameId));
+    return applied.removed;
   });
 }
 

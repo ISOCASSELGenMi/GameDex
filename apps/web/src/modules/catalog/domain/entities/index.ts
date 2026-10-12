@@ -5,3 +5,4 @@ export * from "./rating";
 export * from "./region";
 export * from "./platform";
 export * from "./game-record";
+export * from "./event-record";

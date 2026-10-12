@@ -4,6 +4,9 @@
  */
 import { ConfigError, getCoreEnv } from "@/kernel/config/env";
 import type {
+  DictionaryDrift,
+  EventRecord,
+  FetchEventsQuery,
   FetchGamesQuery,
   FranchiseRecord,
   GameCompanyRecord,
@@ -28,7 +31,15 @@ import {
   mapLocalizationRegion,
   mapReleaseStage,
 } from "./igdb/game-mappings";
-import { buildGameLinks, steamAppIdOf, type RawExternalGame, type RawWebsite } from "./igdb/link-map";
+import {
+  buildGameLinks,
+  findNewDictionaryIds,
+  KNOWN_EXTERNAL_GAME_SOURCE_IDS,
+  KNOWN_WEBSITE_TYPE_IDS,
+  steamAppIdOf,
+  type RawExternalGame,
+  type RawWebsite,
+} from "./igdb/link-map";
 import { igdbImageUrl, mapPlatformKind, mapReleaseRegion } from "./igdb/mappings";
 import { RequestLimiter, TokenBucket, realSleep, type Sleep } from "./igdb/throttle";
 
@@ -489,6 +500,51 @@ export function toGameRecord(g: IgdbGame, warn: Warn = defaultWarn): GameRecord 
   };
 }
 
+// ── 活動（04 §活動同步） ─────────────────────────────────────────────────
+
+interface IgdbEvent {
+  id: number;
+  name?: string;
+  slug?: string;
+  description?: string;
+  start_time?: number;
+  end_time?: number;
+  time_zone?: string;
+  event_logo?: { image_id?: string };
+  live_stream_url?: string;
+  games?: number[];
+  updated_at?: number;
+}
+
+/** 2026-10-13 實測（events 共 960 筆；舊活動加入遊戲時 updated_at 會推進）。 */
+export const EVENT_FIELDS = [
+  "name", "slug", "description", "start_time", "end_time", "time_zone",
+  "event_logo.image_id", "live_stream_url", "games", "updated_at",
+].join(",");
+
+const unixToDate = (s: number | null | undefined): Date | null => (s != null ? new Date(s * 1000) : null);
+
+export function toEventRecord(e: IgdbEvent): EventRecord {
+  const name = e.name?.trim() || `Event ${e.id}`;
+  return {
+    igdbId: e.id,
+    name,
+    slug: blankToNull(e.slug) ?? `event-${e.id}`,
+    description: blankToNull(e.description),
+    startTime: unixToDate(e.start_time),
+    endTime: unixToDate(e.end_time),
+    timeZone: blankToNull(e.time_zone),
+    logoUrl: igdbImageUrl(e.event_logo?.image_id),
+    streamUrl: blankToNull(e.live_stream_url),
+    gameIgdbIds: [...new Set(e.games ?? [])],
+    sourceUpdatedAt: unixToDate(e.updated_at),
+  };
+}
+
+export function buildEventsWhere(q: FetchEventsQuery): string | undefined {
+  return q.updatedSince ? `updated_at > ${Math.floor(q.updatedSince.getTime() / 1000)}` : undefined;
+}
+
 /** Apicalypse where 條件；全是數字，不會有注入問題。 */
 export function buildGamesWhere(q: FetchGamesQuery): string | null {
   const conds: string[] = [];
@@ -534,6 +590,28 @@ export class IgdbProvider implements GameDataProvider {
     const body = `fields ${GAME_FIELDS};${where ? ` where ${where};` : ""} sort id asc; limit ${limit};`;
     const rows = await this.client.query<IgdbGame>("games", body);
     return rows.map((g) => toGameRecord(g, this.warnOnce));
+  }
+
+  /** 活動數量少（約千筆），一次抓完全部頁。 */
+  async fetchEvents(q: FetchEventsQuery): Promise<EventRecord[]> {
+    const rows = await this.client.queryAll<IgdbEvent>("events", EVENT_FIELDS, buildEventsWhere(q));
+    return rows.map(toEventRecord);
+  }
+
+  /** 外部連結字典漂移（04 §外部連結）：website_types、external_game_sources 出現對照表沒見過的 id。 */
+  async checkDictionaryDrift(): Promise<DictionaryDrift[]> {
+    const [websiteTypes, sources] = await Promise.all([
+      this.client.queryAll<{ id: number; type?: string }>("website_types", "type"),
+      this.client.queryAll<{ id: number; name?: string }>("external_game_sources", "name"),
+    ]);
+    const drift = (dictionary: string, known: readonly number[], rows: Array<{ id: number; label?: string }>) => {
+      const fresh = new Set(findNewDictionaryIds(known, rows.map((r) => r.id)));
+      return { dictionary, newEntries: rows.filter((r) => fresh.has(r.id)).map((r) => ({ id: r.id, name: r.label ?? "" })) };
+    };
+    return [
+      drift("website_types", KNOWN_WEBSITE_TYPE_IDS, websiteTypes.map((r) => ({ id: r.id, label: r.type }))),
+      drift("external_game_sources", KNOWN_EXTERNAL_GAME_SOURCE_IDS, sources.map((r) => ({ id: r.id, label: r.name }))),
+    ];
   }
 }
 

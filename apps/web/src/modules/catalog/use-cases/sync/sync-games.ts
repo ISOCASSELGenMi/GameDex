@@ -7,7 +7,7 @@ import { getSyncState, saveSyncProgress } from "@/kernel/db/sync-state";
 import type { DatePrecision, GameRecord, IsoDate } from "../../domain/entities";
 import { isEarlierSpan, type DesiredRelease } from "../../domain/release-diff";
 import type { GameDataProvider } from "../../providers/game-data-provider.interface";
-import { syncIgdbGame, type IgdbGameSyncInput } from "../../repository/game-sync";
+import { syncIgdbGame, type IgdbGameSyncInput, type IgdbGameSyncResult } from "../../repository/game-sync";
 import { listIgdbPlatformRefs } from "../../repository/platforms";
 import { listRegions } from "../../repository/regions";
 import { autoReleasePastEvents } from "../../repository/release-events";
@@ -71,6 +71,8 @@ export interface WriteContext {
   log: Log;
   /** 回填傳 false：只 upsert，不標 removed（04 §回填）。 */
   markMissingRemoved?: boolean;
+  /** 每款寫入成功後呼叫（滾動校對統計 misses 用）。 */
+  onWritten?: (record: GameRecord, result: IgdbGameSyncResult) => void;
 }
 
 /** 讀一次參照資料（平台、地區）；平台表空的時候丟錯，提示先跑 sync_platforms。 */
@@ -205,6 +207,7 @@ export async function writeGameBatch(records: readonly GameRecord[], ctx: WriteC
       stats.releasesRestored += res.releases.restored;
       stats.releasesUnchanged += res.releases.unchanged;
       stats.releaseDuplicatesDropped += res.releases.duplicatesDropped;
+      ctx.onWritten?.(r, res);
     } catch (err) {
       stats.failed += 1;
       stats.failedIgdbIds.push(r.igdbId);
