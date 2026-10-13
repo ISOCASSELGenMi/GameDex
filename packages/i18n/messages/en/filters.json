@@ -18,5 +18,10 @@
   "emptyResult": "No results match your filters",
   "emptyResultHint": "These filters produced no results. Remove them one at a time:",
   "invalidValues": "Ignored unrecognized filters: {values}",
-  "tooManyValues": "“{dimension}” allows at most {max} values; this filter was ignored"
+  "tooManyValues": "“{dimension}” allows at most {max} values; this filter was ignored",
+  "commonPlatforms": "Common platforms",
+  "morePlatforms": "More platforms",
+  "defaultStagesHint": "When none is selected: {stages}",
+  "noFilters": "No filters applied",
+  "chipLabel": "{dimension}: {label}"
 }

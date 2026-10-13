@@ -23,7 +23,12 @@
     "showLess": "Show less",
     "back": "Back",
     "home": "Home",
-    "noData": "No data yet"
+    "noData": "No data yet",
+    "colon": ": ",
+    "withCount": "{label} ({count})",
+    "labelValue": "{label}: {value}",
+    "parenthetical": "({text})",
+    "listSeparator": ", "
   },
   "releaseLabel": {
     "quarter": "Q{quarter} {year}",
@@ -45,7 +50,21 @@
     "event": "Event",
     "showReleases": "Show releases",
     "showEvents": "Show events",
-    "viewGame": "View game details"
+    "viewGame": "View game details",
+    "undatedGroups": {
+      "month": "Month known",
+      "quarter": "Quarter known",
+      "year": "Year known"
+    },
+    "undatedEmpty": "No games without an exact date this month",
+    "agendaTitle": "By date",
+    "dayListTitle": "Releases and events on {date}",
+    "backToList": "Back to the day list",
+    "timeTbd": "Time TBA",
+    "timesInUtc": "Event times are shown in UTC",
+    "monthNavigation": "Change month",
+    "noItemsThisMonth": "No releases or events this month",
+    "undatedGroupTitle": "{group}: {label}"
   },
   "game": {
     "sections": {
@@ -72,10 +91,34 @@
     "previouslyAnnounced": "Previously announced: {date}",
     "noRatings": "No ratings yet",
     "reportError": "Report incorrect data",
-    "brokenLink": "This link may be broken"
+    "brokenLink": "This link may be broken",
+    "originalName": "Original title",
+    "parent": "Base game",
+    "externalSite": "External site",
+    "historyChange": "{from} → {to}",
+    "historyChangedAt": "Updated {date}",
+    "noReleaseDates": "No release dates yet",
+    "timesInUtc": "Times are shown in UTC",
+    "ageRating": "Age rating: {label}",
+    "historyEntry": "{change} ({date})",
+    "franchiseTitle": {
+      "franchise": "In the {name} franchise",
+      "collection": "In the {name} series"
+    }
   },
   "footer": {
     "dataAttribution": "Data from IGDB.com",
     "copyright": "© {year} SoK Studio"
+  },
+  "release": {
+    "sourceUnconfirmed": "Source data unconfirmed",
+    "stage": "Release stage",
+    "status": "Status",
+    "date": "Release date",
+    "region": "Region",
+    "platforms": "Platforms"
+  },
+  "preview": {
+    "title": "Game preview"
   }
 }

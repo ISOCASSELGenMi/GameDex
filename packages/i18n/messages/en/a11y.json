@@ -15,5 +15,12 @@
   "openPreview": "Open preview of “{name}”",
   "closePreview": "Close preview",
   "opensInNewWindow": "(opens in a new window)",
-  "resultsUpdated": "Updated: {count} results"
+  "resultsUpdated": "Updated: {count} results",
+  "calendarAgenda": "Releases in {month}",
+  "dayDialog": "Everything on {date}",
+  "previewDialog": "Game preview",
+  "externalLink": "(external site, opens in a new window)",
+  "stageIcon": "Release stage",
+  "statusIcon": "Status",
+  "dayCellWithEvents": "{date}, {count} games, {events} events"
 }

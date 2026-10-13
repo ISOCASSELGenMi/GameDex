@@ -18,5 +18,10 @@
   "emptyResult": "沒有符合條件的結果",
   "emptyResultHint": "以下條件造成沒有結果，可以逐一移除：",
   "invalidValues": "已忽略無法辨識的條件：{values}",
-  "tooManyValues": "「{dimension}」最多只能選 {max} 個，已忽略此條件"
+  "tooManyValues": "「{dimension}」最多只能選 {max} 個，已忽略此條件",
+  "commonPlatforms": "常用平台",
+  "morePlatforms": "更多平台",
+  "defaultStagesHint": "未選擇時顯示：{stages}",
+  "noFilters": "未套用篩選條件",
+  "chipLabel": "{dimension}：{label}"
 }

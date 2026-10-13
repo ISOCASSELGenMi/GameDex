@@ -23,7 +23,12 @@
     "showLess": "收合",
     "back": "返回",
     "home": "首頁",
-    "noData": "尚無資料"
+    "noData": "尚無資料",
+    "colon": "：",
+    "withCount": "{label}（{count}）",
+    "labelValue": "{label}：{value}",
+    "parenthetical": "（{text}）",
+    "listSeparator": "、"
   },
   "releaseLabel": {
     "quarter": "{year} 年第 {quarter} 季",
@@ -45,7 +50,21 @@
     "event": "活動",
     "showReleases": "顯示上市",
     "showEvents": "顯示活動",
-    "viewGame": "查看遊戲詳情"
+    "viewGame": "查看遊戲詳情",
+    "undatedGroups": {
+      "month": "只確定月份",
+      "quarter": "只確定季度",
+      "year": "只確定年份"
+    },
+    "undatedEmpty": "本月沒有未定日的遊戲",
+    "agendaTitle": "依日期列出",
+    "dayListTitle": "{date} 的上市與活動",
+    "backToList": "回到當天清單",
+    "timeTbd": "時間未定",
+    "timesInUtc": "活動時間以 UTC 顯示",
+    "monthNavigation": "切換月份",
+    "noItemsThisMonth": "這個月沒有上市或活動資料",
+    "undatedGroupTitle": "{group}：{label}"
   },
   "game": {
     "sections": {
@@ -72,10 +91,34 @@
     "previouslyAnnounced": "先前公布：{date}",
     "noRatings": "尚無評分",
     "reportError": "回報資料有誤",
-    "brokenLink": "連結可能已失效"
+    "brokenLink": "連結可能已失效",
+    "originalName": "原名",
+    "parent": "本體遊戲",
+    "externalSite": "外部網站",
+    "historyChange": "{from} → {to}",
+    "historyChangedAt": "{date} 更新",
+    "noReleaseDates": "尚無上市日資料",
+    "timesInUtc": "時間以 UTC 顯示",
+    "ageRating": "年齡分級：{label}",
+    "historyEntry": "{change}（{date}）",
+    "franchiseTitle": {
+      "franchise": "同系列作品：{name}",
+      "collection": "同合集作品：{name}"
+    }
   },
   "footer": {
     "dataAttribution": "Data from IGDB.com",
     "copyright": "© {year} SoK Studio"
+  },
+  "release": {
+    "sourceUnconfirmed": "資料來源待確認",
+    "stage": "上市階段",
+    "status": "狀態",
+    "date": "上市日",
+    "region": "地區",
+    "platforms": "平台"
+  },
+  "preview": {
+    "title": "遊戲預覽"
   }
 }

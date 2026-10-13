@@ -11,5 +11,6 @@
   "queryTimeout": "查詢條件太複雜，請減少篩選條件後再試",
   "invalidMonth": "月份格式不正確",
   "tryAgain": "重試",
-  "backToCalendar": "回到月曆"
+  "backToCalendar": "回到月曆",
+  "queryTimeoutTitle": "查詢逾時"
 }

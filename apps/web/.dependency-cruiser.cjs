@@ -37,12 +37,12 @@ module.exports = {
     },
     {
       name: "app-no-deep-import",
-      comment: "薄路由與 registry 也只能 import 模組的公開 API 或 api/ 處理器",
+      comment: "薄路由與 registry 也只能 import 模組的公開 API、api/ 處理器或 ui/index.ts、ui/client.ts（頁面內容，06：內容在 modules/<name>/ui/）",
       severity: "error",
       from: { path: ["^src/app/", "^src/modules/registry\\.ts$", "^src/bootstrap\\.ts$"] },
       to: {
         path: "^src/modules/[^/]+/",
-        pathNot: ["^src/modules/[^/]+/index\\.ts$", "^src/modules/[^/]+/api/"],
+        pathNot: ["^src/modules/[^/]+/index\\.ts$", "^src/modules/[^/]+/api/", "^src/modules/[^/]+/ui/(index|client)\\.ts$"],
       },
     },
     {

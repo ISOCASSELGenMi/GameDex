@@ -11,5 +11,6 @@
   "queryTimeout": "This query is too complex. Remove some filters and try again.",
   "invalidMonth": "Invalid month",
   "tryAgain": "Try again",
-  "backToCalendar": "Back to calendar"
+  "backToCalendar": "Back to calendar",
+  "queryTimeoutTitle": "Query timed out"
 }

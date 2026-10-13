@@ -15,5 +15,12 @@
   "openPreview": "開啟「{name}」預覽",
   "closePreview": "關閉預覽",
   "opensInNewWindow": "（另開新視窗）",
-  "resultsUpdated": "已更新，共 {count} 筆結果"
+  "resultsUpdated": "已更新，共 {count} 筆結果",
+  "calendarAgenda": "{month} 上市清單",
+  "dayDialog": "{date} 完整清單",
+  "previewDialog": "遊戲預覽",
+  "externalLink": "（外部網站，另開新視窗）",
+  "stageIcon": "上市階段",
+  "statusIcon": "狀態",
+  "dayCellWithEvents": "{date}，{count} 款遊戲、{events} 場活動"
 }
