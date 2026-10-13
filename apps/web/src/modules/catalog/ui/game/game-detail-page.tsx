@@ -8,7 +8,6 @@ import { notFound } from "next/navigation";
 import { cache, type ReactElement, type ReactNode } from "react";
 import { formatDateTime, formatIsoDate, formatReleaseLabel, type Locale, type Translator } from "@sok/i18n";
 import type { CalendarEventItem, GameDetail, GameFranchiseGroup, GameReleaseRow, GameSummary } from "../../domain/entities";
-import { igdbImageUrl } from "../../domain/entities/cover-image";
 import { getGameDetail } from "../../use-cases/read";
 import { joinList } from "../calendar/view-model";
 import { EventIcon, ExternalIcon, StageIcon, StatusIcon, WarningIcon } from "../icons";
@@ -64,8 +63,8 @@ function SummaryCard({ game, locale, t }: { game: GameSummary; locale: Locale; t
   const label = game.firstReleasePrecision ? formatReleaseLabel(game.firstReleaseDate, game.firstReleasePrecision, locale) : t.t("ui.releaseLabel.tbd");
   return (
     <a className="summary-card" href={gameHref(locale, game.slug)}>
-      {game.coverImageId ? (
-        <Image className="summary-thumb" src={igdbImageUrl(game.coverImageId, "t_cover_small")} alt="" width={90} height={128} unoptimized />
+      {game.cover ? (
+        <Image className="summary-thumb" src={game.cover.small} alt="" width={90} height={128} unoptimized />
       ) : (
         <span className="summary-thumb card-thumb-empty" aria-hidden="true" />
       )}
@@ -186,14 +185,16 @@ export async function GameDetailPage({ locale, supportedLocales, slug, slots }: 
     <PageShell locale={locale} supportedLocales={supportedLocales} path={`/games/${game.slug}`}>
       <article className="detail">
         <div className="detail-head">
-          {game.coverImageId ? (
+          {game.cover ? (
             <Image
               className="detail-cover"
-              src={igdbImageUrl(game.coverImageId, "t_cover_big")}
+              src={game.cover.medium}
               alt={game.name}
               width={264}
               height={374}
               sizes="(min-width: 768px) 264px, 50vw"
+              // 未知來源（resized=false）不在 images.remotePatterns 內：不經最佳化器、原樣載入
+              unoptimized={!game.cover.resized}
               priority
             />
           ) : null}

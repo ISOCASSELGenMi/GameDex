@@ -37,12 +37,37 @@ module.exports = {
     },
     {
       name: "app-no-deep-import",
-      comment: "薄路由與 registry 也只能 import 模組的公開 API、api/ 處理器或 ui/index.ts、ui/client.ts（頁面內容，06：內容在 modules/<name>/ui/）",
+      comment:
+        "薄路由、registry、proxy 也只能 import 模組的公開 API、api/ 處理器或 ui/index.ts、ui/client.ts（頁面內容，06：內容在 modules/<name>/ui/）、" +
+        "ui/routing.ts（proxy 用的輕量入口：只有純函式，不帶 React 頁面與 DB）",
       severity: "error",
-      from: { path: ["^src/app/", "^src/modules/registry\\.ts$", "^src/bootstrap\\.ts$"] },
+      from: { path: ["^src/app/", "^src/modules/registry\\.ts$", "^src/bootstrap\\.ts$", "^src/proxy\\.ts$"] },
       to: {
         path: "^src/modules/[^/]+/",
-        pathNot: ["^src/modules/[^/]+/index\\.ts$", "^src/modules/[^/]+/api/", "^src/modules/[^/]+/ui/(index|client)\\.ts$"],
+        pathNot: [
+          "^src/modules/[^/]+/index\\.ts$",
+          "^src/modules/[^/]+/api/",
+          "^src/modules/[^/]+/ui/(index|client|routing)\\.ts$",
+        ],
+      },
+    },
+    {
+      name: "proxy-only-routing-entry",
+      comment:
+        "proxy 每個請求都執行：對模組只能 import ui/routing.ts（不可經 index.ts、ui/index.ts 帶進 DB 與 React 頁面）。" +
+        "可選模組另由 only-registry-and-app-import-optional 擋下",
+      severity: "error",
+      from: { path: "^src/proxy\\.ts$" },
+      to: { path: "^src/modules/", pathNot: ["^src/modules/[^/]+/ui/routing\\.ts$"] },
+    },
+    {
+      name: "proxy-stays-light",
+      comment: "proxy 的依賴鏈（含間接）不可碰到 Repository、Use Case、kernel/db、React 元件（.tsx）",
+      severity: "error",
+      from: { path: "^src/proxy\\.ts$" },
+      to: {
+        path: ["/repository/", "/use-cases/", "^src/kernel/db/", "\\.tsx$", "node_modules/react/", "node_modules/react-dom/"],
+        reachable: true,
       },
     },
     {

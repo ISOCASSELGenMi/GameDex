@@ -1,5 +1,6 @@
 import type { DatePrecision, IgnoredFilterValue, IsoDate, ReleaseCard, ReleaseFilter } from "../../domain/entities";
 import { aggregateReleases } from "../../repository/release-aggregate";
+import { resolveImageRef } from "../../providers/image-ref";
 import { resolveFilterSlugs, resolveRegionPref } from "./resolve-filter";
 
 export interface ListReleaseCardsInput {
@@ -28,6 +29,7 @@ export async function listReleaseCards(input: ListReleaseCardsInput): Promise<{ 
     regionPref: resolveRegionPref(input.regionPref),
     locale: input.locale,
     limit: input.limit,
+    resolveImage: resolveImageRef,
   });
   return { cards, ignored };
 }

@@ -198,7 +198,7 @@ function card(over: Partial<ReleaseCard>): ReleaseCard {
     slug: "game",
     name: "Game",
     originalName: "Game",
-    coverImageId: null,
+    cover: null,
     date: "2026-10-05",
     periodStart: "2026-10-05",
     precision: "day",

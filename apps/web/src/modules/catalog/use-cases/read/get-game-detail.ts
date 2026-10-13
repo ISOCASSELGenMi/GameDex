@@ -1,5 +1,6 @@
 import type { GameDetail } from "../../domain/entities";
 import { getGameDetailBySlug } from "../../repository/game-detail";
+import { resolveImageRef } from "../../providers/image-ref";
 import { releaseFilterDefaults, resolveRegionPref } from "./resolve-filter";
 
 export interface GetGameDetailInput {
@@ -21,5 +22,6 @@ export async function getGameDetail(input: GetGameDetailInput): Promise<GameDeta
     locale: input.locale,
     regionPref: resolveRegionPref(input.regionPref),
     franchiseGameTypes: releaseFilterDefaults().gameTypes,
+    resolveImage: resolveImageRef,
   });
 }

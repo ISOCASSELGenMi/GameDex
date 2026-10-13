@@ -1,8 +1,12 @@
 /**
  * 聚合規則的唯一實作（06 §聚合規則；02 資料夾結構）。月曆、時間軸、Discord `/upcoming`、公開 iCal 共用。
  *
- * 1. 每個 (遊戲, 平台, 階段) 挑一筆：`manual` 優先於 `igdb`；其次來源仍存在（active）優先於 removed（同鍵有有效列時
- *    不拿 removed 列）；再來偏好地區 → `WW` → 最早日期 → id
+ * 1. 每個 (遊戲, 平台, 階段) 挑一筆，優先序（使用者 2026-10-13 定案）：
+ *    `manual` 優先於 `igdb`（source 為 NULL 視為 igdb，與 game-detail.ts 一致）
+ *    → 來源仍存在（active）優先於 removed（同鍵有有效列時不拿 removed 列）
+ *    → **有日期**（precision 非 tbd 且 release_date 非 NULL）優先於未定（例：WW＝tbd、JP＝10/20 day，偏好 WW
+ *      仍挑 JP，遊戲出現在 10/20，不會因為挑到 tbd 列而從月曆消失）
+ *    → 偏好地區 → `WW` → 最早日期 → id
  *    （`DISTINCT ON`＋優先序，在 DB 端做）。挑選範圍是該鍵的**全部**候選列，不只落在查詢區間內的列——
  *    否則偏好地區的日期在區間外時，會誤把 WW 的日期放進來。挑完再套區間。
  * 2. 同一款遊戲、同一個代表日期＋精度＋階段的多個平台合併成一張卡（平台以 chip 呈現）；不同天分開。
@@ -15,8 +19,8 @@
 import { sql, type SQL } from "drizzle-orm";
 import {
   DATE_PRECISIONS,
-  parseImageId,
   type DatePrecision,
+  type ImageResolver,
   type IsoDate,
   type PlatformChip,
   type RegionCode,
@@ -46,6 +50,8 @@ export interface AggregateReleasesInput {
   gameIds?: readonly number[];
   /** 結果上限（依排序截斷）；未給＝不限。 */
   limit?: number;
+  /** 已存封面網址 → ImageRef（Provider 實作，由 Use Case 傳入；Repository 不知道來源網址格式）。 */
+  resolveImage: ImageResolver;
 }
 
 export const DEFAULT_AGGREGATE_PRECISIONS: readonly DatePrecision[] = ["day", "month", "quarter", "year"];
@@ -74,11 +80,11 @@ interface CardRow extends Record<string, unknown> {
 export async function aggregateReleases(input: AggregateReleasesInput, opts: ReadOptions = {}): Promise<ReleaseCard[]> {
   const query = buildAggregateQuery(input);
   const res = await withReadTimeout((tx) => tx.execute<CardRow>(query), opts);
-  return res.rows.map(toCard);
+  return res.rows.map((r) => toCard(r, input.resolveImage));
 }
 
 /** 查詢本體（匯出供效能量測 EXPLAIN 用；一般請呼叫 aggregateReleases）。 */
-export function buildAggregateQuery(input: AggregateReleasesInput): SQL {
+export function buildAggregateQuery(input: Omit<AggregateReleasesInput, "resolveImage">): SQL {
   const f = input.filter;
   const precisions = [...new Set(input.precisions ?? DEFAULT_AGGREGATE_PRECISIONS)].filter((p) =>
     (DATE_PRECISIONS as readonly string[]).includes(p),
@@ -142,8 +148,9 @@ export function buildAggregateQuery(input: AggregateReleasesInput): SQL {
       JOIN regions rg ON rg.id = r.region_id
       WHERE ${sql.join(rowConds, sql` AND `)}
       ORDER BY r.game_id, r.platform_id, r.release_stage,
-        (r.source = 'manual') DESC,
+        (COALESCE(r.source, 'igdb') = 'manual') DESC,
         (r.source_status = 'active') DESC,
+        (r.precision <> 'tbd' AND r.release_date IS NOT NULL) DESC,
         (rg.code = ${input.regionPref}) DESC,
         (rg.code = 'WW') DESC,
         r.release_date ASC NULLS LAST,
@@ -187,13 +194,13 @@ export function buildAggregateQuery(input: AggregateReleasesInput): SQL {
   `;
 }
 
-function toCard(r: CardRow): ReleaseCard {
+function toCard(r: CardRow, resolveImage: ImageResolver): ReleaseCard {
   return {
     gameId: r.game_id,
     slug: r.slug,
     name: r.name,
     originalName: r.original_name,
-    coverImageId: parseImageId(r.cover_url),
+    cover: resolveImage(r.cover_url, "cover"),
     date: r.release_date,
     periodStart: r.period_start,
     precision: r.precision,

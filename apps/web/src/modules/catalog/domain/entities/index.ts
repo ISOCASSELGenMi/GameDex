@@ -8,4 +8,4 @@ export * from "./game-record";
 export * from "./event-record";
 export * from "./read-models";
 export * from "./read-errors";
-export * from "./cover-image";
+export * from "./image-ref";

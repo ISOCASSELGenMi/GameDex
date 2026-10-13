@@ -10,7 +10,6 @@
  */
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactElement, type ReactNode } from "react";
-import { igdbImageUrl } from "../../domain/entities/cover-image";
 import { EventIcon, StageIcon, StatusIcon, WarningIcon } from "../icons";
 import { PreviewDataContext } from "./folded-cards";
 import type { CalendarClientLabels, PreviewCardData } from "./types";
@@ -332,7 +331,7 @@ export function CalendarInteractive({
               {card.c ? (
                 <Image
                   className="mt-3 h-auto w-40 rounded-md"
-                  src={igdbImageUrl(card.c, "t_cover_big")}
+                  src={card.c}
                   alt={card.n}
                   width={264}
                   height={352}

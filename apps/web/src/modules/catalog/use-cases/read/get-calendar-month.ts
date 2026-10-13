@@ -1,6 +1,7 @@
 import type { CalendarMonth, DatePrecision, ReleaseCard, ReleaseFilter } from "../../domain/entities";
 import { monthBounds } from "../../domain/release-filter";
 import { listEventsInRange } from "../../repository/calendar-events";
+import { resolveImageRef } from "../../providers/image-ref";
 import { aggregateReleases } from "../../repository/release-aggregate";
 import { resolveFilterSlugs, resolveRegionPref } from "./resolve-filter";
 
@@ -35,7 +36,7 @@ export async function getCalendarMonth(input: GetCalendarMonthInput): Promise<Ca
   const nextMonthStart = new Date(Date.UTC(input.year, input.month, 1));
 
   const [cards, events] = await Promise.all([
-    aggregateReleases({ from: first, to: last, filter, regionPref, locale: input.locale }),
+    aggregateReleases({ from: first, to: last, filter, regionPref, locale: input.locale, resolveImage: resolveImageRef }),
     input.includeEvents === false ? Promise.resolve([]) : listEventsInRange({ from: monthStart, to: nextMonthStart }),
   ]);
 

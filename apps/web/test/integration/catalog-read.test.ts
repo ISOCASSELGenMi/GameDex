@@ -47,7 +47,8 @@ interface Ev {
   stage?: "unspecified" | "full" | "early_access" | "beta";
   status?: "scheduled" | "delayed" | "released" | "cancelled";
   sourceStatus?: "active" | "removed";
-  source?: "igdb" | "manual";
+  /** null＝欄位為 NULL（schema 允許；讀取時視為 igdb）。 */
+  source?: "igdb" | "manual" | null;
 }
 
 const ids = { platform: {} as Record<string, number>, region: {} as Record<string, number>, genre: {} as Record<string, number> };
@@ -64,6 +65,7 @@ async function addGame(
     parentGameId?: number;
     genres?: string[];
     firstReleaseDate?: string;
+    coverUrl?: string | null;
     events?: Ev[];
   } = {},
 ) {
@@ -80,7 +82,7 @@ async function addGame(
       popularityScore: opts.popularity ?? 0,
       parentGameId: opts.parentGameId ?? null,
       firstReleaseDate: opts.firstReleaseDate ?? null,
-      coverUrl: `https://images.igdb.com/igdb/image/upload/t_cover_big/cob${igdbId}.jpg`,
+      coverUrl: opts.coverUrl !== undefined ? opts.coverUrl : `https://images.igdb.com/igdb/image/upload/t_cover_big/cob${igdbId}.jpg`,
     })
     .returning({ id: games.id });
   gameId[igdbId] = g.id;
@@ -100,7 +102,7 @@ async function addGame(
       releaseStage: e.stage ?? "full",
       status: e.status ?? "scheduled",
       sourceStatus: e.sourceStatus ?? "active",
-      source: e.source ?? "igdb",
+      source: e.source === undefined ? "igdb" : e.source,
     });
   }
   return g.id;
@@ -200,6 +202,21 @@ describe.skipIf(!enabled)("catalog 讀取層（整合）", () => {
         { platform: P["b55-xb"], region: "US", date: "2035-03-22" },
       ],
     });
+    // 有日期優先於 tbd（使用者 2026-10-13 定案）：WW＝tbd、JP＝day，偏好 WW 仍挑 JP 列
+    await addGame(550018, {
+      events: [
+        { platform: P["b55-ps"], region: "WW", date: null, periodStart: null, precision: "tbd" },
+        { platform: P["b55-ps"], region: "JP", date: "2035-03-26" },
+      ],
+    });
+    // source 為 NULL 視為 igdb：manual 列（即使不是偏好地區）仍優先；封面非 IGDB 網址 → 原樣使用
+    await addGame(550019, {
+      coverUrl: "https://cdn.example.com/b55/cover-550019.webp",
+      events: [
+        { platform: P["b55-ps"], region: "WW", date: "2035-03-03", source: null },
+        { platform: P["b55-ps"], region: "JP", date: "2035-03-27", source: "manual" },
+      ],
+    });
 
     // 詳情用：相似、同系列、連結、公司、活動、改期紀錄
     await addGame(550020, { popularity: 10, firstReleaseDate: "2030-01-01" });
@@ -260,7 +277,13 @@ describe.skipIf(!enabled)("catalog 讀取層（整合）", () => {
     expect(a[0].releaseEventIds).toHaveLength(3);
     expect(a[0].name).toBe("測試甲");
     expect(a[0].originalName).toBe("B55 Game 550001");
-    expect(a[0].coverImageId).toBe("cob550001");
+    expect(a[0].cover).toEqual({
+      original: "https://images.igdb.com/igdb/image/upload/t_cover_big/cob550001.jpg",
+      small: "https://images.igdb.com/igdb/image/upload/t_cover_small/cob550001.jpg",
+      medium: "https://images.igdb.com/igdb/image/upload/t_cover_big/cob550001.jpg",
+      large: "https://images.igdb.com/igdb/image/upload/t_1080p/cob550001.jpg",
+      resized: true,
+    });
 
     const b = find(cardsOf(m), 550002);
     expect(b.map((c) => [c.date, c.platforms.map((p) => p.slug)])).toEqual([
@@ -290,6 +313,26 @@ describe.skipIf(!enabled)("catalog 讀取層（整合）", () => {
     // 不存在的地區 → DEFAULT_REGION_PREF（WW）
     const bogus = cardsOf(await march({ regionPref: "XX" }));
     expect(find(bogus, 550004).map((c) => c.date)).toEqual(["2035-03-15"]);
+  });
+
+  it("有日期優先於 tbd：WW＝tbd、JP＝day、偏好 WW → 挑 JP 列，遊戲出現在該日", async () => {
+    const m = await march({ regionPref: "WW" });
+    expect(find(cardsOf(m), 550018).map((c) => [c.date, c.precision])).toEqual([["2035-03-26", "day"]]);
+    expect(find(m.days["2035-03-26"] ?? [], 550018)).toHaveLength(1);
+    // 明確要 tbd 時也不會再拿 tbd 列（同鍵有日期列）
+    const tbdOnly = await listReleaseCards({ locale: "en", precisions: ["tbd"], filter: { platformSlugs: ["b55-ps"] } });
+    expect(find(tbdOnly.cards, 550018)).toEqual([]);
+  });
+
+  it("source 為 NULL 視為 igdb，manual 列優先；非 IGDB 封面網址原樣使用", async () => {
+    const m = await march({ regionPref: "WW" });
+    const c = find(cardsOf(m), 550019);
+    expect(c.map((x) => x.date)).toEqual(["2035-03-27"]);
+    const url = "https://cdn.example.com/b55/cover-550019.webp";
+    expect(c[0].cover).toEqual({ original: url, small: url, medium: url, large: url, resized: false });
+    const d = await getGameDetail({ slug: "b55-550019", locale: "en" });
+    expect(d?.cover?.medium).toBe(url);
+    expect(d?.releaseGroups[0].releases.map((r) => r.source).sort()).toEqual(["igdb", "manual"]);
   });
 
   it("月精度歸該月、季精度在期間最後一個月的 undated、年精度在 12 月、tbd 不出現", async () => {

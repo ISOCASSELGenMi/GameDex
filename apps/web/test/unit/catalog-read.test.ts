@@ -1,11 +1,7 @@
 import { describe, expect, it } from "vitest";
-import {
-  CatalogQueryTimeoutError,
-  igdbImageUrl,
-  isCatalogQueryTimeoutError,
-  parseImageId,
-  type GameLink,
-} from "@/modules/catalog/domain/entities";
+import { CatalogQueryTimeoutError, isCatalogQueryTimeoutError, type GameLink } from "@/modules/catalog/domain/entities";
+import { resolveImageRef } from "@/modules/catalog/providers/image-ref";
+import { parseIgdbImageId } from "@/modules/catalog/providers/igdb/images";
 import { monthBounds, normalizeRegionPref, normalizeReleaseFilter } from "@/modules/catalog/domain/release-filter";
 import { groupCompanies, groupReleases, sortLinks } from "@/modules/catalog/repository/game-detail";
 import { isStatementTimeout } from "@/modules/catalog/repository/read-tx";
@@ -70,15 +66,33 @@ describe("normalizeRegionPref／monthBounds", () => {
   });
 });
 
-describe("圖片 id", () => {
-  it("parseImageId／igdbImageUrl", () => {
-    expect(parseImageId("https://images.igdb.com/igdb/image/upload/t_cover_big/co6fyp.jpg")).toBe("co6fyp");
-    expect(parseImageId("https://images.igdb.com/igdb/image/upload/t_screenshot_big/bzj0uj2svnwlqxwtbjgc.jpg")).toBe(
-      "bzj0uj2svnwlqxwtbjgc",
-    );
-    expect(parseImageId(null)).toBeNull();
-    expect(parseImageId("https://example.com/x.jpg")).toBeNull();
-    expect(igdbImageUrl("co6fyp", "t_thumb")).toBe("https://images.igdb.com/igdb/image/upload/t_thumb/co6fyp.jpg");
+describe("圖片網址 → ImageRef（Provider）", () => {
+  const base = "https://images.igdb.com/igdb/image/upload";
+  it("IGDB 圖片網址：取 id、依用途換尺寸 token", () => {
+    expect(parseIgdbImageId(`${base}/t_cover_big/co6fyp.jpg`)).toBe("co6fyp");
+    expect(parseIgdbImageId(`${base}/t_screenshot_big/bzj0uj2svnwlqxwtbjgc.jpg`)).toBe("bzj0uj2svnwlqxwtbjgc");
+    expect(parseIgdbImageId("https://example.com/t_cover_big/x.jpg")).toBeNull();
+    expect(resolveImageRef(`${base}/t_cover_big/co6fyp.jpg`, "cover")).toEqual({
+      original: `${base}/t_cover_big/co6fyp.jpg`,
+      small: `${base}/t_cover_small/co6fyp.jpg`,
+      medium: `${base}/t_cover_big/co6fyp.jpg`,
+      large: `${base}/t_1080p/co6fyp.jpg`,
+      resized: true,
+    });
+    expect(resolveImageRef(`${base}/t_screenshot_big/sc1.jpg`, "screenshot")).toMatchObject({
+      small: `${base}/t_screenshot_med/sc1.jpg`,
+      medium: `${base}/t_screenshot_big/sc1.jpg`,
+      resized: true,
+    });
+  });
+  it("非 IGDB 格式的 http(s) 網址原樣使用（不變成沒封面）", () => {
+    const url = "https://cdn.example.com/covers/abc.webp";
+    expect(resolveImageRef(url, "cover")).toEqual({ original: url, small: url, medium: url, large: url, resized: false });
+  });
+  it("空值與非 http(s) → null", () => {
+    expect(resolveImageRef(null, "cover")).toBeNull();
+    expect(resolveImageRef("  ", "cover")).toBeNull();
+    expect(resolveImageRef("javascript:alert(1)", "cover")).toBeNull();
   });
 });
 

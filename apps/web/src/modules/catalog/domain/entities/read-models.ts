@@ -12,6 +12,7 @@ import type {
   ReleaseStatus,
   SourceStatus,
 } from "./enums";
+import type { ImageRef } from "./image-ref";
 
 /** regions.code（WW、US、EU、JP…）。地區偏好＝使用者設定 > 瀏覽器語系推導 > DEFAULT_REGION_PREF（06 §聚合規則 3）。 */
 export type RegionCode = string;
@@ -75,8 +76,8 @@ export interface ReleaseCard {
   name: string;
   /** games.name（原文）。 */
   originalName: string;
-  /** IGDB 圖片 id（例 `co6fyp`），UI 以 igdbImageUrl(id, size) 換尺寸；沒有封面為 null。 */
-  coverImageId: string | null;
+  /** 封面（各尺寸網址已由 Provider 解析好）；沒有封面為 null。 */
+  cover: ImageRef | null;
   /** tbd 精度為 null（只有呼叫端明確要求 tbd 時才會出現；月曆不會）。 */
   date: IsoDate | null;
   periodStart: IsoDate | null;
@@ -131,7 +132,7 @@ export interface GameSummary {
   slug: string;
   name: string;
   originalName: string;
-  coverImageId: string | null;
+  cover: ImageRef | null;
   firstReleaseDate: IsoDate | null;
   firstReleasePrecision: DatePrecision | null;
   gameType: string;
@@ -207,8 +208,9 @@ export interface GameDetail {
   originalName: string;
   /** 簡介原文（IGDB 只有英文，UI 標「原文（English）」）。 */
   summary: string | null;
-  coverImageId: string | null;
-  screenshotImageIds: string[];
+  cover: ImageRef | null;
+  /** 截圖（各尺寸網址已解析好；無法使用的網址已略過）。 */
+  screenshots: ImageRef[];
   trailerUrl: string | null;
   ageRatingLabel: string | null;
   gameType: string;

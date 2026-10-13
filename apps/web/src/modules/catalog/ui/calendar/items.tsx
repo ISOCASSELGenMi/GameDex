@@ -5,7 +5,6 @@
 import Image from "next/image";
 import type { ReactElement } from "react";
 import type { Translator } from "@sok/i18n";
-import { igdbImageUrl } from "../../domain/entities/cover-image";
 import { EventIcon, StageIcon, StatusIcon, WarningIcon } from "../icons";
 import { stageLabel, statusLabel } from "../labels";
 import type { CardItem, DayItem, EventItem } from "./view-model";
@@ -35,10 +34,10 @@ export function FullCard({ item, href, t }: { item: CardItem; href: string; t: T
   const { card } = item;
   return (
     <a className="card" href={href} data-card={item.key}>
-      {card.coverImageId ? (
+      {card.cover ? (
         <Image
           className="card-thumb"
-          src={igdbImageUrl(card.coverImageId, "t_cover_small")}
+          src={card.cover.small}
           alt=""
           width={90}
           height={128}

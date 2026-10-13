@@ -10,7 +10,7 @@ export interface PreviewCardData {
   n: string;
   /** 原名（與顯示名稱不同時才有） */
   o?: string;
-  /** 封面 IGDB image id */
+  /** 封面網址（ImageRef.medium，已由 Provider 解析好） */
   c?: string;
   /** 上市日文字（formatReleaseLabel） */
   d: string;

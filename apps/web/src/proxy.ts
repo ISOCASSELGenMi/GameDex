@@ -2,11 +2,11 @@
 // 請求進入頁面前的判斷（06 §多語系）：
 // 1. 無語系前綴的入口（`/`、`/calendar`…）→ 依 Cookie → Accept-Language → 預設語系 302 導向（private、Vary）
 // 2. 帶前綴的網址一律不依偏好導向；語系不支援 → 404
-// 3. catalog 路由不需查 DB 的導向／404（月份格式等）在這裡做，才能回真正的狀態碼（見 request-routing.ts）
+// 3. catalog 路由不需查 DB 的導向／404（月份格式等）在這裡做，才能回真正的狀態碼（見 modules/catalog/ui/request-routing.ts；proxy 只經 ui/routing.ts 這個輕量入口取得）
 import { NextResponse, type NextRequest } from "next/server";
 import { LOCALE_COOKIE, getLocaleConfig, isSupportedLocale, needsLocalePrefix, pickRequestLocale } from "@/kernel/locale";
 import type { Locale } from "@sok/i18n";
-import { decideLocalizedRoute, renderNotFoundHtml } from "@/modules/catalog/ui/request-routing";
+import { decideLocalizedRoute, renderNotFoundHtml } from "@/modules/catalog/ui/routing";
 
 function notFoundResponse(locale: Locale): NextResponse {
   return new NextResponse(renderNotFoundHtml(locale), {

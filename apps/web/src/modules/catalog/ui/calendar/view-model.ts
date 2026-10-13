@@ -69,7 +69,7 @@ export function buildCalendarViewModel(data: CalendarMonth, locale: Locale, t: T
       s: stageLabel(t, card.stage),
     };
     if (card.originalName && card.originalName !== card.name) preview.o = card.originalName;
-    if (card.coverImageId) preview.c = card.coverImageId;
+    if (card.cover) preview.c = card.cover.medium;
     if (card.status !== "scheduled") {
       preview.tk = card.status;
       preview.t = statusLabel(t, card.status);

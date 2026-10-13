@@ -8,8 +8,8 @@ import {
   GAME_COMPANY_ROLES,
   GAME_LINK_TYPES,
   RELEASE_STAGES,
-  parseImageId,
   type DatePrecision,
+  type ImageResolver,
   type FranchiseKind,
   type GameCompanyCredit,
   type GameCompanyRole,
@@ -48,6 +48,8 @@ export interface GameDetailQuery {
   eventLimit?: number;
   /** 「現在」（活動是否已結束的基準）；測試用，預設資料庫 now()。 */
   now?: Date;
+  /** 已存圖片網址 → ImageRef（Provider 實作，由 Use Case 傳入；Repository 不知道來源網址格式）。 */
+  resolveImage: ImageResolver;
 }
 
 interface SummaryRow extends Record<string, unknown> {
@@ -71,13 +73,13 @@ const summaryColumns = (alias: string, locale: string): SQL => {
     COALESCE(${a}.game_type, 'main_game') AS game_type, ${a}.popularity_score`;
 };
 
-function toSummary(r: SummaryRow): GameSummary {
+function toSummary(r: SummaryRow, resolveImage: ImageResolver): GameSummary {
   return {
     gameId: r.id,
     slug: r.slug,
     name: r.name,
     originalName: r.original_name,
-    coverImageId: parseImageId(r.cover_url),
+    cover: resolveImage(r.cover_url, "cover"),
     firstReleaseDate: r.first_release_date,
     firstReleasePrecision: r.first_release_precision,
     gameType: r.game_type,
@@ -248,8 +250,10 @@ async function readDetail(tx: DbOrTx, q: GameDetailQuery): Promise<GameDetail | 
     name: g.name,
     originalName: g.original_name,
     summary: g.summary,
-    coverImageId: parseImageId(g.cover_url),
-    screenshotImageIds: (g.screenshot_urls ?? []).map(parseImageId).filter((x): x is string => x != null),
+    cover: q.resolveImage(g.cover_url, "cover"),
+    screenshots: (g.screenshot_urls ?? [])
+      .map((u) => q.resolveImage(u, "screenshot"))
+      .filter((x): x is NonNullable<typeof x> => x != null),
     trailerUrl: g.trailer_url,
     ageRatingLabel: g.age_rating_label,
     gameType: g.game_type,
@@ -268,10 +272,10 @@ async function readDetail(tx: DbOrTx, q: GameDetailQuery): Promise<GameDetail | 
     links: sortLinks(
       linkRes.rows.map((l) => ({ linkType: l.link_type, categoryLabel: l.category_label, url: l.url, isBroken: l.is_broken })),
     ),
-    parent: parentRes.rows[0] ? toSummary(parentRes.rows[0]) : null,
-    franchises: groupFranchises(franchiseRes.rows),
-    similarGames: similarRes.rows.map(toSummary),
-    dlcs: dlcRes.rows.map(toSummary),
+    parent: parentRes.rows[0] ? toSummary(parentRes.rows[0], q.resolveImage) : null,
+    franchises: groupFranchises(franchiseRes.rows, q.resolveImage),
+    similarGames: similarRes.rows.map((r) => toSummary(r, q.resolveImage)),
+    dlcs: dlcRes.rows.map((r) => toSummary(r, q.resolveImage)),
     upcomingEvents: eventRes.rows.map(toCalendarEvent),
   };
 }
@@ -381,11 +385,12 @@ export function sortLinks(links: readonly GameLink[]): GameLink[] {
 
 function groupFranchises(
   rows: ReadonlyArray<{ f_id: number; f_slug: string; f_name: string; f_kind: FranchiseKind } & Partial<SummaryRow>>,
+  resolveImage: ImageResolver,
 ): GameFranchiseGroup[] {
   const map = new Map<number, GameFranchiseGroup>();
   for (const r of rows) {
     const grp = map.get(r.f_id) ?? { slug: r.f_slug, name: r.f_name, kind: r.f_kind, games: [] };
-    if (r.id != null) grp.games.push(toSummary(r as SummaryRow));
+    if (r.id != null) grp.games.push(toSummary(r as SummaryRow, resolveImage));
     map.set(r.f_id, grp);
   }
   return [...map.values()];
