@@ -2,7 +2,7 @@
 
 > 規則：做完一項就打 `[x]`；發現新工作就加進對應區塊並標註日期。
 > 正本在 claude.ai Project（`claude/checklist.md`）；本檔為 repo 副本（`docs/checklist.md`），Claude Code 可直接核對與打勾，回到 claude.ai 時兩邊再同步。
-> 最後更新：2026-10-13（Phase 3a 完成、推上 GitHub `SoK-GameDB`、Phase 3b 開工；Phase 2a／2b 完成；Phase 3a 開工，企劃負責人＋Claude Code 子代理分工；checklist 複製進 repo）
+> 最後更新：2026-10-13（Wave 2a 完成、交接 docs/handoff/2026-10-13-phase3b-wave2a.md；Phase 3a 完成、推上 GitHub `SoK-GameDB`、Phase 3b 開工；Phase 2a／2b 完成；Phase 3a 開工，企劃負責人＋Claude Code 子代理分工；checklist 複製進 repo）
 
 ## 0. 既有成果（依過往對話紀錄回填）
 - [x] 架構規格書初稿與審閱（v1.2 單一文件；2026-10-12 起改為 `spec/` 多文件 v2.0）
