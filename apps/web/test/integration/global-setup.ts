@@ -7,11 +7,12 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import pg from "pg";
 import { SEED_REGIONS } from "../../src/modules/catalog/domain/entities/region";
+import { resolveTestDatabaseUrl } from "./test-db-url";
 
 export default async function setup(): Promise<void> {
   // NODE_ENV=test 時 Next 的載入器刻意略過 .env.local，所以這裡直接讀
   loadDotenv({ path: [".env.test.local", ".env.local", ".env"], quiet: true });
-  const raw = process.env.TEST_DATABASE_URL;
+  const raw = resolveTestDatabaseUrl();
   if (!raw) {
     console.log("[integration] 未設定 TEST_DATABASE_URL，跳過整合測試");
     return;

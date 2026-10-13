@@ -90,3 +90,13 @@
 - [x] Wave 2-C：`[locale]` 路由與 proxy 導向、語言選單、月曆（CSS Grid、＋N、本月未定日、手機議程式）、側邊預覽卡、遊戲詳情（評分區留空）、篩選 UI
 - [x] Wave 3-D：Playwright＋axe `test:a11y`、鍵盤走完月曆 → 詳情、CI 加 `i18n:check`／`test:a11y`
 - [x] 驗收：四項檢查全綠＋spec 15 Phase 3 完成標準（3a 範圍）＋獨立審查；commit；交接文件
+
+### Phase 3b：時間軸、完整篩選、瀏覽、實體頁、活動、熱度、語言支援（2026-10-13 開工，分支 `feat/phase3b`）
+- [x] 整合測試支援 `TEST_DATABASE_NAME`（子代理各用一個測試 DB 並行）（2026-10-13）
+- [ ] Wave 1-F：`refresh_popularity`（IGDB popularity_primitives＋結構訊號、PERCENT_RANK、heatLevel）、PopularitySignal 介面、熱門榜讀取
+- [ ] Wave 1-G：FilterSpec 完整維度＋正規化、聚合支援新維度、時間軸讀取（cursor 雙向）、瀏覽／搜尋讀取
+- [ ] Wave 1-H：平台／公司／系列頁、活動列表與詳情、詳情頁補完（DLC、即將亮相活動、語言支援三態）讀取層
+- [ ] Wave 2：UI（時間軸、完整篩選列＋手機抽屜＋URL 正規化 308、瀏覽／搜尋、平台／公司／系列、活動、熱門榜、詳情頁語言支援區塊、熱度圖示＋文字）＋字典
+- [ ] Wave 3：test:a11y 擴充（時間軸、瀏覽、實體頁）＋獨立審查
+- [ ] 在開發 DB 跑 `refresh_popularity`，確認熱度分布合理
+- [ ] 驗收：全部檢查全綠＋spec 15 Phase 3 完成標準（3b 範圍）；commit；交接文件
