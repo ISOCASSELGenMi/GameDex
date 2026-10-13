@@ -8,6 +8,7 @@ import {
   GAME_TYPES,
   PLATFORM_KINDS,
   RELEASE_STAGES,
+  RELEASE_STATE_FILTERS,
   RELEASE_STATUSES,
   SEED_REGIONS,
   type IgnoredFilterValue,
@@ -16,6 +17,7 @@ import {
   type ReleaseFilter,
   type ReleaseFilterDimension,
   type ReleaseStage,
+  type ReleaseStateFilter,
   type ReleaseStatus,
 } from "./entities";
 
@@ -40,7 +42,22 @@ export interface NormalizedReleaseFilter {
   gameTypes: string[];
   statuses: ReleaseStatus[];
   includeRumored: boolean;
+  // 3b（undefined＝不限制）
+  themeSlugs?: string[];
+  companySlugs?: string[];
+  franchiseSlugs?: string[];
+  releaseStates?: ReleaseStateFilter[];
+  /** 1~5；其他值忽略並回報。 */
+  minHeat?: number;
   ignored: IgnoredFilterValue[];
+}
+
+/** minHeat：1~5 的整數；否則忽略並回報（dimension minHeat）。 */
+function pickMinHeat(v: number | undefined, ignored: IgnoredFilterValue[]): number | undefined {
+  if (v === undefined || v === null) return undefined;
+  if (Number.isInteger(v) && v >= 1 && v <= 5) return v;
+  ignored.push({ dimension: "minHeat", slug: String(v) });
+  return undefined;
 }
 
 const SELECTABLE_KINDS = PLATFORM_KINDS.filter((k) => k !== "mobile");
@@ -94,6 +111,11 @@ export function normalizeReleaseFilter(filter: ReleaseFilter, defaults: ReleaseF
     pickEnum(filter.gameTypes, GAME_TYPES, "type", ignored) ??
     validDefaults(defaults.gameTypes, GAME_TYPES, ["main_game", "standalone_expansion", "remake", "remaster", "port"]);
   const statuses = pickEnum(filter.statuses, RELEASE_STATUSES, "status", ignored) ?? [...DEFAULT_RELEASE_STATUSES];
+  const themeSlugs = clean(filter.themeSlugs, "theme", ignored);
+  const companySlugs = clean(filter.companySlugs, "company", ignored);
+  const franchiseSlugs = clean(filter.franchiseSlugs, "franchise", ignored);
+  const releaseStates = pickEnum(filter.releaseStates, RELEASE_STATE_FILTERS, "status", ignored);
+  const minHeat = pickMinHeat(filter.minHeat, ignored);
   return {
     ...(platformSlugs ? { platformSlugs } : {}),
     ...(platformKinds ? { platformKinds } : {}),
@@ -102,6 +124,11 @@ export function normalizeReleaseFilter(filter: ReleaseFilter, defaults: ReleaseF
     gameTypes,
     statuses,
     includeRumored: filter.includeRumored === true,
+    ...(themeSlugs ? { themeSlugs } : {}),
+    ...(companySlugs ? { companySlugs } : {}),
+    ...(franchiseSlugs ? { franchiseSlugs } : {}),
+    ...(releaseStates ? { releaseStates } : {}),
+    ...(minHeat !== undefined ? { minHeat } : {}),
     ignored,
   };
 }
@@ -115,6 +142,16 @@ export function normalizeRegionPref(code: string | null | undefined, fallback: s
     if (v && REGION_CODES.includes(v)) return v;
   }
   return "WW";
+}
+
+/**
+ * 地區偏好是否無效（3b：URL `region` 指到不存在的地區時「忽略並提示」）。
+ * 未給（null／undefined／空字串）→ null；已知代碼 → null；否則回傳 ignored 項目。
+ */
+export function regionPrefIssue(code: string | null | undefined): IgnoredFilterValue | null {
+  const v = code?.trim();
+  if (!v) return null;
+  return REGION_CODES.includes(v.toUpperCase()) ? null : { dimension: "region", slug: v };
 }
 
 /** 月份的第一天與最後一天（UTC 曆法）。無效年月丟 RangeError（UI 應先驗證）。 */

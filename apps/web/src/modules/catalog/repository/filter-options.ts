@@ -70,24 +70,83 @@ export async function listGenreOptions(opts: ReadOptions = {}): Promise<Taxonomy
   return res.rows.map((r) => ({ slug: r.slug, name: r.name }));
 }
 
+/** 主題選項（依原文名稱）。 */
+export async function listThemeOptions(opts: ReadOptions = {}): Promise<TaxonomyItem[]> {
+  const res = await withReadTimeout(
+    (tx) => tx.execute<{ slug: string; name: string }>(sql`SELECT slug, name FROM themes ORDER BY name, id`),
+    opts,
+  );
+  return res.rows.map((r) => ({ slug: r.slug, name: r.name }));
+}
+
+/** regions.code（WW 在前，其餘依 code）。 */
+export async function listRegionCodes(opts: ReadOptions = {}): Promise<string[]> {
+  const res = await withReadTimeout(
+    (tx) => tx.execute<{ code: string }>(sql`SELECT code FROM regions ORDER BY (code = 'WW') DESC, code`),
+    opts,
+  );
+  return res.rows.map((r) => r.code);
+}
+
+export interface FilterSlugLookup {
+  platformSlugs: readonly string[];
+  genreSlugs: readonly string[];
+  themeSlugs?: readonly string[];
+  companySlugs?: readonly string[];
+  franchiseSlugs?: readonly string[];
+}
+
+export interface FilterSlugIds {
+  platforms: Map<string, number>;
+  genres: Map<string, number>;
+  themes: Map<string, number>;
+  companies: Map<string, number>;
+  /** franchises.slug 不是 unique（franchise 與 collection 可同 slug）→ 一個 slug 可能對到多個 id。 */
+  franchises: Map<string, number[]>;
+}
+
+type Dim = "platform" | "genre" | "theme" | "company" | "franchise";
+
 /** slug → id；不存在的 slug 不在結果內。mobile 平台視為不存在（不顯示，P35）。 */
-export async function lookupFilterSlugs(
-  q: { platformSlugs: readonly string[]; genreSlugs: readonly string[] },
-  opts: ReadOptions = {},
-): Promise<{ platforms: Map<string, number>; genres: Map<string, number> }> {
-  const platforms = new Map<string, number>();
-  const genres = new Map<string, number>();
-  if (q.platformSlugs.length === 0 && q.genreSlugs.length === 0) return { platforms, genres };
+export async function lookupFilterSlugs(q: FilterSlugLookup, opts: ReadOptions = {}): Promise<FilterSlugIds> {
+  const out: FilterSlugIds = {
+    platforms: new Map(),
+    genres: new Map(),
+    themes: new Map(),
+    companies: new Map(),
+    franchises: new Map(),
+  };
+  const themeSlugs = q.themeSlugs ?? [];
+  const companySlugs = q.companySlugs ?? [];
+  const franchiseSlugs = q.franchiseSlugs ?? [];
+  const total = q.platformSlugs.length + q.genreSlugs.length + themeSlugs.length + companySlugs.length + franchiseSlugs.length;
+  if (total === 0) return out;
   const res = await withReadTimeout(
     (tx) =>
-      tx.execute<{ dim: "platform" | "genre"; slug: string; id: number }>(sql`
+      tx.execute<{ dim: Dim; slug: string; id: number }>(sql`
         SELECT 'platform' AS dim, slug, id FROM platforms
         WHERE slug = ANY(${pgArray(q.platformSlugs)}::text[]) AND kind <> 'mobile'
         UNION ALL
         SELECT 'genre' AS dim, slug, id FROM genres WHERE slug = ANY(${pgArray(q.genreSlugs)}::text[])
+        UNION ALL
+        SELECT 'theme' AS dim, slug, id FROM themes WHERE slug = ANY(${pgArray(themeSlugs)}::text[])
+        UNION ALL
+        SELECT 'company' AS dim, slug, id FROM companies WHERE slug = ANY(${pgArray(companySlugs)}::text[])
+        UNION ALL
+        SELECT 'franchise' AS dim, slug, id FROM franchises WHERE slug = ANY(${pgArray(franchiseSlugs)}::text[])
       `),
     opts,
   );
-  for (const r of res.rows) (r.dim === "platform" ? platforms : genres).set(r.slug, r.id);
-  return { platforms, genres };
+  for (const r of res.rows) {
+    if (r.dim === "platform") out.platforms.set(r.slug, r.id);
+    else if (r.dim === "genre") out.genres.set(r.slug, r.id);
+    else if (r.dim === "theme") out.themes.set(r.slug, r.id);
+    else if (r.dim === "company") out.companies.set(r.slug, r.id);
+    else {
+      const list = out.franchises.get(r.slug) ?? [];
+      list.push(r.id);
+      out.franchises.set(r.slug, list);
+    }
+  }
+  return out;
 }

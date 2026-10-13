@@ -17,3 +17,4 @@ export {
   type NormalizedReleaseFilter,
   type ReleaseFilterDefaults,
 } from "./domain/release-filter";
+export { regionPrefIssue } from "./domain/release-filter";

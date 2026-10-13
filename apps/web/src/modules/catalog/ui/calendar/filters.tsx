@@ -40,6 +40,9 @@ export function makeFilterLabeler(t: Translator, options: FilterOptions): Filter
         return genreLabel(t, value, genreNames.get(value));
       case "stage":
         return stageLabel(t, value);
+      default:
+        // 3b 新維度（theme、type、status…）的標籤由 UI 波次補上；先顯示原值（G 的最小相容修正）
+        return value;
     }
   };
 }

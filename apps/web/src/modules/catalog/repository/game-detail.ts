@@ -1,5 +1,5 @@
 /**
- * 遊戲詳情頁的讀取（06 §遊戲詳情頁，Phase 3a 範圍）。評分（05）與語言支援（3b）不在這裡。
+ * 遊戲詳情頁的讀取（06 §遊戲詳情頁；Phase 3a，3b 補語言支援）。評分（05）不在這裡。
  * 全部查詢在同一個唯讀 transaction（statement_timeout 保護）。
  */
 import { sql, type SQL } from "drizzle-orm";
@@ -28,8 +28,10 @@ import {
   type ReleaseStatus,
   type SourceStatus,
   type TaxonomyItem,
+  buildLanguageSupport,
 } from "../domain/entities";
 import { EVENT_COLUMNS, toCalendarEvent, type EventRow } from "./calendar-events";
+import { readLanguageSupportEntries } from "./language-support";
 import { pgArray, toIso, withReadTimeout, type ReadOptions } from "./read-tx";
 
 export interface GameDetailQuery {
@@ -52,7 +54,7 @@ export interface GameDetailQuery {
   resolveImage: ImageResolver;
 }
 
-interface SummaryRow extends Record<string, unknown> {
+export interface SummaryRow extends Record<string, unknown> {
   id: number;
   slug: string;
   name: string;
@@ -64,7 +66,8 @@ interface SummaryRow extends Record<string, unknown> {
   popularity_score: number;
 }
 
-const summaryColumns = (alias: string, locale: string): SQL => {
+/** 遊戲摘要欄位（平台／公司／系列／活動頁共用）。 */
+export const summaryColumns = (alias: string, locale: string): SQL => {
   const a = sql.raw(alias);
   return sql`${a}.id, ${a}.slug,
     COALESCE(NULLIF(${a}.display_names ->> ${locale}, ''), ${a}.name) AS name,
@@ -73,7 +76,7 @@ const summaryColumns = (alias: string, locale: string): SQL => {
     COALESCE(${a}.game_type, 'main_game') AS game_type, ${a}.popularity_score`;
 };
 
-function toSummary(r: SummaryRow, resolveImage: ImageResolver): GameSummary {
+export function toSummary(r: SummaryRow, resolveImage: ImageResolver): GameSummary {
   return {
     gameId: r.id,
     slug: r.slug,
@@ -239,6 +242,8 @@ async function readDetail(tx: DbOrTx, q: GameDetailQuery): Promise<GameDetail | 
     LIMIT ${q.eventLimit ?? 10}
   `);
 
+  const languageEntries = await readLanguageSupportEntries(tx, id);
+
   const taxonomy = (dim: "genre" | "theme"): TaxonomyItem[] =>
     taxRes.rows.filter((r) => r.dim === dim).map((r) => ({ slug: r.slug, name: r.name }));
   const companies = groupCompanies(companyRes.rows);
@@ -277,6 +282,7 @@ async function readDetail(tx: DbOrTx, q: GameDetailQuery): Promise<GameDetail | 
     similarGames: similarRes.rows.map((r) => toSummary(r, q.resolveImage)),
     dlcs: dlcRes.rows.map((r) => toSummary(r, q.resolveImage)),
     upcomingEvents: eventRes.rows.map(toCalendarEvent),
+    languageSupport: buildLanguageSupport(languageEntries, locale),
   };
 }
 

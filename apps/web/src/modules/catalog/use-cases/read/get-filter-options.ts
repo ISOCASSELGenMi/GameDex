@@ -1,6 +1,6 @@
-import { PLATFORM_KINDS, RELEASE_STAGES, type FilterOptions } from "../../domain/entities";
+import { BROWSE_SORTS, GAME_TYPES, PLATFORM_KINDS, RELEASE_STAGES, RELEASE_STATE_FILTERS, type FilterOptions } from "../../domain/entities";
 import { normalizeReleaseFilter } from "../../domain/release-filter";
-import { listGenreOptions, listPlatformOptions } from "../../repository/filter-options";
+import { listGenreOptions, listPlatformOptions, listRegionCodes, listThemeOptions } from "../../repository/filter-options";
 import { releaseFilterDefaults } from "./resolve-filter";
 
 export interface GetFilterOptionsInput {
@@ -15,7 +15,12 @@ export async function getFilterOptions(input: GetFilterOptionsInput): Promise<Fi
   void input.locale;
   const today = (input.today ?? new Date()).toISOString().slice(0, 10);
   const defaults = normalizeReleaseFilter({}, releaseFilterDefaults());
-  const [platforms, genres] = await Promise.all([listPlatformOptions(today), listGenreOptions()]);
+  const [platforms, genres, themes, regions] = await Promise.all([
+    listPlatformOptions(today),
+    listGenreOptions(),
+    listThemeOptions(),
+    listRegionCodes(),
+  ]);
   return {
     platforms,
     platformKinds: PLATFORM_KINDS.filter((k) => k !== "mobile"),
@@ -23,5 +28,10 @@ export async function getFilterOptions(input: GetFilterOptionsInput): Promise<Fi
     stages: [...RELEASE_STAGES],
     defaultStages: defaults.stages,
     defaultGameTypes: defaults.gameTypes,
+    themes,
+    gameTypes: [...GAME_TYPES],
+    releaseStates: [...RELEASE_STATE_FILTERS],
+    regions,
+    sorts: [...BROWSE_SORTS],
   };
 }

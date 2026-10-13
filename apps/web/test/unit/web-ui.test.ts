@@ -107,9 +107,10 @@ describe("FilterSpec ↔ ReleaseFilter", () => {
     expect(releaseFilterToFilterSpecShape(rf)).toEqual({ platform: ["ps5", "switch"], platformKind: ["console"], genre: ["rpg"], stage: ["full"] });
   });
 
-  it("不對應 status（3b 的 upcoming／released／delayed 不能傳進上市列 status）", () => {
+  it("status（upcoming／released／delayed）對應 releaseStates，不進上市列 statuses", () => {
     const rf = filterSpecToReleaseFilter(parseFilterSpec(new URLSearchParams("status=upcoming")).filter);
-    expect(rf).toEqual({});
+    expect(rf).toEqual({ releaseStates: ["upcoming"] });
+    expect(rf.statuses).toBeUndefined();
   });
 
   it("合併格式錯誤與查無此 slug 的提示，並從連結用的 FilterSpec 移除", () => {
@@ -117,6 +118,7 @@ describe("FilterSpec ↔ ReleaseFilter", () => {
     const notices = collectFilterNotices(parsed.issues, [{ dimension: "platform", slug: "nope" }, { dimension: "type", slug: "x" }]);
     expect(notices).toEqual([
       { dimension: "platform", value: "nope", reason: "unknown" },
+      { dimension: "type", value: "x", reason: "unknown" },
       { dimension: "stage", value: "bad!", reason: "invalid" },
     ]);
     expect(withoutIgnored(parsed.filter, notices)).toEqual({ platform: ["ps5"] });

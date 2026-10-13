@@ -3,6 +3,7 @@
 import type {
   DatePrecision,
   EventKind,
+  GameType,
   FranchiseKind,
   GameCompanyRole,
   GameLinkType,
@@ -13,12 +14,25 @@ import type {
   SourceStatus,
 } from "./enums";
 import type { ImageRef } from "./image-ref";
+import type { GameLanguageSupport } from "./language-support";
 
 /** regions.code（WW、US、EU、JP…）。地區偏好＝使用者設定 > 瀏覽器語系推導 > DEFAULT_REGION_PREF（06 §聚合規則 3）。 */
 export type RegionCode = string;
 
 /** 篩選維度名稱（回報被忽略的值用）。 */
-export type ReleaseFilterDimension = "platform" | "platformKind" | "genre" | "stage" | "type" | "status";
+export type ReleaseFilterDimension =
+  | "platform"
+  | "platformKind"
+  | "genre"
+  | "stage"
+  | "type"
+  | "status"
+  // 3b
+  | "theme"
+  | "company"
+  | "franchise"
+  | "region"
+  | "minHeat";
 
 /**
  * 月曆／時間軸的篩選條件（UI 由 FilterSpec 轉來；值一律 slug／enum 值）。
@@ -36,6 +50,17 @@ export interface ReleaseFilter {
   statuses?: readonly string[];
   /** `rumored=1`：顯示 gameStatus='rumored' 的遊戲（預設隱藏，04 §遊戲層級狀態）。 */
   includeRumored?: boolean;
+  // ── 3b ──
+  /** 主題 slug（themes.slug）。 */
+  themeSlugs?: readonly string[];
+  /** 公司 slug（companies.slug，任何角色）。 */
+  companySlugs?: readonly string[];
+  /** 系列 slug（franchises.slug；franchise 與 collection 同 slug 時都算）。 */
+  franchiseSlugs?: readonly string[];
+  /** spec 06 的 `status`：upcoming／released／delayed（同維度 OR）。和上面 `statuses`（上市列原始 status）不同。 */
+  releaseStates?: readonly string[];
+  /** games.heat_level ≥ minHeat（1~5）。 */
+  minHeat?: number;
 }
 
 export interface IgnoredFilterValue {
@@ -56,6 +81,13 @@ export interface ResolvedReleaseFilter {
   includeRumored: boolean;
   /** source_status='removed' 的列是否納入；預設 true（D7：removed 不等於取消，網站照常顯示並加註）。 */
   includeRemoved: boolean;
+  // ── 3b（未給＝不限制）──
+  themeIds?: readonly number[];
+  companyIds?: readonly number[];
+  /** 同 slug 的 franchise 與 collection 都列入。 */
+  franchiseIds?: readonly number[];
+  releaseStates?: readonly ReleaseStateFilter[];
+  minHeat?: number;
 }
 
 export interface PlatformChip {
@@ -97,6 +129,11 @@ export interface ReleaseCard {
   gameStatus: string | null;
   /** 合併進這張卡的 release_events.id（每個平台一筆，依平台名稱排序）。 */
   releaseEventIds: number[];
+  /**
+   * 3b：合併進卡的上市列有改期紀錄（release_date_history）。aggregateReleases 一定會填；
+   * 歷次公告日期用 getReleaseDateHistory(releaseEventIds) 取。
+   */
+  hasDateHistory?: boolean;
 }
 
 export interface CalendarEventItem {
@@ -241,6 +278,8 @@ export interface GameDetail {
   dlcs: GameSummary[];
   /** 即將亮相的活動（COALESCE(end_time, start_time) ≥ now()），依開始時間。 */
   upcomingEvents: CalendarEventItem[];
+  /** 語言支援（Phase 3b，06 §語言支援區塊）：三態，絕不表示「不支援」。 */
+  languageSupport: GameLanguageSupport;
 }
 
 // ── 篩選選項 ────────────────────────────────────────────────────────────
@@ -265,4 +304,31 @@ export interface FilterOptions {
   defaultStages: ReleaseStage[];
   /** 預設可見的遊戲類型（CALENDAR_VISIBLE_GAME_TYPES）。 */
   defaultGameTypes: string[];
+  // ── 3b ──
+  /** 主題（依原文名稱排序；UI 以 themes 字典翻譯）。 */
+  themes: TaxonomyItem[];
+  /** 全部遊戲類型（GAME_TYPES 順序）。 */
+  gameTypes: GameType[];
+  /** upcoming、released、delayed。 */
+  releaseStates: ReleaseStateFilter[];
+  /** regions.code（WW 在前，其餘依 code）。 */
+  regions: RegionCode[];
+  /** 瀏覽排序選項。 */
+  sorts: BrowseSort[];
 }
+
+// ── 3b：篩選 enum ───────────────────────────────────────────────────────
+
+/**
+ * spec 06 §篩選 `status`（上市狀態，作用在聚合後挑出的上市列；瀏覽頁作用在遊戲）。
+ * - upcoming：代表期間尚未結束（day＝當日、month＝月底、quarter／year＝期間最後一天 ≥ 今天 UTC），或 tbd；且不是 released。
+ * - released：上市列 status＝released，或代表期間已結束。
+ * - delayed：有延期紀錄（release_date_history 中新日期晚於舊日期、或精度變粗、或改成未定；03 §狀態機）。
+ * 必須與 @sok/api-contract 的 FILTER_RELEASE_STATES 相同（ui/contract-assertions.ts）。
+ */
+export const RELEASE_STATE_FILTERS = ["upcoming", "released", "delayed"] as const;
+export type ReleaseStateFilter = (typeof RELEASE_STATE_FILTERS)[number];
+
+/** 瀏覽排序（D27：MVP 不開放依評分）。name 依原文 games.name。必須與 FILTER_SORTS 相同。 */
+export const BROWSE_SORTS = ["popularity", "release_date", "name"] as const;
+export type BrowseSort = (typeof BROWSE_SORTS)[number];

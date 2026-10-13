@@ -1,6 +1,6 @@
 import { getCoreEnv } from "@/kernel/config/env";
 import type { IgnoredFilterValue, RegionCode, ReleaseFilter, ResolvedReleaseFilter } from "../../domain/entities";
-import { normalizeRegionPref, normalizeReleaseFilter } from "../../domain/release-filter";
+import { normalizeRegionPref, normalizeReleaseFilter, regionPrefIssue } from "../../domain/release-filter";
 import { lookupFilterSlugs } from "../../repository/filter-options";
 
 export interface ResolvedFilterResult {
@@ -22,20 +22,34 @@ export function releaseFilterDefaults() {
 export async function resolveFilterSlugs(filter: ReleaseFilter = {}): Promise<ResolvedFilterResult> {
   const n = normalizeReleaseFilter(filter, releaseFilterDefaults());
   const ignored = [...n.ignored];
-  const found = await lookupFilterSlugs({ platformSlugs: n.platformSlugs ?? [], genreSlugs: n.genreSlugs ?? [] });
+  const found = await lookupFilterSlugs({
+    platformSlugs: n.platformSlugs ?? [],
+    genreSlugs: n.genreSlugs ?? [],
+    themeSlugs: n.themeSlugs ?? [],
+    companySlugs: n.companySlugs ?? [],
+    franchiseSlugs: n.franchiseSlugs ?? [],
+  });
 
-  const toIds = (slugs: string[] | undefined, map: Map<string, number>, dim: "platform" | "genre") => {
+  const toIds = (
+    slugs: string[] | undefined,
+    map: Map<string, number | number[]>,
+    dim: "platform" | "genre" | "theme" | "company" | "franchise",
+  ) => {
     if (!slugs) return undefined;
     const ids: number[] = [];
     for (const s of slugs) {
       const id = map.get(s);
       if (id == null) ignored.push({ dimension: dim, slug: s });
+      else if (Array.isArray(id)) ids.push(...id);
       else ids.push(id);
     }
     return ids.length > 0 ? ids : undefined;
   };
   const platformIds = toIds(n.platformSlugs, found.platforms, "platform");
   const genreIds = toIds(n.genreSlugs, found.genres, "genre");
+  const themeIds = toIds(n.themeSlugs, found.themes, "theme");
+  const companyIds = toIds(n.companySlugs, found.companies, "company");
+  const franchiseIds = toIds(n.franchiseSlugs, found.franchises, "franchise");
 
   return {
     filter: {
@@ -48,9 +62,22 @@ export async function resolveFilterSlugs(filter: ReleaseFilter = {}): Promise<Re
       includeRumored: n.includeRumored,
       // removed 不等於取消（D7、spec 04）：照常顯示，卡片帶 sourceStatus 讓 UI 加註「資料來源待確認」
       includeRemoved: true,
+      ...(themeIds ? { themeIds } : {}),
+      ...(companyIds ? { companyIds } : {}),
+      ...(franchiseIds ? { franchiseIds } : {}),
+      ...(n.releaseStates ? { releaseStates: n.releaseStates } : {}),
+      ...(n.minHeat !== undefined ? { minHeat: n.minHeat } : {}),
     },
     ignored,
   };
+}
+
+/**
+ * 地區偏好＋提示：無效代碼退回預設，並回傳 ignored（dimension region），讓 UI「忽略並提示」。
+ */
+export function resolveRegionPrefWithNotice(code?: string | null): { regionPref: RegionCode; ignored: IgnoredFilterValue[] } {
+  const issue = regionPrefIssue(code);
+  return { regionPref: resolveRegionPref(issue ? null : code), ignored: issue ? [issue] : [] };
 }
 
 /** 地區偏好：傳入值（使用者設定或語系推導）無效時退回 DEFAULT_REGION_PREF，再退回 WW。 */

@@ -37,6 +37,8 @@ export const coreEnvSchema = z.object({
   BACKFILL_MAX_REQ_PER_SEC: z.preprocess(emptyToUndefined, z.coerce.number().positive().max(4).default(2)),
   /** 滾動校對（04 §滾動校對）每晚重抓幾款；10000 ≈ 20 個請求，全庫約 43 天輪一遍（2026-10-13 定）。 */
   ROLLING_REFRESH_PER_NIGHT: z.preprocess(emptyToUndefined, z.coerce.number().int().min(1).max(200000).default(10000)),
+  /** 熱度（03 §熱度、16）：站內追蹤權重達滿所需的全站追蹤總數（未驗證的起始值）。 */
+  HEAT_COLD_START_FOLLOWS: z.preprocess(emptyToUndefined, z.coerce.number().int().min(1).default(5000)),
 });
 
 export type CoreEnv = z.infer<typeof coreEnvSchema>;

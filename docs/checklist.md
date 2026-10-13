@@ -72,7 +72,7 @@
 - [ ] 把 Phase 1 實測（Next 16 cacheComponents、embedded-postgres、Windows trgm、depcruise 細節）補進 spec/91（2026-10-12 新增）
 - [ ] 規格 15 Phase 0 的指令與 02 的 dependency-cruiser 範例更新為實際做法（2026-10-12 新增）
 - [ ] 選用：加 `.gitattributes` 統一 LF，消除 Windows CRLF 警告（2026-10-12 新增）
-- [ ] 推上 GitHub（private repo `SoK-GameDB`）後確認 CI 兩個 job 實際通過（2026-10-12 新增）
+- [x] 推上 GitHub（private repo `ISOCASSELGenMi/SoK-GameDB`）後確認 CI 兩個 job 實際通過（2026-10-13：check 第一次 test:a11y 在 Linux 失敗 1 項——詳情頁表格捲動區不可聚焦，已修；run 38354844625 全綠）
 
 ### Phase 2：IGDB 同步（2026-10-13 完成）
 - [x] Twitch Application（Confidential、redirect `http://localhost`）；Client ID／Secret 已填入 `.env.local`，取得 app token 驗證成功（2026-10-12）
