@@ -25,7 +25,7 @@
 - GitHub：private repo `ISOCASSELGenMi/SoK-GameDB`（remote `origin`）
 - ✅ **Phase 3a 網站**（2026-10-13，分支 `feat/phase3a`）：月曆＋詳情＋聚合＋基本篩選＋i18n（zh-Hant、en）＋test:a11y
   - **接手先讀 `docs/handoff/2026-10-13-phase3a-done.md`**（3a 程式地圖、已定案判斷、待使用者處理、地雷）；資料量／排程／Phase 2 程式地圖仍見 `2026-10-13-phase3.md`
-- 🚧 **Phase 3b 進行中**（分支 `feat/phase3b`）：Wave 1、2a 完成；**接手先讀 `docs/handoff/2026-10-13-phase3b-wave2a.md`**（工作方式、下一步、待使用者同意的 DB 操作、地雷）
+- ✅ **Phase 3b 完成**（2026-10-14，分支 `feat/phase3b`，尚未合併 main）：時間軸、完整篩選、瀏覽、平台／公司／系列／活動頁、熱度與熱門榜、語言支援、test:a11y 195；**接手先讀 `docs/handoff/2026-10-14-phase3b-done.md`**（待決、地雷、下一步）
 - ⏭ Phase 3.5、4、5、9（見 spec 15）
   - 任務註冊在 `catalog/module.ts` 的 `jobs`；長任務用 `lockMode: "session"`；遊戲寫入一律經 `writeGameBatch`
 

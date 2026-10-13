@@ -91,7 +91,7 @@
 - [x] Wave 3-D：Playwright＋axe `test:a11y`、鍵盤走完月曆 → 詳情、CI 加 `i18n:check`／`test:a11y`
 - [x] 驗收：四項檢查全綠＋spec 15 Phase 3 完成標準（3a 範圍）＋獨立審查；commit；交接文件
 
-### Phase 3b：時間軸、完整篩選、瀏覽、實體頁、活動、熱度、語言支援（2026-10-13 開工，分支 `feat/phase3b`）
+### Phase 3b：時間軸、完整篩選、瀏覽、實體頁、活動、熱度、語言支援（2026-10-13 開工、2026-10-14 完成，分支 `feat/phase3b`）
 - [x] 整合測試支援 `TEST_DATABASE_NAME`（子代理各用一個測試 DB 並行）（2026-10-13）
 - [x] Wave 1-F：`refresh_popularity`（IGDB popularity_primitives＋結構訊號、PERCENT_RANK、heatLevel）、PopularitySignal 介面、熱門榜讀取
 - [x] Wave 1-G：FilterSpec 完整維度＋正規化、聚合支援新維度、時間軸讀取（cursor 雙向）、瀏覽／搜尋讀取
@@ -110,4 +110,4 @@
 - [ ] 待決（W3B）：/games 預設 sort 是否從網址省略；無效 group key 回 200 空結果或 400；四份頁碼解析合併；use-cases 4 處自算 UTC 今天；分頁 aria-current 移出 li（需同步改 e2e）；repository 引用 api-contract 的 isValidIsoDate（可移到 domain）（2026-10-14 新增）
 - [ ] CI：Actions Node 20 淘汰警告、ubuntu-latest 2026-10-19 起改 Ubuntu 26（2026-10-14 新增）
 - [x] 在開發 DB 跑 `refresh_popularity --scope all`（2026-10-13，149 秒；heat 5＝2,731、4＝10,766、3＝28,293、2＝67,624、1＝155,134、0＝50,058）
-- [ ] 驗收：全部檢查全綠＋spec 15 Phase 3 完成標準（3b 範圍）；commit；交接文件
+- [x] 驗收：全部檢查全綠＋spec 15 Phase 3 完成標準（3b 範圍）；commit；交接文件（2026-10-14，`docs/handoff/2026-10-14-phase3b-done.md`；3c 硬體世代時間軸未做，spec 標可後延）
