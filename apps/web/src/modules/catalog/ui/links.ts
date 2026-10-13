@@ -50,6 +50,77 @@ export function gameHref(locale: Locale, slug: string): string {
   return localeHref(locale, `/games/${encodeURIComponent(slug)}`);
 }
 
+function pageQuery(extra: string[], page?: number): string {
+  const parts = [...extra];
+  if (page && page > 1) parts.push(`page=${page}`);
+  return parts.join("&");
+}
+
+export function platformsHref(locale: Locale): string {
+  return localeHref(locale, "/platforms");
+}
+
+/** 第 4 個參數（可省略）：section 預設 upcoming、sort 預設 date，預設值不寫入網址。 */
+export function platformHref(
+  locale: Locale,
+  slug: string,
+  page?: number,
+  opts: { section?: "upcoming" | "recent"; sort?: "date" | "popularity" } = {},
+): string {
+  const extra: string[] = [];
+  if (opts.section && opts.section !== "upcoming") extra.push(`section=${opts.section}`);
+  if (opts.sort && opts.sort !== "date") extra.push(`sort=${opts.sort}`);
+  return localeHref(locale, `/platforms/${encodeURIComponent(slug)}`, pageQuery(extra, page));
+}
+
+/** 第 4 個參數（可省略）：role 角色篩選（developer／publisher／porting／supporting），省略＝全部。 */
+export function companyHref(locale: Locale, slug: string, page?: number, opts: { role?: string | null } = {}): string {
+  const extra = opts.role ? [`role=${encodeURIComponent(opts.role)}`] : [];
+  return localeHref(locale, `/companies/${encodeURIComponent(slug)}`, pageQuery(extra, page));
+}
+
+/** kind 預設 franchise 與 page=1 不寫入網址。 */
+export function franchiseHref(
+  locale: Locale,
+  slug: string,
+  kind: "franchise" | "collection" = "franchise",
+  page?: number,
+): string {
+  return localeHref(
+    locale,
+    `/franchises/${encodeURIComponent(slug)}`,
+    pageQuery(kind === "collection" ? ["kind=collection"] : [], page),
+  );
+}
+
+export interface EventsHrefOptions {
+  /** 活動類型（EventKind 值：showcase/expo/awards/other）。 */
+  kind?: string;
+  /** 時間範圍：upcoming（預設，不寫入）／past／undated（時間未定）。 */
+  when?: "upcoming" | "past" | "undated";
+  page?: number;
+}
+
+export function eventsHref(locale: Locale, opts: EventsHrefOptions = {}): string {
+  const extra: string[] = [];
+  if (opts.kind) extra.push(`kind=${encodeURIComponent(opts.kind)}`);
+  if (opts.when && opts.when !== "upcoming") extra.push(`when=${opts.when}`);
+  return localeHref(locale, "/events", pageQuery(extra, opts.page));
+}
+
+export function eventHref(locale: Locale, slug: string): string {
+  return localeHref(locale, `/events/${encodeURIComponent(slug)}`);
+}
+
+/**
+ * 遊戲瀏覽／搜尋 `/games`。篩選參數（含 q、sort；順序同 FILTER_PARAMS）在前，`page`（第 1 頁不寫入）在後，
+ * 與 proxy 的正規形式一致。
+ */
+export function gamesBrowseHref(locale: Locale, filter: FilterSpec = {}, page = 1): string {
+  const q = [filterSpecToQueryString(filter), page > 1 ? `page=${Math.floor(page)}` : ""].filter(Boolean).join("&");
+  return localeHref(locale, "/games", q);
+}
+
 export interface LanguageLink {
   locale: Locale;
   href: string;

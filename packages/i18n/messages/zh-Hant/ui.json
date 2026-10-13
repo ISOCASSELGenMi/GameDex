@@ -171,5 +171,129 @@
     "page": "第 {page} 頁",
     "releaseDate": "上市日",
     "viewGame": "查看「{name}」"
+  },
+  "games": {
+    "title": "遊戲",
+    "intro": "瀏覽資料庫中的遊戲，或用名稱搜尋。",
+    "searchLabel": "搜尋遊戲",
+    "searchPlaceholder": "輸入遊戲名稱",
+    "searchButton": "搜尋",
+    "sortLabel": "排序方式",
+    "sortNote": {
+      "popularity": "熱度每小時更新，由高到低。",
+      "release_date": "依首發日期由早到晚排序，日期未定的排在最後。",
+      "name": "依原文名稱排序（多數為英文），不是依當前語言的顯示名稱。"
+    },
+    "yearLegend": "首發年份",
+    "yearHint": "填一個或兩個年份，依遊戲的首發日期篩選。",
+    "resultsRange": "顯示第 {from}–{to} 筆",
+    "empty": "目前沒有可顯示的遊戲",
+    "listLabel": "遊戲列表",
+    "pagination": "分頁",
+    "prevPage": "上一頁",
+    "nextPage": "下一頁",
+    "page": "第 {page} 頁",
+    "depthNote": "為了維持速度，只能瀏覽排序後的前 {max} 筆結果；想找更後面的遊戲，請加上搜尋或篩選條件。",
+    "limitReached": "已到可瀏覽範圍的盡頭（前 {max} 筆）。請縮小搜尋或篩選條件。",
+    "backToFirst": "回到第一頁",
+    "firstRelease": "首發日期",
+    "otherPage": "這一頁沒有結果。",
+    "viewAll": "查看全部",
+    "viewAllFranchise": "查看「{name}」的全部作品",
+    "viewCompany": "查看「{name}」的作品"
+  },
+  "langSupport": {
+    "language": "語言",
+    "yes": "有",
+    "cellNoData": "無資料",
+    "columnNoData": "未提供資料",
+    "sectionNoData": "尚無語言資料",
+    "sectionNoDataNote": "目前沒有收錄這款遊戲的語言資料，這不代表遊戲缺少任何語言。",
+    "caption": "語言列表：每列是一種語言，欄位為介面、字幕與語音。",
+    "onlyListed": "只列出有資料的語言；空白代表沒有資料。"
+  },
+  "platforms": {
+    "title": "平台",
+    "note": "依平台類型分組，常用平台排在前面。不含行動平台。",
+    "empty": "目前沒有平台資料",
+    "generation": "第 {generation} 世代",
+    "kind": "類型",
+    "status": "狀態",
+    "family": "平台系列",
+    "generationLabel": "世代",
+    "alternativeName": "別名",
+    "discontinued": "停產日期",
+    "summary": "平台簡介",
+    "releaseDates": "平台發售日",
+    "gamesTitle": "遊戲",
+    "sectionLabel": "時間範圍",
+    "sortLabel": "排序",
+    "upcoming": "即將上市",
+    "recent": "近期上市",
+    "sortDate": "上市日期",
+    "sortPopularity": "熱度",
+    "upcomingHint": "在此平台上即將上市的遊戲，由近到遠。只確定月份、季度或年份的遊戲排在該期間的最後。",
+    "recentHint": "最近 90 天在此平台上市的遊戲。",
+    "emptyUpcoming": "此平台目前沒有即將上市的遊戲",
+    "emptyRecent": "此平台近期沒有新上市的遊戲"
+  },
+  "companies": {
+    "worksTitle": "作品",
+    "allRoles": "全部角色",
+    "roleFilter": "依角色篩選",
+    "website": "官方網站",
+    "empty": "此公司在這個角色下沒有作品"
+  },
+  "franchises": {
+    "kind": {
+      "franchise": "系列",
+      "collection": "合集"
+    },
+    "total": "共 {count} 款",
+    "worksTitle": "系列作品",
+    "orderNote": "依首次上市日期排序，由舊到新。",
+    "otherKindsLabel": "同名的其他分類",
+    "otherKindsHint": "有一個系列與一個合集使用相同名稱。",
+    "switchTo": "查看{kind}",
+    "empty": "此系列目前沒有作品"
+  },
+  "events": {
+    "title": "活動",
+    "timesInUtc": "活動時間以 UTC 顯示",
+    "scopeLabel": "時間範圍",
+    "kindLabel": "活動類型",
+    "scope": {
+      "upcoming": "即將舉行與進行中",
+      "past": "已結束",
+      "undated": "時間未定"
+    },
+    "allKinds": "全部類型",
+    "undatedHint": "這個活動的日期尚未公布。",
+    "shown": "顯示 {count} 個活動",
+    "empty": "沒有符合條件的活動",
+    "timeTbd": "時間未定",
+    "timeRange": "{start} – {end}",
+    "status": {
+      "ongoing": "進行中",
+      "past": "已結束"
+    },
+    "gameCount": "{count} 款遊戲",
+    "time": "時間",
+    "organizer": "主辦",
+    "series": "系列活動",
+    "watch": "觀看直播",
+    "officialSite": "官方網站",
+    "description": "活動簡介",
+    "relatedGames": "相關遊戲",
+    "noGames": "目前沒有列出相關遊戲",
+    "gamesTruncated": "僅顯示熱度最高的 {count} 款。",
+    "seriesEvents": "同系列的其他屆"
+  },
+  "entities": {
+    "pagination": "分頁",
+    "prevPage": "上一頁",
+    "nextPage": "下一頁",
+    "page": "第 {page} 頁",
+    "shownOnPage": "本頁 {count} 筆"
   }
 }

@@ -7,16 +7,17 @@ import { connection } from "next/server";
 import { notFound } from "next/navigation";
 import { cache, type ReactElement, type ReactNode } from "react";
 import { formatDateTime, formatReleaseLabel, type Locale, type Translator } from "@sok/i18n";
-import type { CalendarEventItem, GameDetail, GameFranchiseGroup, GameReleaseRow, GameSummary } from "../../domain/entities";
+import type { CalendarEventItem, GameDetail, GameFranchiseGroup, GameReleaseRow, GameSummary, PlatformChip } from "../../domain/entities";
 import { getGameDetail } from "../../use-cases/read";
 import { joinList } from "../calendar/view-model";
 import { HeatBadge, heatBadgeLabel } from "../heat-badge";
 import { EventIcon, ExternalIcon, StageIcon, StatusIcon, WarningIcon } from "../icons";
 import { eventKindLabel, genreLabel, getTranslator, regionLabel, stageLabel, statusLabel } from "../labels";
 import { PageShell } from "../layout/page-shell";
-import { gameHref } from "../links";
+import { companyHref, eventHref, franchiseHref, gameHref, platformHref } from "../links";
 import { rethrowForPage } from "../page-errors";
 import { releaseHistoryText } from "../release-history";
+import { LanguageSupportBody } from "./language-support";
 
 export interface GameDetailSlots {
   /** `game.actions`（追蹤／收藏；accounts）。3a 沒有提供者。 */
@@ -48,6 +49,16 @@ function safeDecode(s: string): string {
   } catch {
     return s;
   }
+}
+
+/** 平台頁不含 mobile（P35）：mobile 平台只顯示文字。 */
+function PlatformName({ platform, locale }: { platform: PlatformChip; locale: Locale }): ReactElement {
+  if (platform.kind === "mobile") return <>{platform.name}</>;
+  return (
+    <a className="link" href={platformHref(locale, platform.slug)}>
+      {platform.name}
+    </a>
+  );
 }
 
 function Section({ id, title, children }: { id: string; title: string; children: ReactNode }): ReactElement {
@@ -152,9 +163,9 @@ function EventList({ events, locale, t }: { events: readonly CalendarEventItem[]
               <EventIcon />
               <span>{eventKindLabel(t, e.kind)}</span>
             </span>
-            <span className="font-medium" lang="en">
+            <a className="link font-medium" lang="en" href={eventHref(locale, e.slug)}>
               {e.name}
-            </span>
+            </a>
             <span className="text-sm text-[var(--muted)]">
               {e.startTime ? formatDateTime(e.startTime, locale, "UTC") : t.t("ui.calendar.timeTbd")}
             </span>
@@ -212,7 +223,12 @@ export async function GameDetailPage({ locale, supportedLocales, slug, slots }: 
                 <span className="font-semibold">{t.t("ui.game.sections.platforms")}
                   {t.t("ui.common.colon")}
                 </span>
-                {joinList(locale, game.platforms.map((p) => p.name))}
+                {game.platforms.map((p, i) => (
+                  <span key={p.slug}>
+                    {i > 0 ? t.t("ui.common.listSeparator") : null}
+                    <PlatformName platform={p} locale={locale} />
+                  </span>
+                ))}
               </p>
             ) : null}
             {game.genres.length > 0 ? (
@@ -252,7 +268,7 @@ export async function GameDetailPage({ locale, supportedLocales, slug, slots }: 
           {game.releaseGroups.map((group) => (
             <div key={group.platform.slug} className="mt-3">
               <h3 id={`release-group-${group.platform.slug}`} className="font-semibold">
-                {group.platform.name}
+                <PlatformName platform={group.platform} locale={locale} />
               </h3>
               {/* 窄螢幕表格會水平溢出：可捲動區域要能用鍵盤聚焦（axe scrollable-region-focusable） */}
               <div
@@ -286,7 +302,10 @@ export async function GameDetailPage({ locale, supportedLocales, slug, slots }: 
             <ul className="flex flex-col gap-1">
               {game.companies.map((c) => (
                 <li key={c.slug}>
-                  <span className="font-medium">{c.name}</span> <span className="text-sm text-[var(--muted)]">{roleText(c.roles)}</span>
+                  <a className="link font-medium" href={companyHref(locale, c.slug)}>
+                    {c.name}
+                  </a>{" "}
+                  <span className="text-sm text-[var(--muted)]">{roleText(c.roles)}</span>
                 </li>
               ))}
             </ul>
@@ -317,6 +336,11 @@ export async function GameDetailPage({ locale, supportedLocales, slug, slots }: 
         {dedupeFranchises(game.franchises).map((f) => (
           <Section key={`${f.kind}:${f.slug}`} id={`sec-${f.kind}-${f.slug}`} title={t.t(`ui.game.franchiseTitle.${f.kind}`, { name: f.name })}>
             {f.games.length > 0 ? <SummaryList games={f.games} locale={locale} t={t} /> : <p>{t.t("ui.common.noData")}</p>}
+            <p className="mt-2">
+              <a className="link inline-flex min-h-11 items-center" href={franchiseHref(locale, f.slug, f.kind)}>
+                {t.t("ui.games.viewAllFranchise", { name: f.name })}
+              </a>
+            </p>
           </Section>
         ))}
 
@@ -337,6 +361,10 @@ export async function GameDetailPage({ locale, supportedLocales, slug, slots }: 
             <EventList events={game.upcomingEvents} locale={locale} t={t} />
           </Section>
         ) : null}
+
+        <Section id="sec-languages" title={t.t("ui.game.sections.languages")}>
+          <LanguageSupportBody support={game.languageSupport} locale={locale} t={t} headingId="sec-languages" />
+        </Section>
 
         {slots?.sections}
       </article>

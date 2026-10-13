@@ -171,5 +171,129 @@
     "page": "Page {page}",
     "releaseDate": "Release date",
     "viewGame": "View “{name}”"
+  },
+  "games": {
+    "title": "Games",
+    "intro": "Browse games in the database, or search by title.",
+    "searchLabel": "Search games",
+    "searchPlaceholder": "Enter a game title",
+    "searchButton": "Search",
+    "sortLabel": "Sort by",
+    "sortNote": {
+      "popularity": "Heat is updated hourly, highest first.",
+      "release_date": "Earliest first release date first; games without a date come last.",
+      "name": "Sorted by original title (mostly English), not by the title shown in the current language."
+    },
+    "yearLegend": "First release year",
+    "yearHint": "Enter one or two years; filters by each game's first release date.",
+    "resultsRange": "Showing {from}–{to}",
+    "empty": "There are no games to show yet",
+    "listLabel": "Game list",
+    "pagination": "Pagination",
+    "prevPage": "Previous page",
+    "nextPage": "Next page",
+    "page": "Page {page}",
+    "depthNote": "To keep pages fast, only the first {max} sorted results can be browsed. Add a search or filters to find games further down.",
+    "limitReached": "You have reached the end of the browsable range (first {max} results). Narrow your search or filters.",
+    "backToFirst": "Back to page 1",
+    "firstRelease": "First release",
+    "otherPage": "This page has no results.",
+    "viewAll": "View all",
+    "viewAllFranchise": "View all works in “{name}”",
+    "viewCompany": "View works by “{name}”"
+  },
+  "langSupport": {
+    "language": "Language",
+    "yes": "Yes",
+    "cellNoData": "No data",
+    "columnNoData": "No data provided",
+    "sectionNoData": "No language data yet",
+    "sectionNoDataNote": "We have no language data for this game yet. That does not mean the game lacks any language.",
+    "caption": "Language list: each row is a language; columns are interface, subtitles and audio.",
+    "onlyListed": "Only languages with data are listed; a blank cell means no data."
+  },
+  "platforms": {
+    "title": "Platforms",
+    "note": "Platforms grouped by type. Common platforms are listed first. Mobile platforms are not covered.",
+    "empty": "No platforms yet",
+    "generation": "Generation {generation}",
+    "kind": "Type",
+    "status": "Status",
+    "family": "Platform family",
+    "generationLabel": "Generation",
+    "alternativeName": "Also known as",
+    "discontinued": "Discontinued",
+    "summary": "About this platform",
+    "releaseDates": "Platform release dates",
+    "gamesTitle": "Games",
+    "sectionLabel": "Time range",
+    "sortLabel": "Sort by",
+    "upcoming": "Upcoming",
+    "recent": "Recently released",
+    "sortDate": "Release date",
+    "sortPopularity": "Popularity",
+    "upcomingHint": "Games releasing on this platform, soonest first. Games with only a rough date are listed at the end of their period.",
+    "recentHint": "Games released on this platform in the last 90 days.",
+    "emptyUpcoming": "No upcoming games on this platform",
+    "emptyRecent": "No recent releases on this platform"
+  },
+  "companies": {
+    "worksTitle": "Games",
+    "allRoles": "All roles",
+    "roleFilter": "Filter by role",
+    "website": "Official website",
+    "empty": "No games found for this company and role"
+  },
+  "franchises": {
+    "kind": {
+      "franchise": "Franchise",
+      "collection": "Collection"
+    },
+    "total": "{count} games",
+    "worksTitle": "Games in this series",
+    "orderNote": "Sorted by first release date, oldest first.",
+    "otherKindsLabel": "Same name, other kind",
+    "otherKindsHint": "A franchise and a collection share this name.",
+    "switchTo": "View the {kind}",
+    "empty": "No games found in this series"
+  },
+  "events": {
+    "title": "Events",
+    "timesInUtc": "Event times are shown in UTC",
+    "scopeLabel": "Time range",
+    "kindLabel": "Event type",
+    "scope": {
+      "upcoming": "Upcoming and ongoing",
+      "past": "Past",
+      "undated": "Date to be announced"
+    },
+    "allKinds": "All types",
+    "undatedHint": "The date of this event has not been announced yet.",
+    "shown": "{count} events shown",
+    "empty": "No events match",
+    "timeTbd": "Date to be announced",
+    "timeRange": "{start} – {end}",
+    "status": {
+      "ongoing": "Happening now",
+      "past": "Ended"
+    },
+    "gameCount": "{count} games",
+    "time": "Time",
+    "organizer": "Organizer",
+    "series": "Series",
+    "watch": "Watch the stream",
+    "officialSite": "Official site",
+    "description": "About this event",
+    "relatedGames": "Related games",
+    "noGames": "No related games are listed yet",
+    "gamesTruncated": "Showing the {count} most popular games.",
+    "seriesEvents": "Other editions in this series"
+  },
+  "entities": {
+    "pagination": "Pagination",
+    "prevPage": "Previous page",
+    "nextPage": "Next page",
+    "page": "Page {page}",
+    "shownOnPage": "{count} items on this page"
   }
 }

@@ -79,7 +79,7 @@
 - [x] 2a：providers/igdb.ts（token 快取、節流）、平台同步、Tier 1 回填、增量同步、上市階段、語言支援（2026-10-13）
 - [x] 2b：Tier 2 回填、相似遊戲與活動關聯批次解析、滾動校對、sync_events、字典漂移偵測（2026-10-13；遊戲 314,606、上市事件 461,410）
 - [ ] 規格正本更新 2a／2b 已定案判斷（04 平台只採原版機、滾動校對 misses 與查不到的處理、活動增量與 change_feed；03 相似遊戲刪舊配對；16 `ROLLING_REFRESH_PER_NIGHT`=10000），再重新匯出到 `docs/spec/`（2026-10-13 新增）
-- [ ] 決定備份資料庫 `sok_studio_bak_20261013` 是否刪除（破壞性，需使用者同意）（2026-10-13 新增）
+- [ ] 決定備份資料庫 `sok_studio_bak_20261013` 是否刪除（破壞性，需使用者同意）（2026-10-13 新增；同日使用者決定先保留）
 - [ ] 補 RatingProvider／PopularitySignal／GameFilterProvider 介面（Phase 3b／4／7 需要時）
 - [ ] `data_reports` 表（Slice 2，見 12）
 
@@ -98,8 +98,11 @@
 - [x] Wave 1-H：平台／公司／系列頁、活動列表與詳情、詳情頁補完（DLC、即將亮相活動、語言支援三態）讀取層
 - [x] 使用者定案（2026-10-13）：熱度鎖用 session、暫不抓 games.hypes、無日期遊戲歸 upcoming 群、cancelled／只上 mobile 不上熱門榜；系列頁 `?kind=` 區分＋`franchises(slug)` 索引；活動類型同步時依名稱推斷；logo 擴充 ImageKind 經 ImageResolver
 - [ ] 規格正本更新（3b 已定案，2026-10-13 新增）：04 `refresh_popularity` 鎖 session、hypes 暫不抓、熱度分群規則；06 §時間軸 cursor 實際鍵、upcoming／released 用期間結束日、from/to 比對 period_start；06 §篩選 單值參數規則與 308 正規化；06 §活動 undated 範圍、類型依名稱推斷；06 §詳情 連結無地區欄位無法依地區排序；系列 `?kind=`
-- [ ] Wave 2a：I＝時間軸頁、完整篩選 UI、proxy 308、熱度徽章、熱門榜頁；K＝franchise 索引 migration、活動類型推斷＋重新分類、logo ImageKind、平台頁改用共用挑選邏輯
-- [ ] Wave 2b：J＝瀏覽／搜尋、平台／公司／系列、活動頁、詳情頁補完（語言支援區塊、DLC、即將亮相活動）
+- [x] Wave 2a：I＝時間軸頁、完整篩選 UI、proxy 308、熱度徽章、熱門榜頁；K＝franchise 索引 migration、活動類型推斷＋重新分類、logo ImageKind、平台頁改用共用挑選邏輯
+- [x] 開發 DB 套用 migration 0003（`franchises_slug_idx`）＋`sync_events --reclassify`（960 筆：showcase 696、expo 101、awards 37、other 126）（2026-10-13，使用者同意）
+- [x] Wave 2b：J＝瀏覽／搜尋、平台／公司／系列、活動頁、詳情頁補完（語言支援區塊、DLC、即將亮相活動）（2026-10-13 拆成 J1 瀏覽＋詳情、J2 實體頁＋活動並行；完成）
+- [ ] 導覽列加「遊戲／平台／活動」入口（J1／J2 待決，Wave 3 處理）（2026-10-13 新增）
+- [ ] 收斂重複：`safeDecode`（game-detail-page 與 entities/view-model）、分頁元件（browse 與 entities `Pager`）、TBA 文字兩種來源（Wave 3 審查一併看）（2026-10-13 新增）
 - [ ] Wave 3：test:a11y 擴充（時間軸、瀏覽、實體頁）＋獨立審查
 - [x] 在開發 DB 跑 `refresh_popularity --scope all`（2026-10-13，149 秒；heat 5＝2,731、4＝10,766、3＝28,293、2＝67,624、1＝155,134、0＝50,058）
 - [ ] 驗收：全部檢查全綠＋spec 15 Phase 3 完成標準（3b 範圍）；commit；交接文件

@@ -9,3 +9,11 @@ export { parseMonthParam } from "./month";
 export { TimelineViewPage, timelineTitle } from "./timeline/timeline-page";
 export { timelineChunkResponse, timelineGroupResponse, timelineHistoryResponse } from "./timeline/api";
 export { TrendingViewPage, trendingTitle } from "./trending/trending-page";
+
+// Phase 3b（J1）：遊戲瀏覽／搜尋
+export { GamesBrowsePage, gamesTitle } from "./browse/browse-page";
+
+// Phase 3b（J2）：平台／公司／系列／活動頁
+export { PlatformsOverviewPage, PlatformDetailPage, platformsTitle, platformPageTitle } from "./entities/platform-pages";
+export { CompanyDetailPage, companyPageTitle, FranchiseDetailPage, franchisePageTitle } from "./entities/company-franchise-pages";
+export { EventsListPage, EventDetailPage, eventsTitle, eventPageTitle } from "./events/events-pages";
