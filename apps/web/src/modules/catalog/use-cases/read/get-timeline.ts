@@ -82,8 +82,15 @@ export async function getTimeline(input: GetTimelineInput): Promise<TimelinePage
   const last = raw.rows.at(-1)?.key;
   let nextCursor: string | null = null;
   let prevCursor: string | null = null;
+  let nextPartial = false;
+  let prevPartial = false;
   if (cursor.dir === "after") {
     if (raw.hasMore && last) nextCursor = encodeTimelineCursor({ dir: "after", key: last });
+    else if (raw.partial) {
+      // 掃描量用完仍湊不滿：cursor 指向已掃描範圍的邊界，下次從那裡繼續（不是「到盡頭」）
+      nextCursor = encodeTimelineCursor({ dir: "after", key: raw.partial });
+      nextPartial = true;
+    }
     // 往前：從這頁第一張（或起點）之前；全庫最早日期在其之前才給（不保證篩選後有資料）
     const edge = first ?? cursor.key;
     const lowest = from && raw.minPeriodStart && from > raw.minPeriodStart ? from : raw.minPeriodStart;
@@ -91,6 +98,10 @@ export async function getTimeline(input: GetTimelineInput): Promise<TimelinePage
     else if (lowest && lowest === edge.sk && edge.pr > 0) prevCursor = encodeTimelineCursor({ dir: "before", key: edge });
   } else {
     if (raw.hasMore && first) prevCursor = encodeTimelineCursor({ dir: "before", key: first });
+    else if (raw.partial) {
+      prevCursor = encodeTimelineCursor({ dir: "before", key: raw.partial });
+      prevPartial = true;
+    }
     // 往後：從 cursor 來的，cursor 之後一定還有資料
     const edge = last ?? cursor.key;
     if (raw.rows.length > 0 || edge.sk < TIMELINE_TBD_SORT_DATE) nextCursor = encodeTimelineCursor({ dir: "after", key: edge });
@@ -100,6 +111,8 @@ export async function getTimeline(input: GetTimelineInput): Promise<TimelinePage
     groups: groupTimelineRows(raw.rows, TIMELINE_GROUP_PREVIEW),
     nextCursor,
     prevCursor,
+    nextPartial,
+    prevPartial,
     today,
     anchor,
     groupPreview: TIMELINE_GROUP_PREVIEW,

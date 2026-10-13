@@ -41,3 +41,27 @@
 - 瀏覽預設排序 176 ms 主要是 `popularity_score` 全 0 時要依名稱排序整個白名單類型集合；熱度計算（refresh_popularity）上線後
   `games_type_popularity_idx` 可直接取前 N 筆，屆時再量。
 - `release_date_history` 目前 0 筆；延期篩選與 `has_date_history` 的成本（走 `release_date_history_event_idx`）在有資料後要再量。
+
+## 2026-10-14 稀疏條件
+
+**問題**（R 審查中-1）：條件在挑選之後才套用（`status=delayed`／`released` 往後／`upcoming` 往前…）時，視窗 14 → 56 → 224 → 896 → 3584 → 14336 天一路擴張，
+每段都要完整聚合；一次請求最壞串 6 段、最後幾段約聚合整庫（46 萬筆上市列），結果還可能是空的。
+
+**修法**：單次請求最多掃 4 段視窗，單段上限 896 天（`TIMELINE_MAX_SCAN_WINDOWS`、`TIMELINE_MAX_WINDOW_DAYS`；14+56+224+896 = 1190 天≈3.3 年）。
+湊不滿一頁就回傳已取得的組＋邊界 cursor（`boundaryKey`，cursor 格式不變、舊 cursor 照常解析），回應標示 `nextPartial`／`prevPartial`（與 cursor＝null 的「確定到盡頭」區分）；
+UI 顯示「繼續往前／往後找」。上限選 4 段的理由：第 4 段（896 天）已涵蓋 3.3 年，其後每多一段成本再 ×4；實測 4 段在開發 DB 最壞約 1.3 s，低於 3 s 的每句限制且遠低於原本的 4~6.4 s。
+（未做 `release_date_history` 預篩：不改變結果的前提下收益有限，且該表目前 0 筆，無法驗證。）
+
+**實測**（開發 DB，warm，`.local/agents/scratch/tl-sparse.mts`，每項跑兩次；前＝HEAD 78b312b、後＝本次）
+
+| 情境 | 前（ms／組數） | 後（ms／組數／是否 partial） |
+| --- | --- | --- |
+| delayed 往後 | 1637、580 ／ 0 | 160、164 ／ 0 ／ partial |
+| delayed 往前 | 4837、4031 ／ 0 | 1273、1264 ／ 0 ／ partial |
+| released 往後 | 333、319 ／ 0 | 80、85 ／ 0 ／ partial |
+| released 往前 | 52、51 ／ 7 | 49、50 ／ 7 |
+| upcoming 往後 | 11、11 ／ 8 | 10、10 ／ 8 |
+| upcoming 往前 | 2261、2329 ／ 3 | 748、758 ／ 3 |
+
+不稀疏的情境結果與耗時不變。代價：delayed 往前要連點才到最早（每次約 1.2 s、涵蓋 3.3 年），不再一次卡 4~6 s。
+dev server 逐步載入 `/api/timeline?status=delayed` 往前：第 1 次（冷）2.0 s，之後 1.1 s → 0.73 → 0.45 → 0.25 s…（越往前越稀疏越快）；往後 61／25／32／393 ms，第 4 次 `nextPartial=false`、cursor＝null。

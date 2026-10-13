@@ -15,7 +15,7 @@
  * - Wave 3（3b）追加，igdbId 441xxx（見 fixture-data.ts 的 FIXTURE_3B）：2037-03 時間軸資料（單日 13 款＋90 款填充）、
  *   同 slug 的 franchise／collection、語言支援三態、另三個活動（expo／已結束 awards／時間未定 expo）
  */
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { closeDb, getDb } from "@/kernel/db/client";
 import { buildSearchText } from "@/modules/catalog/domain/search-text";
 import {
@@ -218,6 +218,12 @@ export async function seedE2eDatabase(): Promise<void> {
       const date = `2037-03-${String(day).padStart(2, "0")}`;
       await addGame(441100 + i, { slug: `e2e-fill-${String(i).padStart(2, "0")}`, name: `Filler Game ${String(i).padStart(2, "0")}`, events: [{ platform: "e2e-pc", date }] });
     }
+
+    // 稀疏條件（W3C）：status=delayed 往前找時，與 hero（2036-05-15，有延期紀錄）相距超過單次掃描上限
+    // （「延期」篩選＝有改期紀錄且往後延；此篩選下只有 hero 2036-05-15 與這款）
+    await addGame(442901, { slug: FIXTURE_3B.sparse.slug, name: FIXTURE_3B.sparse.name, events: [{ platform: "e2e-pc", date: FIXTURE_3B.sparse.date }] });
+    const [farEv] = await db.select({ id: releaseEvents.id }).from(releaseEvents).where(eq(releaseEvents.gameId, gameId[442901]!));
+    await db.insert(releaseDateHistory).values({ releaseEventId: farEv!.id, oldDate: "2032-03-01", oldPrecision: "day", newDate: FIXTURE_3B.sparse.date, newPrecision: "day" });
 
     // 同 slug 的 franchise 與 collection（igdbId 在各自 kind 內唯一）
     const twin = FIXTURE_3B.twin;

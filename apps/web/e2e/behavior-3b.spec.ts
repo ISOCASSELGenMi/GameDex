@@ -8,6 +8,7 @@ import { FIXTURE, FIXTURE_3B, LOCALES, expect, msg, test, type TestLocale } from
 
 const MOBILE = { width: 375, height: 812 };
 const TL = FIXTURE_3B.timeline;
+const TL_SPARSE = FIXTURE_3B.sparse;
 const mainNav = (page: Page, locale: TestLocale) => page.getByRole("navigation", { name: msg(locale, "a11y.mainNavigation") });
 
 /** 時間軸清單水合完成（React 在根元素掛上 fiber）。按鈕／連結的點擊在此之前會變成整頁導覽。 */
@@ -219,6 +220,37 @@ test.describe("時間軸：載入更多／較早", () => {
     await expect(page).toHaveURL(/cursor=/);
     await expect(page.locator("[data-timeline-card]").first()).toBeVisible();
     await expect(page.locator("a[data-load=prev]")).toBeVisible();
+    await ctx.close();
+  });
+
+  test("稀疏條件：status=delayed 往前找 → 部分結果與「繼續往前找」，再點才找到更遠的，最後才是「沒有更早的資料」", async ({ page }) => {
+    await page.goto(`/en/timeline?status=delayed&at=${TL_SPARSE.at}`);
+    await waitTimelineHydrated(page);
+    const prev = page.locator("a[data-load=prev]");
+    await expect(prev).toHaveText(msg("en", "ui.timeline.loadEarlier")); // 還沒掃過：一般文案
+    await prev.click();
+    // 第一次：找到 hero（2036-05-15），掃描量用完 → 部分結果
+    await expect(page.locator("[data-timeline-card]")).toHaveCount(1);
+    await expect(prev).toHaveText(msg("en", "ui.timeline.searchEarlier"));
+    await expect(page.locator("[data-partial=prev]")).toHaveText(msg("en", "ui.timeline.partialEarlier"));
+    await expect(page.getByText(msg("en", "ui.timeline.noEarlier"))).toHaveCount(0);
+    // 第二次：2032-06 的遠端資料；之後確定到盡頭
+    await prev.click();
+    await expect(page.locator("[data-timeline-card]")).toHaveCount(2);
+    await expect(page.locator(`[data-group="day:${TL_SPARSE.date}"]`)).toHaveCount(1);
+    await expect(page.getByText(msg("en", "ui.timeline.noEarlier"))).toBeVisible();
+    await expect(page.locator("a[data-load=prev]")).toHaveCount(0);
+    await expect(page.locator("[data-partial=prev]")).toHaveCount(0);
+  });
+
+  test("沒有 JS：部分結果的「繼續往前找」是帶 cursor 的連結", async ({ browser }) => {
+    const ctx = await browser.newContext({ javaScriptEnabled: false, baseURL: test.info().project.use.baseURL });
+    const page = await ctx.newPage();
+    await page.goto(`/en/timeline?status=delayed&at=${TL_SPARSE.at}`);
+    await page.locator("a[data-load=prev]").click();
+    await expect(page).toHaveURL(/cursor=/);
+    await expect(page.locator("a[data-load=prev]")).toHaveText(msg("en", "ui.timeline.searchEarlier"));
+    await expect(page.locator("[data-partial=prev]")).toBeVisible();
     await ctx.close();
   });
 

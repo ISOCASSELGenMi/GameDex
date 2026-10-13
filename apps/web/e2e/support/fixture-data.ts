@@ -34,6 +34,8 @@ export const FIXTURE_3B = {
     bigDayPreview: 10,
     fillerCount: 90,
   },
+  /** 稀疏條件（W3C）：status=delayed（有延期紀錄）的遊戲只有兩款，一款在 2036-05-15（hero），一款在 2032-06（相距超過單次掃描上限 1190 天）。 */
+  sparse: { slug: "e2e-far-delayed", name: "Far Delayed Fable", date: "2032-06-01", at: "2037-03-20" },
   twin: { slug: "e2e-twin-saga", name: "Twin Saga", franchiseGames: 2, collectionGames: 2 },
   langPartial: { slug: "e2e-lang-partial", name: "Partial Language Game" },
   langNone: { slug: "e2e-aurora-prequel" },

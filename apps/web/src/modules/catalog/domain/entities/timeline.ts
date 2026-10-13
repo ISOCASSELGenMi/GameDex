@@ -44,6 +44,13 @@ export interface TimelinePage {
   nextCursor: string | null;
   /** 往前載入；null＝沒有了（第一頁時只確認全庫最早日期，可能載入後為空）。 */
   prevCursor: string | null;
+  /**
+   * true＝這次請求在掃描上限內沒湊滿一頁，nextCursor 指向「已掃描範圍的邊界」，之後還有沒掃過的範圍
+   * （與 nextCursor＝null 的「確定到盡頭」不同；此時 nextCursor 必不為 null）。
+   */
+  nextPartial?: boolean;
+  /** 同 nextPartial，往前方向。 */
+  prevPartial?: boolean;
   /** 今天（UTC），UI 畫「今天」線。 */
   today: IsoDate;
   /** 起點（未給 cursor 時＝指定日期或今天；給 cursor 時為 null）。 */

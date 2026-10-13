@@ -76,6 +76,8 @@ export function buildTimelineChunk(page: TimelinePage, locale: Locale, t: Transl
     groups: page.groups.map((g) => toTimelineGroup(g, locale, t)),
     nextCursor: page.nextCursor,
     prevCursor: page.prevCursor,
+    ...(page.nextPartial ? { nextPartial: true } : {}),
+    ...(page.prevPartial ? { prevPartial: true } : {}),
   };
 }
 
@@ -123,12 +125,24 @@ export function mergeTimelineChunk(existing: TimelineChunk, incoming: TimelineCh
     const last = groups[groups.length - 1]!;
     const rest = [...incoming.groups];
     if (rest[0] && rest[0].key === last.key) groups[groups.length - 1] = mergeGroupCards(last, rest.shift()!, "next");
-    return { groups: [...groups, ...rest], nextCursor: incoming.nextCursor, prevCursor: existing.prevCursor };
+    return {
+      groups: [...groups, ...rest],
+      nextCursor: incoming.nextCursor,
+      prevCursor: existing.prevCursor,
+      ...(incoming.nextPartial ? { nextPartial: true } : {}),
+      ...(existing.prevPartial ? { prevPartial: true } : {}),
+    };
   }
   const first = groups[0]!;
   const head = [...incoming.groups];
   if (head.length > 0 && head[head.length - 1]!.key === first.key) groups[0] = mergeGroupCards(first, head.pop()!, "prev");
-  return { groups: [...head, ...groups], nextCursor: existing.nextCursor, prevCursor: incoming.prevCursor };
+  return {
+    groups: [...head, ...groups],
+    nextCursor: existing.nextCursor,
+    prevCursor: incoming.prevCursor,
+    ...(existing.nextPartial ? { nextPartial: true } : {}),
+    ...(incoming.prevPartial ? { prevPartial: true } : {}),
+  };
 }
 
 /** 展開某組：把新取得的卡接在後面（去重）。找不到該組則原樣回傳。 */

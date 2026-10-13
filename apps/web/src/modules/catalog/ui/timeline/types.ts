@@ -62,6 +62,9 @@ export interface TimelineChunk {
   groups: TimelineGroupData[];
   nextCursor: string | null;
   prevCursor: string | null;
+  /** true＝這次沒在掃描上限內湊滿，cursor 指向已掃描範圍的邊界（還有未掃描的範圍）；省略／false＝一般。 */
+  nextPartial?: boolean;
+  prevPartial?: boolean;
 }
 
 /** 「展開」的回應。 */
@@ -91,6 +94,11 @@ export interface TimelineClientLabels {
   loadError: string;
   noEarlier: string;
   noLater: string;
+  /** 部分結果：掃描範圍內沒有更多，還能繼續找（與 noEarlier／noLater 的「到盡頭」區分） */
+  partialEarlier: string;
+  partialLater: string;
+  searchEarlier: string;
+  searchLater: string;
   today: string;
   /** 「今天」線上的日期文字（已格式化） */
   todayDate: string;

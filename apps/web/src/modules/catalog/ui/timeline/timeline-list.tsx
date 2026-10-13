@@ -240,9 +240,10 @@ export function TimelineList({ initial, labels, locale, path, baseQuery, today, 
       </p>
 
       <div className="tl-more">
+        {chunk.prevCursor && chunk.prevPartial ? <p className="text-sm text-[var(--muted)]" data-partial="prev">{labels.partialEarlier}</p> : null}
         {chunk.prevCursor ? (
           <a className="btn-secondary" href={hrefFor(chunk.prevCursor)} rel="prev" onClick={(e) => onLoadClick(e, "prev")} aria-busy={busy === "prev"} data-load="prev">
-            {busy === "prev" ? labels.loading : labels.loadEarlier}
+            {busy === "prev" ? labels.loading : chunk.prevPartial ? labels.searchEarlier : labels.loadEarlier}
           </a>
         ) : (
           <p className="text-sm text-[var(--muted)]">{labels.noEarlier}</p>
@@ -286,9 +287,10 @@ export function TimelineList({ initial, labels, locale, path, baseQuery, today, 
       {marker === chunk.groups.length ? todayLine : null}
 
       <div className="tl-more">
+        {chunk.nextCursor && chunk.nextPartial ? <p className="text-sm text-[var(--muted)]" data-partial="next">{labels.partialLater}</p> : null}
         {chunk.nextCursor ? (
           <a className="btn-secondary" href={hrefFor(chunk.nextCursor)} rel="next" onClick={(e) => onLoadClick(e, "next")} aria-busy={busy === "next"} data-load="next">
-            {busy === "next" ? labels.loading : labels.loadMore}
+            {busy === "next" ? labels.loading : chunk.nextPartial ? labels.searchLater : labels.loadMore}
           </a>
         ) : (
           <p className="text-sm text-[var(--muted)]">{labels.noLater}</p>

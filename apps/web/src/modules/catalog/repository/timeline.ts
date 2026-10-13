@@ -159,11 +159,22 @@ export interface TimelineRawPage {
   /** 全庫（不含篩選）最早／最晚的 period_start；判斷另一方向是否可能有資料。 */
   minPeriodStart: IsoDate | null;
   maxPeriodStart: IsoDate | null;
+  /**
+   * 掃描量用完仍湊不滿一頁、且掃描方向還有沒掃過的範圍時，為「從這裡繼續」的邊界鍵（`boundaryKey`）；否則 null。
+   * 非 null 時 hasMore 一定是 false；用它當該方向的 cursor（after＝period_start ≥ 邊界；before＝< 邊界）。
+   */
+  partial: TimelineKey | null;
 }
 
 const DATED: readonly DatePrecision[] = ["day", "month", "quarter", "year"];
 const FIRST_WINDOW_DAYS = 14;
 const WINDOW_GROWTH = 4;
+/**
+ * 單次請求的掃描上限（稀疏條件保護，docs/perf 2026-10-14）：視窗 14 → 56 → 224 → 896 天，最多 4 段（共 1190 天≈3.3 年），
+ * 單段不超過 896 天。湊不滿一頁就回傳部分結果＋`partial` 邊界，由下一次請求從邊界繼續。
+ */
+export const TIMELINE_MAX_SCAN_WINDOWS = 4;
+export const TIMELINE_MAX_WINDOW_DAYS = 896;
 
 function addDays(d: IsoDate, n: number): IsoDate {
   const t = new Date(`${d}T00:00:00Z`);
@@ -256,33 +267,47 @@ export async function readTimelinePage(q: TimelinePageQuery, opts: ReadOptions =
       out.push(...res.rows);
     };
 
-    const datedPhase = async (forward: boolean) => {
-      if (!lo || !hi) return;
+    let partial: TimelineKey | null = null;
+    /** 回傳 true＝日期範圍已掃完（或已湊滿）；false＝掃描量用完、還有沒掃的範圍（partial 已設定）。 */
+    const datedPhase = async (forward: boolean): Promise<boolean> => {
+      if (!lo || !hi) return true;
       const start = q.cursor.key.sk;
       let days = FIRST_WINDOW_DAYS;
+      let windows = 0;
       if (forward) {
         let a = start < lo ? lo : start;
         while (out.length < want && a <= hi) {
+          if (windows >= TIMELINE_MAX_SCAN_WINDOWS) {
+            partial = boundaryKey(a);
+            return false;
+          }
           const b = addDays(a, days - 1);
           await run(DATED, a, b < hi ? b : hi);
           a = addDays(b, 1);
-          days *= WINDOW_GROWTH;
+          days = Math.min(days * WINDOW_GROWTH, TIMELINE_MAX_WINDOW_DAYS);
+          windows++;
         }
       } else {
         let b = start > hi ? hi : start;
         while (out.length < want && b >= lo) {
+          if (windows >= TIMELINE_MAX_SCAN_WINDOWS) {
+            partial = boundaryKey(addDays(b, 1));
+            return false;
+          }
           const a = addDays(b, -(days - 1));
           await run(DATED, a > lo ? a : lo, b);
           b = addDays(a, -1);
-          days *= WINDOW_GROWTH;
+          days = Math.min(days * WINDOW_GROWTH, TIMELINE_MAX_WINDOW_DAYS);
+          windows++;
         }
       }
+      return true;
     };
 
     const inTbd = q.cursor.key.sk >= TIMELINE_TBD_SORT_DATE;
     if (q.cursor.dir === "after") {
-      if (!inTbd) await datedPhase(true);
-      if (includeTbd && out.length < want) await run(["tbd"], null, null);
+      const done = inTbd ? true : await datedPhase(true);
+      if (done && includeTbd && out.length < want) await run(["tbd"], null, null);
     } else {
       if (inTbd && includeTbd) await run(["tbd"], null, null);
       if (out.length < want) await datedPhase(false);
@@ -291,7 +316,7 @@ export async function readTimelinePage(q: TimelinePageQuery, opts: ReadOptions =
     const hasMore = out.length > q.limit;
     const rows = out.slice(0, q.limit).map((r) => toRaw(r, q.resolveImage));
     if (q.cursor.dir === "before") rows.reverse();
-    return { rows, hasMore, minPeriodStart: minPs, maxPeriodStart: maxPs };
+    return { rows, hasMore, minPeriodStart: minPs, maxPeriodStart: maxPs, partial: hasMore ? null : partial };
   }, opts);
 }
 

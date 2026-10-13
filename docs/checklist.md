@@ -105,7 +105,8 @@
 - [x] 收斂重複：`safeDecode`（game-detail-page 與 entities/view-model）、分頁元件（browse 與 entities `Pager`）、TBA 文字兩種來源（Wave 3 審查一併看）（2026-10-13 新增）
 - [x] Wave 3：test:a11y 擴充（時間軸、瀏覽、實體頁）＋獨立審查（2026-10-14：W3A e2e 156 個新測試，test:a11y 193；審查 R 1 高 4 中 8 低）
 - [x] Wave 3 修正 W3B（2026-10-14）：高-1 撇號無限 308、外部連結 http(s) 白名單唯一實作、history 超大 id／不存在日期不再 500、重複實作收斂（PageNav、periodEndSql、utc-date、safeDecode）、平台頁 upcomingHint 文字配合排序（使用者決定）；精簡熱度徽章維持（使用者決定）
-- [ ] W3C：時間軸稀疏條件視窗上限＋部分結果（實測 2026-10-14：status=delayed 往前 6.4 s／0 組、status=upcoming 往前 2.3 s；使用者決定實測後超門檻就修）
+- [x] W3C：時間軸稀疏條件視窗上限＋部分結果（實測 2026-10-14：status=delayed 往前 6.4 s→1.3 s、status=upcoming 往前 2.3 s→0.76 s；單次最多 4 段、單段 ≤ 896 天；回應 nextPartial／prevPartial＋「繼續找」）
+- [ ] 待決（W3C）：掃描上限常數是否調整；partial 時篩選後可能要多按一次「繼續找」才確認到盡頭（2026-10-14 新增）
 - [ ] 待決（W3B）：/games 預設 sort 是否從網址省略；無效 group key 回 200 空結果或 400；四份頁碼解析合併；use-cases 4 處自算 UTC 今天；分頁 aria-current 移出 li（需同步改 e2e）；repository 引用 api-contract 的 isValidIsoDate（可移到 domain）（2026-10-14 新增）
 - [ ] CI：Actions Node 20 淘汰警告、ubuntu-latest 2026-10-19 起改 Ubuntu 26（2026-10-14 新增）
 - [x] 在開發 DB 跑 `refresh_popularity --scope all`（2026-10-13，149 秒；heat 5＝2,731、4＝10,766、3＝28,293、2＝67,624、1＝155,134、0＝50,058）
