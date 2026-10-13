@@ -28,6 +28,9 @@ export interface PreviewCardData {
   a?: string;
   /** 折疊清單用：附註（非正式版階段、延期／取消、資料來源待確認），已含括號 */
   x?: string;
+  /** 熱度等級（1~5；0 不給）與文字（「熱度 4/5」） */
+  hv?: number;
+  hl?: string;
 }
 
 export interface CalendarClientLabels {

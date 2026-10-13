@@ -33,8 +33,8 @@ const listColumns = (now: SQL) => sql`${EVENT_COLUMNS}, e.stream_url,
        ELSE 'past' END AS time_status,
   (SELECT count(*) FROM event_games eg WHERE eg.event_id = e.id)::int AS game_count`;
 
-function toListItem(r: EventListRow): EventListItem {
-  return { ...toCalendarEvent(r), timeStatus: r.time_status, streamUrl: r.stream_url, gameCount: r.game_count };
+function toListItem(r: EventListRow, resolveImage: ImageResolver): EventListItem {
+  return { ...toCalendarEvent(r, resolveImage), timeStatus: r.time_status, streamUrl: r.stream_url, gameCount: r.game_count };
 }
 
 export interface EventListQuery {
@@ -44,6 +44,8 @@ export interface EventListQuery {
   offset: number;
   /** 測試用；預設資料庫 now()。 */
   now?: Date;
+  /** logo 網址 → ImageRef（Provider 實作，由 Use Case 傳入）。 */
+  resolveImage: ImageResolver;
 }
 
 export async function listEventsPage(
@@ -75,7 +77,7 @@ export async function listEventsPage(
       `),
     opts,
   );
-  return { items: res.rows.slice(0, q.limit).map(toListItem), hasMore: res.rows.length > q.limit };
+  return { items: res.rows.slice(0, q.limit).map((r) => toListItem(r, q.resolveImage)), hasMore: res.rows.length > q.limit };
 }
 
 export interface EventDetailQuery {
@@ -137,12 +139,12 @@ async function readEventDetail(tx: DbOrTx, q: EventDetailQuery): Promise<EventDe
     e.series_slug && e.series_name && e.series_kind ? { slug: e.series_slug, name: e.series_name, kind: e.series_kind } : null;
   const games: GameListItem[] = gamesRes.rows.map((r) => ({ ...toSummary(r, q.resolveImage), gameStatus: r.game_status }));
   return {
-    ...toListItem(e),
+    ...toListItem(e, q.resolveImage),
     description: e.description,
     url: e.url,
     organizer: e.organizer,
     series,
-    seriesEvents: seriesRes.rows.map(toListItem),
+    seriesEvents: seriesRes.rows.map((r) => toListItem(r, q.resolveImage)),
     games,
   };
 }

@@ -5,6 +5,7 @@
  * 狀態碼在頁面程式執行前就以 200 送出，頁面內的 notFound()／redirect() 只會變成「軟 404」與客戶端導向
  * （Next 16.4 實測，見 C-report）。所以能不查 DB 就判斷的 404 與導向放在 proxy，回真正的狀態碼。
  */
+import { filterRedirectSearch } from "@sok/api-contract";
 import { createTranslator, type Locale } from "@sok/i18n";
 import { calendarMonthPath, localeHref } from "./links";
 import { monthOfDate, parseMonthParam } from "./month";
@@ -30,6 +31,33 @@ export function decideLocalizedRoute(pathname: string, locale: Locale, search: s
     if (rest.length > 2 || !parseMonthParam(rest[1] ?? "")) return { type: "notFound", locale };
   }
   return { type: "next" };
+}
+
+/**
+ * 讀 FilterSpec 的頁面（去掉語系前綴後的路徑段）：月曆 `/calendar/{yyyy-mm}`、時間軸、熱門榜、瀏覽列表 `/games`。
+ * 不含 `/games/{slug}`（詳情頁）與 `/api/*`（proxy 的 matcher 已排除）。新增吃篩選參數的頁面時在這裡加一行。
+ */
+export function isFilterCanonicalPath(rest: readonly string[]): boolean {
+  if (rest.length === 2) return rest[0] === "calendar";
+  if (rest.length === 1) return rest[0] === "timeline" || rest[0] === "trending" || rest[0] === "games";
+  return false;
+}
+
+/**
+ * 篩選 query 的正規化（06 §SEO 與快取）：同一組條件只有一種網址，CDN 快取鍵才穩定。
+ * 需要時回傳 308 的目標（含語系前綴的路徑＋正規 search）；已是正規形式、有格式問題（交給頁面「忽略並提示」）、
+ * 不是篩選頁面時回 null。冪等。
+ */
+export function decideFilterRedirect(pathname: string, search: string): string | null {
+  const rest = pathname.split("/").filter((s, i) => i === 0 || s !== "").slice(2);
+  if (!isFilterCanonicalPath(rest)) return null;
+  const target = filterRedirectSearch(search);
+  if (target === null) return null;
+  // 逗號與 %2C 視為相同：表單、部分 HTTP 用戶端與代理會把 `a,b` 重新編碼成 `a%2Cb`，
+  // 若因此再轉一次址，它們收到的網址又被改回 %2C → 無限轉址。
+  const sameModuloComma = (x: string) => x.replace(/%2C/gi, ",");
+  if (sameModuloComma(target) === sameModuloComma(search)) return null;
+  return `${pathname}${target}`;
 }
 
 function escapeHtml(s: string): string {

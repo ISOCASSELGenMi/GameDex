@@ -5,6 +5,7 @@
 import Image from "next/image";
 import type { ReactElement } from "react";
 import type { Translator } from "@sok/i18n";
+import { HeatBadge, heatBadgeLabel } from "../heat-badge";
 import { EventIcon, StageIcon, StatusIcon, WarningIcon } from "../icons";
 import { stageLabel, statusLabel } from "../labels";
 import type { CardItem, DayItem, EventItem } from "./view-model";
@@ -51,6 +52,7 @@ export function FullCard({ item, href, t }: { item: CardItem; href: string; t: T
         <span className="card-name">{card.name}</span>
         <Chips item={item} />
         <span className="card-meta">
+          <HeatBadge level={card.heatLevel} label={heatBadgeLabel(t, card.heatLevel)} compact />
           <StageIcon stage={card.stage} />
           <span>{stageLabel(t, card.stage)}</span>
           {card.status === "delayed" || card.status === "cancelled" ? (

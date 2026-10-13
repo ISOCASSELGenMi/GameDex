@@ -93,10 +93,13 @@
 
 ### Phase 3b：時間軸、完整篩選、瀏覽、實體頁、活動、熱度、語言支援（2026-10-13 開工，分支 `feat/phase3b`）
 - [x] 整合測試支援 `TEST_DATABASE_NAME`（子代理各用一個測試 DB 並行）（2026-10-13）
-- [ ] Wave 1-F：`refresh_popularity`（IGDB popularity_primitives＋結構訊號、PERCENT_RANK、heatLevel）、PopularitySignal 介面、熱門榜讀取
-- [ ] Wave 1-G：FilterSpec 完整維度＋正規化、聚合支援新維度、時間軸讀取（cursor 雙向）、瀏覽／搜尋讀取
-- [ ] Wave 1-H：平台／公司／系列頁、活動列表與詳情、詳情頁補完（DLC、即將亮相活動、語言支援三態）讀取層
-- [ ] Wave 2：UI（時間軸、完整篩選列＋手機抽屜＋URL 正規化 308、瀏覽／搜尋、平台／公司／系列、活動、熱門榜、詳情頁語言支援區塊、熱度圖示＋文字）＋字典
+- [x] Wave 1-F：`refresh_popularity`（IGDB popularity_primitives＋結構訊號、PERCENT_RANK、heatLevel）、PopularitySignal 介面、熱門榜讀取
+- [x] Wave 1-G：FilterSpec 完整維度＋正規化、聚合支援新維度、時間軸讀取（cursor 雙向）、瀏覽／搜尋讀取
+- [x] Wave 1-H：平台／公司／系列頁、活動列表與詳情、詳情頁補完（DLC、即將亮相活動、語言支援三態）讀取層
+- [x] 使用者定案（2026-10-13）：熱度鎖用 session、暫不抓 games.hypes、無日期遊戲歸 upcoming 群、cancelled／只上 mobile 不上熱門榜；系列頁 `?kind=` 區分＋`franchises(slug)` 索引；活動類型同步時依名稱推斷；logo 擴充 ImageKind 經 ImageResolver
+- [ ] 規格正本更新（3b 已定案，2026-10-13 新增）：04 `refresh_popularity` 鎖 session、hypes 暫不抓、熱度分群規則；06 §時間軸 cursor 實際鍵、upcoming／released 用期間結束日、from/to 比對 period_start；06 §篩選 單值參數規則與 308 正規化；06 §活動 undated 範圍、類型依名稱推斷；06 §詳情 連結無地區欄位無法依地區排序；系列 `?kind=`
+- [ ] Wave 2a：I＝時間軸頁、完整篩選 UI、proxy 308、熱度徽章、熱門榜頁；K＝franchise 索引 migration、活動類型推斷＋重新分類、logo ImageKind、平台頁改用共用挑選邏輯
+- [ ] Wave 2b：J＝瀏覽／搜尋、平台／公司／系列、活動頁、詳情頁補完（語言支援區塊、DLC、即將亮相活動）
 - [ ] Wave 3：test:a11y 擴充（時間軸、瀏覽、實體頁）＋獨立審查
-- [ ] 在開發 DB 跑 `refresh_popularity`，確認熱度分布合理
+- [x] 在開發 DB 跑 `refresh_popularity --scope all`（2026-10-13，149 秒；heat 5＝2,731、4＝10,766、3＝28,293、2＝67,624、1＝155,134、0＝50,058）
 - [ ] 驗收：全部檢查全綠＋spec 15 Phase 3 完成標準（3b 範圍）；commit；交接文件

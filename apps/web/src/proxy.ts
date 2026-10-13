@@ -6,7 +6,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { LOCALE_COOKIE, getLocaleConfig, isSupportedLocale, needsLocalePrefix, pickRequestLocale } from "@/kernel/locale";
 import type { Locale } from "@sok/i18n";
-import { decideLocalizedRoute, renderNotFoundHtml } from "@/modules/catalog/ui/routing";
+import { decideFilterRedirect, decideLocalizedRoute, renderNotFoundHtml } from "@/modules/catalog/ui/routing";
 
 function notFoundResponse(locale: Locale): NextResponse {
   return new NextResponse(renderNotFoundHtml(locale), {
@@ -56,6 +56,14 @@ export function proxy(request: NextRequest): NextResponse | undefined {
     return res;
   }
   if (decision.type === "notFound") return notFoundResponse(decision.locale);
+
+  // 篩選 query 正規化（06 §SEO 與快取）：月曆、時間軸、熱門榜、瀏覽列表 → 308 到正規網址
+  const canonical = decideFilterRedirect(pathname, search);
+  if (canonical !== null) {
+    const target = request.nextUrl.clone();
+    applyLocation(target, canonical);
+    return NextResponse.redirect(target, 308);
+  }
   return undefined;
 }
 

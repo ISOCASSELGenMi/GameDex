@@ -1,7 +1,9 @@
 /**
  * 平台總覽與平台頁（06 §路由，Phase 3b）。mobile 平台不顯示（P35）：總覽不列、平台頁視為不存在。
- * 平台頁的遊戲清單以「該平台」的 release_events 為準（release_events_date_platform_idx），
- * 不用 games.firstReleaseDate（移植版的首發日是別的平台）。之後可改用通用瀏覽查詢（browse-games）。
+ * 平台頁的遊戲清單以「該平台」的上市列為準，不用 games.firstReleaseDate（移植版的首發日是別的平台）。
+ * 代表上市列的挑選**直接用聚合規則**（release-aggregate.ts 的 buildAggregateCardsQuery，platform 篩選＝本平台），
+ * 不另寫挑選邏輯（原則五）：地區偏好、manual 優先、有日期優先……與月曆完全一致；一張卡＝(遊戲, 階段)。
+ * upcoming／recent 用聚合的上市狀態篩選（filter.releaseStates）判斷，這裡只多加 recent 的天數下限。
  */
 import { sql } from "drizzle-orm";
 import type { DbOrTx } from "@/kernel/db/client";
@@ -10,6 +12,8 @@ import type {
   ImageResolver,
   IsoDate,
   PagedList,
+  RegionCode,
+  ResolvedReleaseFilter,
   PlatformGameItem,
   PlatformGamesSection,
   PlatformGamesSort,
@@ -22,7 +26,8 @@ import type {
 } from "../domain/entities";
 import { isCommonPlatform } from "./filter-options";
 import { summaryColumns, toSummary, type SummaryRow } from "./game-detail";
-import { pgArray, withReadTimeout, type ReadOptions } from "./read-tx";
+import { withReadTimeout, type ReadOptions } from "./read-tx";
+import { buildAggregateCardsQuery } from "./release-aggregate";
 
 /** 總覽的分組順序（mobile 不列；other 放最後，UI 可預設收合）。 */
 export const PLATFORM_OVERVIEW_KIND_ORDER: readonly PlatformKind[] = ["console", "hybrid", "handheld", "pc", "arcade", "other"];
@@ -50,7 +55,7 @@ const platformSelect = (today: IsoDate) => sql`
     ), 0)::int AS recent
   FROM platforms pl LEFT JOIN platform_families pf ON pf.id = pl.family_id`;
 
-function toListItem(r: PlatformRow): PlatformListItem {
+function toListItem(r: PlatformRow, resolveImage: ImageResolver): PlatformListItem {
   return {
     slug: r.slug,
     name: r.name,
@@ -59,6 +64,7 @@ function toListItem(r: PlatformRow): PlatformListItem {
     generation: r.generation,
     family: r.family_slug && r.family_name ? { slug: r.family_slug, name: r.family_name } : null,
     status: r.status,
+    logo: resolveImage(r.logo_url, "logo"),
     logoUrl: r.logo_url,
     recentReleaseCount: r.recent,
     isCommon: isCommonPlatform(r.kind, r.recent),
@@ -82,19 +88,26 @@ export function groupPlatformsByKind(items: readonly PlatformListItem[]): Platfo
   })).filter((g) => g.platforms.length > 0);
 }
 
-/** 平台總覽（不含 mobile），依 kind 分組。@param today UTC 日期（近期事件數的中心）。 */
-export async function listPlatformGroups(today: IsoDate, opts: ReadOptions = {}): Promise<PlatformKindGroup[]> {
+/**
+ * 平台總覽（不含 mobile），依 kind 分組。@param today UTC 日期（近期事件數的中心）。
+ * @param resolveImage logo 網址 → ImageRef（Provider 實作，由 Use Case 傳入）。
+ */
+export async function listPlatformGroups(
+  today: IsoDate,
+  resolveImage: ImageResolver,
+  opts: ReadOptions = {},
+): Promise<PlatformKindGroup[]> {
   const res = await withReadTimeout(
     (tx) => tx.execute<PlatformRow>(sql`${platformSelect(today)} WHERE pl.kind <> 'mobile'`),
     opts,
   );
-  return groupPlatformsByKind(res.rows.map(toListItem));
+  return groupPlatformsByKind(res.rows.map((r) => toListItem(r, resolveImage)));
 }
 
 export interface PlatformPageQuery {
   slug: string;
   locale: string;
-  /** UTC 日期：upcoming ≥ today；recent ∈ [today − recentDays, today)。 */
+  /** UTC 日期：upcoming／released 的判斷基準（聚合的 releaseStates）。 */
   today: IsoDate;
   section: PlatformGamesSection;
   sort: PlatformGamesSort;
@@ -102,10 +115,13 @@ export interface PlatformPageQuery {
   recentDays?: number;
   limit: number;
   offset: number;
-  /** 上市列的階段／遊戲類型／狀態（通常是月曆預設值）。rumored 遊戲一律不列。 */
-  stages: readonly string[];
-  gameTypes: readonly string[];
-  statuses: readonly string[];
+  /**
+   * 基本篩選（通常是月曆預設：可見階段、可見遊戲類型、scheduled／delayed／released、不含 rumored、含 removed）。
+   * platformIds 與 releaseStates 會被這裡覆寫（本平台；upcoming／released）。
+   */
+  filter: ResolvedReleaseFilter;
+  /** 聚合的地區偏好。 */
+  regionPref: RegionCode;
   resolveImage: ImageResolver;
 }
 
@@ -145,40 +161,33 @@ async function readPlatformPage(
 
   const upcoming = q.section === "upcoming";
   const recentDays = Math.max(1, Math.floor(q.recentDays ?? 90));
-  // 期間結束日：month 精度的代表日是當月 1 日，要算到月底（本月未定日的遊戲仍算「即將上市」）；
-  // quarter／year 的代表日已是期間最後一天。原欄位的寬範圍條件讓查詢仍走 (release_date, platform_id) 索引。
-  const periodEnd = sql`(CASE WHEN r.precision = 'month'
-      THEN (date_trunc('month', r.release_date) + interval '1 month - 1 day')::date ELSE r.release_date END)`;
-  const dateCond = upcoming
-    ? sql`r.release_date >= (${q.today}::date - 31) AND ${periodEnd} >= ${q.today}::date`
-    : sql`r.release_date >= (${q.today}::date - ${recentDays}::int - 31) AND r.release_date < ${q.today}::date
-        AND ${periodEnd} >= (${q.today}::date - ${recentDays}::int) AND ${periodEnd} < ${q.today}::date`;
-  // 每款遊戲挑一筆代表列：upcoming 取最早、recent 取最晚；同日依精度（day 優先）、id
-  const pickOrder = upcoming ? sql`r.release_date ASC` : sql`r.release_date DESC`;
+  // 代表日期的寬範圍：month 精度的代表日是當月 1 日，往前多 31 天才不會漏掉「本月未定日」；
+  // 是否 upcoming／released 由聚合的 releaseStates 以期間結束日判斷（與月曆、時間軸同一份規則）。
+  const cards = buildAggregateCardsQuery({
+    from: upcoming ? addDays(q.today, -31) : addDays(q.today, -(recentDays + 31)),
+    to: upcoming ? null : q.today,
+    filter: { ...q.filter, platformIds: [p.id], releaseStates: [upcoming ? "upcoming" : "released"] },
+    regionPref: q.regionPref,
+    locale: q.locale,
+    today: q.today,
+  });
+  // recent 只列期間結束日在今天前 recentDays 天內的（quarter／year 的代表日已是期間最後一天）
+  const recentCond = upcoming
+    ? sql``
+    : sql`WHERE (CASE WHEN c.precision = 'month'
+        THEN (c.release_date::date + interval '1 month' - interval '1 day')::date
+        ELSE c.release_date::date END) >= (${q.today}::date - ${recentDays}::int)`;
+  const dateDir = upcoming ? sql`ASC` : sql`DESC`;
   const outerOrder =
     q.sort === "popularity"
-      ? upcoming
-        ? sql`g.popularity_score DESC, c.release_date ASC, g.name ASC, g.id ASC`
-        : sql`g.popularity_score DESC, c.release_date DESC, g.name ASC, g.id ASC`
-      : upcoming
-        ? sql`c.release_date ASC, g.popularity_score DESC, g.name ASC, g.id ASC`
-        : sql`c.release_date DESC, g.popularity_score DESC, g.name ASC, g.id ASC`;
+      ? sql`g.popularity_score DESC, c.release_date ${dateDir}, g.name ASC, g.id ASC, c.release_stage ASC`
+      : sql`c.release_date ${dateDir}, g.popularity_score DESC, g.name ASC, g.id ASC, c.release_stage ASC`;
 
   const gamesRes = await tx.execute<PlatformGameRow>(sql`
-    WITH c AS (
-      SELECT DISTINCT ON (r.game_id) r.game_id, r.release_date, r.precision, r.release_stage
-      FROM release_events r
-      WHERE r.platform_id = ${p.id} AND ${dateCond}
-        AND r.precision <> 'tbd'
-        AND r.release_stage::text = ANY(${pgArray(q.stages)}::text[])
-        AND r.status::text = ANY(${pgArray(q.statuses)}::text[])
-      ORDER BY r.game_id, ${pickOrder}, (r.precision = 'day') DESC, r.id ASC
-    )
     SELECT ${summaryColumns("g", q.locale)}, g.game_status,
-      c.release_date::text AS rep_date, c.precision AS rep_precision, c.release_stage AS rep_stage
-    FROM c JOIN games g ON g.id = c.game_id
-    WHERE COALESCE(g.game_type, 'main_game') = ANY(${pgArray(q.gameTypes)}::text[])
-      AND g.game_status IS DISTINCT FROM 'rumored'
+      c.release_date AS rep_date, c.precision AS rep_precision, c.release_stage AS rep_stage
+    FROM (${cards}) c JOIN games g ON g.id = c.game_id
+    ${recentCond}
     ORDER BY ${outerOrder}
     LIMIT ${q.limit + 1} OFFSET ${q.offset}
   `);
@@ -186,7 +195,7 @@ async function readPlatformPage(
 
   return {
     platform: {
-      ...toListItem(p),
+      ...toListItem(p, q.resolveImage),
       alternativeName: p.alternative_name,
       summary: p.summary,
       discontinuedOn: p.discontinued_on,
@@ -205,4 +214,11 @@ async function readPlatformPage(
       hasMore: gamesRes.rows.length > q.limit,
     },
   };
+}
+
+/** YYYY-MM-DD 加減天數（UTC）。 */
+function addDays(d: IsoDate, days: number): IsoDate {
+  const t = new Date(`${d}T00:00:00Z`);
+  t.setUTCDate(t.getUTCDate() + days);
+  return t.toISOString().slice(0, 10);
 }

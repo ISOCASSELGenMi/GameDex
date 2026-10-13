@@ -182,7 +182,7 @@ describe.skipIf(!enabled)("平台／公司／系列頁（整合）", () => {
     expect(items.map((g) => [g.slug, g.date, g.precision])).toEqual([
       ["h3b-830004", "2041-06-01", "month"],
       ["h3b-830003", "2041-06-15", "day"],
-      ["h3b-830001", "2041-06-20", "day"],
+      ["h3b-830001", "2041-07-01", "day"],
       ["h3b-830002", "2041-08-01", "day"],
     ]);
     expect(items[0].cover?.original).toContain("h3b830004");
@@ -214,7 +214,7 @@ describe.skipIf(!enabled)("平台／公司／系列頁（整合）", () => {
   // ── 公司 ──
   it("getCompanyPage：作品依首發日新到舊（未定最後）、角色合併、DLC 不列、角色計數", async () => {
     const page = await getCompanyPage({ slug: "h3b-studio", locale: "en" });
-    expect(page!.company).toEqual({ slug: "h3b-studio", name: "H3B Studio", logoUrl: null, websiteUrl: "https://example.com" });
+    expect(page!.company).toEqual({ slug: "h3b-studio", name: "H3B Studio", logo: null, logoUrl: null, websiteUrl: "https://example.com" });
     expect(page!.role).toBeNull();
     expect(page!.works.items.map((w) => [w.slug, w.roles])).toEqual([
       ["h3b-830101", ["developer", "publisher"]],

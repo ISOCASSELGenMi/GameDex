@@ -6,7 +6,8 @@
  */
 import { getSyncState, saveSyncProgress } from "@/kernel/db/sync-state";
 import type { GameDataProvider } from "../../providers/game-data-provider.interface";
-import { syncIgdbEvent } from "../../repository/events";
+import { inferIgdbEventKind } from "../../providers/igdb/event-kind";
+import { reclassifyIgdbEventKinds, syncIgdbEvent, type ReclassifyEventKindsResult } from "../../repository/events";
 import { resolveEventGames, type RelationResolveStats } from "../../repository/relations";
 
 type Log = (message: string, extra?: Record<string, unknown>) => void;
@@ -64,5 +65,27 @@ export async function syncEvents(provider: GameDataProvider, ctx: { startedAt: D
 
   if (result.failed > 0) throw new Error(`sync_events：${result.failed} 筆活動寫入失敗（見 log），進度不推進`);
   await saveSyncProgress(IGDB_EVENTS_STATE, { lastSyncedAt: ctx.startedAt, meta: { ...result } });
+  return result;
+}
+
+export interface SyncEventsArgs {
+  /** `--reclassify`：不抓 IGDB，只依名稱重算既有 IGDB 活動的類型。 */
+  reclassify: boolean;
+  /** `--all`（配合 --reclassify）：連已不是 other 的 IGDB 活動也重算（規則改版時用）。 */
+  all: boolean;
+}
+
+/** `npm run job -- sync_events --reclassify [--all]`。排程觸發時 args 為空＝一般同步。 */
+export function parseSyncEventsArgs(args: readonly string[]): SyncEventsArgs {
+  return { reclassify: args.includes("--reclassify"), all: args.includes("--all") };
+}
+
+/**
+ * 既有 IGDB 活動的類型重新分類（3b：IGDB 沒有類型，依名稱推斷）。不呼叫 IGDB、不推進 sync_state 的同步進度。
+ * 人工活動（source='manual'）不動；預設只改目前是 other 的活動，`all` 時全部 IGDB 活動依規則重算。
+ */
+export async function reclassifyEventKinds(ctx: { log: Log }, opts: { all?: boolean } = {}): Promise<ReclassifyEventKindsResult> {
+  const result = await reclassifyIgdbEventKinds(inferIgdbEventKind, { all: opts.all === true });
+  ctx.log("活動類型重新分類完成", { all: opts.all === true, ...result });
   return result;
 }

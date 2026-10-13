@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import type { CalendarEventItem, EventKind } from "../domain/entities";
+import type { CalendarEventItem, EventKind, ImageResolver } from "../domain/entities";
 import { toIso, withReadTimeout, type ReadOptions } from "./read-tx";
 
 export interface EventRow extends Record<string, unknown> {
@@ -15,7 +15,8 @@ export interface EventRow extends Record<string, unknown> {
 
 export const EVENT_COLUMNS = sql`e.id, e.slug, e.name, e.kind, e.start_time, e.end_time, e.timezone, e.logo_url`;
 
-export function toCalendarEvent(r: EventRow): CalendarEventItem {
+/** 查詢列 → CalendarEventItem。logo 經 ImageResolver（kind＝logo），與封面相同。 */
+export function toCalendarEvent(r: EventRow, resolveImage: ImageResolver): CalendarEventItem {
   return {
     id: r.id,
     slug: r.slug,
@@ -25,6 +26,7 @@ export function toCalendarEvent(r: EventRow): CalendarEventItem {
     endTime: toIso(r.end_time),
     timezone: r.timezone,
     logoUrl: r.logo_url,
+    logo: resolveImage(r.logo_url, "logo"),
   };
 }
 
@@ -33,7 +35,7 @@ export function toCalendarEvent(r: EventRow): CalendarEventItem {
  * start_time 為 NULL（時間未定）不列入月曆。依開始時間排序。
  */
 export async function listEventsInRange(
-  range: { from: Date; to: Date },
+  range: { from: Date; to: Date; resolveImage: ImageResolver },
   opts: ReadOptions = {},
 ): Promise<CalendarEventItem[]> {
   const res = await withReadTimeout(
@@ -47,5 +49,5 @@ export async function listEventsInRange(
       `),
     opts,
   );
-  return res.rows.map(toCalendarEvent);
+  return res.rows.map((r) => toCalendarEvent(r, range.resolveImage));
 }

@@ -3,6 +3,7 @@
  */
 import { formatDateTime, formatReleaseLabel, type Locale, type Translator } from "@sok/i18n";
 import type { CalendarEventItem, CalendarMonth, ReleaseCard } from "../../domain/entities";
+import { heatBadgeLabel } from "../heat-badge";
 import { eventKindLabel, getTranslator, stageLabel, statusLabel } from "../labels";
 import { gameHref } from "../links";
 import { isoDate } from "../month";
@@ -75,6 +76,11 @@ export function buildCalendarViewModel(data: CalendarMonth, locale: Locale, t: T
       preview.t = statusLabel(t, card.status);
     }
     if (card.sourceStatus === "removed") preview.r = 1;
+    const heat = heatBadgeLabel(t, card.heatLevel);
+    if (heat) {
+      preview.hv = card.heatLevel;
+      preview.hl = heat;
+    }
     const abbr = card.platforms.map(platformChipText).join(" · ");
     if (abbr) preview.a = abbr;
     const notes: string[] = [];

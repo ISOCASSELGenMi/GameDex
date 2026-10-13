@@ -9,6 +9,7 @@ import type {
   PlatformStatus,
   ReleaseStage,
 } from "./enums";
+import type { ImageRef } from "./image-ref";
 import type { GameSummary, PlatformChip, RegionCode } from "./read-models";
 
 /** 分頁結果（limit／offset）。hasMore 以多查一筆判斷，不另算總數（大平台的總數很貴）。 */
@@ -36,7 +37,9 @@ export interface PlatformListItem extends PlatformChip {
   generation: number | null;
   family: PlatformFamilyRef | null;
   status: PlatformStatus;
-  /** 平台 logo 的已存網址（原樣；與 CalendarEventItem.logoUrl 相同處理，見 3b H 報告）。 */
+  /** 平台 logo（已解析各尺寸，與封面相同經 ImageResolver；kind＝logo）。UI 用這個。 */
+  logo: ImageRef | null;
+  /** @deprecated 已存的原始網址（＝logo?.original），只為相容保留；UI 請用 `logo`。 */
   logoUrl: string | null;
   /** 今天前後 365 天內的上市事件數。 */
   recentReleaseCount: number;
@@ -67,8 +70,10 @@ export interface PlatformInfo extends PlatformListItem {
 }
 
 /**
- * 以「該平台」上市列的期間結束日判斷（day＝當日、month＝月底、quarter／year＝期間最後一天；tbd 不列）：
- * upcoming＝結束日 ≥ 今天；recent＝結束日在今天前 recentDays 天內（不含今天）。
+ * 以聚合規則挑出的「該平台」代表上市列判斷（與月曆的上市狀態篩選同一份規則，期間結束日：day＝當日、month＝月底、
+ * quarter／year＝期間最後一天；tbd 不列）：
+ * upcoming＝未標為已上市且結束日 ≥ 今天；recent＝已上市（status released 或結束日 < 今天）、代表日期 ≤ 今天，
+ * 且結束日在今天前 recentDays 天內。
  */
 export type PlatformGamesSection = "upcoming" | "recent";
 export const PLATFORM_GAMES_SECTIONS: readonly PlatformGamesSection[] = ["upcoming", "recent"];
@@ -77,9 +82,12 @@ export const PLATFORM_GAMES_SECTIONS: readonly PlatformGamesSection[] = ["upcomi
 export type PlatformGamesSort = "date" | "popularity";
 export const PLATFORM_GAMES_SORTS: readonly PlatformGamesSort[] = ["date", "popularity"];
 
-/** 平台頁的一款遊戲：日期是「該平台」的上市日（不是 games.firstReleaseDate）。 */
+/**
+ * 平台頁的一筆：聚合規則（地區偏好、manual 優先…，與月曆相同）挑出的「該平台」代表上市列，一筆＝(遊戲, 階段)；
+ * 同一款遊戲在此平台有多個可見階段（例如搶先體驗＋正式版）時會有多筆。日期不是 games.firstReleaseDate。
+ */
 export interface PlatformGameItem extends GameListItem {
-  /** 該平台在區段內最早（upcoming）／最晚（recent）的代表日期。 */
+  /** 該平台、該階段的代表日期（month 精度＝當月 1 日；quarter／year＝期間最後一天）。 */
   date: IsoDate;
   precision: DatePrecision;
   stage: ReleaseStage;
@@ -97,7 +105,9 @@ export interface PlatformPage {
 export interface CompanyInfo {
   slug: string;
   name: string;
-  /** 已存網址（原樣）。 */
+  /** 公司 logo（已解析各尺寸，經 ImageResolver；kind＝logo）。UI 用這個。 */
+  logo: ImageRef | null;
+  /** @deprecated 已存的原始網址（＝logo?.original），只為相容保留；UI 請用 `logo`。 */
   logoUrl: string | null;
   websiteUrl: string | null;
 }

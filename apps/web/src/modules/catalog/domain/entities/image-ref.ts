@@ -1,13 +1,14 @@
 // 圖片參照（06 §封面圖：依 viewport 選尺寸）。Domain 型別，零外部格式知識：
 // 來源 CDN 的網址格式與尺寸 token 換算只在 Provider 層（providers/image-ref.ts），由 Use Case 交給 Repository 套用。
 
-/** 圖片用途；Provider 依用途決定各尺寸對應的實際網址。 */
-export type ImageKind = "cover" | "screenshot";
+/** 圖片用途；Provider 依用途決定各尺寸對應的實際網址。logo＝平台、公司、活動的 logo（3b）。 */
+export type ImageKind = "cover" | "screenshot" | "logo";
 
 /**
  * 已解析好各尺寸網址的圖片。UI 直接用這裡的網址，不自行組網址。
  * - cover：small ≈ 列表縮圖（90×128）、medium ≈ 詳情封面（264×374）、large ≈ 高解析。
  * - screenshot：small ≈ 569×320、medium ≈ 889×500、large ≈ 1080p。
+ * - logo：small＝medium ≈ 284×160 內縮（不裁切）、large ≈ 1280×720 內縮；透明背景（png）。
  */
 export interface ImageRef {
   /** 資料庫存的原始網址（原樣）。 */

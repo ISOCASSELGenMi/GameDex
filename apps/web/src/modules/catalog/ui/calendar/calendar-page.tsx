@@ -11,15 +11,17 @@ import type { ReactElement } from "react";
 import { filterSpecToQueryString, isEmptyFilter, parseFilterSpec, type FilterSearchInput } from "@sok/api-contract";
 import { formatYearMonth, type Locale } from "@sok/i18n";
 import { getCalendarMonth } from "../../use-cases/read";
-import { collectFilterNotices, filterSpecToReleaseFilter, withoutIgnored } from "../filter-mapping";
+import { regionPrefIssue } from "../../domain/release-filter";
+import { collectFilterNotices, filterSpecToReadQuery, withoutIgnored } from "../filter-mapping";
+import { appliedChips, filterSpecForPage, makeFilterLabeler, PAGE_FILTER_PARAMS } from "../filters/filter-labels";
+import { AppliedFilterChips, CALENDAR_FILTER_FIELDS, EmptyFilterResult, FilterNotices, FilterPanel } from "../filters/filter-panel";
 import { getTranslator } from "../labels";
 import { PageShell } from "../layout/page-shell";
-import { calendarMonthHref, calendarMonthPath, calendarTodayHref, localeHref, searchParamsToQuery } from "../links";
-import { addMonths, monthOfDate, parseMonthParam, weekStartFor, type YearMonth } from "../month";
+import { calendarMonthHref, calendarMonthPath, calendarTodayHref, localeHref, searchParamsToQuery, timelineHref } from "../links";
+import { addMonths, isoDate, monthOfDate, parseMonthParam, weekStartFor, type YearMonth } from "../month";
 import { rethrowForPage } from "../page-errors";
 import { CalendarInteractive } from "./calendar-interactive";
 import { loadFilterOptions } from "./filter-options";
-import { AppliedFilterChips, FilterNotices, FilterPanel, appliedChips, makeFilterLabeler } from "./filters";
 import { AgendaView, MonthGridView, UndatedView } from "./month-views";
 import type { CalendarClientLabels } from "./types";
 import { buildCalendarViewModel, type CardItem } from "./view-model";
@@ -52,18 +54,35 @@ export async function CalendarMonthPage({ locale, supportedLocales, month, searc
 
   const t = getTranslator(locale);
   const parsed = parseFilterSpec(searchParams as FilterSearchInput);
+  // 月曆不適用的參數（from／to、q、sort…）靜默略過，也不提示
+  const pageParams = new Set<string>(PAGE_FILTER_PARAMS.calendar);
+  const pageSpec = filterSpecForPage(parsed.filter, "calendar");
+  const rq = filterSpecToReadQuery(pageSpec);
   let data, options;
   try {
     [data, options] = await Promise.all([
-      getCalendarMonth({ year: ym.year, month: ym.month, filter: filterSpecToReleaseFilter(parsed.filter), locale }),
+      getCalendarMonth({
+        year: ym.year,
+        month: ym.month,
+        filter: rq.filter,
+        regionPref: rq.regionPref,
+        includeEvents: rq.show.events,
+        locale,
+      }),
       loadFilterOptions(locale),
     ]);
   } catch (err) {
     rethrowForPage(err);
   }
+  // show=events（只看活動）：上市卡片不顯示
+  if (!rq.show.releases) data = { ...data, days: {}, undated: [] };
+  const regionIssue = regionPrefIssue(rq.regionPref);
 
-  const notices = collectFilterNotices(parsed.issues, data.ignored);
-  const spec = withoutIgnored(parsed.filter, notices);
+  const notices = collectFilterNotices(
+    parsed.issues.filter((i) => pageParams.has(i.param)),
+    regionIssue ? [...data.ignored, regionIssue] : data.ignored,
+  );
+  const spec = withoutIgnored(pageSpec, notices);
   const query = filterSpecToQueryString(spec);
   const path = calendarMonthPath(ym);
   const basePath = localeHref(locale, path);
@@ -74,7 +93,7 @@ export async function CalendarMonthPage({ locale, supportedLocales, month, searc
   const prev = addMonths(ym, -1);
   const next = addMonths(ym, 1);
   const hrefOf = (item: CardItem) => vm.previews[item.key]!.h;
-  const empty = vm.releaseCount === 0;
+  const empty = rq.show.releases ? vm.releaseCount === 0 : vm.eventCount === 0;
 
   const labels: CalendarClientLabels = {
     close: t.t("ui.common.close"),
@@ -118,6 +137,11 @@ export async function CalendarMonthPage({ locale, supportedLocales, month, searc
                 {t.t("ui.calendar.today")}
               </a>
             </li>
+            <li>
+              <a className="btn-secondary" href={timelineHref(locale, filterSpecForPage(spec, "timeline"), isoDate(ym.year, ym.month, 1))}>
+                {t.t("ui.timeline.viewAsTimeline")}
+              </a>
+            </li>
             {next ? (
               <li>
                 <a
@@ -138,20 +162,13 @@ export async function CalendarMonthPage({ locale, supportedLocales, month, searc
       <div className="cal-tools">
         <FilterNotices notices={notices} t={t} />
         {!empty ? <AppliedFilterChips chips={chips} t={t} clearHref={basePath} /> : null}
-        <FilterPanel locale={locale} t={t} options={options} spec={spec} action={basePath} />
+        <FilterPanel locale={locale} t={t} options={options} spec={spec} action={basePath} fields={CALENDAR_FILTER_FIELDS} />
         <p role="status" className="text-sm text-[var(--muted)]">
           {t.t("filters.resultsCount", { count: vm.releaseCount })}
         </p>
       </div>
 
-      {empty ? (
-        <div className="empty-result">
-          <p className="font-semibold">{isEmptyFilter(spec) ? t.t("ui.calendar.noReleases") : t.t("filters.emptyResult")}</p>
-          {!isEmptyFilter(spec) ? (
-            <AppliedFilterChips chips={chips} t={t} clearHref={basePath} heading={t.t("filters.emptyResultHint")} />
-          ) : null}
-        </div>
-      ) : null}
+      {empty ? <EmptyFilterResult chips={isEmptyFilter(spec) ? [] : chips} t={t} clearHref={basePath} emptyText={t.t("ui.calendar.noReleases")} /> : null}
 
       <CalendarInteractive key={`${path}?${query}`} previews={vm.previews} labels={labels}>
         <div className="cal-desktop">

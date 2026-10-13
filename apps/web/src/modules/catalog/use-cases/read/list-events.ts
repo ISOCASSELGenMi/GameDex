@@ -1,4 +1,5 @@
 import { EVENT_KINDS, EVENT_LIST_SCOPES, type EventKind, type EventList, type EventListScope } from "../../domain/entities";
+import { resolveImageRef } from "../../providers/image-ref";
 import { listEventsPage } from "../../repository/event-pages";
 
 export const EVENT_LIST_DEFAULT_PAGE_SIZE = 30;
@@ -29,7 +30,7 @@ export async function listEvents(input: ListEventsInput = {}): Promise<EventList
   const kind: EventKind | null = t && (EVENT_KINDS as readonly string[]).includes(t) ? (t as EventKind) : null;
   const pageSize = clampInt(input.pageSize, 1, EVENT_LIST_MAX_PAGE_SIZE, EVENT_LIST_DEFAULT_PAGE_SIZE);
   const page = clampInt(input.page, 1, MAX_PAGE, 1);
-  const res = await listEventsPage({ scope, kind, limit: pageSize, offset: (page - 1) * pageSize, now: input.now });
+  const res = await listEventsPage({ scope, kind, limit: pageSize, offset: (page - 1) * pageSize, now: input.now, resolveImage: resolveImageRef });
   return { scope, kind, page, pageSize, hasMore: res.hasMore, items: res.items };
 }
 

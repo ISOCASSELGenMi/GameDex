@@ -23,7 +23,13 @@ export interface PageShellProps {
 export function PageShell({ locale, supportedLocales, path, query = "", headerRight, children }: PageShellProps): ReactElement {
   const t = getTranslator(locale);
   const links = languageMenuLinks(locale, supportedLocales, path, query);
-  const onCalendar = path.startsWith("/calendar");
+  // 主要導覽（3b：月曆、時間軸、熱門榜）。aria-current 依路徑前綴判斷。
+  const navItems = [
+    { path: "/calendar", label: t.t("ui.nav.calendar") },
+    { path: "/timeline", label: t.t("ui.nav.timeline") },
+    { path: "/trending", label: t.t("ui.nav.trending") },
+  ];
+  const isCurrent = (p: string) => path === p || path.startsWith(`${p}/`);
   return (
     <>
       <header className="border-b border-[var(--border)]">
@@ -32,16 +38,18 @@ export function PageShell({ locale, supportedLocales, path, query = "", headerRi
             {t.t("ui.site.name")}
           </a>
           <nav aria-label={t.t("a11y.mainNavigation")} className="flex-1">
-            <ul className="flex gap-2">
-              <li>
-                <a
-                  href={localeHref(locale, "/calendar")}
-                  aria-current={onCalendar ? "page" : undefined}
-                  className="link-quiet inline-flex min-h-11 items-center rounded-md px-2 aria-[current=page]:font-semibold aria-[current=page]:underline"
-                >
-                  {t.t("ui.nav.calendar")}
-                </a>
-              </li>
+            <ul className="flex flex-wrap gap-2">
+              {navItems.map((item) => (
+                <li key={item.path}>
+                  <a
+                    href={localeHref(locale, item.path)}
+                    aria-current={isCurrent(item.path) ? "page" : undefined}
+                    className="link-quiet inline-flex min-h-11 items-center rounded-md px-2 aria-[current=page]:font-semibold aria-[current=page]:underline"
+                  >
+                    {item.label}
+                  </a>
+                </li>
+              ))}
             </ul>
           </nav>
           <LanguageMenu items={links} label={t.t("a11y.languageMenu")} />

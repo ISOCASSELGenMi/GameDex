@@ -7,7 +7,7 @@ import { checkDictionaryDrift } from "./use-cases/sync/dictionary-drift";
 import { parseRefreshPopularityArgs, refreshPopularity } from "./use-cases/sync/refresh-popularity";
 import { resolveRelations } from "./use-cases/sync/resolve-relations";
 import { rollingRefresh } from "./use-cases/sync/rolling-refresh";
-import { syncEvents } from "./use-cases/sync/sync-events";
+import { parseSyncEventsArgs, reclassifyEventKinds, syncEvents } from "./use-cases/sync/sync-events";
 import { syncGames } from "./use-cases/sync/sync-games";
 import { syncPlatforms } from "./use-cases/sync/sync-platforms";
 
@@ -69,6 +69,12 @@ export const catalogModule: ModuleManifest = {
       name: "sync_events",
       cron: "25 */6 * * *", // 每 6 小時
       run: async (ctx) => {
+        // npm run job -- sync_events --reclassify [--all]：只依名稱重算既有 IGDB 活動的類型
+        const args = parseSyncEventsArgs(ctx.args);
+        if (args.reclassify) {
+          await reclassifyEventKinds(ctx, { all: args.all });
+          return;
+        }
         await syncEvents(getIgdbProvider(), ctx);
       },
     },

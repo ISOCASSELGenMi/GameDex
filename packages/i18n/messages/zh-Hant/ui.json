@@ -8,7 +8,8 @@
     "timeline": "時間軸",
     "games": "遊戲",
     "platforms": "平台",
-    "events": "活動"
+    "events": "活動",
+    "trending": "熱門榜"
   },
   "language": {
     "menuLabel": "語言",
@@ -120,5 +121,55 @@
   },
   "preview": {
     "title": "遊戲預覽"
+  },
+  "heat": {
+    "label": "熱度 {level}/{max}"
+  },
+  "timeline": {
+    "title": "上市時間軸",
+    "viewAsTimeline": "以時間軸檢視",
+    "viewAsCalendar": "以月曆檢視",
+    "viewSwitch": "切換檢視方式",
+    "loadMore": "載入更多",
+    "loadEarlier": "載入較早",
+    "loading": "載入中…",
+    "expand": "展開（剩 {count} 款）",
+    "expandAria": "展開「{group}」（剩 {count} 款）",
+    "loadedCount": "已載入 {count} 款遊戲",
+    "loadError": "載入失敗，請稍後再試",
+    "noEarlier": "沒有更早的資料了",
+    "noLater": "沒有更多資料了",
+    "today": "今天",
+    "todayLine": "今天：{date}",
+    "history": "改期紀錄",
+    "historyLoading": "載入改期紀錄…",
+    "historyError": "改期紀錄載入失敗",
+    "historyEmpty": "沒有改期紀錄",
+    "tbdSection": "日期未定",
+    "jumpTo": "跳到日期",
+    "jumpGo": "前往",
+    "jumpHint": "從選擇的日期開始往後列出；未選擇時從今天開始",
+    "empty": "這段期間沒有符合條件的上市資料",
+    "backToToday": "回到今天",
+    "startsFrom": "從 {date} 開始",
+    "description": "依上市日期由近到遠列出。日期未確定的遊戲放在所屬期間的頂端，完全未定的在最後。",
+    "timesInUtc": "日期以 UTC 計算"
+  },
+  "trending": {
+    "title": "熱門榜",
+    "note": "熱度每小時更新一次，不是即時排名。",
+    "groupLabel": "榜單",
+    "upcoming": "即將上市",
+    "released": "已上市",
+    "upcomingHint": "尚未上市，或上市未滿 30 天",
+    "releasedHint": "已上市超過 30 天",
+    "rank": "第 {rank} 名",
+    "empty": "目前沒有符合條件的熱門遊戲",
+    "pagination": "分頁",
+    "prevPage": "上一頁",
+    "nextPage": "下一頁",
+    "page": "第 {page} 頁",
+    "releaseDate": "上市日",
+    "viewGame": "查看「{name}」"
   }
 }

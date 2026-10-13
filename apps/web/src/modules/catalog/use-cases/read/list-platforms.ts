@@ -1,4 +1,5 @@
 import type { PlatformKindGroup } from "../../domain/entities";
+import { resolveImageRef } from "../../providers/image-ref";
 import { listPlatformGroups } from "../../repository/platform-page";
 
 export interface ListPlatformsInput {
@@ -16,5 +17,5 @@ export interface ListPlatformsInput {
 export async function listPlatforms(input: ListPlatformsInput): Promise<PlatformKindGroup[]> {
   void input.locale;
   const today = (input.today ?? new Date()).toISOString().slice(0, 10);
-  return listPlatformGroups(today);
+  return listPlatformGroups(today, resolveImageRef);
 }

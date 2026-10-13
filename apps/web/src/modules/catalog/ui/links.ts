@@ -31,6 +31,21 @@ export function calendarTodayHref(locale: Locale, filter: FilterSpec = {}): stri
   return localeHref(locale, "/calendar", filterSpecToQueryString(filter));
 }
 
+/** 時間軸 `/timeline`；`at`＝跳到指定日期（YYYY-MM-DD）。篩選參數在前、`at` 在後（與 proxy 正規形式一致）。 */
+export function timelineHref(locale: Locale, filter: FilterSpec = {}, at?: string | null): string {
+  const q = [filterSpecToQueryString(filter), at ? `at=${encodeURIComponent(at)}` : ""].filter(Boolean).join("&");
+  return localeHref(locale, "/timeline", q);
+}
+
+/** 熱門榜 `/trending`；group＝upcoming（預設，不寫進網址）／released。 */
+export function trendingHref(locale: Locale, filter: FilterSpec = {}, group: "upcoming" | "released" = "upcoming", page = 1): string {
+  const extra: string[] = [];
+  if (group !== "upcoming") extra.push(`group=${group}`);
+  if (page > 1) extra.push(`page=${page}`);
+  const q = [filterSpecToQueryString(filter), ...extra].filter(Boolean).join("&");
+  return localeHref(locale, "/trending", q);
+}
+
 export function gameHref(locale: Locale, slug: string): string {
   return localeHref(locale, `/games/${encodeURIComponent(slug)}`);
 }

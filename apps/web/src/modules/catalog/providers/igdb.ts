@@ -25,6 +25,7 @@ import type {
 } from "../domain/entities";
 import type { GameDataProvider } from "./game-data-provider.interface";
 import { normalizeIgdbDate } from "./igdb/dates";
+import { inferIgdbEventKind } from "./igdb/event-kind";
 import {
   gameTypeIds,
   mapGameStatus,
@@ -529,10 +530,13 @@ export const EVENT_FIELDS = [
 const unixToDate = (s: number | null | undefined): Date | null => (s != null ? new Date(s * 1000) : null);
 
 export function toEventRecord(e: IgdbEvent): EventRecord {
-  const name = e.name?.trim() || `Event ${e.id}`;
+  const rawName = e.name?.trim();
+  const name = rawName || `Event ${e.id}`;
   return {
     igdbId: e.id,
     name,
+    // 佔位名稱（IGDB 沒給名稱）不推斷
+    kind: rawName ? inferIgdbEventKind(rawName) : "other",
     slug: blankToNull(e.slug) ?? `event-${e.id}`,
     description: blankToNull(e.description),
     startTime: unixToDate(e.start_time),

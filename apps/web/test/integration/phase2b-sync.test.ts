@@ -135,7 +135,7 @@ describe.skipIf(!enabled)("Phase 2b（整合）", () => {
       { name: "人工同名", slug: "p2b-showcase", source: "manual" },
     ]);
     const ev = (id: number, start: string, gamesIds: number[], slug = `p2b-ev-${id}`) =>
-      toEventRecord({ id, name: `Event ${id}`, slug, start_time: Date.parse(start) / 1000, time_zone: "PST", games: gamesIds });
+      toEventRecord({ id, name: `P2B Gathering ${id}`, slug, start_time: Date.parse(start) / 1000, time_zone: "PST", games: gamesIds });
     let list = [ev(660301, "2027-06-01T17:00:00Z", [660101, 660102, 669999], "p2b-showcase"), ev(660302, "2027-01-01T00:00:00Z", [660101])];
     const src = fakeSource(() => [], () => list);
 

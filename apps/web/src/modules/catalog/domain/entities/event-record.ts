@@ -1,10 +1,17 @@
+import type { EventKind } from "./enums";
+
 /**
  * GameDataProvider.fetchEvents() 的回傳（04 §活動同步）：一場活動，來源格式已在 Provider 轉完。
- * kind／seriesId IGDB 沒有，由管理員標註，不在這裡。
+ * seriesId IGDB 沒有，由管理員標註，不在這裡。
  */
 export interface EventRecord {
   igdbId: number;
   name: string;
+  /**
+   * 活動類型。IGDB 沒有這個欄位，由 Provider 依名稱推斷（3b 使用者定案；providers/igdb/event-kind.ts）。
+   * 寫入時只填新活動、或覆蓋仍是 other 的活動（管理員改過的不覆蓋，見 repository/events.ts）。
+   */
+  kind: EventKind;
   slug: string;
   description: string | null;
   /** NULL＝時間未定。 */

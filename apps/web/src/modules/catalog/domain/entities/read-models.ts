@@ -146,7 +146,13 @@ export interface CalendarEventItem {
   endTime: string | null;
   /** IGDB 時區縮寫，只供附註，不可計算。 */
   timezone: string | null;
+  /** @deprecated 已存的原始網址（＝logo?.original），只為相容保留；UI 請用 `logo`。 */
   logoUrl: string | null;
+  /**
+   * 活動 logo（已解析各尺寸，與封面相同經 ImageResolver；kind＝logo）。Repository 一定會填（沒有 logo 時為 null）；
+   * 型別上是 optional 只為了讓既有測試的物件字面值仍可編譯。
+   */
+  logo?: ImageRef | null;
 }
 
 export interface CalendarMonth {

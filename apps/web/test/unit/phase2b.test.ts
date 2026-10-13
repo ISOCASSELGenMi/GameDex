@@ -50,6 +50,7 @@ describe("活動（IGDB events）", () => {
       startTime: new Date(1791396000 * 1000),
       endTime: new Date(1791406800 * 1000),
       timeZone: "EST",
+      kind: "other",
       logoUrl: "https://images.igdb.com/igdb/image/upload/t_logo_med/el173.png",
       streamUrl: "https://www.youtube.com/watch?v=x",
       gameIgdbIds: [3, 1],

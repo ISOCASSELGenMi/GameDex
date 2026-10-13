@@ -22,6 +22,13 @@
       "when": 1791837797379,
       "tag": "0002_complex_the_hood",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791872519174,
+      "tag": "0003_wooden_proemial_gods",
+      "breakpoints": true
     }
   ]
 }

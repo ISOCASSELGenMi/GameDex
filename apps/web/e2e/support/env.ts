@@ -4,6 +4,7 @@
  */
 import path from "node:path";
 import { config as loadDotenv } from "dotenv";
+import { resolveTestDatabaseUrl } from "../../test/integration/test-db-url";
 
 /** 不用 3100（企劃負責人的 dev server）。 */
 export const E2E_PORT = Number(process.env.E2E_PORT || 3200);
@@ -21,10 +22,13 @@ export const E2E_DIST_DIR = process.env.E2E_DIST_DIR || "../../.local/e2e-next";
 /** Playwright 產物（截圖、trace、HTML 報告）也放 `.local/`。 */
 export const E2E_ARTIFACT_DIR = path.resolve(WEB_DIR, "..", "..", ".local", "playwright");
 
-/** 讀 TEST_DATABASE_URL（與整合測試相同的來源：.env.test.local → .env.local → .env）；不印出。 */
+/**
+ * 讀 TEST_DATABASE_URL（與整合測試相同的來源：.env.test.local → .env.local → .env）；不印出。
+ * 有 TEST_DATABASE_NAME 時換掉資料庫名稱（同 test/integration/test-db-url.ts；seed 的重建也走同一個函式）。
+ */
 export function testDatabaseUrl(): string {
   loadDotenv({ path: [".env.test.local", ".env.local", ".env"].map((f) => path.join(WEB_DIR, f)), quiet: true });
-  const raw = process.env.TEST_DATABASE_URL;
+  const raw = resolveTestDatabaseUrl();
   if (!raw) throw new Error("test:a11y 需要 TEST_DATABASE_URL（資料庫名稱必須以 _test 結尾）");
   const dbName = new URL(raw).pathname.slice(1);
   if (!dbName.endsWith("_test")) throw new Error(`TEST_DATABASE_URL 的資料庫名稱必須以 _test 結尾：${dbName}`);

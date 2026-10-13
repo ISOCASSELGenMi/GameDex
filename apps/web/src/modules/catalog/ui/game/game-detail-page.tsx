@@ -6,15 +6,17 @@ import Image from "next/image";
 import { connection } from "next/server";
 import { notFound } from "next/navigation";
 import { cache, type ReactElement, type ReactNode } from "react";
-import { formatDateTime, formatIsoDate, formatReleaseLabel, type Locale, type Translator } from "@sok/i18n";
+import { formatDateTime, formatReleaseLabel, type Locale, type Translator } from "@sok/i18n";
 import type { CalendarEventItem, GameDetail, GameFranchiseGroup, GameReleaseRow, GameSummary } from "../../domain/entities";
 import { getGameDetail } from "../../use-cases/read";
 import { joinList } from "../calendar/view-model";
+import { HeatBadge, heatBadgeLabel } from "../heat-badge";
 import { EventIcon, ExternalIcon, StageIcon, StatusIcon, WarningIcon } from "../icons";
 import { eventKindLabel, genreLabel, getTranslator, regionLabel, stageLabel, statusLabel } from "../labels";
 import { PageShell } from "../layout/page-shell";
 import { gameHref } from "../links";
 import { rethrowForPage } from "../page-errors";
+import { releaseHistoryText } from "../release-history";
 
 export interface GameDetailSlots {
   /** `game.actions`（追蹤／收藏；accounts）。3a 沒有提供者。 */
@@ -100,14 +102,7 @@ function dedupeFranchises(groups: readonly GameFranchiseGroup[]): GameFranchiseG
 }
 
 function historyText(row: GameReleaseRow, locale: Locale, t: Translator): string[] {
-  return row.history.map((h) => {
-    const from = formatReleaseLabel(h.oldDate, h.oldPrecision ?? "tbd", locale);
-    const to = formatReleaseLabel(h.newDate, h.newPrecision ?? "tbd", locale);
-    const change = t.t("ui.game.historyChange", { from, to });
-    return h.changedAt
-      ? t.t("ui.game.historyEntry", { change, date: t.t("ui.game.historyChangedAt", { date: formatIsoDate(h.changedAt.slice(0, 10), locale) }) })
-      : change;
-  });
+  return releaseHistoryText(row.history, locale, t);
 }
 
 function ReleaseRowView({ row, locale, t }: { row: GameReleaseRow; locale: Locale; t: Translator }): ReactElement {
@@ -210,6 +205,7 @@ export async function GameDetailPage({ locale, supportedLocales, slug, slots }: 
             <p className="flex flex-wrap gap-2 text-sm">
               <span className="chip">{t.t(`enums.gameType.${game.gameType}`)}</span>
               {game.gameStatus ? <span className="chip">{t.t(`enums.gameStatus.${game.gameStatus}`)}</span> : null}
+              <HeatBadge level={game.heatLevel} label={heatBadgeLabel(t, game.heatLevel)} />
             </p>
             {game.platforms.length > 0 ? (
               <p>

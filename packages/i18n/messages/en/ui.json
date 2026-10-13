@@ -8,7 +8,8 @@
     "timeline": "Timeline",
     "games": "Games",
     "platforms": "Platforms",
-    "events": "Events"
+    "events": "Events",
+    "trending": "Trending"
   },
   "language": {
     "menuLabel": "Language",
@@ -120,5 +121,55 @@
   },
   "preview": {
     "title": "Game preview"
+  },
+  "heat": {
+    "label": "Heat {level}/{max}"
+  },
+  "timeline": {
+    "title": "Release timeline",
+    "viewAsTimeline": "View as timeline",
+    "viewAsCalendar": "View as calendar",
+    "viewSwitch": "Switch view",
+    "loadMore": "Load more",
+    "loadEarlier": "Load earlier",
+    "loading": "Loading…",
+    "expand": "Show all ({count} more)",
+    "expandAria": "Show all in “{group}” ({count} more)",
+    "loadedCount": "Loaded {count} games",
+    "loadError": "Could not load. Please try again later.",
+    "noEarlier": "No earlier releases",
+    "noLater": "No more releases",
+    "today": "Today",
+    "todayLine": "Today: {date}",
+    "history": "Date changes",
+    "historyLoading": "Loading date changes…",
+    "historyError": "Could not load date changes",
+    "historyEmpty": "No date changes",
+    "tbdSection": "Date TBA",
+    "jumpTo": "Jump to date",
+    "jumpGo": "Go",
+    "jumpHint": "Lists releases from the chosen date onward; starts from today when empty",
+    "empty": "No releases match your filters in this period",
+    "backToToday": "Back to today",
+    "startsFrom": "Starting {date}",
+    "description": "Releases from nearest to furthest. Games with only a month, quarter or year are listed at the top of that period; fully undated games come last.",
+    "timesInUtc": "Dates are in UTC"
+  },
+  "trending": {
+    "title": "Trending",
+    "note": "Heat is updated hourly; this is not a live ranking.",
+    "groupLabel": "Ranking",
+    "upcoming": "Upcoming",
+    "released": "Released",
+    "upcomingHint": "Not yet released, or released within the last 30 days",
+    "releasedHint": "Released more than 30 days ago",
+    "rank": "No. {rank}",
+    "empty": "No trending games match your filters",
+    "pagination": "Pagination",
+    "prevPage": "Previous page",
+    "nextPage": "Next page",
+    "page": "Page {page}",
+    "releaseDate": "Release date",
+    "viewGame": "View “{name}”"
   }
 }

@@ -10,6 +10,7 @@
  */
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactElement, type ReactNode } from "react";
+import { HeatBadge } from "../heat-badge";
 import { EventIcon, StageIcon, StatusIcon, WarningIcon } from "../icons";
 import { PreviewDataContext } from "./folded-cards";
 import type { CalendarClientLabels, PreviewCardData } from "./types";
@@ -328,6 +329,11 @@ export function CalendarInteractive({
               <h2 id="sheet-title" ref={titleRef} tabIndex={-1} className="text-xl font-semibold outline-none">
                 {card.n}
               </h2>
+              {card.hl ? (
+                <p className="mt-2">
+                  <HeatBadge level={card.hv} label={card.hl} />
+                </p>
+              ) : null}
               {card.c ? (
                 <Image
                   className="mt-3 h-auto w-40 rounded-md"

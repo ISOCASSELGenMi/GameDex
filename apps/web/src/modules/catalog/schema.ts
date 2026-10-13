@@ -295,7 +295,11 @@ export const franchises = pgTable(
     name: varchar("name", { length: 255 }).notNull(),
     slug: varchar("slug", { length: 255 }).notNull(),
   },
-  (t) => [uniqueIndex("franchises_igdb_kind_uq").on(t.igdbId, t.kind)],
+  (t) => [
+    uniqueIndex("franchises_igdb_kind_uq").on(t.igdbId, t.kind),
+    // 系列頁以 slug 查（slug 不唯一：franchise 與 collection 同名時相同，頁面用 ?kind= 區分；3b 使用者定案）
+    index("franchises_slug_idx").on(t.slug),
+  ],
 );
 
 export const gameFranchises = pgTable(

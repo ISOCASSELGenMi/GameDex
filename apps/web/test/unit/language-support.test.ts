@@ -99,6 +99,7 @@ describe("groupPlatformsByKind", () => {
     generation: null,
     family: null,
     status: "active",
+    logo: null,
     logoUrl: null,
     recentReleaseCount: 0,
     isCommon: false,

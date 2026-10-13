@@ -37,7 +37,7 @@ export async function getCalendarMonth(input: GetCalendarMonthInput): Promise<Ca
 
   const [cards, events] = await Promise.all([
     aggregateReleases({ from: first, to: last, filter, regionPref, locale: input.locale, resolveImage: resolveImageRef }),
-    input.includeEvents === false ? Promise.resolve([]) : listEventsInRange({ from: monthStart, to: nextMonthStart }),
+    input.includeEvents === false ? Promise.resolve([]) : listEventsInRange({ from: monthStart, to: nextMonthStart, resolveImage: resolveImageRef }),
   ]);
 
   const days: Record<string, ReleaseCard[]> = {};

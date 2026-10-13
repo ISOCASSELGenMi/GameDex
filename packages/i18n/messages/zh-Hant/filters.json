@@ -12,7 +12,23 @@
     "platform": "平台",
     "platformKind": "平台類型",
     "genre": "類型",
-    "stage": "上市階段"
+    "stage": "上市階段",
+    "theme": "主題",
+    "type": "遊戲類型",
+    "status": "上市狀態",
+    "region": "地區偏好",
+    "from": "從",
+    "to": "到",
+    "minHeat": "最低熱度",
+    "show": "顯示內容",
+    "rumored": "傳聞中",
+    "company": "公司",
+    "franchise": "系列",
+    "year": "年份",
+    "yearFrom": "起始年份",
+    "yearTo": "結束年份",
+    "q": "搜尋",
+    "sort": "排序"
   },
   "resultsCount": "共 {count} 筆結果",
   "emptyResult": "沒有符合條件的結果",
@@ -23,5 +39,29 @@
   "morePlatforms": "更多平台",
   "defaultStagesHint": "未選擇時顯示：{stages}",
   "noFilters": "未套用篩選條件",
-  "chipLabel": "{dimension}：{label}"
+  "chipLabel": "{dimension}：{label}",
+  "statusValues": {
+    "upcoming": "即將上市",
+    "released": "已上市",
+    "delayed": "曾延期"
+  },
+  "showValues": {
+    "releases": "遊戲上市",
+    "events": "活動"
+  },
+  "sortValues": {
+    "popularity": "熱度",
+    "release_date": "上市日期",
+    "name": "名稱"
+  },
+  "minHeatValue": "熱度 {level} 以上",
+  "rumoredValue": "含傳聞中",
+  "rumoredOption": "包含傳聞中（尚未證實）的遊戲",
+  "any": "不限",
+  "regionHint": "決定每款遊戲以哪個地區的上市日顯示",
+  "regionDefault": "預設（{region}）",
+  "dateRange": "日期範圍",
+  "dateRangeHint": "依期間起點篩選；設定範圍後不顯示日期未定的遊戲",
+  "defaultHint": "未選擇時顯示：{values}",
+  "showHint": "兩者都不選時，上市與活動都顯示"
 }

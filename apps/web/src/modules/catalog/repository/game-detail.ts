@@ -281,7 +281,7 @@ async function readDetail(tx: DbOrTx, q: GameDetailQuery): Promise<GameDetail | 
     franchises: groupFranchises(franchiseRes.rows, q.resolveImage),
     similarGames: similarRes.rows.map((r) => toSummary(r, q.resolveImage)),
     dlcs: dlcRes.rows.map((r) => toSummary(r, q.resolveImage)),
-    upcomingEvents: eventRes.rows.map(toCalendarEvent),
+    upcomingEvents: eventRes.rows.map((r) => toCalendarEvent(r, q.resolveImage)),
     languageSupport: buildLanguageSupport(languageEntries, locale),
   };
 }
