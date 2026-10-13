@@ -8,7 +8,6 @@ import {
   parseEventKind,
   parseEventScope,
   parseEventsPage,
-  safeExternalUrl,
 } from "@/modules/catalog/ui/events/view-model";
 
 const tZh = createTranslator("zh-Hant");
@@ -70,15 +69,5 @@ describe("活動狀態與連結", () => {
     expect(eventStatusLabel(tEn, "ongoing")).toBe("Happening now");
     expect(eventStatusLabel(tZh, "past")).toBe("已結束");
     expect(eventStatusLabel(tZh, "undated")).toBeNull();
-  });
-
-  it("外部連結只放行 http(s)", () => {
-    expect(safeExternalUrl("https://twitch.tv/x")).toBe("https://twitch.tv/x");
-    expect(safeExternalUrl("http://example.com/a")).toBe("http://example.com/a");
-    expect(safeExternalUrl("javascript:alert(1)")).toBeNull();
-    expect(safeExternalUrl("data:text/html,x")).toBeNull();
-    expect(safeExternalUrl("not a url")).toBeNull();
-    expect(safeExternalUrl(null)).toBeNull();
-    expect(safeExternalUrl("")).toBeNull();
   });
 });

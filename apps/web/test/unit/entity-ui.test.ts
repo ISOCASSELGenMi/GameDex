@@ -96,6 +96,10 @@ describe("網址參數解析", () => {
     expect(firstParam(undefined)).toBeUndefined();
     expect(safeDecode("a%20b")).toBe("a b");
     expect(safeDecode("%E0%A4%A")).toBe("%E0%A4%A");
+    // Next 16.4 對同一個請求會給出「已解碼」與「未解碼」兩種 params（實測）：兩種都要得到同一個 slug
+    expect(safeDecode("%E4%BD%A0")).toBe("你");
+    expect(safeDecode("你")).toBe("你");
+    expect(safeDecode("a-b-1")).toBe("a-b-1");
   });
 });
 

@@ -68,6 +68,7 @@ export function timelineHistoryResponse(request: Request): Promise<Response> {
       .split(",")
       .filter((s) => /^\d{1,12}$/.test(s))
       .map(Number)
+      .filter((n) => n >= 1 && n <= 2147483647) // PG integer 範圍；超出會在查詢時 22003 → 500
       .slice(0, MAX_IDS);
     if (ids.length === 0) return json({ error: "invalid_ids" }, 400);
     return json(await loadTimelineHistory(locale, ids));

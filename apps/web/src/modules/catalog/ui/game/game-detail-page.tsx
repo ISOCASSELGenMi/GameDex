@@ -10,6 +10,8 @@ import { formatDateTime, formatReleaseLabel, type Locale, type Translator } from
 import type { CalendarEventItem, GameDetail, GameFranchiseGroup, GameReleaseRow, GameSummary, PlatformChip } from "../../domain/entities";
 import { getGameDetail } from "../../use-cases/read";
 import { joinList } from "../calendar/view-model";
+import { safeDecode } from "../entities/view-model";
+import { safeExternalUrl } from "../external-url";
 import { HeatBadge, heatBadgeLabel } from "../heat-badge";
 import { EventIcon, ExternalIcon, StageIcon, StatusIcon, WarningIcon } from "../icons";
 import { eventKindLabel, genreLabel, getTranslator, regionLabel, stageLabel, statusLabel } from "../labels";
@@ -43,14 +45,6 @@ export const loadGameDetail = cache(async (slug: string, locale: Locale): Promis
   }
 });
 
-function safeDecode(s: string): string {
-  try {
-    return decodeURIComponent(s);
-  } catch {
-    return s;
-  }
-}
-
 /** 平台頁不含 mobile（P35）：mobile 平台只顯示文字。 */
 function PlatformName({ platform, locale }: { platform: PlatformChip; locale: Locale }): ReactElement {
   if (platform.kind === "mobile") return <>{platform.name}</>;
@@ -72,8 +66,8 @@ function Section({ id, title, children }: { id: string; title: string; children:
   );
 }
 
-function SummaryCard({ game, locale, t }: { game: GameSummary; locale: Locale; t: Translator }): ReactElement {
-  const label = game.firstReleasePrecision ? formatReleaseLabel(game.firstReleaseDate, game.firstReleasePrecision, locale) : t.t("ui.releaseLabel.tbd");
+function SummaryCard({ game, locale }: { game: GameSummary; locale: Locale }): ReactElement {
+  const label = formatReleaseLabel(game.firstReleaseDate, game.firstReleasePrecision ?? "tbd", locale);
   return (
     <a className="summary-card" href={gameHref(locale, game.slug)}>
       {game.cover ? (
@@ -89,12 +83,12 @@ function SummaryCard({ game, locale, t }: { game: GameSummary; locale: Locale; t
   );
 }
 
-function SummaryList({ games, locale, t }: { games: readonly GameSummary[]; locale: Locale; t: Translator }): ReactElement {
+function SummaryList({ games, locale }: { games: readonly GameSummary[]; locale: Locale }): ReactElement {
   return (
     <ul className="summary-grid">
       {games.map((g) => (
         <li key={g.gameId}>
-          <SummaryCard game={g} locale={locale} t={t} />
+          <SummaryCard game={g} locale={locale} />
         </li>
       ))}
     </ul>
@@ -181,6 +175,11 @@ export async function GameDetailPage({ locale, supportedLocales, slug, slots }: 
   const game = await loadGameDetail(slug, locale);
   if (!game) notFound();
   const t = getTranslator(locale);
+  // 外部連結只放行 http(s)（唯一白名單 external-url.ts）；其餘不渲染成連結
+  const safeLinks = game.links.flatMap((link) => {
+    const href = safeExternalUrl(link.url);
+    return href ? [{ link, href }] : [];
+  });
   const linkLabel = (category: string) => {
     const key = `enums.linkCategory.${category}`;
     return t.has(key) ? t.t(key) : category;
@@ -312,12 +311,12 @@ export async function GameDetailPage({ locale, supportedLocales, slug, slots }: 
           </Section>
         ) : null}
 
-        {game.links.length > 0 ? (
+        {safeLinks.length > 0 ? (
           <Section id="sec-links" title={t.t("ui.game.sections.links")}>
             <ul className="flex flex-wrap gap-2">
-              {game.links.map((link) => (
+              {safeLinks.map(({ link, href }) => (
                 <li key={`${link.categoryLabel}:${link.url}`}>
-                  <a className="ext-link" href={link.url} target="_blank" rel="noopener noreferrer">
+                  <a className="ext-link" href={href} target="_blank" rel="noopener noreferrer">
                     {linkLabel(link.categoryLabel)}
                     <ExternalIcon />
                     <span className="sr-only">{t.t("a11y.externalLink")}</span>
@@ -335,7 +334,7 @@ export async function GameDetailPage({ locale, supportedLocales, slug, slots }: 
 
         {dedupeFranchises(game.franchises).map((f) => (
           <Section key={`${f.kind}:${f.slug}`} id={`sec-${f.kind}-${f.slug}`} title={t.t(`ui.game.franchiseTitle.${f.kind}`, { name: f.name })}>
-            {f.games.length > 0 ? <SummaryList games={f.games} locale={locale} t={t} /> : <p>{t.t("ui.common.noData")}</p>}
+            {f.games.length > 0 ? <SummaryList games={f.games} locale={locale} /> : <p>{t.t("ui.common.noData")}</p>}
             <p className="mt-2">
               <a className="link inline-flex min-h-11 items-center" href={franchiseHref(locale, f.slug, f.kind)}>
                 {t.t("ui.games.viewAllFranchise", { name: f.name })}
@@ -346,13 +345,13 @@ export async function GameDetailPage({ locale, supportedLocales, slug, slots }: 
 
         {game.similarGames.length > 0 ? (
           <Section id="sec-similar" title={t.t("ui.game.sections.similar")}>
-            <SummaryList games={game.similarGames} locale={locale} t={t} />
+            <SummaryList games={game.similarGames} locale={locale} />
           </Section>
         ) : null}
 
         {game.dlcs.length > 0 ? (
           <Section id="sec-dlc" title={t.t("ui.game.sections.dlc")}>
-            <SummaryList games={game.dlcs} locale={locale} t={t} />
+            <SummaryList games={game.dlcs} locale={locale} />
           </Section>
         ) : null}
 

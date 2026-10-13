@@ -19,7 +19,7 @@ import type {
   PlatformChip,
   ResolvedReleaseFilter,
 } from "../domain/entities";
-import { delayedHistoryCondition } from "./release-aggregate";
+import { delayedHistoryCondition, periodEndSql } from "./release-aggregate";
 import { pgArray, withReadTimeout, type ReadOptions } from "./read-tx";
 
 export interface BrowseGamesQuery {
@@ -81,8 +81,7 @@ export function buildBrowseQuery(q: Omit<BrowseGamesQuery, "resolveImage">): SQL
   if (q.yearTo != null) conds.push(sql`g.first_release_date <= ${`${q.yearTo}-12-31`}::date`);
 
   if (f.releaseStates && f.releaseStates.length > 0) {
-    const end = sql`(CASE WHEN g.first_release_precision = 'month'
-      THEN (g.first_release_date + interval '1 month' - interval '1 day')::date ELSE g.first_release_date END)`;
+    const end = periodEndSql(sql`g.first_release_precision`, sql`g.first_release_date`);
     const st: SQL[] = [];
     if (f.releaseStates.includes("upcoming")) {
       st.push(sql`(g.first_release_date IS NULL OR g.first_release_precision = 'tbd' OR ${end} >= ${q.today}::date)`);

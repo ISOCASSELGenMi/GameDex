@@ -68,5 +68,19 @@ export function canonicalizeFilterQuery(input: string | URLSearchParams): Canoni
 export function filterRedirectSearch(search: string): string | null {
   const c = canonicalizeFilterQuery(search);
   if (c.isCanonical || c.hasIssues) return null;
+  // 語意相同、只差百分比編碼（`,` 與 %2C、`'` 與 %27、`!*()`、`+` 與 %20…）一律不轉址：
+  // 瀏覽器／WHATWG URL／代理會自行重新編碼 search，若逐字比較，轉址後的網址又被改寫 → 無限 308。
+  // 比較「逐一解碼後的 (名稱, 值) 序列」：順序、大小寫、重複、空參數的差異仍視為不同而轉址。
+  if (samePairs(search, c.query)) return null;
   return c.query ? `?${c.query}` : "";
+}
+
+function pairsOf(search: string): Array<[string, string]> {
+  return [...new URLSearchParams(search.startsWith("?") ? search.slice(1) : search)];
+}
+
+function samePairs(a: string, b: string): boolean {
+  const x = pairsOf(a);
+  const y = pairsOf(b);
+  return x.length === y.length && x.every(([k, v], i) => k === y[i]![0] && v === y[i]![1]);
 }

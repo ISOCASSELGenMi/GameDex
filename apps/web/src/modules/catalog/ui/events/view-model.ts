@@ -1,5 +1,5 @@
 /**
- * 活動列表與詳情的純函式（網址參數解析、時間文字、連結安全檢查）。不依賴 React，可單元測試。
+ * 活動列表與詳情的純函式（網址參數解析、時間文字）。不依賴 React，可單元測試。
  * 活動時間一律顯示 UTC 並標註（沿用 3a）；start_time 為 NULL＝「時間未定」。
  */
 import { formatDateTime, type Locale, type Translator } from "@sok/i18n";
@@ -56,16 +56,5 @@ export function eventStatusLabel(t: Translator, status: EventTimeStatus): string
       return t.t("ui.events.status.past");
     default:
       return null;
-  }
-}
-
-/** 只放行 http(s) 外部連結（直播、官網來自外部資料，不可直接當 javascript: 等網址）。 */
-export function safeExternalUrl(url: string | null | undefined): string | null {
-  if (!url) return null;
-  try {
-    const u = new URL(url);
-    return u.protocol === "http:" || u.protocol === "https:" ? u.toString() : null;
-  } catch {
-    return null;
   }
 }

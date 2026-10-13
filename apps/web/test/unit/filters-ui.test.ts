@@ -147,6 +147,43 @@ describe("proxy 篩選正規化（decideFilterRedirect）", () => {
     expect(decideFilterRedirect("/en/timeline", "?platform=switch%2Cps5")).toBe("/en/timeline?platform=ps5,switch");
   });
 
+  it("高-1：只差百分比編碼（' ! * ( ) 與 %27 等）不轉址，不會無限 308", () => {
+    const P = "/zh-Hant/games";
+    for (const s of [
+      "?q=a'b",
+      "?q=a%27b",
+      "?q=Assassin%27s%20Creed",
+      "?q=Assassin's%20Creed",
+      "?q=Assassin's Creed",
+      "?q=Assassin%27s+Creed",
+      "?q=a(b)!*",
+      "?q=a%28b%29%21%2A",
+      "?platform=ps5%2Cswitch&q=a%27b&at=2026-12-01",
+    ]) {
+      expect(decideFilterRedirect(P, s), s).toBeNull();
+    }
+  });
+
+  it("高-1：仍需轉址的情況照舊轉址，且產出的 target 以兩種編碼再判斷都回 null（冪等）", () => {
+    const cases = [
+      "?q=a'b&platform=switch&platform=ps5",
+      "?q=a%27b&genre=&platform=switch,ps5",
+      "?at=2026-12-01&q=Assassin%27s%20Creed&platform=switch&platform=ps5",
+      "?q=a(b)!*&platform=switch&platform=ps5",
+      "?q=a'b&platform=PS5",
+    ];
+    for (const s of cases) {
+      const target = decideFilterRedirect("/en/games", s);
+      expect(target, s).not.toBeNull();
+      const [path, rawSearch = ""] = target!.split("?");
+      const raw = rawSearch ? `?${rawSearch}` : "";
+      // 原樣（含未編碼的 '）與經 WHATWG URL 重新編碼（瀏覽器實際送回的）兩種形式
+      expect(decideFilterRedirect(path!, raw), `raw ${s}`).toBeNull();
+      const u = new URL(target!, "http://x");
+      expect(decideFilterRedirect(u.pathname, u.search), `url ${s}`).toBeNull();
+    }
+  });
+
   it("不是篩選頁面一律 null（詳情頁、其他路徑）", () => {
     expect(decideFilterRedirect("/en/games/zelda", "?platform=b&platform=a")).toBeNull();
     expect(decideFilterRedirect("/en/platforms", "?platform=b&platform=a")).toBeNull();

@@ -22,6 +22,7 @@
  * 每組前 N 筆；月曆與通用清單用 `buildAggregateQuery`（＝卡片＋固定排序＋LIMIT）。聚合本身仍只有這一份。
  */
 import { sql, type SQL } from "drizzle-orm";
+import { utcToday } from "../domain/utc-date";
 import {
   DATE_PRECISIONS,
   type DatePrecision,
@@ -110,10 +111,16 @@ export function buildAggregateQuery(input: Omit<AggregateReleasesInput, "resolve
   `;
 }
 
-/** UTC 今天（YYYY-MM-DD）。 */
-export function utcToday(now: Date = new Date()): IsoDate {
-  return now.toISOString().slice(0, 10);
+/**
+ * 代表期間的最後一天（SQL 片段，唯一實作）：month 精度的代表日是 1 日，要換成月底；
+ * day／quarter／year 的代表日已是期間最後一天。upcoming／released 判斷與平台頁 recent 篩選共用。
+ */
+export function periodEndSql(precisionCol: SQL, dateCol: SQL): SQL {
+  return sql`(CASE WHEN ${precisionCol} = 'month' THEN (${dateCol} + interval '1 month' - interval '1 day')::date ELSE ${dateCol} END)`;
 }
+
+/** UTC 今天（YYYY-MM-DD）：唯一實作在 domain/utc-date.ts，這裡再匯出給既有的 import 路徑。 */
+export { utcToday } from "../domain/utc-date";
 
 /**
  * 延期判斷（03 §狀態機「→ delayed」）：新日期晚於舊日期、精度變粗（enum 宣告順序 day < … < tbd），或從有日期改成未定。
@@ -196,7 +203,7 @@ export function buildAggregateCardsQuery(input: Omit<AggregateReleasesInput, "re
   const pickedConds: SQL[] = [range("p")];
   if (f.releaseStates && f.releaseStates.length > 0) {
     // 代表期間的最後一天：month 精度的代表日是 1 日，要換成月底；day／quarter／year 的代表日已是期間最後一天
-    const periodEnd = sql`(CASE WHEN p.precision = 'month' THEN (p.release_date + interval '1 month' - interval '1 day')::date ELSE p.release_date END)`;
+    const periodEnd = periodEndSql(sql`p.precision`, sql`p.release_date`);
     const states: SQL[] = [];
     if (f.releaseStates.includes("upcoming")) {
       states.push(sql`(p.status <> 'released' AND (p.release_date IS NULL OR ${periodEnd} >= ${today}::date))`);

@@ -7,7 +7,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test as base, type Page } from "@playwright/test";
 import { WEB_DIR } from "./env";
 
-export { FIXTURE } from "./fixture-data";
+export { FIXTURE, FIXTURE_3B } from "./fixture-data";
 
 export type TestLocale = "zh-Hant" | "en";
 export const LOCALES: readonly TestLocale[] = ["zh-Hant", "en"];

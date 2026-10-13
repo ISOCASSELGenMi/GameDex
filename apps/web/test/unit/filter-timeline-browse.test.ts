@@ -141,6 +141,16 @@ describe("時間軸 cursor 與組", () => {
     expect(parseTimelineGroupKey("week:2027-01-01")).toBeNull();
   });
 
+  it("低-1／2：不存在的日期（02-31、0000）在 cursor 與組鍵一律視為無效（不送進 PG 變 500）", () => {
+    expect(parseTimelineGroupKey("day:2026-02-31")).toBeNull();
+    expect(parseTimelineGroupKey("month:0000-01-01")).toBeNull();
+    expect(parseTimelineGroupKey("day:2026-02-28")).toEqual({ precision: "day", periodStart: "2026-02-28" });
+    const mk = (sk: string) => Buffer.from(JSON.stringify([1, "a", sk, 0, 0, 1, 1])).toString("base64url");
+    expect(decodeTimelineCursor(mk("2026-02-31"))).toBeNull();
+    expect(decodeTimelineCursor(mk("2026-02-28"))).not.toBeNull();
+    expect(decodeTimelineCursor(mk("9999-12-31"))).not.toBeNull(); // tbd 的排序日期
+  });
+
   it("groupTimelineRows：月份區段、hiddenCount、跨頁延續旗標", () => {
     const row = (c: ReleaseCard, rank: number, groupTotal: number) => ({ card: c, key: timelineKeyOf(c), rank, groupTotal });
     const groups = groupTimelineRows(

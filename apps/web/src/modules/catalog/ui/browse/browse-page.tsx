@@ -21,6 +21,7 @@ import { HeatBadge, heatBadgeLabel } from "../heat-badge";
 import { getTranslator } from "../labels";
 import { PageShell } from "../layout/page-shell";
 import { gameHref, gamesBrowseHref, localeHref } from "../links";
+import { PageNav } from "../page-nav";
 import { rethrowForPage } from "../page-errors";
 import {
   BROWSE_FILTER_FIELDS,
@@ -52,7 +53,7 @@ function first(v: string | string[] | undefined): string | undefined {
 const inputClass = "min-h-11 rounded-md border border-[var(--border)] bg-[var(--background)] px-2 text-[var(--foreground)]";
 
 function GameCard({ game, locale, t }: { game: BrowseGameCard; locale: Locale; t: Translator }): ReactElement {
-  const dateText = game.firstReleasePrecision ? formatReleaseLabel(game.firstReleaseDate, game.firstReleasePrecision, locale) : t.t("ui.releaseLabel.tbd");
+  const dateText = formatReleaseLabel(game.firstReleaseDate, game.firstReleasePrecision ?? "tbd", locale);
   const shown = game.platforms.slice(0, 4).map((p) => p.abbreviation ?? p.name);
   const platformText = shown.join(t.t("ui.common.listSeparator")) + (game.platforms.length > 4 ? ` +${game.platforms.length - 4}` : "");
   return (
@@ -217,27 +218,17 @@ export async function GamesBrowsePage({ locale, supportedLocales, searchParams }
       )}
 
       {pageNo > 1 || result.hasMore ? (
-        <nav aria-label={t.t("ui.games.pagination")} className="mt-4">
-          <ul className="flex flex-wrap items-center gap-3">
-            {pager.prev ? (
-              <li>
-                <a className="btn-secondary" rel="prev" href={gamesBrowseHref(locale, spec, pager.prev)}>
-                  {t.t("ui.games.prevPage")}
-                </a>
-              </li>
-            ) : null}
-            <li aria-current="page">{t.t("ui.games.page", { page: pageNo })}</li>
-            {pager.next ? (
-              <li>
-                <a className="btn-secondary" rel="next" href={gamesBrowseHref(locale, spec, pager.next)}>
-                  {t.t("ui.games.nextPage")}
-                </a>
-              </li>
-            ) : null}
-          </ul>
+        <PageNav
+          label={t.t("ui.games.pagination")}
+          prevHref={pager.prev ? gamesBrowseHref(locale, spec, pager.prev) : null}
+          nextHref={pager.next ? gamesBrowseHref(locale, spec, pager.next) : null}
+          prevText={t.t("ui.games.prevPage")}
+          nextText={t.t("ui.games.nextPage")}
+          pageText={t.t("ui.games.page", { page: pageNo })}
+        >
           {pager.limitReached ? <p className="mt-2 text-sm font-semibold">{t.t("ui.games.limitReached", { max: formatNumber(BROWSE_OFFSET_MAX, locale) })}</p> : null}
           <p className="mt-2 text-sm text-[var(--muted)]">{t.t("ui.games.depthNote", { max: formatNumber(BROWSE_OFFSET_MAX, locale) })}</p>
-        </nav>
+        </PageNav>
       ) : null}
     </PageShell>
   );

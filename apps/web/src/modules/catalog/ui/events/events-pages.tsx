@@ -12,12 +12,13 @@ import { getEventDetail } from "../../use-cases/read/get-event-detail";
 import { listEvents } from "../../use-cases/read/list-events";
 import { EntityGameList, LinkTabs, Pager } from "../entities/shared";
 import { firstParam, safeDecode, type RawParam } from "../entities/view-model";
+import { safeExternalUrl } from "../external-url";
 import { EventIcon, ExternalIcon } from "../icons";
 import { eventKindLabel, getTranslator } from "../labels";
 import { PageShell } from "../layout/page-shell";
 import { eventHref, eventsHref } from "../links";
 import { rethrowForPage } from "../page-errors";
-import { EVENTS_PAGE_SIZE, eventStatusLabel, eventTimeText, parseEventKind, parseEventScope, parseEventsPage, safeExternalUrl } from "./view-model";
+import { EVENTS_PAGE_SIZE, eventStatusLabel, eventTimeText, parseEventKind, parseEventScope, parseEventsPage } from "./view-model";
 
 type SearchParamsRecord = Readonly<Record<string, RawParam>>;
 

@@ -52,11 +52,8 @@ export function decideFilterRedirect(pathname: string, search: string): string |
   const rest = pathname.split("/").filter((s, i) => i === 0 || s !== "").slice(2);
   if (!isFilterCanonicalPath(rest)) return null;
   const target = filterRedirectSearch(search);
+  // 「只差百分比編碼」不轉址的比較在 api-contract 的 filterRedirectSearch（唯一實作）
   if (target === null) return null;
-  // 逗號與 %2C 視為相同：表單、部分 HTTP 用戶端與代理會把 `a,b` 重新編碼成 `a%2Cb`，
-  // 若因此再轉一次址，它們收到的網址又被改回 %2C → 無限轉址。
-  const sameModuloComma = (x: string) => x.replace(/%2C/gi, ",");
-  if (sameModuloComma(target) === sameModuloComma(search)) return null;
   return `${pathname}${target}`;
 }
 

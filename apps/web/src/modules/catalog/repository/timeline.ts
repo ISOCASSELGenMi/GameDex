@@ -11,6 +11,7 @@
  *
  * cursor 是 opaque 字串（base64url JSON）；解析失敗回 null，由 Use Case 從起點開始。
  */
+import { isValidIsoDate } from "@sok/api-contract";
 import { sql, type SQL } from "drizzle-orm";
 import type { DbOrTx } from "@/kernel/db/client";
 import {
@@ -30,6 +31,8 @@ import { pgArray, toIso, withReadTimeout, type ReadOptions } from "./read-tx";
 
 // ── 排序鍵與 cursor ─────────────────────────────────────────────────────
 
+/** PostgreSQL integer 上限；超過會讓 `::int[]` 轉型報 22003（500）。 */
+const PG_INT_MAX = 2147483647;
 /** tbd（period_start 為 NULL）的排序日期：排在所有有日期的組之後。 */
 export const TIMELINE_TBD_SORT_DATE = "9999-12-31";
 
@@ -79,7 +82,7 @@ export function decodeTimelineCursor(s: string | null | undefined): TimelineCurs
     if (!Array.isArray(v) || v.length !== 7 || v[0] !== 1) return null;
     const [, d, sk, pr, np, gameId, st] = v as unknown[];
     if ((d !== "a" && d !== "b") || typeof sk !== "string" || !ISO.test(sk)) return null;
-    if (Number.isNaN(Date.parse(`${sk}T00:00:00Z`))) return null;
+    if (sk !== TIMELINE_TBD_SORT_DATE && !isValidIsoDate(sk)) return null; // 02-31 這類不存在的日期會讓 PG 報錯（500）
     if (!isInt(pr) || pr < -1 || pr > 4 || !isInt(np) || !isInt(gameId) || !isInt(st)) return null;
     return { dir: d === "a" ? "after" : "before", key: { sk, pr, np, gameId, st } };
   } catch {
@@ -114,7 +117,7 @@ export function timelineGroupKey(precision: DatePrecision, periodStart: IsoDate 
 export function parseTimelineGroupKey(key: string): { precision: DatePrecision; periodStart: IsoDate | null } | null {
   if (key === "tbd") return { precision: "tbd", periodStart: null };
   const m = /^(day|month|quarter|year):(\d{4}-\d{2}-\d{2})$/.exec(key);
-  if (!m || Number.isNaN(Date.parse(`${m[2]}T00:00:00Z`))) return null;
+  if (!m || !isValidIsoDate(m[2]!)) return null;
   return { precision: m[1] as DatePrecision, periodStart: m[2]! };
 }
 
@@ -386,7 +389,7 @@ export async function listReleaseDateHistory(
   releaseEventIds: readonly number[],
   opts: ReadOptions = {},
 ): Promise<ReleaseEventDateHistory[]> {
-  const ids = [...new Set(releaseEventIds.filter((n) => Number.isSafeInteger(n) && n > 0))].slice(0, 200);
+  const ids = [...new Set(releaseEventIds.filter((n) => Number.isSafeInteger(n) && n > 0 && n <= PG_INT_MAX))].slice(0, 200);
   if (ids.length === 0) return [];
   const res = await withReadTimeout(
     (tx: DbOrTx) =>

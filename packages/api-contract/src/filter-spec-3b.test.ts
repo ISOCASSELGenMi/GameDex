@@ -172,6 +172,16 @@ describe("正規化 query（proxy 308 用）", () => {
     expect(canonicalizeFilterQuery("?genre=b,a&sort=x").hasIssues).toBe(true);
   });
 
+  it("只差百分比編碼不轉址（' ! * ( ) 與逗號）；冪等", () => {
+    for (const s of ["?q=a'b", "?q=a%27b", "?q=Assassin%27s%20Creed", "?q=a(b)!*", "?q=a%28b%29%21%2A", "?platform=ps5%2Cswitch"]) {
+      expect(filterRedirectSearch(s), s).toBeNull();
+    }
+    const t = filterRedirectSearch("?q=a'b&platform=switch&platform=ps5")!;
+    expect(t).toBe("?platform=ps5,switch&q=a'b");
+    expect(filterRedirectSearch(t)).toBeNull();
+    expect(filterRedirectSearch(new URL(`http://x/${t}`).search)).toBeNull(); // 瀏覽器實際送回 %27
+  });
+
   it("空 query、只剩空參數", () => {
     expect(filterRedirectSearch("")).toBeNull();
     expect(filterRedirectSearch("?platform=")).toBe("");

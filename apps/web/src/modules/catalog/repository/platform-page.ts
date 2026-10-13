@@ -27,7 +27,7 @@ import type {
 import { isCommonPlatform } from "./filter-options";
 import { summaryColumns, toSummary, type SummaryRow } from "./game-detail";
 import { withReadTimeout, type ReadOptions } from "./read-tx";
-import { buildAggregateCardsQuery } from "./release-aggregate";
+import { buildAggregateCardsQuery, periodEndSql } from "./release-aggregate";
 
 /** 總覽的分組順序（mobile 不列；other 放最後，UI 可預設收合）。 */
 export const PLATFORM_OVERVIEW_KIND_ORDER: readonly PlatformKind[] = ["console", "hybrid", "handheld", "pc", "arcade", "other"];
@@ -174,9 +174,7 @@ async function readPlatformPage(
   // recent 只列期間結束日在今天前 recentDays 天內的（quarter／year 的代表日已是期間最後一天）
   const recentCond = upcoming
     ? sql``
-    : sql`WHERE (CASE WHEN c.precision = 'month'
-        THEN (c.release_date::date + interval '1 month' - interval '1 day')::date
-        ELSE c.release_date::date END) >= (${q.today}::date - ${recentDays}::int)`;
+    : sql`WHERE ${periodEndSql(sql`c.precision`, sql`c.release_date::date`)} >= (${q.today}::date - ${recentDays}::int)`;
   const dateDir = upcoming ? sql`ASC` : sql`DESC`;
   const outerOrder =
     q.sort === "popularity"

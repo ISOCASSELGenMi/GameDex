@@ -5,7 +5,7 @@
 import { connection } from "next/server";
 import { notFound } from "next/navigation";
 import { cache, type ReactElement } from "react";
-import { formatIsoDate, type Locale, type Translator } from "@sok/i18n";
+import { formatIsoDate, formatReleaseLabel, type Locale, type Translator } from "@sok/i18n";
 import type { PlatformListItem, PlatformPage } from "../../domain/entities";
 import { getPlatformPage } from "../../use-cases/read/get-platform-page";
 import { listPlatforms } from "../../use-cases/read/list-platforms";
@@ -209,7 +209,7 @@ export async function PlatformDetailPage({
               <li key={`${r.regionCode}-${i}`}>
                 {regionLabel(t, r.regionCode)}
                 {t.t("ui.common.colon")}
-                {r.date ? formatIsoDate(r.date, locale, { dateStyle: "long" }) : t.t("ui.releaseLabel.tbd")}
+                {formatReleaseLabel(r.date, "day", locale)}
               </li>
             ))}
           </ul>

@@ -9,6 +9,7 @@ import type { GameListItem, ImageRef, PlatformGameItem } from "../../domain/enti
 import { StageIcon } from "../icons";
 import { stageLabel } from "../labels";
 import { gameHref } from "../links";
+import { PageNav } from "../page-nav";
 import { buildPager, gameDateText, gameStatusBadge } from "./view-model";
 
 export function EntityLogo({ logo, name, small }: { logo: ImageRef | null; name: string; small?: boolean }): ReactElement | null {
@@ -104,25 +105,14 @@ export function Pager({ t, page, hasMore, hrefFor, label }: PagerProps): ReactEl
   const pager = buildPager(page, hasMore, hrefFor);
   if (!pager.prev && !pager.next) return null;
   return (
-    <nav aria-label={label} className="mt-4">
-      <ul className="flex flex-wrap items-center gap-3">
-        {pager.prev ? (
-          <li>
-            <a className="btn-secondary" rel="prev" href={pager.prev}>
-              {t.t("ui.entities.prevPage")}
-            </a>
-          </li>
-        ) : null}
-        <li aria-current="page">{t.t("ui.entities.page", { page })}</li>
-        {pager.next ? (
-          <li>
-            <a className="btn-secondary" rel="next" href={pager.next}>
-              {t.t("ui.entities.nextPage")}
-            </a>
-          </li>
-        ) : null}
-      </ul>
-    </nav>
+    <PageNav
+      label={label}
+      prevHref={pager.prev}
+      nextHref={pager.next}
+      prevText={t.t("ui.entities.prevPage")}
+      nextText={t.t("ui.entities.nextPage")}
+      pageText={t.t("ui.entities.page", { page })}
+    />
   );
 }
 

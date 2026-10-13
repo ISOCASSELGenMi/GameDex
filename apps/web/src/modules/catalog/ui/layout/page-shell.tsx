@@ -5,7 +5,7 @@
 import type { ReactElement, ReactNode } from "react";
 import type { Locale } from "@sok/i18n";
 import { getTranslator } from "../labels";
-import { languageMenuLinks, localeHref, type LocalPath } from "../links";
+import { eventsHref, gamesBrowseHref, languageMenuLinks, localeHref, platformsHref, type LocalPath } from "../links";
 import { LanguageMenu } from "./language-menu";
 
 export interface PageShellProps {
@@ -23,13 +23,18 @@ export interface PageShellProps {
 export function PageShell({ locale, supportedLocales, path, query = "", headerRight, children }: PageShellProps): ReactElement {
   const t = getTranslator(locale);
   const links = languageMenuLinks(locale, supportedLocales, path, query);
-  // 主要導覽（3b：月曆、時間軸、熱門榜）。aria-current 依路徑前綴判斷。
+  // 主要導覽（月曆、時間軸、熱門榜、遊戲、平台、活動）。aria-current 依路徑判斷：
+  // /games 只在瀏覽頁本身為 current（遊戲詳情 /games/{slug} 不標），其餘依路徑前綴。
   const navItems = [
-    { path: "/calendar", label: t.t("ui.nav.calendar") },
-    { path: "/timeline", label: t.t("ui.nav.timeline") },
-    { path: "/trending", label: t.t("ui.nav.trending") },
+    { path: "/calendar", href: localeHref(locale, "/calendar"), label: t.t("ui.nav.calendar"), exact: false },
+    { path: "/timeline", href: localeHref(locale, "/timeline"), label: t.t("ui.nav.timeline"), exact: false },
+    { path: "/trending", href: localeHref(locale, "/trending"), label: t.t("ui.nav.trending"), exact: false },
+    { path: "/games", href: gamesBrowseHref(locale), label: t.t("ui.nav.games"), exact: true },
+    { path: "/platforms", href: platformsHref(locale), label: t.t("ui.nav.platforms"), exact: false },
+    { path: "/events", href: eventsHref(locale), label: t.t("ui.nav.events"), exact: false },
   ];
-  const isCurrent = (p: string) => path === p || path.startsWith(`${p}/`);
+  const isCurrent = (item: { path: string; exact: boolean }) =>
+    path === item.path || (!item.exact && path.startsWith(`${item.path}/`));
   return (
     <>
       <header className="border-b border-[var(--border)]">
@@ -42,8 +47,8 @@ export function PageShell({ locale, supportedLocales, path, query = "", headerRi
               {navItems.map((item) => (
                 <li key={item.path}>
                   <a
-                    href={localeHref(locale, item.path)}
-                    aria-current={isCurrent(item.path) ? "page" : undefined}
+                    href={item.href}
+                    aria-current={isCurrent(item) ? "page" : undefined}
                     className="link-quiet inline-flex min-h-11 items-center rounded-md px-2 aria-[current=page]:font-semibold aria-[current=page]:underline"
                   >
                     {item.label}

@@ -11,6 +11,7 @@ import { cacheLife } from "next/cache";
 import type { ReactElement } from "react";
 import { filterSpecToQueryString, isEmptyFilter, parseFilterSpec, type FilterSearchInput, type FilterSpec } from "@sok/api-contract";
 import { formatNumber, formatReleaseLabel, type Locale } from "@sok/i18n";
+import { utcToday } from "../../domain/utc-date";
 import type { IgnoredFilterValue, PopularityGroup, TrendingPage } from "../../domain/entities";
 import { getTrending } from "../../use-cases/read";
 import { loadFilterOptions } from "../calendar/filter-options";
@@ -21,6 +22,7 @@ import { HeatBadge, heatBadgeLabel } from "../heat-badge";
 import { getTranslator } from "../labels";
 import { PageShell } from "../layout/page-shell";
 import { gameHref, localeHref, trendingHref } from "../links";
+import { PageNav } from "../page-nav";
 import { rethrowForPage } from "../page-errors";
 import { TRENDING_PAGE_MAX, TRENDING_PAGE_SIZE, parseTrendingGroup, parseTrendingPage } from "./params";
 
@@ -66,7 +68,7 @@ export async function TrendingViewPage({ locale, supportedLocales, searchParams 
   let data: CachedTrending, options;
   try {
     [data, options] = await Promise.all([
-      loadTrending(locale, group, JSON.stringify(pageSpec), (pageNo - 1) * TRENDING_PAGE_SIZE, new Date().toISOString().slice(0, 10)),
+      loadTrending(locale, group, JSON.stringify(pageSpec), (pageNo - 1) * TRENDING_PAGE_SIZE, utcToday()),
       loadFilterOptions(locale),
     ]);
   } catch (err) {
@@ -128,7 +130,7 @@ export async function TrendingViewPage({ locale, supportedLocales, searchParams 
         <ol className="mt-4 grid list-none grid-cols-1 gap-2 p-0 md:grid-cols-2" role="list">
           {items.map((it, i) => {
             const rank = offset + i + 1;
-            const dateText = it.releaseDate || it.releasePrecision ? formatReleaseLabel(it.releaseDate, it.releasePrecision ?? "tbd", locale) : t.t("ui.releaseLabel.tbd");
+            const dateText = formatReleaseLabel(it.releaseDate, it.releasePrecision ?? "tbd", locale);
             return (
               <li key={it.gameId} className="flex items-center gap-3 rounded-lg border border-[var(--border)] p-2" data-trending-item={it.slug}>
                 <span className="w-14 shrink-0 text-center text-sm font-bold">{t.t("ui.trending.rank", { rank })}</span>
@@ -151,25 +153,14 @@ export async function TrendingViewPage({ locale, supportedLocales, searchParams 
       )}
 
       {pageNo > 1 || hasMore ? (
-        <nav aria-label={t.t("ui.trending.pagination")} className="mt-4">
-          <ul className="flex flex-wrap items-center gap-3">
-            {pageNo > 1 ? (
-              <li>
-                <a className="btn-secondary" rel="prev" href={trendingHref(locale, spec, group, pageNo - 1)}>
-                  {t.t("ui.trending.prevPage")}
-                </a>
-              </li>
-            ) : null}
-            <li aria-current="page">{t.t("ui.trending.page", { page: pageNo })}</li>
-            {hasMore && pageNo < TRENDING_PAGE_MAX ? (
-              <li>
-                <a className="btn-secondary" rel="next" href={trendingHref(locale, spec, group, pageNo + 1)}>
-                  {t.t("ui.trending.nextPage")}
-                </a>
-              </li>
-            ) : null}
-          </ul>
-        </nav>
+        <PageNav
+          label={t.t("ui.trending.pagination")}
+          prevHref={pageNo > 1 ? trendingHref(locale, spec, group, pageNo - 1) : null}
+          nextHref={hasMore && pageNo < TRENDING_PAGE_MAX ? trendingHref(locale, spec, group, pageNo + 1) : null}
+          prevText={t.t("ui.trending.prevPage")}
+          nextText={t.t("ui.trending.nextPage")}
+          pageText={t.t("ui.trending.page", { page: pageNo })}
+        />
       ) : null}
     </PageShell>
   );

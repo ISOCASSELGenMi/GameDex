@@ -254,6 +254,13 @@ describe.skipIf(!enabled)("時間軸與瀏覽（整合）", () => {
     expect(idsOf(allCards(bad))).toEqual(full);
   });
 
+  it("低-2：不存在的日期（day:2026-02-31、at=2026-02-31）不丟 PG 錯誤", async () => {
+    const g = await expandTimelineGroup({ groupKey: "day:2026-02-31", filter: TAG, locale: "en" });
+    expect(g.cards).toEqual([]);
+    const page = await tl({ at: "2026-02-31", limit: 5 });
+    expect(page).toBeTruthy();
+  });
+
   it("上市狀態：upcoming／released／delayed（today＝2037-03-15）", async () => {
     const ids = async (releaseStates: string[]) => idsOf(allCards(await tl({ filter: { ...TAG, releaseStates }, limit: 200 })));
     const delayed = await ids(["delayed"]);
@@ -283,6 +290,9 @@ describe.skipIf(!enabled)("時間軸與瀏覽（整合）", () => {
       },
     ]);
     expect(await getReleaseDateHistory([])).toEqual([]);
+    // 低-1：超出 PG integer 範圍的 id 被濾掉，不丟 22003
+    expect(await getReleaseDateHistory([99999999999, 2147483648])).toEqual([]);
+    expect((await getReleaseDateHistory([...c.releaseEventIds, 99999999999])).length).toBe(1);
   });
 
   it("主題、熱度、公司、系列（同 slug 的 franchise＋collection）、平台、傳聞", async () => {

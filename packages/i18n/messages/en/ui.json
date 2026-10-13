@@ -232,7 +232,7 @@
     "recent": "Recently released",
     "sortDate": "Release date",
     "sortPopularity": "Popularity",
-    "upcomingHint": "Games releasing on this platform, soonest first. Games with only a rough date are listed at the end of their period.",
+    "upcomingHint": "Games releasing on this platform, soonest first. Games with only a month are sorted by the 1st of that month (at the start of the month); games with only a quarter or year are listed at the end of that period.",
     "recentHint": "Games released on this platform in the last 90 days.",
     "emptyUpcoming": "No upcoming games on this platform",
     "emptyRecent": "No recent releases on this platform"

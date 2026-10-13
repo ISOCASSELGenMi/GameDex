@@ -12,9 +12,12 @@
  * - 05-12：一個活動（showcase）
  * - 05-22：延期一款、來源已移除（removed）一款
  * - 05-20：DLC（月曆預設不顯示，詳情頁 DLC 區塊）
+ * - Wave 3（3b）追加，igdbId 441xxx（見 fixture-data.ts 的 FIXTURE_3B）：2037-03 時間軸資料（單日 13 款＋90 款填充）、
+ *   同 slug 的 franchise／collection、語言支援三態、另三個活動（expo／已結束 awards／時間未定 expo）
  */
 import { sql } from "drizzle-orm";
 import { closeDb, getDb } from "@/kernel/db/client";
+import { buildSearchText } from "@/modules/catalog/domain/search-text";
 import {
   companies,
   eventGames,
@@ -23,18 +26,20 @@ import {
   gameCompanies,
   gameExternalLinks,
   gameFranchises,
+  gameLanguageSupports,
   gameGenres,
   gamePlatforms,
   games,
   gameSimilarGames,
   genres,
+  languages,
   platforms,
   regions,
   releaseDateHistory,
   releaseEvents,
 } from "@/modules/catalog/schema";
 import resetTestDatabase from "../../test/integration/global-setup";
-import { FIXTURE } from "./fixture-data";
+import { FIXTURE, FIXTURE_3B } from "./fixture-data";
 
 
 type Precision = "day" | "month" | "quarter" | "year" | "tbd";
@@ -96,6 +101,8 @@ export async function seedE2eDatabase(): Promise<void> {
           slug: opts.slug,
           name: opts.name,
           displayNames: opts.displayNames ?? {},
+          // 瀏覽頁搜尋比對 search_text（同步時由 game-sync 寫入；fixture 直接寫入同一個函式的結果）
+          searchText: buildSearchText([opts.name, ...Object.values(opts.displayNames ?? {})]),
           gameType: opts.gameType ?? "main_game",
           parentGameId: opts.parentGameId ?? null,
           firstReleaseDate: opts.firstReleaseDate ?? null,
@@ -197,6 +204,69 @@ export async function seedE2eDatabase(): Promise<void> {
       .from(releaseEvents)
       .where(sql`${releaseEvents.gameId} = ${gameId[440001]!} AND ${releaseEvents.platformId} = ${platform["e2e-ps5"]!}`);
     await db.insert(releaseDateHistory).values({ releaseEventId: ps!.id, oldDate: "2035-12-31", oldPrecision: "year", newDate: "2036-05-15", newPrecision: "day" });
+
+    // ── Wave 3（3b）追加 ──────────────────────────────────────────────
+    const tl = FIXTURE_3B.timeline;
+    // 單日 13 款（超過時間軸每組預覽 10 款）
+    for (let i = 1; i <= tl.bigDayCount; i++) {
+      const n = String(i).padStart(2, "0");
+      await addGame(441000 + i, { slug: `e2e-big-${n}`, name: `Big Day Game ${n}`, events: [{ platform: "e2e-pc", date: tl.bigDay }] });
+    }
+    // 填充 90 款：03-03 起每天 4 款，讓第一頁（60 筆）之後還有下一頁
+    for (let i = 0; i < tl.fillerCount; i++) {
+      const day = 3 + Math.floor(i / 4);
+      const date = `2037-03-${String(day).padStart(2, "0")}`;
+      await addGame(441100 + i, { slug: `e2e-fill-${String(i).padStart(2, "0")}`, name: `Filler Game ${String(i).padStart(2, "0")}`, events: [{ platform: "e2e-pc", date }] });
+    }
+
+    // 同 slug 的 franchise 與 collection（igdbId 在各自 kind 內唯一）
+    const twin = FIXTURE_3B.twin;
+    const [twinFr] = await db.insert(franchises).values({ igdbId: 441201, kind: "franchise", name: twin.name, slug: twin.slug }).returning();
+    const [twinCo] = await db.insert(franchises).values({ igdbId: 441202, kind: "collection", name: twin.name, slug: twin.slug }).returning();
+    await addGame(441211, { slug: "e2e-twin-franchise-only", name: "Twin Franchise Only", firstReleaseDate: "2036-07-01", events: [{ platform: "e2e-pc", date: "2036-07-01" }] });
+    await addGame(441212, { slug: "e2e-twin-both", name: "Twin In Both", firstReleaseDate: "2036-07-02", events: [{ platform: "e2e-pc", date: "2036-07-02" }] });
+    await addGame(441213, { slug: "e2e-twin-collection-only", name: "Twin Collection Only", firstReleaseDate: "2036-07-03", events: [{ platform: "e2e-pc", date: "2036-07-03" }] });
+    await db.insert(gameFranchises).values([
+      { gameId: gameId[441211]!, franchiseId: twinFr!.id },
+      { gameId: gameId[441212]!, franchiseId: twinFr!.id },
+      { gameId: gameId[441212]!, franchiseId: twinCo!.id },
+      { gameId: gameId[441213]!, franchiseId: twinCo!.id },
+    ]);
+
+    // 語言支援：hero＝三欄都有資料；partial＝只有介面（字幕、語音兩欄整欄沒資料）；Aurora Prequel（440002）＝整區沒資料
+    const lang: Record<string, number> = {};
+    for (const l of [
+      { igdbId: 441301, code: "en-US", name: "English (United States)", nativeName: "English" },
+      { igdbId: 441302, code: "ja-JP", name: "Japanese (Japan)", nativeName: "日本語" },
+      { igdbId: 441303, code: "zh-Hant", name: "Chinese (Traditional)", nativeName: "繁體中文" },
+    ]) {
+      const [row] = await db.insert(languages).values(l).returning({ id: languages.id });
+      lang[l.code] = row!.id;
+    }
+    await db.insert(gameLanguageSupports).values([
+      { gameId: gameId[440001]!, languageId: lang["en-US"]!, supportType: "interface" },
+      { gameId: gameId[440001]!, languageId: lang["en-US"]!, supportType: "subtitles" },
+      { gameId: gameId[440001]!, languageId: lang["en-US"]!, supportType: "audio" },
+      { gameId: gameId[440001]!, languageId: lang["ja-JP"]!, supportType: "interface" },
+      { gameId: gameId[440001]!, languageId: lang["ja-JP"]!, supportType: "subtitles" },
+      { gameId: gameId[440001]!, languageId: lang["zh-Hant"]!, supportType: "interface" },
+    ]);
+    await addGame(441401, { slug: FIXTURE_3B.langPartial.slug, name: FIXTURE_3B.langPartial.name, firstReleaseDate: "2036-08-01", events: [{ platform: "e2e-pc", date: "2036-08-01" }] });
+    await db.insert(gameLanguageSupports).values([
+      { gameId: gameId[441401]!, languageId: lang["en-US"]!, supportType: "interface" },
+      { gameId: gameId[441401]!, languageId: lang["ja-JP"]!, supportType: "interface" },
+    ]);
+
+    // 活動：即將舉行的 expo、已結束的 awards、時間未定的 expo（皆沒有關聯遊戲，除了 expo 掛一款）
+    const [expo] = await db
+      .insert(events)
+      .values({ name: FIXTURE_3B.events.expo.name, slug: FIXTURE_3B.events.expo.slug, kind: "expo", startTime: new Date("2036-06-10T09:00:00Z"), endTime: new Date("2036-06-12T18:00:00Z"), organizer: "E2E Organizer", url: "https://expo.example.test" })
+      .returning({ id: events.id });
+    await db.insert(eventGames).values({ eventId: expo!.id, gameId: gameId[441401]! });
+    await db.insert(events).values([
+      { name: FIXTURE_3B.events.past.name, slug: FIXTURE_3B.events.past.slug, kind: "awards", startTime: new Date("2020-12-10T01:00:00Z"), endTime: new Date("2020-12-10T04:00:00Z") },
+      { name: FIXTURE_3B.events.undated.name, slug: FIXTURE_3B.events.undated.slug, kind: "expo", startTime: null, endTime: null },
+    ]);
   } finally {
     await closeDb();
   }

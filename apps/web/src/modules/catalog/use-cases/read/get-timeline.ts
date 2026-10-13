@@ -9,6 +9,7 @@ import {
   type TimelineGroupCards,
   type TimelinePage,
 } from "../../domain/entities";
+import { isValidIsoDate } from "@sok/api-contract";
 import { resolveImageRef } from "../../providers/image-ref";
 import { utcToday } from "../../repository/release-aggregate";
 import {
@@ -44,8 +45,7 @@ export interface GetTimelineInput {
   now?: Date;
 }
 
-const ISO = /^\d{4}-\d{2}-\d{2}$/;
-const validDate = (d: string | null | undefined): d is IsoDate => !!d && ISO.test(d) && !Number.isNaN(Date.parse(`${d}T00:00:00Z`));
+const validDate = (d: string | null | undefined): d is IsoDate => !!d && isValidIsoDate(d);
 
 /**
  * 時間軸一頁（06 §時間軸）。未給 cursor：從 `at`（或今天 UTC）往後；給 cursor：依 cursor 方向（往後或往前）。

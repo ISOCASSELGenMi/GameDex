@@ -9,6 +9,7 @@ import { formatNumber, type Locale } from "@sok/i18n";
 import type { CompanyPage, FranchisePage } from "../../domain/entities";
 import { getCompanyPage } from "../../use-cases/read/get-company-page";
 import { getFranchisePage } from "../../use-cases/read/get-franchise-page";
+import { safeExternalUrl } from "../external-url";
 import { ExternalIcon } from "../icons";
 import { joinList } from "../calendar/view-model";
 import { getTranslator } from "../labels";
@@ -66,6 +67,7 @@ export async function CompanyDetailPage({
   if (!data) notFound();
   const t = getTranslator(locale);
   const c = data.company;
+  const website = safeExternalUrl(c.websiteUrl);
   const roleLabel = (r: string) => t.t(`enums.gameCompanyRole.${r}`);
   const tabs = [
     {
@@ -89,9 +91,9 @@ export async function CompanyDetailPage({
         <EntityLogo logo={c.logo} name={c.name} />
         <h1 className="text-3xl font-bold [overflow-wrap:anywhere]">{c.name}</h1>
       </div>
-      {c.websiteUrl ? (
+      {website ? (
         <p className="mt-2">
-          <a className="ext-link" href={c.websiteUrl} target="_blank" rel="noopener noreferrer">
+          <a className="ext-link" href={website} target="_blank" rel="noopener noreferrer">
             {t.t("ui.companies.website")} <ExternalIcon />
             <span className="sr-only">{t.t("a11y.opensInNewWindow")}</span>
           </a>
