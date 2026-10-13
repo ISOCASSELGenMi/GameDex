@@ -22,8 +22,9 @@
 - ✅ Phase 0 環境、✅ Phase 1 kernel／catalog schema／lint:arch／core-only CI（2026-10-12）
 - ✅ **Phase 2a IGDB 同步**（2026-10-13）：sync_platforms、sync_games（每小時增量）、Tier 1 回填，真實資料已寫入本機 DB
 - ✅ **Phase 2b**（2026-10-13）：resolve_relations、Tier 2 回填（真實資料已跑完）、sync_events、rolling_refresh、字典漂移偵測
-- ⏭ **Phase 3 網站**（3a：月曆＋詳情＋聚合＋基本篩選＋i18n 骨架）
-  - **開工前先讀 `docs/handoff/2026-10-13-phase3.md`**（目前狀態整合版：資料量、排程、程式地圖、全部已定案判斷、待使用者處理、地雷）
+- ✅ **Phase 3a 網站**（2026-10-13，分支 `feat/phase3a`）：月曆＋詳情＋聚合＋基本篩選＋i18n（zh-Hant、en）＋test:a11y
+  - **接手先讀 `docs/handoff/2026-10-13-phase3a-done.md`**（3a 程式地圖、已定案判斷、待使用者處理、地雷）；資料量／排程／Phase 2 程式地圖仍見 `2026-10-13-phase3.md`
+- ⏭ Phase 3b／3.5（見 spec 15）
   - 任務註冊在 `catalog/module.ts` 的 `jobs`；長任務用 `lockMode: "session"`；遊戲寫入一律經 `writeGameBatch`
 
 ## 本機開發
@@ -43,6 +44,8 @@ npm run typecheck   # next typegen && tsc --noEmit
 npm run lint
 npm run lint:arch   # 0 violations
 npm test            # 單元＋整合（整合測試用 TEST_DATABASE_URL，資料庫名必須以 _test 結尾，每次重建）
+npm run i18n:check
+npm -w apps/web run test:a11y   # Playwright＋axe；本機 PW_CHANNEL=msedge；與 npm test 共用測試 DB，不可同時跑
 ```
 
 ## 慣例與地雷
