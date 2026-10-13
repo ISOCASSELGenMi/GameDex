@@ -255,8 +255,16 @@ export async function GameDetailPage({ locale, supportedLocales, slug, slots }: 
           {game.releaseGroups.length === 0 ? <p>{t.t("ui.game.noReleaseDates")}</p> : null}
           {game.releaseGroups.map((group) => (
             <div key={group.platform.slug} className="mt-3">
-              <h3 className="font-semibold">{group.platform.name}</h3>
-              <div className="overflow-x-auto">
+              <h3 id={`release-group-${group.platform.slug}`} className="font-semibold">
+                {group.platform.name}
+              </h3>
+              {/* 窄螢幕表格會水平溢出：可捲動區域要能用鍵盤聚焦（axe scrollable-region-focusable） */}
+              <div
+                className="overflow-x-auto"
+                tabIndex={0}
+                role="region"
+                aria-labelledby={`release-group-${group.platform.slug}`}
+              >
                 <table className="release-table">
                   <thead>
                     <tr>
