@@ -46,7 +46,7 @@
 - [ ] Discord Bot spike：建立外部活動、反應身分組、250 身分組上限的清理策略（2026-10-12 新增）
 - [ ] 確認 IGDB events 端點的資料覆蓋率（活動類型、時區、直播連結）（2026-10-12 新增）
 
-## 3. 實作（本機 `C:\Users\illus\Project\SoK-Game_Calender`；2026-10-12 起在 Claude Code 繼續）
+## 3. 實作（本機 `C:\Users\illus\Project\SoK-GameDB`，2026-10-14 由 `SoK-Game_Calender` 改名；2026-10-12 起在 Claude Code 繼續）
 
 ### Phase 0：環境（2026-10-12 完成）
 - [x] npm workspaces（apps/web、packages/*、bots/*）＋ git（main）

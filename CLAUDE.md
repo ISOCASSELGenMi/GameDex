@@ -29,6 +29,13 @@
 - ⏭ Phase 3.5、4、5、9（見 spec 15）
   - 任務註冊在 `catalog/module.ts` 的 `jobs`；長任務用 `lockMode: "session"`；遊戲寫入一律經 `writeGameBatch`
 
+## 工作方式（使用者指示，跨電腦／雲端都適用）
+
+- 負責人只規劃與驗收；寫碼派子代理（`model: sonnet`、`effort: medium`、背景、各自 `TEST_DATABASE_NAME=sok_<x>_test`）。子代理報告沒有指令與數字就退回；驗收時自己重跑「提交前必過」全部項目並讀 diff。動開發 DB 先問使用者。
+- **用量控管**：派工前與執行中用 `get_usage` 看用量（約每 20 分鐘排程檢查）。5 小時 ≥ 80% 或每週 ≥ 95% 時，叫子代理在好的段落收尾並把進度寫到磁碟，不再派新工作；接著排一次性排程，在重置後自動接續。
+- **對話過長**：context ≥ 70% 時主動寫交接檔 `docs/handoff/<日期>-*.md`，更新本檔進度與 checklist 並 commit，再進新工作階段接手。
+- 雲端或別台電腦沒有 `.local/`（開發 DB、子代理任務書）與 `apps/web/.env.local`（IGDB 金鑰）；需要真實資料的工作只能在本機做。換手前先 commit 並推送。
+
 ## 本機開發
 
 ```bash
