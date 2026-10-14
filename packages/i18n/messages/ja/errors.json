@@ -1,0 +1,16 @@
+{
+  "notFound": {
+    "title": "ページが見つかりません",
+    "description": "このURLは存在しないか、コンテンツが削除されました。"
+  },
+  "gameNotFound": "このゲームは見つかりません",
+  "serverError": {
+    "title": "エラーが発生しました",
+    "description": "サーバーが一時的に処理できません。しばらくしてからもう一度お試しください。"
+  },
+  "queryTimeout": "検索条件が複雑すぎます。絞り込み条件を減らしてもう一度お試しください",
+  "invalidMonth": "月の形式が正しくありません",
+  "tryAgain": "再試行",
+  "backToCalendar": "カレンダーに戻る",
+  "queryTimeoutTitle": "検索がタイムアウトしました"
+}

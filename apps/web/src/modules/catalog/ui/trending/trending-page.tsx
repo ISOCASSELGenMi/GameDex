@@ -22,6 +22,7 @@ import { HeatBadge, heatBadgeLabel } from "../heat-badge";
 import { getTranslator } from "../labels";
 import { PageShell } from "../layout/page-shell";
 import { gameHref, localeHref, trendingHref } from "../links";
+import { gameNameLang } from "../name-lang";
 import { PageNav } from "../page-nav";
 import { rethrowForPage } from "../page-errors";
 import { TRENDING_PAGE_MAX, TRENDING_PAGE_SIZE, parseTrendingGroup, parseTrendingPage } from "./params";
@@ -141,7 +142,9 @@ export async function TrendingViewPage({ locale, supportedLocales, searchParams 
                     <span className="summary-thumb card-thumb-empty" aria-hidden="true" style={{ width: 45, height: 64, flex: "none" }} />
                   )}
                   <span className="flex min-w-0 flex-col gap-1">
-                    <span className="font-semibold [overflow-wrap:anywhere]">{it.name}</span>
+                    <span className="font-semibold [overflow-wrap:anywhere]" lang={gameNameLang(it.name, it.name === it.originalName, locale)}>
+                      {it.name}
+                    </span>
                     <span className="text-sm text-[var(--muted)]">{t.t("ui.common.labelValue", { label: t.t("ui.trending.releaseDate"), value: dateText })}</span>
                     <HeatBadge level={it.heatLevel} label={heatBadgeLabel(t, it.heatLevel)} className="self-start" />
                   </span>

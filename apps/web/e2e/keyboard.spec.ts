@@ -16,7 +16,7 @@ async function tabUntil(page: Page, predicate: string, max = 80): Promise<number
   throw new Error(`按了 ${max} 次 Tab 仍未到達 ${predicate}`);
 }
 
-for (const locale of ["zh-Hant", "en"] as const satisfies readonly TestLocale[]) {
+for (const locale of ["zh-Hant", "en", "ja"] as const satisfies readonly TestLocale[]) {
   test(`純鍵盤：月曆 → 預覽卡 → 詳情（${locale}）`, async ({ page }) => {
     await page.goto(calendarUrl(locale, FIXTURE.month));
     await waitForCalendarReady(page);

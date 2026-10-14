@@ -2,14 +2,14 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getLocaleConfig, isSupportedLocale } from "@/kernel/locale";
-import { PlatformsOverviewPage, platformsTitle } from "@/modules/catalog/ui";
+import { PlatformsOverviewPage, platformsTitle, seoMetadata } from "@/modules/catalog/ui";
 
 export const instant = false;
 
 export async function generateMetadata({ params }: PageProps<"/[locale]/platforms">): Promise<Metadata> {
   const { locale } = await params;
   if (!isSupportedLocale(locale)) return {};
-  return { title: platformsTitle(locale) };
+  return { title: platformsTitle(locale), ...seoMetadata({ locale, config: getLocaleConfig(), path: "/platforms" }) };
 }
 
 export default async function Platforms({ params }: PageProps<"/[locale]/platforms">) {

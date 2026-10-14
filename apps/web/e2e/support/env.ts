@@ -6,6 +6,9 @@ import path from "node:path";
 import { config as loadDotenv } from "dotenv";
 import { resolveTestDatabaseUrl } from "../../test/integration/test-db-url";
 
+/** e2e 伺服器的 NEXT_PUBLIC_SITE_URL（SEO 斷言用）。 */
+export const E2E_SITE_ORIGIN = "https://sok.example";
+
 /** 不用 3100（企劃負責人的 dev server）。 */
 export const E2E_PORT = Number(process.env.E2E_PORT || 3200);
 export const E2E_BASE_URL = `http://localhost:${E2E_PORT}`;
@@ -44,9 +47,11 @@ export function serverEnv(): NodeJS.ProcessEnv {
     ...process.env,
     DATABASE_URL: testDatabaseUrl(),
     SCHEDULER_ENABLED: "false",
-    // 測試假設兩個語系都開放、預設 zh-Hant（不受 .env.local 影響）
-    SUPPORTED_LOCALES: "zh-Hant,en",
+    // 測試假設三個語系都開放、預設 zh-Hant（不受 .env.local 影響）
+    SUPPORTED_LOCALES: "zh-Hant,en,ja",
     DEFAULT_LOCALE: "zh-Hant",
+    // SEO 測試：canonical／hreflang／sitemap 用絕對網址（沒設時會退回相對網址）
+    NEXT_PUBLIC_SITE_URL: E2E_SITE_ORIGIN,
     // catalog manifest 把 IGDB 憑證列為 requiredEnv；排程關閉時不會呼叫 IGDB，用假值通過啟動檢查
     IGDB_CLIENT_ID: "e2e-dummy",
     IGDB_CLIENT_SECRET: "e2e-dummy",

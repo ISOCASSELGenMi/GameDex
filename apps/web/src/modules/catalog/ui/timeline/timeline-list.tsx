@@ -10,6 +10,7 @@ import Image from "next/image";
 import { useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type MouseEvent, type ReactElement } from "react";
 import { HeatBadge } from "../heat-badge";
 import { StageIcon, StatusIcon, WarningIcon } from "../icons";
+import { gameNameLang } from "../name-lang";
 import type { TimelineCardData, TimelineChunk, TimelineClientLabels, TimelineGroupData, TimelineGroupExpansion, TimelineHistoryResponse } from "./types";
 import { appendGroupCards, groupByMonth, mergeTimelineChunk, remainingInGroup, todayMarkerIndex } from "./view-model";
 
@@ -102,7 +103,9 @@ function TimelineCard({ card, groupKey, labels, locale, js }: { card: TimelineCa
       <a id={cardId(groupKey, card)} className="card" href={card.h}>
         {card.c ? <Image className="card-thumb" src={card.c} alt="" width={90} height={128} unoptimized loading="lazy" /> : <span className="card-thumb card-thumb-empty" aria-hidden="true" />}
         <span className="card-body">
-          <span className="card-name">{card.n}</span>
+          <span className="card-name" lang={gameNameLang(card.n, !card.o, locale)}>
+            {card.n}
+          </span>
           {card.o ? (
             <span className="card-meta" lang="en">
               {card.o}

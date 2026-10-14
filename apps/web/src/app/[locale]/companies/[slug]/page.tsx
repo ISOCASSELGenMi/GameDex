@@ -2,15 +2,17 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getLocaleConfig, isSupportedLocale } from "@/kernel/locale";
-import { CompanyDetailPage, companyPageTitle } from "@/modules/catalog/ui";
+import { CompanyDetailPage, PAGE_RULE, companyPageTitle, seoMetadata, seoSlug } from "@/modules/catalog/ui";
 
 export const instant = false;
 
 export async function generateMetadata({ params, searchParams }: PageProps<"/[locale]/companies/[slug]">): Promise<Metadata> {
   const { locale, slug } = await params;
   if (!isSupportedLocale(locale)) return {};
-  const title = await companyPageTitle(slug, locale, await searchParams);
-  return title ? { title } : {};
+  const sp = await searchParams;
+  const title = await companyPageTitle(slug, locale, sp);
+  if (!title) return {};
+  return { title, ...seoMetadata({ locale, config: getLocaleConfig(), path: `/companies/${seoSlug(slug)}`, searchParams: sp, queryRules: [PAGE_RULE] }) };
 }
 
 export default async function Company({ params, searchParams }: PageProps<"/[locale]/companies/[slug]">) {

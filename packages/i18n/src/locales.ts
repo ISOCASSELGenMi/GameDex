@@ -5,7 +5,7 @@
  */
 
 /** 有字典的語系（順序 = 語言選單預設順序）。 */
-export const AVAILABLE_LOCALES = ["zh-Hant", "en"] as const;
+export const AVAILABLE_LOCALES = ["zh-Hant", "en", "ja"] as const;
 export type Locale = (typeof AVAILABLE_LOCALES)[number];
 
 export const DEFAULT_LOCALE: Locale = "zh-Hant";

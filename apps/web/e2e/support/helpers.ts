@@ -9,8 +9,8 @@ import { WEB_DIR } from "./env";
 
 export { FIXTURE, FIXTURE_3B } from "./fixture-data";
 
-export type TestLocale = "zh-Hant" | "en";
-export const LOCALES: readonly TestLocale[] = ["zh-Hant", "en"];
+export type TestLocale = "zh-Hant" | "en" | "ja";
+export const LOCALES: readonly TestLocale[] = ["zh-Hant", "en", "ja"];
 
 /** 1×1 透明 PNG。 */
 const PIXEL = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=", "base64");

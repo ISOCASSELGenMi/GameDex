@@ -55,12 +55,12 @@ export function isoDate(year: number, month: number, day: number): string {
 export type WeekStart = 0 | 1;
 
 /**
- * 各語系的週起始日（可設定）。目前 zh-Hant、en 都是週日；未列出的語系用 DEFAULT_WEEK_START。
- * ja（Phase 3.5）若要改週一起，在這裡加一行即可。
+ * 各語系的週起始日（可設定）。目前 zh-Hant、en、ja 都是週日；未列出的語系用 DEFAULT_WEEK_START。
  */
 export const WEEK_START_BY_LOCALE: Readonly<Record<string, WeekStart>> = {
   "zh-Hant": 0,
   en: 0,
+  ja: 0, // 日本の一般的なカレンダーは日曜始まり
 };
 export const DEFAULT_WEEK_START: WeekStart = 0;
 

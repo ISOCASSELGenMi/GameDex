@@ -16,4 +16,10 @@ export { GamesBrowsePage, gamesTitle } from "./browse/browse-page";
 // Phase 3b（J2）：平台／公司／系列／活動頁
 export { PlatformsOverviewPage, PlatformDetailPage, platformsTitle, platformPageTitle } from "./entities/platform-pages";
 export { CompanyDetailPage, companyPageTitle, FranchiseDetailPage, franchisePageTitle } from "./entities/company-franchise-pages";
-export { EventsListPage, EventDetailPage, eventsTitle, eventPageTitle } from "./events/events-pages";
+export { EventsListPage, EventDetailPage, eventsTitle, eventPageTitle, loadEventDetail } from "./events/events-pages";
+
+// Phase 3.5：SEO／快取
+export { STATIC_SHELL_SLUG } from "./seo/cache-tags";
+export { seoMetadata, seoSlug, gameDetailMetadata, eventDetailMetadata } from "./seo/metadata";
+export { PAGE_RULE, enumRule } from "./seo/alternates";
+export { sitemapIndexResponse, sitemapShardResponse, robotsResponse } from "./seo/sitemap-routes";

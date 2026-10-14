@@ -9,6 +9,13 @@ import enFilters from "../messages/en/filters.json";
 import enGenres from "../messages/en/genres.json";
 import enThemes from "../messages/en/themes.json";
 import enUi from "../messages/en/ui.json";
+import jaA11y from "../messages/ja/a11y.json";
+import jaEnums from "../messages/ja/enums.json";
+import jaErrors from "../messages/ja/errors.json";
+import jaFilters from "../messages/ja/filters.json";
+import jaGenres from "../messages/ja/genres.json";
+import jaThemes from "../messages/ja/themes.json";
+import jaUi from "../messages/ja/ui.json";
 import zhA11y from "../messages/zh-Hant/a11y.json";
 import zhEnums from "../messages/zh-Hant/enums.json";
 import zhErrors from "../messages/zh-Hant/errors.json";
@@ -50,6 +57,15 @@ export const MESSAGES: Readonly<Record<Locale, LocaleMessages>> = {
     errors: enErrors,
     genres: enGenres,
     themes: enThemes,
+  },
+  ja: {
+    ui: jaUi,
+    enums: jaEnums,
+    filters: jaFilters,
+    a11y: jaA11y,
+    errors: jaErrors,
+    genres: jaGenres,
+    themes: jaThemes,
   },
 };
 

@@ -1,0 +1,128 @@
+{
+  "releaseStatus": {
+    "scheduled": "発売予定",
+    "delayed": "発売延期",
+    "released": "発売済み",
+    "cancelled": "開発中止"
+  },
+  "releaseStage": {
+    "unspecified": "未設定",
+    "full": "正式版",
+    "early_access": "早期アクセス",
+    "beta": "ベータ版",
+    "alpha": "アルファ版",
+    "demo": "体験版",
+    "other": "その他"
+  },
+  "datePrecision": {
+    "day": "日付確定",
+    "month": "月",
+    "quarter": "四半期",
+    "year": "年",
+    "tbd": "未定"
+  },
+  "gameType": {
+    "main_game": "本編",
+    "dlc_addon": "DLC／追加コンテンツ",
+    "expansion": "拡張パック",
+    "bundle": "バンドル",
+    "standalone_expansion": "単体で遊べる拡張",
+    "mod": "MOD",
+    "episode": "エピソード",
+    "season": "シーズン",
+    "remake": "リメイク",
+    "remaster": "リマスター",
+    "expanded_game": "拡張版",
+    "port": "移植版",
+    "fork": "派生作品",
+    "pack": "パック",
+    "update": "アップデート",
+    "other": "その他"
+  },
+  "gameStatus": {
+    "released": "発売済み",
+    "alpha": "アルファ版",
+    "beta": "ベータ版",
+    "early_access": "早期アクセス",
+    "offline": "サービス終了",
+    "cancelled": "開発中止",
+    "rumored": "噂",
+    "delisted": "販売終了"
+  },
+  "platformKind": {
+    "console": "据え置き機",
+    "handheld": "携帯機",
+    "hybrid": "ハイブリッド機",
+    "pc": "PC",
+    "arcade": "アーケード",
+    "mobile": "モバイル",
+    "other": "その他"
+  },
+  "platformStatus": {
+    "announced": "発表済み",
+    "active": "現行機",
+    "discontinued": "生産終了"
+  },
+  "region": {
+    "WW": "全世界",
+    "US": "北米",
+    "EU": "欧州",
+    "JP": "日本",
+    "KR": "韓国",
+    "CN": "中国",
+    "AU": "オーストラリア",
+    "ASIA": "アジア",
+    "BR": "ブラジル",
+    "TW": "台湾"
+  },
+  "eventKind": {
+    "showcase": "発表会",
+    "expo": "展示会",
+    "awards": "授賞式",
+    "other": "その他"
+  },
+  "gameCompanyRole": {
+    "developer": "開発元",
+    "publisher": "発売元",
+    "porting": "移植",
+    "supporting": "開発協力"
+  },
+  "gameLinkType": {
+    "store": "ストア",
+    "official": "公式サイト",
+    "social": "SNS",
+    "media": "メディア"
+  },
+  "linkCategory": {
+    "official_website": "公式サイト",
+    "community_wiki": "コミュニティWiki",
+    "wikipedia": "Wikipedia",
+    "twitch": "Twitch",
+    "youtube": "YouTube",
+    "facebook": "Facebook",
+    "twitter": "X（Twitter）",
+    "instagram": "Instagram",
+    "subreddit": "Reddit",
+    "discord": "Discord",
+    "bluesky": "Bluesky",
+    "steam": "Steam",
+    "epic": "Epic Games Store",
+    "gog": "GOG",
+    "xbox_store": "Xboxストア",
+    "playstation_store": "PlayStation Store",
+    "nintendo_eshop": "ニンテンドーeショップ",
+    "google_play": "Google Play",
+    "app_store": "App Store",
+    "itch": "itch.io",
+    "meta": "Meta Horizonストア",
+    "gamejolt": "Game Jolt",
+    "microsoft_store": "Microsoft Store",
+    "giantbomb": "Giant Bomb",
+    "other": "その他のリンク"
+  },
+  "languageSupportType": {
+    "interface": "インターフェース",
+    "subtitles": "字幕",
+    "audio": "音声"
+  }
+}

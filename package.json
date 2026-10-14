@@ -21,7 +21,8 @@
     "lint:arch": "npm -w apps/web run lint:arch",
     "typecheck": "npm -w apps/web run typecheck && npm -w packages/i18n run typecheck && npm -w packages/api-contract run typecheck",
     "test": "npm -w apps/web run test",
-    "i18n:check": "npm -w apps/web run i18n:check"
+    "i18n:check": "npm -w apps/web run i18n:check",
+    "i18n:report": "npm -w apps/web run i18n:report --"
   },
   "allowScripts": {
     "esbuild@0.18.20": true,

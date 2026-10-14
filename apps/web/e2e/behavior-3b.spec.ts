@@ -467,7 +467,7 @@ test.describe("語言支援", () => {
       await expect(table).toBeVisible();
       await expect(table.locator("tbody tr")).toHaveCount(3);
       await expect(table.locator("thead th")).toHaveCount(4);
-      await expect(table.locator("tbody tr").first().locator("th")).toContainText(locale === "en" ? "English" : "繁體中文");
+      await expect(table.locator("tbody tr").first().locator("th")).toContainText({ en: "English", ja: "日本語", "zh-Hant": "繁體中文" }[locale]);
       await expect(table.locator("td", { hasText: msg(locale, "ui.langSupport.columnNoData") })).toHaveCount(0);
       expect(await section(page).innerText()).not.toMatch(forbidden);
       await expect(table.locator("td .sr-only", { hasText: msg(locale, "ui.langSupport.cellNoData") }).first()).toBeAttached();

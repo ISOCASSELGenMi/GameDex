@@ -21,6 +21,7 @@ import { HeatBadge, heatBadgeLabel } from "../heat-badge";
 import { getTranslator } from "../labels";
 import { PageShell } from "../layout/page-shell";
 import { gameHref, gamesBrowseHref, localeHref } from "../links";
+import { gameNameLang } from "../name-lang";
 import { PageNav } from "../page-nav";
 import { rethrowForPage } from "../page-errors";
 import {
@@ -65,7 +66,9 @@ function GameCard({ game, locale, t }: { game: BrowseGameCard; locale: Locale; t
           <span className="summary-thumb card-thumb-empty" aria-hidden="true" />
         )}
         <span className="flex min-w-0 flex-col gap-1">
-          <span className="font-semibold [overflow-wrap:anywhere]">{game.name}</span>
+          <span className="font-semibold [overflow-wrap:anywhere]" lang={gameNameLang(game.name, game.name === game.originalName, locale)}>
+            {game.name}
+          </span>
           {game.originalName !== game.name ? (
             <span className="text-sm text-[var(--muted)] [overflow-wrap:anywhere]" lang="en">
               {game.originalName}

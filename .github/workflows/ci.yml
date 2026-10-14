@@ -29,6 +29,7 @@ jobs:
       - run: npm -w apps/web run lint
       - run: npm -w apps/web run typecheck
       - run: npm -w apps/web run i18n:check
+      - run: npm -w apps/web run i18n:report -- --strict
       - run: npm -w apps/web run lint:arch
       - run: npm -w apps/web run test
       - run: npm -w apps/web run build
