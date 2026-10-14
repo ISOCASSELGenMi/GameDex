@@ -122,4 +122,6 @@
 - [ ] 待決（S）：多維篩選頁一律 noindex、canonical 不帶篩選參數；正式環境必須設 `NEXT_PUBLIC_SITE_URL`（沒設時 canonical 為相對網址）（2026-10-14 新增）
 - [ ] 待決（負責人）：PPR 下查詢逾時的錯誤頁是 200，加上依路徑的 `s-maxage` 會讓 CDN 快取錯誤頁 60~300 秒，Phase 9 前要處理；`/games` 預設排序冷查詢 1.9 s（熱 0.27 s），DB 重啟後首次可能逾時（2026-10-14 新增）
 - [ ] 已知：本機在同一個 shell 中 `npm test` 後緊接 `test:a11y` 會 exit 1 且無測試輸出（單獨跑 287 全過；CI 分步驟不受影響），原因未查（2026-10-14 新增）
-- [ ] 驗收：全部檢查全綠＋spec 15 Phase 3.5 完成標準（本機部分）；commit；交接文件
+- [x] 驗收：全部檢查全綠＋spec 15 Phase 3.5 完成標準（本機部分）；commit；交接文件（2026-10-14，`docs/handoff/2026-10-14-phase3.5-done.md`；sitemap 被搜尋主控台接受移到 Phase 9）
+- [x] 本機資料夾改名 `SoK-Game_Calender` → `SoK-GameDB`、記憶搬到新路徑、CLAUDE.md 加「工作方式」（2026-10-14）
+- [ ] Phase 9 前：PPR 錯誤頁 200 會被 `s-maxage` 快取的處理；設 `NEXT_PUBLIC_SITE_URL`（2026-10-14 新增）
