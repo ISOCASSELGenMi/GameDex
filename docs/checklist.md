@@ -111,7 +111,8 @@
 - [ ] CI：Actions Node 20 淘汰警告、ubuntu-latest 2026-10-19 起改 Ubuntu 26（2026-10-14 新增）
 - [x] 在開發 DB 跑 `refresh_popularity --scope all`（2026-10-13，149 秒；heat 5＝2,731、4＝10,766、3＝28,293、2＝67,624、1＝155,134、0＝50,058）
 - [x] 驗收：全部檢查全綠＋spec 15 Phase 3 完成標準（3b 範圍）；commit；交接文件（2026-10-14，`docs/handoff/2026-10-14-phase3b-done.md`；3c 硬體世代時間軸未做，spec 標可後延）
-- [ ] PR `ISOCASSELGenMi/SoK-GameDB#1`（feat/phase3b → main，含 3a）待使用者審閱合併（2026-10-14 開）
+- [x] PR `ISOCASSELGenMi/SoK-GameDB#1`（feat/phase3b → main，含 3a）2026-10-14 使用者合併（merge commit `be43a6e`）
+- [ ] PR `ISOCASSELGenMi/SoK-GameDB#2`（feat/phase3.5 → main）待使用者審閱合併（2026-10-14 開）
 
 ### Phase 3.5：多語補完、SEO、快取（2026-10-14 開工，分支 `feat/phase3.5`）
 - [x] 使用者決定（2026-10-14）：先做本機可做的；Cloudflare Cache Rule／rate limiting 實際設定與搜尋主控台驗收移到 Phase 9；ja 由子代理出初稿、使用者審專有名詞對照表
