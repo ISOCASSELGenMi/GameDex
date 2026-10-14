@@ -117,7 +117,7 @@
 - [x] 使用者決定（2026-10-14）：先做本機可做的；Cloudflare Cache Rule／rate limiting 實際設定與搜尋主控台驗收移到 Phase 9；ja 由子代理出初稿、使用者審專有名詞對照表
 - [x] L：ja 字典、類型／主題翻譯、game_localizations→displayNames、翻譯缺漏報告＋CI 三語字典檢查
 - [x] S：sitemap 分片、canonical、hreflang（x-default）、JSON-LD、ISR／快取（語系不互相污染）、Cloudflare 規則草案文件
-- [ ] 使用者審 ja 專有名詞對照表（120 列，`.local/agents/35/L-report.md`；特別是「熱度＝注目度」「熱門榜＝注目ランキング」）
+- [ ] 使用者審 ja 專有名詞對照表（120 列，`docs/review/ja-terms.md`；特別是「熱度＝注目度」「熱門榜＝注目ランキング」）
 - [ ] 待決（L）：zh-Hant 顯示名稱規則保守，既有遊戲要下次同步才重算；立即回填需對開發 DB 重跑同步（需使用者同意）（2026-10-14 新增）
 - [ ] 待決（S）：多維篩選頁一律 noindex、canonical 不帶篩選參數；正式環境必須設 `NEXT_PUBLIC_SITE_URL`（沒設時 canonical 為相對網址）（2026-10-14 新增）
 - [ ] 待決（負責人）：PPR 下查詢逾時的錯誤頁是 200，加上依路徑的 `s-maxage` 會讓 CDN 快取錯誤頁 60~300 秒，Phase 9 前要處理；`/games` 預設排序冷查詢 1.9 s（熱 0.27 s），DB 重啟後首次可能逾時（2026-10-14 新增）
