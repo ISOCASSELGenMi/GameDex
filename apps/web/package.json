@@ -18,6 +18,7 @@
     "db:trgm-test": "tsx --import ./scripts/load-env.ts scripts/trgm-test.ts",
     "test:unit": "vitest run --project unit",
     "i18n:check": "tsx ../../packages/i18n/scripts/i18n-check.ts",
+    "i18n:report": "tsx ../../packages/i18n/scripts/i18n-report.ts",
     "test:a11y": "playwright test"
   },
   "dependencies": {

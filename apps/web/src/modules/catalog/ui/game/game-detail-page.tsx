@@ -3,8 +3,8 @@
  * 伺服器元件；找不到 → notFound()（回應開始前呼叫，真正的 404）。
  */
 import Image from "next/image";
-import { connection } from "next/server";
 import { notFound } from "next/navigation";
+import { cacheLife, cacheTag } from "next/cache";
 import { cache, type ReactElement, type ReactNode } from "react";
 import { formatDateTime, formatReleaseLabel, type Locale, type Translator } from "@sok/i18n";
 import type { CalendarEventItem, GameDetail, GameFranchiseGroup, GameReleaseRow, GameSummary, PlatformChip } from "../../domain/entities";
@@ -17,7 +17,12 @@ import { EventIcon, ExternalIcon, StageIcon, StatusIcon, WarningIcon } from "../
 import { eventKindLabel, genreLabel, getTranslator, regionLabel, stageLabel, statusLabel } from "../labels";
 import { PageShell } from "../layout/page-shell";
 import { companyHref, eventHref, franchiseHref, gameHref, platformHref } from "../links";
+import { CATALOG_TAG, STATIC_SHELL_SLUG } from "../seo/cache-tags";
+import { breadcrumbJsonLd, gameJsonLd } from "../seo/json-ld";
+import { JsonLdScript } from "../seo/json-ld-script";
+import { siteOrigin } from "../seo/site-url";
 import { rethrowForPage } from "../page-errors";
+import { gameNameLang } from "../name-lang";
 import { releaseHistoryText } from "../release-history";
 import { LanguageSupportBody } from "./language-support";
 
@@ -35,11 +40,31 @@ export interface GameDetailPageProps {
   slots?: GameDetailSlots;
 }
 
-/** generateMetadata 與頁面共用（React cache：同一請求只查一次）；找不到回 null。 */
+/**
+ * 快取層（06 §SEO 與快取：詳情頁 ISR 1~24 小時）。`use cache` 的快取鍵＝函式 ID＋引數（slug、locale），
+ * 所以兩個語系各有自己的條目、不會互相污染。例外不快取（逾時等錯誤會原樣往外丟，由外層轉成頁面錯誤）。
+ * 找不到（軟 404）只快取一下下，避免爬蟲掃不存在的 slug 每次都打 DB。
+ */
+async function readGameDetailCached(slug: string, locale: Locale): Promise<GameDetail | null> {
+  "use cache";
+  if (slug === STATIC_SHELL_SLUG) {
+    cacheLife("catalogMiss");
+    return null;
+  }
+  const game = await getGameDetail({ slug: safeDecode(slug), locale });
+  if (game) {
+    cacheLife("catalogDetail");
+    cacheTag(CATALOG_TAG, `${CATALOG_TAG}:game`, `${CATALOG_TAG}:game:${game.slug}`);
+  } else {
+    cacheLife("catalogMiss");
+  }
+  return game;
+}
+
+/** generateMetadata 與頁面共用（React cache：同一請求只呼叫一次）；找不到回 null。 */
 export const loadGameDetail = cache(async (slug: string, locale: Locale): Promise<GameDetail | null> => {
-  await connection();
   try {
-    return await getGameDetail({ slug: safeDecode(slug), locale });
+    return await readGameDetailCached(slug, locale);
   } catch (err) {
     rethrowForPage(err);
   }
@@ -76,7 +101,9 @@ function SummaryCard({ game, locale }: { game: GameSummary; locale: Locale }): R
         <span className="summary-thumb card-thumb-empty" aria-hidden="true" />
       )}
       <span className="flex min-w-0 flex-col">
-        <span className="font-medium">{game.name}</span>
+        <span className="font-medium" lang={gameNameLang(game.name, game.name === game.originalName, locale)}>
+          {game.name}
+        </span>
         <span className="text-sm text-[var(--muted)]">{label}</span>
       </span>
     </a>
@@ -184,10 +211,18 @@ export async function GameDetailPage({ locale, supportedLocales, slug, slots }: 
     const key = `enums.linkCategory.${category}`;
     return t.has(key) ? t.t(key) : category;
   };
+  const jsonLdCtx = { origin: siteOrigin(), locale };
   const roleText = (roles: readonly string[]) => joinList(locale, roles.map((r) => t.t(`enums.gameCompanyRole.${r}`)));
 
   return (
     <PageShell locale={locale} supportedLocales={supportedLocales} path={`/games/${game.slug}`}>
+      <JsonLdScript data={gameJsonLd(game, jsonLdCtx)} />
+      <JsonLdScript
+        data={breadcrumbJsonLd(
+          [{ name: t.t("ui.site.name"), path: "/" }, { name: t.t("ui.games.title"), path: "/games" }, { name: game.name }],
+          jsonLdCtx,
+        )}
+      />
       <article className="detail">
         <div className="detail-head">
           {game.cover ? (
@@ -204,7 +239,9 @@ export async function GameDetailPage({ locale, supportedLocales, slug, slots }: 
             />
           ) : null}
           <div className="flex min-w-0 flex-col gap-2">
-            <h1 className="text-3xl font-bold">{game.name}</h1>
+            <h1 className="text-3xl font-bold" lang={gameNameLang(game.name, game.name === game.originalName, locale)}>
+              {game.name}
+            </h1>
             {game.originalName !== game.name ? (
               <p className="text-[var(--muted)]">
                 {t.t("ui.game.originalName")}

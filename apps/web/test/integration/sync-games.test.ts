@@ -148,7 +148,8 @@ describe.skipIf(!enabled)("sync_games（整合）", () => {
       firstReleaseDate: "2026-03-01",
       firstReleasePrecision: "day",
       similarIgdbIds: [770002],
-      displayNames: { ja: "シンクテスト" },
+      // ja 來自 game_localizations；zh-Hant 來自 comment 標「Chinese title - traditional」的別名（06 解析鏈 2）
+      displayNames: { ja: "シンクテスト", "zh-Hant": "測試遊戲" },
     });
     expect(g.searchText).toContain("sync test game");
     expect(g.searchText).toContain("測試 試遊 遊戲");

@@ -50,6 +50,11 @@ body {
   font-family: system-ui, -apple-system, "Segoe UI", "Noto Sans TC", "Microsoft JhengHei", "Hiragino Sans", sans-serif;
 }
 
+/* 日文頁面：漢字要用日文字形，所以日文字型排在中文字型之前 */
+body:lang(ja) {
+  font-family: system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Yu Gothic UI", "Yu Gothic", "Meiryo", "Noto Sans JP", sans-serif;
+}
+
 :focus-visible {
   outline: 3px solid var(--focus);
   outline-offset: 2px;

@@ -8,6 +8,7 @@ import type { Translator } from "@sok/i18n";
 import { HeatBadge, heatBadgeLabel } from "../heat-badge";
 import { EventIcon, StageIcon, StatusIcon, WarningIcon } from "../icons";
 import { stageLabel, statusLabel } from "../labels";
+import { gameNameLang } from "../name-lang";
 import type { CardItem, DayItem, EventItem } from "./view-model";
 import { platformChipText } from "./view-model";
 
@@ -49,7 +50,9 @@ export function FullCard({ item, href, t }: { item: CardItem; href: string; t: T
         <span className="card-thumb card-thumb-empty" aria-hidden="true" />
       )}
       <span className="card-body">
-        <span className="card-name">{card.name}</span>
+        <span className="card-name" lang={gameNameLang(card.name, card.name === card.originalName, t.locale)}>
+          {card.name}
+        </span>
         <Chips item={item} />
         <span className="card-meta">
           <HeatBadge level={card.heatLevel} label={heatBadgeLabel(t, card.heatLevel)} compact />

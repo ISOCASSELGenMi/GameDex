@@ -14,6 +14,7 @@ import type {
   LanguageSupportType,
 } from "../domain/entities";
 import { planReleaseEventDiff, type DesiredRelease } from "../domain/release-diff";
+import { resolveDisplayNames } from "../domain/display-names";
 import { buildSearchText } from "../domain/search-text";
 import {
   externalIds,
@@ -170,10 +171,7 @@ export async function syncIgdbGame(
       .select({ localeCode: gameLocalizations.localeCode, name: gameLocalizations.name, source: gameLocalizations.source })
       .from(gameLocalizations)
       .where(eq(gameLocalizations.gameId, gameId));
-    const displayNames: Record<string, string> = {};
-    for (const l of [...locs].sort((a, b) => Number(a.source === "manual") - Number(b.source === "manual"))) {
-      displayNames[l.localeCode] = l.name;
-    }
+    const displayNames = resolveDisplayNames(locs, input.alternativeNames);
     const searchText = buildSearchText([input.name, ...input.alternativeNames.map((a) => a.name), ...locs.map((l) => l.name)]);
     await tx.update(games).set({ displayNames, searchText }).where(eq(games.id, gameId));
 

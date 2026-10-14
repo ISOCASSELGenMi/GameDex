@@ -46,7 +46,7 @@
 - [ ] Discord Bot spike：建立外部活動、反應身分組、250 身分組上限的清理策略（2026-10-12 新增）
 - [ ] 確認 IGDB events 端點的資料覆蓋率（活動類型、時區、直播連結）（2026-10-12 新增）
 
-## 3. 實作（本機 `C:\Users\illus\Project\SoK-Game_Calender`；2026-10-12 起在 Claude Code 繼續）
+## 3. 實作（本機 `C:\Users\illus\Project\SoK-GameDB`，2026-10-14 由 `SoK-Game_Calender` 改名；2026-10-12 起在 Claude Code 繼續）
 
 ### Phase 0：環境（2026-10-12 完成）
 - [x] npm workspaces（apps/web、packages/*、bots/*）＋ git（main）
@@ -111,3 +111,18 @@
 - [ ] CI：Actions Node 20 淘汰警告、ubuntu-latest 2026-10-19 起改 Ubuntu 26（2026-10-14 新增）
 - [x] 在開發 DB 跑 `refresh_popularity --scope all`（2026-10-13，149 秒；heat 5＝2,731、4＝10,766、3＝28,293、2＝67,624、1＝155,134、0＝50,058）
 - [x] 驗收：全部檢查全綠＋spec 15 Phase 3 完成標準（3b 範圍）；commit；交接文件（2026-10-14，`docs/handoff/2026-10-14-phase3b-done.md`；3c 硬體世代時間軸未做，spec 標可後延）
+- [x] PR `ISOCASSELGenMi/SoK-GameDB#1`（feat/phase3b → main，含 3a）2026-10-14 使用者合併（merge commit `be43a6e`）
+- [ ] PR `ISOCASSELGenMi/SoK-GameDB#2`（feat/phase3.5 → main）待使用者審閱合併（2026-10-14 開）
+
+### Phase 3.5：多語補完、SEO、快取（2026-10-14 開工，分支 `feat/phase3.5`）
+- [x] 使用者決定（2026-10-14）：先做本機可做的；Cloudflare Cache Rule／rate limiting 實際設定與搜尋主控台驗收移到 Phase 9；ja 由子代理出初稿、使用者審專有名詞對照表
+- [x] L：ja 字典、類型／主題翻譯、game_localizations→displayNames、翻譯缺漏報告＋CI 三語字典檢查
+- [x] S：sitemap 分片、canonical、hreflang（x-default）、JSON-LD、ISR／快取（語系不互相污染）、Cloudflare 規則草案文件
+- [ ] 使用者審 ja 專有名詞對照表（120 列，`docs/review/ja-terms.md`；特別是「熱度＝注目度」「熱門榜＝注目ランキング」）
+- [ ] 待決（L）：zh-Hant 顯示名稱規則保守，既有遊戲要下次同步才重算；立即回填需對開發 DB 重跑同步（需使用者同意）（2026-10-14 新增）
+- [ ] 待決（S）：多維篩選頁一律 noindex、canonical 不帶篩選參數；正式環境必須設 `NEXT_PUBLIC_SITE_URL`（沒設時 canonical 為相對網址）（2026-10-14 新增）
+- [ ] 待決（負責人）：PPR 下查詢逾時的錯誤頁是 200，加上依路徑的 `s-maxage` 會讓 CDN 快取錯誤頁 60~300 秒，Phase 9 前要處理；`/games` 預設排序冷查詢 1.9 s（熱 0.27 s），DB 重啟後首次可能逾時（2026-10-14 新增）
+- [ ] 已知：本機在同一個 shell 中 `npm test` 後緊接 `test:a11y` 會 exit 1 且無測試輸出（單獨跑 287 全過；CI 分步驟不受影響），原因未查（2026-10-14 新增）
+- [x] 驗收：全部檢查全綠＋spec 15 Phase 3.5 完成標準（本機部分）；commit；交接文件（2026-10-14，`docs/handoff/2026-10-14-phase3.5-done.md`；sitemap 被搜尋主控台接受移到 Phase 9）
+- [x] 本機資料夾改名 `SoK-Game_Calender` → `SoK-GameDB`、記憶搬到新路徑、CLAUDE.md 加「工作方式」（2026-10-14）
+- [ ] Phase 9 前：PPR 錯誤頁 200 會被 `s-maxage` 快取的處理；設 `NEXT_PUBLIC_SITE_URL`（2026-10-14 新增）

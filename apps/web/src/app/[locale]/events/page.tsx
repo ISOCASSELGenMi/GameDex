@@ -2,14 +2,15 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getLocaleConfig, isSupportedLocale } from "@/kernel/locale";
-import { EventsListPage, eventsTitle } from "@/modules/catalog/ui";
+import { EventsListPage, PAGE_RULE, eventsTitle, seoMetadata } from "@/modules/catalog/ui";
 
 export const instant = false;
 
-export async function generateMetadata({ params }: PageProps<"/[locale]/events">): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: PageProps<"/[locale]/events">): Promise<Metadata> {
   const { locale } = await params;
   if (!isSupportedLocale(locale)) return {};
-  return { title: eventsTitle(locale) };
+  const queryRules = [PAGE_RULE];
+  return { title: eventsTitle(locale), ...seoMetadata({ locale, config: getLocaleConfig(), path: "/events", searchParams: await searchParams, queryRules }) };
 }
 
 export default async function Events({ params, searchParams }: PageProps<"/[locale]/events">) {

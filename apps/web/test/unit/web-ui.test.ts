@@ -77,6 +77,7 @@ describe("月曆格", () => {
   it("週起始日可依語系設定（目前 zh-Hant、en 週日起；未列出的語系用預設）", () => {
     expect(weekStartFor("zh-Hant")).toBe(0);
     expect(weekStartFor("en")).toBe(0);
+    expect(weekStartFor("ja")).toBe(0);
     expect(weekStartFor("xx")).toBe(0);
   });
 });
@@ -133,6 +134,13 @@ describe("網址與語言選單", () => {
       { locale: "en", href: "/en/calendar/2026-10?platform=ps5,switch", label: "English", current: false },
     ]);
     expect(languageMenuLinks("en", ["zh-Hant", "en"], "/")[0]!.href).toBe("/zh-Hant");
+    const three = languageMenuLinks("ja", ["zh-Hant", "en", "ja"], "/games/elden-ring", "q=elden");
+    expect(three.map((l) => [l.locale, l.label, l.current])).toEqual([
+      ["zh-Hant", "繁體中文", false],
+      ["en", "English", false],
+      ["ja", "日本語", true],
+    ]);
+    expect(three[2]!.href).toBe("/ja/games/elden-ring?q=elden");
   });
 
   it("月份連結保留篩選（逗號不編碼）；今天連結不帶月份", () => {
@@ -148,7 +156,7 @@ describe("無前綴入口與 proxy 判斷", () => {
   const config = getLocaleConfig({ SUPPORTED_LOCALES: "zh-Hant,en,ja" });
 
   it("支援語系來自 env 與字典的交集", () => {
-    expect(config.supported).toEqual(["zh-Hant", "en"]);
+    expect(config.supported).toEqual(["zh-Hant", "en", "ja"]);
     expect(config.defaultLocale).toBe("zh-Hant");
   });
 
@@ -167,6 +175,8 @@ describe("無前綴入口與 proxy 判斷", () => {
     expect(pickRequestLocale({ cookie: "fr", acceptLanguage: "en-US,en;q=0.9" }, config)).toBe("en");
     expect(pickRequestLocale({ acceptLanguage: "zh-TW,zh;q=0.9" }, config)).toBe("zh-Hant");
     expect(pickRequestLocale({ acceptLanguage: "de-DE" }, config)).toBe("zh-Hant");
+    expect(pickRequestLocale({ acceptLanguage: "ja-JP,ja;q=0.9,en;q=0.5" }, config)).toBe("ja");
+    expect(pickRequestLocale({ cookie: "ja", acceptLanguage: "en-US" }, config)).toBe("ja");
     expect(pickRequestLocale({}, config)).toBe("zh-Hant");
   });
 

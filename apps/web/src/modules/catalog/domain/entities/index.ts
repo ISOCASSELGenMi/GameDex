@@ -15,3 +15,4 @@ export * from "./language-support";
 export * from "./popularity";
 export * from "./timeline";
 export * from "./browse";
+export * from "./sitemap";

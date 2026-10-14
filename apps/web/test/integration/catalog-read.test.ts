@@ -136,7 +136,7 @@ describe.skipIf(!enabled)("catalog 讀取層（整合）", () => {
 
     // 聚合：三平台同一天 → 一張卡；不同天 → 兩張
     await addGame(550001, {
-      displayNames: { "zh-Hant": "測試甲" },
+      displayNames: { "zh-Hant": "測試甲", ja: "テスト甲" },
       popularity: 500,
       genres: ["b55-rpg"],
       firstReleaseDate: "2035-03-10",
@@ -295,6 +295,10 @@ describe.skipIf(!enabled)("catalog 讀取層（整合）", () => {
     // en 沒有 displayNames → 原名
     const en = await march({ locale: "en" });
     expect(find(cardsOf(en), 550001)[0].name).toBe("B55 Game 550001");
+    // ja 取 ja 的名稱；originalName 永遠是原名；沒有 ja 名稱的遊戲退回原名
+    const ja = await march({ locale: "ja" });
+    expect(find(cardsOf(ja), 550001)[0]).toMatchObject({ name: "テスト甲", originalName: "B55 Game 550001" });
+    expect(find(cardsOf(ja), 550002)[0].name).toBe(find(cardsOf(ja), 550002)[0].originalName);
   });
 
   it("manual 優先於 igdb；地區偏好 > WW > 最早日期；偏好地區在區間外不拿 WW 補", async () => {

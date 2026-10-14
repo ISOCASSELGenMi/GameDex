@@ -9,6 +9,7 @@ import type { GameListItem, ImageRef, PlatformGameItem } from "../../domain/enti
 import { StageIcon } from "../icons";
 import { stageLabel } from "../labels";
 import { gameHref } from "../links";
+import { gameNameLang } from "../name-lang";
 import { PageNav } from "../page-nav";
 import { buildPager, gameDateText, gameStatusBadge } from "./view-model";
 
@@ -71,7 +72,9 @@ export function EntityGameList({ items, locale, t, extra }: EntityGameListProps)
                 <span className="summary-thumb card-thumb-empty" aria-hidden="true" style={{ width: 45, height: 64, flex: "none" }} />
               )}
               <span className="flex min-w-0 flex-col gap-1">
-                <span className="font-semibold [overflow-wrap:anywhere]">{it.name}</span>
+                <span className="font-semibold [overflow-wrap:anywhere]" lang={gameNameLang(it.name, it.name === it.originalName, locale)}>
+                  {it.name}
+                </span>
                 <span className="text-sm text-[var(--muted)]">
                   {platformItem ? (
                     <>

@@ -2,15 +2,17 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getLocaleConfig, isSupportedLocale } from "@/kernel/locale";
-import { TimelineViewPage, timelineTitle } from "@/modules/catalog/ui";
+import { TimelineViewPage, seoMetadata, timelineTitle } from "@/modules/catalog/ui";
 
 // 整頁在回應前算完（不串流），同月曆
 export const instant = false;
 
-export async function generateMetadata({ params }: PageProps<"/[locale]/timeline">): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: PageProps<"/[locale]/timeline">): Promise<Metadata> {
   const { locale } = await params;
   if (!isSupportedLocale(locale)) return {};
-  return { title: timelineTitle(locale) };
+  // `at`、篩選都不進正規網址；多維組合 noindex
+  const meta = { searchParams: await searchParams, queryRules: [], filterPage: true };
+  return { title: timelineTitle(locale), ...seoMetadata({ locale, config: getLocaleConfig(), path: "/timeline", ...meta }) };
 }
 
 export default async function Timeline({ params, searchParams }: PageProps<"/[locale]/timeline">) {

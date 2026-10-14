@@ -16,3 +16,5 @@ export { getTrending, TRENDING_DEFAULT_LIMIT, TRENDING_MAX_LIMIT, type GetTrendi
 // Phase 3b（G）：時間軸、瀏覽／搜尋
 export { getTimeline, expandTimelineGroup, getReleaseDateHistory, type GetTimelineInput, type ExpandTimelineGroupInput } from "./get-timeline";
 export { browseGames, type BrowseGamesInput } from "./browse-games";
+// Phase 3.5：sitemap
+export { getSitemapCounts, listSitemapEntries, listSitemapSmall, type ListSitemapShardInput } from "./sitemap";

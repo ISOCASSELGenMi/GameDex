@@ -3,6 +3,7 @@
  * 時間一律顯示 UTC 並標註；start_time 為 NULL＝「時間未定」。找不到 → notFound()；逾時 → 錯誤邊界。
  */
 import Image from "next/image";
+import { cacheLife, cacheTag } from "next/cache";
 import { connection } from "next/server";
 import { notFound } from "next/navigation";
 import { cache, type ReactElement } from "react";
@@ -18,6 +19,10 @@ import { eventKindLabel, getTranslator } from "../labels";
 import { PageShell } from "../layout/page-shell";
 import { eventHref, eventsHref } from "../links";
 import { rethrowForPage } from "../page-errors";
+import { CATALOG_TAG, STATIC_SHELL_SLUG } from "../seo/cache-tags";
+import { breadcrumbJsonLd, eventJsonLd } from "../seo/json-ld";
+import { JsonLdScript } from "../seo/json-ld-script";
+import { siteOrigin } from "../seo/site-url";
 import { EVENTS_PAGE_SIZE, eventStatusLabel, eventTimeText, parseEventKind, parseEventScope, parseEventsPage } from "./view-model";
 
 type SearchParamsRecord = Readonly<Record<string, RawParam>>;
@@ -144,10 +149,29 @@ export async function EventsListPage({
 
 // ── 詳情 ────────────────────────────────────────────────────────────────
 
+/**
+ * 快取層（同遊戲詳情：`use cache` 鍵含 slug、locale；找不到只短暫快取）。
+ * timeStatus（upcoming／ongoing／past）由資料庫的 now() 在建立快取時算出，最多落後 catalogDetail.revalidate（1 小時）。
+ */
+async function readEventDetailCached(slug: string, locale: Locale): Promise<EventDetail | null> {
+  "use cache";
+  if (slug === STATIC_SHELL_SLUG) {
+    cacheLife("catalogMiss");
+    return null;
+  }
+  const ev = await getEventDetail({ slug: safeDecode(slug), locale });
+  if (ev) {
+    cacheLife("catalogDetail");
+    cacheTag(CATALOG_TAG, `${CATALOG_TAG}:event`, `${CATALOG_TAG}:event:${ev.slug}`);
+  } else {
+    cacheLife("catalogMiss");
+  }
+  return ev;
+}
+
 export const loadEventDetail = cache(async (slug: string, locale: Locale): Promise<EventDetail | null> => {
-  await connection();
   try {
-    return await getEventDetail({ slug: safeDecode(slug), locale });
+    return await readEventDetailCached(slug, locale);
   } catch (err) {
     rethrowForPage(err);
   }
@@ -171,6 +195,7 @@ export async function EventDetailPage({
   if (!ev) notFound();
   const t = getTranslator(locale);
   const status = eventStatusLabel(t, ev.timeStatus);
+  const jsonLdCtx = { origin: siteOrigin(), locale };
   const stream = safeExternalUrl(ev.streamUrl);
   const site = safeExternalUrl(ev.url);
   const external = (href: string, text: string) => (
@@ -182,6 +207,13 @@ export async function EventDetailPage({
 
   return (
     <PageShell locale={locale} supportedLocales={supportedLocales} path={`/events/${ev.slug}`}>
+      <JsonLdScript data={eventJsonLd(ev, jsonLdCtx)} />
+      <JsonLdScript
+        data={breadcrumbJsonLd(
+          [{ name: t.t("ui.site.name"), path: "/" }, { name: t.t("ui.events.title"), path: "/events" }, { name: ev.name }],
+          jsonLdCtx,
+        )}
+      />
       <nav aria-label={t.t("a11y.breadcrumb")} className="text-sm">
         <a className="link" href={eventsHref(locale)}>
           {t.t("ui.events.title")}
