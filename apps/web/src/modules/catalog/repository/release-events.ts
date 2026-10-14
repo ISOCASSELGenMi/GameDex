@@ -22,8 +22,8 @@ function monthRange(year: number, month: number): { first: string; last: string 
 
 /**
  * 代表日期落在該月的上市事件（只取來源仍存在的列）。
- * 注意：這是原始查詢；月曆的聚合規則（一款多平台只出現一次、季／年精度的顯示）
- * 唯一實作在 repository/release-aggregate.ts（Phase 3a，見 06）。
+ * 注意：這是原始查詢，不套聚合規則，不要拿來做顯示。月曆、時間軸、Discord、iCal 一律用
+ * repository/release-aggregate.ts 的 aggregateReleases（聚合規則唯一實作，06；use case：getCalendarMonth／listReleaseCards）。
  */
 export async function getReleaseEventsByMonth(
   year: number,

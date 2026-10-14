@@ -1,0 +1,16 @@
+{
+  "notFound": {
+    "title": "Page not found",
+    "description": "This address does not exist or the content has been removed."
+  },
+  "gameNotFound": "Game not found",
+  "serverError": {
+    "title": "Something went wrong",
+    "description": "The server could not handle the request. Please try again later."
+  },
+  "queryTimeout": "This query is too complex. Remove some filters and try again.",
+  "invalidMonth": "Invalid month",
+  "tryAgain": "Try again",
+  "backToCalendar": "Back to calendar",
+  "queryTimeoutTitle": "Query timed out"
+}

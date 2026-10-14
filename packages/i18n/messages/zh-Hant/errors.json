@@ -1,0 +1,16 @@
+{
+  "notFound": {
+    "title": "找不到頁面",
+    "description": "這個網址不存在，或內容已被移除。"
+  },
+  "gameNotFound": "找不到這款遊戲",
+  "serverError": {
+    "title": "發生錯誤",
+    "description": "伺服器暫時無法處理，請稍後再試。"
+  },
+  "queryTimeout": "查詢條件太複雜，請減少篩選條件後再試",
+  "invalidMonth": "月份格式不正確",
+  "tryAgain": "重試",
+  "backToCalendar": "回到月曆",
+  "queryTimeoutTitle": "查詢逾時"
+}

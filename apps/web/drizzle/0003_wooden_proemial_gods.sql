@@ -1,0 +1,1 @@
+CREATE INDEX "franchises_slug_idx" ON "franchises" USING btree ("slug");

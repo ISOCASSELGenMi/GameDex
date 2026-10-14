@@ -24,6 +24,9 @@ export const coreEnvSchema = z.object({
   SUPPORTED_LOCALES: csv("zh-Hant,en,ja"),
   DEFAULT_LOCALE: z.preprocess(emptyToUndefined, z.string().default("zh-Hant")),
   DEFAULT_REGION_PREF: z.preprocess(emptyToUndefined, z.string().default("WW")),
+  /** 月曆、時間軸、公開 iCal、Discord 預設顯示的遊戲類型與上市階段（04 §遊戲類型、§上市階段對照；16）。 */
+  CALENDAR_VISIBLE_GAME_TYPES: csv("main_game,standalone_expansion,remake,remaster,port"),
+  CALENDAR_VISIBLE_RELEASE_STAGES: csv("unspecified,full,early_access"),
   /** 本機開發可設 false 關閉排程（例如同時開多個 dev server）。 */
   SCHEDULER_ENABLED: bool("true"),
   /** catalog 的 manifest 把兩者列為 requiredEnv，啟動時檢查；這裡設為可選，讓單元測試與 build 不需要憑證。 */
@@ -34,6 +37,8 @@ export const coreEnvSchema = z.object({
   BACKFILL_MAX_REQ_PER_SEC: z.preprocess(emptyToUndefined, z.coerce.number().positive().max(4).default(2)),
   /** 滾動校對（04 §滾動校對）每晚重抓幾款；10000 ≈ 20 個請求，全庫約 43 天輪一遍（2026-10-13 定）。 */
   ROLLING_REFRESH_PER_NIGHT: z.preprocess(emptyToUndefined, z.coerce.number().int().min(1).max(200000).default(10000)),
+  /** 熱度（03 §熱度、16）：站內追蹤權重達滿所需的全站追蹤總數（未驗證的起始值）。 */
+  HEAT_COLD_START_FOLLOWS: z.preprocess(emptyToUndefined, z.coerce.number().int().min(1).default(5000)),
 });
 
 export type CoreEnv = z.infer<typeof coreEnvSchema>;

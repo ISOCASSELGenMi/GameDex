@@ -7,7 +7,7 @@ export default defineConfig({
     projects: [
       {
         extends: true,
-        test: { name: "unit", include: ["test/unit/**/*.test.ts"], environment: "node" },
+        test: { name: "unit", include: ["test/unit/**/*.test.ts", "../../packages/*/src/**/*.test.ts"], environment: "node" },
       },
       {
         // 需要 TEST_DATABASE_URL；未設定時整組跳過（CI core-only job 沒有資料庫）

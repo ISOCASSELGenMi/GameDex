@@ -7,7 +7,7 @@
 規格書 v2.0 的副本在 **`docs/spec/`**（00~16、90、91、CHANGELOG；2026-10-12 從 claude.ai Project「SoK-Game_Calendar」的 `spec/` 匯出）。
 正本仍在 Project；兩邊不一致時以 Project 為準，請使用者重新匯出。動工前讀對應章節；實作與規格衝突時先問使用者，不要自行改規格。關鍵章節：
 - 02 架構與模組（分層、模組邊界、manifest、排程）／03 資料模型／04 IGDB 同步／15 路線圖（每個 Phase 的完成標準）／16 部署與環境變數
-- 進度 checklist：Project 的 `claude/checklist.md`（做完打勾、新工作加進去並標日期）
+- 進度 checklist：repo 副本 **`docs/checklist.md`**（正本在 Project 的 `claude/checklist.md`）。開工前先讀；做完打勾、新工作加進對應區塊並標日期。
 
 ## 五個硬性原則（摘自 spec/00）
 
@@ -22,8 +22,11 @@
 - ✅ Phase 0 環境、✅ Phase 1 kernel／catalog schema／lint:arch／core-only CI（2026-10-12）
 - ✅ **Phase 2a IGDB 同步**（2026-10-13）：sync_platforms、sync_games（每小時增量）、Tier 1 回填，真實資料已寫入本機 DB
 - ✅ **Phase 2b**（2026-10-13）：resolve_relations、Tier 2 回填（真實資料已跑完）、sync_events、rolling_refresh、字典漂移偵測
-- ⏭ **Phase 3 網站**（3a：月曆＋詳情＋聚合＋基本篩選＋i18n 骨架）
-  - **開工前先讀 `docs/handoff/2026-10-13-phase3.md`**（目前狀態整合版：資料量、排程、程式地圖、全部已定案判斷、待使用者處理、地雷）
+- GitHub：private repo `ISOCASSELGenMi/SoK-GameDB`（remote `origin`）
+- ✅ **Phase 3a 網站**（2026-10-13，分支 `feat/phase3a`）：月曆＋詳情＋聚合＋基本篩選＋i18n（zh-Hant、en）＋test:a11y
+  - **接手先讀 `docs/handoff/2026-10-13-phase3a-done.md`**（3a 程式地圖、已定案判斷、待使用者處理、地雷）；資料量／排程／Phase 2 程式地圖仍見 `2026-10-13-phase3.md`
+- ✅ **Phase 3b 完成**（2026-10-14，分支 `feat/phase3b`，尚未合併 main）：時間軸、完整篩選、瀏覽、平台／公司／系列／活動頁、熱度與熱門榜、語言支援、test:a11y 195；**接手先讀 `docs/handoff/2026-10-14-phase3b-done.md`**（待決、地雷、下一步）
+- ⏭ Phase 3.5、4、5、9（見 spec 15）
   - 任務註冊在 `catalog/module.ts` 的 `jobs`；長任務用 `lockMode: "session"`；遊戲寫入一律經 `writeGameBatch`
 
 ## 本機開發
@@ -43,6 +46,8 @@ npm run typecheck   # next typegen && tsc --noEmit
 npm run lint
 npm run lint:arch   # 0 violations
 npm test            # 單元＋整合（整合測試用 TEST_DATABASE_URL，資料庫名必須以 _test 結尾，每次重建）
+npm run i18n:check
+npm -w apps/web run test:a11y   # Playwright＋axe；本機 PW_CHANNEL=msedge；與 npm test 共用測試 DB，不可同時跑
 ```
 
 ## 慣例與地雷

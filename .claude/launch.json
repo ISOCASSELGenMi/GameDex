@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "web-dev-3100",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "cd /d apps\\web && set SCHEDULER_ENABLED=false&& npx next dev -p 3100"],
+      "port": 3100
+    }
+  ]
+}

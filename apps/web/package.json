@@ -16,9 +16,13 @@
     "db:seed": "tsx --import ./scripts/load-env.ts src/modules/catalog/seed.ts",
     "job": "tsx --import ./scripts/load-env.ts scripts/run-job.ts",
     "db:trgm-test": "tsx --import ./scripts/load-env.ts scripts/trgm-test.ts",
-    "test:unit": "vitest run --project unit"
+    "test:unit": "vitest run --project unit",
+    "i18n:check": "tsx ../../packages/i18n/scripts/i18n-check.ts",
+    "test:a11y": "playwright test"
   },
   "dependencies": {
+    "@sok/api-contract": "0.1.0",
+    "@sok/i18n": "0.1.0",
     "drizzle-orm": "^0.45.4",
     "ical-generator": "^11.1.2",
     "next": "16.4.0",
@@ -30,6 +34,8 @@
     "zod": "^4.6.6"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "^1.64.0",
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^22",
     "@types/pg": "^8.23.1",

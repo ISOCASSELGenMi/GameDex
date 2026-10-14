@@ -1,0 +1,1 @@
+CREATE INDEX "release_date_history_event_idx" ON "release_date_history" USING btree ("release_event_id");

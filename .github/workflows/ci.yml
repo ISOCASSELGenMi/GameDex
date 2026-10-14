@@ -1,4 +1,4 @@
-# 16 §CI／CD。i18n:check、test:a11y、api:check 會在對應 Phase（3a、3.5、API）加入。
+# 16 §CI／CD。api:check 會在 API 的 Phase 加入。
 name: CI
 
 on:
@@ -28,9 +28,21 @@ jobs:
       - run: npm ci
       - run: npm -w apps/web run lint
       - run: npm -w apps/web run typecheck
+      - run: npm -w apps/web run i18n:check
       - run: npm -w apps/web run lint:arch
       - run: npm -w apps/web run test
       - run: npm -w apps/web run build
+      # test:a11y（Playwright＋axe-core）：自行重建測試資料庫＋fixture、next build 到 .local/e2e-next、在 3200 起伺服器。
+      # 與上面的 vitest 共用同一個測試資料庫，必須依序執行（不可平行）。
+      - run: npm -w apps/web exec playwright install --with-deps chromium
+      - run: npm -w apps/web run test:a11y
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: .local/playwright/
+          if-no-files-found: ignore
+          retention-days: 7
 
   # 02 §CI 邊界檢查 d：所有可選模組關閉時，型別檢查、測試、build 都要通過（不需要資料庫）
   core-only:

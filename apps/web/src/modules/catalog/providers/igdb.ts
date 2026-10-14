@@ -6,6 +6,9 @@ import { ConfigError, getCoreEnv } from "@/kernel/config/env";
 import type {
   DictionaryDrift,
   EventRecord,
+  ExternalHypeRecord,
+  ExternalHypeSource,
+  ExternalHypeVersion,
   FetchEventsQuery,
   FetchGamesQuery,
   FranchiseRecord,
@@ -22,6 +25,7 @@ import type {
 } from "../domain/entities";
 import type { GameDataProvider } from "./game-data-provider.interface";
 import { normalizeIgdbDate } from "./igdb/dates";
+import { inferIgdbEventKind } from "./igdb/event-kind";
 import {
   gameTypeIds,
   mapGameStatus,
@@ -41,6 +45,7 @@ import {
   type RawWebsite,
 } from "./igdb/link-map";
 import { igdbImageUrl, mapPlatformKind, mapReleaseRegion } from "./igdb/mappings";
+import { fetchIgdbHypeRecords, fetchIgdbHypeVersion } from "./igdb/popularity";
 import { RequestLimiter, TokenBucket, realSleep, type Sleep } from "./igdb/throttle";
 
 const TOKEN_URL = "https://id.twitch.tv/oauth2/token";
@@ -525,10 +530,13 @@ export const EVENT_FIELDS = [
 const unixToDate = (s: number | null | undefined): Date | null => (s != null ? new Date(s * 1000) : null);
 
 export function toEventRecord(e: IgdbEvent): EventRecord {
-  const name = e.name?.trim() || `Event ${e.id}`;
+  const rawName = e.name?.trim();
+  const name = rawName || `Event ${e.id}`;
   return {
     igdbId: e.id,
     name,
+    // 佔位名稱（IGDB 沒給名稱）不推斷
+    kind: rawName ? inferIgdbEventKind(rawName) : "other",
     slug: blankToNull(e.slug) ?? `event-${e.id}`,
     description: blankToNull(e.description),
     startTime: unixToDate(e.start_time),
@@ -561,7 +569,7 @@ export function buildGamesWhere(q: FetchGamesQuery): string | null {
   return conds.length > 0 ? conds.join(" & ") : null;
 }
 
-export class IgdbProvider implements GameDataProvider {
+export class IgdbProvider implements GameDataProvider, ExternalHypeSource {
   readonly sourceName = "igdb";
   /** 同一則警告（訊息＋內容相同）每個 Provider 實例只記一次，避免整批洗版。 */
   private readonly warnedKeys = new Set<string>();
@@ -612,6 +620,16 @@ export class IgdbProvider implements GameDataProvider {
       drift("website_types", KNOWN_WEBSITE_TYPE_IDS, websiteTypes.map((r) => ({ id: r.id, label: r.type }))),
       drift("external_game_sources", KNOWN_EXTERNAL_GAME_SOURCE_IDS, sources.map((r) => ({ id: r.id, label: r.name }))),
     ];
+  }
+
+  /** 熱度原始訊號版本（03 §熱度）：各種類最新的 calculated_at；每種類 1 個請求。 */
+  async fetchHypeVersion(): Promise<ExternalHypeVersion> {
+    return fetchIgdbHypeVersion(this.client);
+  }
+
+  /** 熱度原始訊號（popularity_primitives 類型 2、10）全量；格式轉換在 igdb/popularity.ts。 */
+  async fetchHypeRecords(): Promise<ExternalHypeRecord[]> {
+    return fetchIgdbHypeRecords(this.client);
   }
 }
 
