@@ -7,6 +7,7 @@
 規格書 v2.0 的副本在 **`docs/spec/`**（00~16、90、91、CHANGELOG；2026-10-12 從 claude.ai Project「SoK-Game_Calendar」的 `spec/` 匯出）。
 正本仍在 Project；兩邊不一致時以 Project 為準，請使用者重新匯出。動工前讀對應章節；實作與規格衝突時先問使用者，不要自行改規格。關鍵章節：
 - 02 架構與模組（分層、模組邊界、manifest、排程）／03 資料模型／04 IGDB 同步／15 路線圖（每個 Phase 的完成標準）／16 部署與環境變數
+- **UI／UX 設計方向**：`docs/design/ui-direction.md`（Motion-Driven、Micro-interactions、Spatial UI、Feature-Rich Showcase；月曆一日一格左右切換、時間軸左右交錯）。**正式規劃或改版頁面設計時必讀並照做**，參考截圖在 `docs/design/references/`。
 - 進度 checklist：repo 副本 **`docs/checklist.md`**（正本在 Project 的 `claude/checklist.md`）。開工前先讀；做完打勾、新工作加進對應區塊並標日期。
 
 ## 五個硬性原則（摘自 spec/00）
