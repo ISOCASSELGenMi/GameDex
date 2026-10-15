@@ -1,7 +1,6 @@
 /**
  * catalog 擁有的表（03 §表歸屬）。只能被 catalog 自己的 repository 使用（02 §資料夾結構）。
  * catalog 的表不得有 FK 指向其他模組。
- * 尚未建立：data_reports（Slice 2，見 12）。
  */
 import { sql } from "drizzle-orm";
 import {
@@ -35,6 +34,7 @@ import {
   SCORE_PROVIDERS,
   SOURCE_STATUSES,
 } from "./domain/entities/enums";
+import type { ReportProposed, ReportStatus, ReportTargetType, ReportType } from "./domain/entities/data-report";
 
 const tz = { withTimezone: true } as const;
 const createdAt = () => timestamp("created_at", tz).defaultNow();
@@ -468,3 +468,28 @@ export const gamePopularitySignals = pgTable(
   (t) => [primaryKey({ columns: [t.gameId, t.signalName] })],
 );
 
+// ── 資料更正回報（12；Phase 4 Slice 2）────────────────────────────────────
+export const dataReports = pgTable(
+  "data_reports",
+  {
+    id: serial("id").primaryKey(),
+    targetType: varchar("target_type", { length: 24 }).notNull().$type<ReportTargetType>(),
+    targetId: integer("target_id"), // 新增型回報可為 NULL；刻意不設 FK（目標可能是已被清掉的列）
+    reportType: varchar("report_type", { length: 24 }).notNull().$type<ReportType>(),
+    proposed: jsonb("proposed").$type<ReportProposed>(),
+    sourceUrl: text("source_url"), // 日期類必填
+    note: text("note"),
+    reporterUserId: integer("reporter_user_id"), // 無 FK：catalog 不依賴 accounts，由 RequestContext 填
+    reporterIpHash: varchar("reporter_ip_hash", { length: 64 }), // 只存 HMAC 雜湊，保留 90 天後設 NULL
+    status: varchar("status", { length: 12 }).notNull().default("open").$type<ReportStatus>(),
+    resolutionNote: text("resolution_note"),
+    createdAt: createdAt(),
+    resolvedAt: timestamp("resolved_at", tz),
+  },
+  (t) => [
+    index("data_reports_status_created_idx").on(t.status, t.createdAt), // 審核佇列
+    // 補充索引（03 索引總表只列第一個）：同目標其他回報、每 IP 每日計數
+    index("data_reports_target_idx").on(t.targetType, t.targetId),
+    index("data_reports_ip_created_idx").on(t.reporterIpHash, t.createdAt),
+  ],
+);

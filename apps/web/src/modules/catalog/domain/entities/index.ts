@@ -16,3 +16,6 @@ export * from "./popularity";
 export * from "./timeline";
 export * from "./browse";
 export * from "./sitemap";
+export * from "./matching";
+export * from "./game-rating";
+export * from "./data-report";

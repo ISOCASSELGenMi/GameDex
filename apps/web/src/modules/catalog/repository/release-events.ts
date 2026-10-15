@@ -1,6 +1,11 @@
 import { and, asc, eq, gte, lte, sql } from "drizzle-orm";
 import { getDb, type DbOrTx } from "@/kernel/db/client";
-import type { ExistingReleaseRow, ReleaseDiffPlan } from "../domain/release-diff";
+import {
+  planManualSupersedes,
+  type ExistingReleaseRow,
+  type IgdbDateUpdate,
+  type ReleaseDiffPlan,
+} from "../domain/release-diff";
 import type {
   IsoDate,
   ReleaseEvent,
@@ -72,7 +77,7 @@ export async function findReleaseEventByKey(
  * - status 變動 → sequence +1、change_feed `status_changed`
  * - 全部在同一個 transaction（03 §change_feed 規則）。
  * 狀態機（何時轉 delayed／released）由 Use Case 決定（04），這裡只負責持久化。
- * 同步只動 source='igdb' 的列；manual 列由人工更正流程處理。
+ * 同步只 upsert source='igdb' 的列；manual 列由人工更正流程寫入，唯一例外是 applyReleaseDiffPlan 在 IGDB 日期更新時把同鍵 manual 標 removed。
  */
 export async function upsertReleaseEvent(
   input: ReleaseEventInput,
@@ -83,9 +88,10 @@ export async function upsertReleaseEvent(
     const existing = await findReleaseEventByKey(input, source, tx);
 
     if (!existing) {
+      const { minSequence, ...values } = input;
       const [created] = await tx
         .insert(releaseEvents)
-        .values({ ...input, source })
+        .values({ ...values, source, ...(minSequence !== undefined ? { sequence: minSequence } : {}) })
         .returning();
       await appendChange(tx, {
         entityType: "release_event",
@@ -118,7 +124,10 @@ export async function upsertReleaseEvent(
         status: input.status,
         sourceStatus,
         ...(input.sourceUpdatedAt !== undefined ? { sourceUpdatedAt: input.sourceUpdatedAt } : {}),
-        sequence: dateChanged || statusChanged ? existing.sequence + 1 : existing.sequence,
+        sequence:
+          dateChanged || statusChanged
+            ? Math.max(existing.sequence + 1, input.minSequence ?? 0)
+            : existing.sequence,
       })
       .where(eq(releaseEvents.id, existing.id))
       .returning();
@@ -193,6 +202,8 @@ export interface ReleaseDiffApplyStats {
  * 寫入 planReleaseEventDiff 的結果。必須在呼叫端的 transaction 內（change_feed 同交易）。
  * - 日期或精度變動 → release_date_history＋change_feed date_changed
  * - 日期或 status 變動 → sequence + 1（removed／restored 不算，status 沒變）
+ * - igdb 列新建、或日期／精度變動，且同鍵有 active 的 manual 列 → 同交易內 manual 標 removed、igdb sequence 提高到 manual + 1
+ *   （IGDB 日期更新覆蓋人工更正；2026-10-15 使用者決定）。只有 status 變動、或 igdb 被標 removed 不覆蓋。
  */
 export async function applyReleaseDiffPlan(
   tx: DbOrTx,
@@ -202,6 +213,7 @@ export async function applyReleaseDiffPlan(
 ): Promise<ReleaseDiffApplyStats> {
   const stats: ReleaseDiffApplyStats = { created: 0, updated: 0, removed: 0, restored: 0 };
   const changes: Parameters<typeof appendChanges>[1][number][] = [];
+  const dateUpdates: IgdbDateUpdate[] = [];
 
   if (plan.creates.length > 0) {
     const created = await tx
@@ -209,12 +221,17 @@ export async function applyReleaseDiffPlan(
       .values(plan.creates.map((c) => ({ ...c, gameId, source: "igdb", sourceUpdatedAt })))
       .returning({
         id: releaseEvents.id,
+        platformId: releaseEvents.platformId,
+        releaseStage: releaseEvents.releaseStage,
+        regionId: releaseEvents.regionId,
+        sequence: releaseEvents.sequence,
         releaseDate: releaseEvents.releaseDate,
         precision: releaseEvents.precision,
         status: releaseEvents.status,
       });
     stats.created = created.length;
     for (const c of created) {
+      dateUpdates.push({ igdbEventId: c.id, platformId: c.platformId, regionId: c.regionId, releaseStage: c.releaseStage, sequence: c.sequence });
       changes.push({
         entityType: "release_event",
         entityId: c.id,
@@ -227,6 +244,7 @@ export async function applyReleaseDiffPlan(
   const history: Array<typeof releaseDateHistory.$inferInsert> = [];
   for (const u of plan.updates) {
     const { before: b, after: a } = u;
+    const nextSequence = u.dateChanged || u.statusChanged ? b.sequence + 1 : b.sequence;
     await tx
       .update(releaseEvents)
       .set({
@@ -236,11 +254,14 @@ export async function applyReleaseDiffPlan(
         precision: a.precision,
         status: a.status,
         sourceStatus: a.sourceStatus,
-        sequence: u.dateChanged || u.statusChanged ? b.sequence + 1 : b.sequence,
+        sequence: nextSequence,
         ...(a.sourceStatus === "active" ? { sourceUpdatedAt } : {}),
       })
       .where(eq(releaseEvents.id, b.id));
 
+    if (u.dateChanged && a.sourceStatus === "active") {
+      dateUpdates.push({ igdbEventId: b.id, platformId: a.platformId, regionId: a.regionId, releaseStage: a.releaseStage, sequence: nextSequence });
+    }
     if (u.dateChanged) {
       history.push({
         releaseEventId: b.id,
@@ -277,8 +298,49 @@ export async function applyReleaseDiffPlan(
   }
 
   if (history.length > 0) await tx.insert(releaseDateHistory).values(history);
+  await supersedeManualRows(tx, gameId, dateUpdates, changes);
   await appendChanges(tx, changes);
   return stats;
+}
+
+/**
+ * IGDB 日期更新覆蓋人工更正：同鍵 active 的 manual 列標 removed（沿用 sourceStatus enum），
+ * 取代它的 igdb 列 sequence 提高到 manual + 1（聚合輸出的 sequence 不倒退）。change_feed 項目併入 changes 一起寫。
+ * 之後管理員再核可同鍵回報，upsertReleaseEvent 會把 manual 列改回 active（restored）。
+ */
+async function supersedeManualRows(
+  tx: DbOrTx,
+  gameId: number,
+  dateUpdates: readonly IgdbDateUpdate[],
+  changes: Parameters<typeof appendChanges>[1][number][],
+): Promise<void> {
+  if (dateUpdates.length === 0) return;
+  const manuals = await tx
+    .select({
+      id: releaseEvents.id,
+      platformId: releaseEvents.platformId,
+      regionId: releaseEvents.regionId,
+      releaseStage: releaseEvents.releaseStage,
+      sequence: releaseEvents.sequence,
+    })
+    .from(releaseEvents)
+    .where(and(eq(releaseEvents.gameId, gameId), eq(releaseEvents.source, "manual"), eq(releaseEvents.sourceStatus, "active")));
+  if (manuals.length === 0) return;
+  const seqById = new Map(dateUpdates.map((u) => [u.igdbEventId, u.sequence]));
+  for (const s of planManualSupersedes(dateUpdates, manuals)) {
+    await tx.update(releaseEvents).set({ sourceStatus: "removed" }).where(eq(releaseEvents.id, s.manualId));
+    changes.push({
+      entityType: "release_event",
+      entityId: s.manualId,
+      changeType: "removed",
+      payload: { reason: "superseded_by_igdb", igdbEventId: s.igdbEventId },
+    });
+    const current = seqById.get(s.igdbEventId) ?? 0;
+    if (s.igdbMinSequence > current) {
+      await tx.update(releaseEvents).set({ sequence: s.igdbMinSequence }).where(eq(releaseEvents.id, s.igdbEventId));
+      seqById.set(s.igdbEventId, s.igdbMinSequence);
+    }
+  }
 }
 
 /**

@@ -22,7 +22,7 @@ export function LanguageSupportBody({ support, locale, t, headingId }: { support
     <>
       <p className="text-sm text-[var(--muted)]">{t.t("ui.langSupport.onlyListed")}</p>
       {/* 列很多或窄螢幕時會水平溢出：可捲動區域要能用鍵盤聚焦（axe scrollable-region-focusable） */}
-      <div className="overflow-x-auto" tabIndex={0} role="region" aria-labelledby={headingId}>
+      <div className="relative overflow-x-auto" tabIndex={0} role="region" aria-labelledby={headingId}>
         <table className="release-table" data-language-table>
           <caption className="sr-only">{t.t("ui.langSupport.caption")}</caption>
           <thead>

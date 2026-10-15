@@ -112,13 +112,13 @@
 - [x] 在開發 DB 跑 `refresh_popularity --scope all`（2026-10-13，149 秒；heat 5＝2,731、4＝10,766、3＝28,293、2＝67,624、1＝155,134、0＝50,058）
 - [x] 驗收：全部檢查全綠＋spec 15 Phase 3 完成標準（3b 範圍）；commit；交接文件（2026-10-14，`docs/handoff/2026-10-14-phase3b-done.md`；3c 硬體世代時間軸未做，spec 標可後延）
 - [x] PR `ISOCASSELGenMi/SoK-GameDB#1`（feat/phase3b → main，含 3a）2026-10-14 使用者合併（merge commit `be43a6e`）
-- [ ] PR `ISOCASSELGenMi/SoK-GameDB#2`（feat/phase3.5 → main）待使用者審閱合併（2026-10-14 開）
+- [x] PR `ISOCASSELGenMi/SoK-GameDB#2`（feat/phase3.5 → main）2026-10-14 已合併
 
 ### Phase 3.5：多語補完、SEO、快取（2026-10-14 開工，分支 `feat/phase3.5`）
 - [x] 使用者決定（2026-10-14）：先做本機可做的；Cloudflare Cache Rule／rate limiting 實際設定與搜尋主控台驗收移到 Phase 9；ja 由子代理出初稿、使用者審專有名詞對照表
 - [x] L：ja 字典、類型／主題翻譯、game_localizations→displayNames、翻譯缺漏報告＋CI 三語字典檢查
 - [x] S：sitemap 分片、canonical、hreflang（x-default）、JSON-LD、ISR／快取（語系不互相污染）、Cloudflare 規則草案文件
-- [ ] 使用者審 ja 專有名詞對照表（120 列，`docs/review/ja-terms.md`；特別是「熱度＝注目度」「熱門榜＝注目ランキング」）
+- [x] 使用者審 ja 專有名詞對照表（120 列，`docs/review/ja-terms.md`）；2026-10-15 依回覆改 `trending.upcoming`、`filters.statusValues.upcoming`＝発売直前、`enums.datePrecision.quarter`＝シーズン，其餘照初稿
 - [ ] 待決（L）：zh-Hant 顯示名稱規則保守，既有遊戲要下次同步才重算；立即回填需對開發 DB 重跑同步（需使用者同意）（2026-10-14 新增）
 - [ ] 待決（S）：多維篩選頁一律 noindex、canonical 不帶篩選參數；正式環境必須設 `NEXT_PUBLIC_SITE_URL`（沒設時 canonical 為相對網址）（2026-10-14 新增）
 - [ ] 待決（負責人）：PPR 下查詢逾時的錯誤頁是 200，加上依路徑的 `s-maxage` 會讓 CDN 快取錯誤頁 60~300 秒，Phase 9 前要處理；`/games` 預設排序冷查詢 1.9 s（熱 0.27 s），DB 重啟後首次可能逾時（2026-10-14 新增）
@@ -126,3 +126,15 @@
 - [x] 驗收：全部檢查全綠＋spec 15 Phase 3.5 完成標準（本機部分）；commit；交接文件（2026-10-14，`docs/handoff/2026-10-14-phase3.5-done.md`；sitemap 被搜尋主控台接受移到 Phase 9）
 - [x] 本機資料夾改名 `SoK-Game_Calender` → `SoK-GameDB`、記憶搬到新路徑、CLAUDE.md 加「工作方式」（2026-10-14）
 - [ ] Phase 9 前：PPR 錯誤頁 200 會被 `s-maxage` 快取的處理；設 `NEXT_PUBLIC_SITE_URL`（2026-10-14 新增）
+
+### Phase 4：評分顯示、比對函式、回報（2026-10-15 開工，分支 `feat/phase4`）
+- [x] A：IGDB 分數列測試、`normalizeTitle`／`findBestMatch`、`selectRatings`＋兩個環境變數驗證、詳情頁評分區（localStorage 來源選擇）、Metacritic 關閉時無評分任務的守門測試
+- [x] B：`data_reports`＋migration、`POST /api/v1/reports`（Turnstile、IP 每日上限、IP 雜湊 90 天清除）、核可寫 manual 上市日（同 transaction、sequence 遞增）、admin 模組 `/internal/reports`（Basic auth、CSRF）、回報入口與表單頁
+- [x] 驗收：全部檢查＋spec 15 Phase 4 完成標準（iCal sequence 只驗資料層，iCal 在 Phase 5）；commit；交接 `docs/handoff/2026-10-15-phase4-done.md`（2026-10-15）
+- [x] ja 日期格式與說明文字的「四半期」一併改為「シーズン」（使用者 2026-10-15 決定）
+- [x] 使用者決定（2026-10-15）：無分數時評分區照顯示、欄位留白（D74）；詳情頁隱藏同鍵 igdb 列、IGDB 同鍵日期更新覆蓋人工更正（D75）——子代理 C 實作完成
+- [ ] 待決：缺金鑰行為（503／404，沿用中）；missing_region_date 階段推測；takedown 專用動作；被覆蓋的人工更正是否通知（2026-10-15 新增，詳見交接）
+- [x] 規格 repo 副本同步（CHANGELOG v2.1，2026-10-15）
+- [ ] 使用者把 `docs/spec/` v2.1 改動匯入 Project 正本
+- [x] 開發 DB 套 migration 0004（使用者同意，2026-10-15）
+- [ ] 開 PR `feat/phase4` → main

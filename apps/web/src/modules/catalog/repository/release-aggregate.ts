@@ -2,8 +2,9 @@
  * 聚合規則的唯一實作（06 §聚合規則；02 資料夾結構）。月曆、時間軸、Discord `/upcoming`、公開 iCal 共用。
  *
  * 1. 每個 (遊戲, 平台, 階段) 挑一筆，優先序（使用者 2026-10-13 定案）：
- *    `manual` 優先於 `igdb`（source 為 NULL 視為 igdb，與 game-detail.ts 一致）
- *    → 來源仍存在（active）優先於 removed（同鍵有有效列時不拿 removed 列）
+ *    來源仍存在（active）優先於 removed（同鍵有有效列時不拿 removed 列；manual 被 IGDB 日期更新覆蓋後即為 removed，
+ *    使用者 2026-10-15 決定，此時取 igdb 列）
+ *    → `manual` 優先於 `igdb`（source 為 NULL 視為 igdb，與 game-detail.ts 一致）
  *    → **有日期**（precision 非 tbd 且 release_date 非 NULL）優先於未定（例：WW＝tbd、JP＝10/20 day，偏好 WW
  *      仍挑 JP，遊戲出現在 10/20，不會因為挑到 tbd 列而從月曆消失）
  *    → 偏好地區 → `WW` → 最早日期 → id
@@ -238,8 +239,8 @@ export function buildAggregateCardsQuery(input: Omit<AggregateReleasesInput, "re
       JOIN regions rg ON rg.id = r.region_id
       WHERE ${sql.join(rowConds, sql` AND `)}
       ORDER BY r.game_id, r.platform_id, r.release_stage,
-        (COALESCE(r.source, 'igdb') = 'manual') DESC,
         (r.source_status = 'active') DESC,
+        (COALESCE(r.source, 'igdb') = 'manual') DESC,
         (r.precision <> 'tbd' AND r.release_date IS NOT NULL) DESC,
         (rg.code = ${input.regionPref}) DESC,
         (rg.code = 'WW') DESC,

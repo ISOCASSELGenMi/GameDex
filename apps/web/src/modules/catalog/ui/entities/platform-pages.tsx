@@ -12,6 +12,7 @@ import { listPlatforms } from "../../use-cases/read/list-platforms";
 import { getTranslator, platformKindLabel, regionLabel } from "../labels";
 import { PageShell } from "../layout/page-shell";
 import { platformHref, platformsHref } from "../links";
+import { reportHref } from "../report/links";
 import { rethrowForPage } from "../page-errors";
 import { EntityGameList, EntityLogo, LinkTabs, Pager } from "./shared";
 import {
@@ -187,6 +188,11 @@ export async function PlatformDetailPage({
           </div>
         ))}
       </dl>
+      <p className="mt-2">
+        <a className="link inline-flex min-h-11 items-center" href={reportHref(locale, { kind: "platform", slug: p.slug })} rel="nofollow">
+          {t.t("ui.report.entry.platform")}
+        </a>
+      </p>
       {p.summary ? (
         <section className="mt-4" aria-labelledby="pf-summary">
           <h2 id="pf-summary" className="text-xl font-semibold">

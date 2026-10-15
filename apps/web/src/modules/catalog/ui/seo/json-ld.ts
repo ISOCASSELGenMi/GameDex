@@ -7,6 +7,8 @@
  */
 import type { Locale } from "@sok/i18n";
 import type { DatePrecision, EventDetail, GameDetail, IsoDate } from "../../domain/entities";
+import { DEFAULT_RATING_DISPLAY_CONFIG, type RatingDisplayConfig } from "../../domain/rating-config";
+import { defaultSelectedProviders, selectRatings } from "../../domain/rating-display";
 import { safeExternalUrl } from "../external-url";
 import { absoluteUrl } from "./site-url";
 
@@ -25,6 +27,8 @@ export interface JsonLdContext {
   /** 站台 origin；null → 相對網址。 */
   origin: string | null;
   locale: Locale;
+  /** 評分顯示設定（站長層）；省略＝不過濾、預設優先序。 */
+  ratingConfig?: RatingDisplayConfig;
 }
 
 const url = (ctx: JsonLdContext, path: string) => absoluteUrl(ctx.origin, path);
@@ -45,8 +49,25 @@ function organization(name: string, pageUrl: string): JsonLd {
   return { "@type": "Organization", name, url: pageUrl };
 }
 
+function aggregateRating(game: GameDetail, config: RatingDisplayConfig): JsonLd | null {
+  const { primary } = selectRatings(game.ratings, {
+    visible: config.visible,
+    selected: defaultSelectedProviders(config.visible),
+    priority: config.priority,
+  });
+  if (!primary || primary.reviewCount == null || primary.reviewCount <= 0) return null;
+  return {
+    "@type": "AggregateRating",
+    ratingValue: primary.score,
+    bestRating: primary.scoreMax,
+    worstRating: 0,
+    ratingCount: primary.reviewCount,
+  };
+}
+
 /**
- * 遊戲詳情 → VideoGame。評分區（Phase 4）還沒做，不輸出 aggregateRating。
+ * 遊戲詳情 → VideoGame。aggregateRating 只用預設來源（IGDB）經 selectRatings 選出的主分數（05：JSON-LD 只用預設來源），
+ * 且評論數 > 0 才輸出（schema.org 需要 ratingCount）；沒有分數 → 省略。
  * description 是 IGDB 原文（英文），不標 inLanguage（同一份資料裡其餘欄位是頁面語系）。
  */
 export function gameJsonLd(game: GameDetail, ctx: JsonLdContext): JsonLd {
@@ -70,6 +91,8 @@ export function gameJsonLd(game: GameDetail, ctx: JsonLdContext): JsonLd {
   if (game.genres.length > 0) ld.genre = game.genres.map((g) => g.name);
   if (developers.length > 0) ld.author = developers.map((c) => organization(c.name, companyUrl(c.slug)));
   if (publishers.length > 0) ld.publisher = publishers.map((c) => organization(c.name, companyUrl(c.slug)));
+  const aggregate = aggregateRating(game, ctx.ratingConfig ?? DEFAULT_RATING_DISPLAY_CONFIG);
+  if (aggregate) ld.aggregateRating = aggregate;
   const trailer = safeExternalUrl(game.trailerUrl);
   if (trailer) ld.trailer = { "@type": "VideoObject", name: game.name, contentUrl: trailer };
   return ld;

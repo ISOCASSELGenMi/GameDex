@@ -91,6 +91,28 @@
     "releaseHistory": "Delay history",
     "previouslyAnnounced": "Previously announced: {date}",
     "noRatings": "No ratings yet",
+    "rating": {
+      "line": "{source} {score}/{max} ({reviews})",
+      "lineNoCount": "{source} {score}/{max}",
+      "reviewsOne": "{count} review",
+      "reviewsOther": "{count} reviews",
+      "settings": "Rating sources to show",
+      "settingsHint": "Saved in this browser only.",
+      "none": "None of the selected sources has a score for this game.",
+      "provider": {
+        "igdb": "IGDB",
+        "metacritic_scrape": "Metascore"
+      },
+      "label": {
+        "igdb": {
+          "critic_aggregate": "IGDB"
+        },
+        "metacritic_scrape": {
+          "metascore": "Metascore",
+          "user_score": "Metacritic user score"
+        }
+      }
+    },
     "reportError": "Report incorrect data",
     "brokenLink": "This link may be broken",
     "originalName": "Original title",
@@ -299,5 +321,79 @@
     "nextPage": "Next page",
     "page": "Page {page}",
     "shownOnPage": "{count} items on this page"
+  },
+  "report": {
+    "title": "Report a data problem",
+    "intro": "Thanks for helping correct our data. Please include a source we can verify; data is only updated after review.",
+    "privacy": "Do not enter personal information (name, email, phone number, etc.) in any field.",
+    "target": "Reporting about",
+    "entry": {
+      "column": "Report",
+      "row": "Report a problem",
+      "rowFor": "Report a problem: {platform} / {region}",
+      "addRegion": "Add the release date for my region",
+      "addLanguage": "Add language support information",
+      "platform": "Report a problem with this platform",
+      "event": "Report a problem with this event"
+    },
+    "type": {
+      "wrong_date": "Release date is wrong",
+      "missing_region_date": "Add a release date for a region",
+      "wrong_stage": "Release stage is wrong",
+      "language_support": "Language support is wrong or missing",
+      "cancelled": "Cancelled or no longer in development",
+      "duplicate": "Duplicate entry",
+      "takedown": "Takedown or copyright request",
+      "other": "Something else"
+    },
+    "targetType": {
+      "release_event": "Release date",
+      "game": "Game",
+      "platform": "Platform",
+      "event": "Event"
+    },
+    "field": {
+      "type": "Type of report",
+      "platform": "Platform",
+      "region": "Region",
+      "date": "Date",
+      "precision": "Date precision",
+      "stage": "Release stage",
+      "language": "Language",
+      "supportType": "Support type",
+      "sourceUrl": "Source URL",
+      "note": "Additional details",
+      "captcha": "Human verification"
+    },
+    "hint": {
+      "sourceUrl": "A link to an official announcement, store page or reliable outlet (http or https).",
+      "sourceUrlRequired": "Date reports must include a source URL.",
+      "date": "For month, quarter or year precision, enter any day within that period.",
+      "stage": "Choose \"Unspecified\" if you are not sure.",
+      "takedown": "Takedown and copyright requests are sent to the site owner only and are never shown publicly. Please state what and why in the details.",
+      "currentValue": "Currently shown: {value}",
+      "choose": "Choose…",
+      "note": "Up to {max} characters."
+    },
+    "submit": "Submit report",
+    "submitting": "Submitting…",
+    "success": {
+      "title": "Report received",
+      "body": "Thank you. The data will only change after the report is reviewed.",
+      "backTo": "Back to {name}"
+    },
+    "errors": {
+      "summary": "Please fix the following fields and submit again.",
+      "required": "This field is required",
+      "invalid": "Invalid value or not found",
+      "tooLong": "Too long",
+      "rateLimited": "Too many reports sent today. Please try again tomorrow.",
+      "captchaFailed": "Human verification failed. Please verify again and resubmit.",
+      "captchaMissing": "Please complete the human verification first.",
+      "unavailable": "The service is temporarily unavailable. Please try again later.",
+      "network": "Could not connect. Check your network and try again.",
+      "generic": "Submission failed. Please try again later."
+    },
+    "captchaLoading": "Loading human verification…"
   }
 }

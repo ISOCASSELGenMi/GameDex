@@ -4,6 +4,7 @@ import type { PopularitySignal } from "./domain/entities";
 import { getIgdbProvider } from "./providers/igdb";
 import { backfillGames, parseBackfillArgs } from "./use-cases/sync/backfill-games";
 import { checkDictionaryDrift } from "./use-cases/sync/dictionary-drift";
+import { clearOldReporterIpHashes } from "./use-cases/reports/cleanup-report-ips";
 import { parseRefreshPopularityArgs, refreshPopularity } from "./use-cases/sync/refresh-popularity";
 import { resolveRelations } from "./use-cases/sync/resolve-relations";
 import { rollingRefresh } from "./use-cases/sync/rolling-refresh";
@@ -35,7 +36,7 @@ export const catalogModule: ModuleManifest = {
     "external_match_attempts", "external_id_rejections", "companies", "game_companies", "franchises",
     "game_franchises", "game_similar_games", "game_external_links", "events", "event_series", "event_games",
     "genres", "themes", "game_genres", "game_themes", "game_localizations", "languages",
-    "game_language_supports", "change_feed", "game_popularity_signals",
+    "game_language_supports", "change_feed", "game_popularity_signals", "data_reports",
   ],
   // 頻率見 04 §排程任務
   jobs: [
@@ -109,6 +110,15 @@ export const catalogModule: ModuleManifest = {
           externalSignals: [],
           ...parseRefreshPopularityArgs(ctx.args),
         });
+      },
+    },
+    {
+      // 回報者 IP 雜湊只保留 90 天（12）：每日把更早的設為 NULL
+      name: "cleanup_report_ips",
+      cron: "15 5 * * *",
+      run: async (ctx) => {
+        const cleared = await clearOldReporterIpHashes(ctx.startedAt);
+        ctx.log(`已清除 ${cleared} 筆回報的 IP 雜湊`);
       },
     },
   ],

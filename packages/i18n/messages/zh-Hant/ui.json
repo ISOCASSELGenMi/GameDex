@@ -91,6 +91,28 @@
     "releaseHistory": "延期紀錄",
     "previouslyAnnounced": "先前公布：{date}",
     "noRatings": "尚無評分",
+    "rating": {
+      "line": "{source} {score}／{max}（{reviews}）",
+      "lineNoCount": "{source} {score}／{max}",
+      "reviewsOne": "{count} 則評論",
+      "reviewsOther": "{count} 則評論",
+      "settings": "要顯示的評分來源",
+      "settingsHint": "只儲存在這個瀏覽器，不會上傳。",
+      "none": "所選來源沒有這款遊戲的分數。",
+      "provider": {
+        "igdb": "IGDB",
+        "metacritic_scrape": "Metascore"
+      },
+      "label": {
+        "igdb": {
+          "critic_aggregate": "IGDB"
+        },
+        "metacritic_scrape": {
+          "metascore": "Metascore",
+          "user_score": "Metacritic 玩家評分"
+        }
+      }
+    },
     "reportError": "回報資料有誤",
     "brokenLink": "連結可能已失效",
     "originalName": "原名",
@@ -299,5 +321,79 @@
     "nextPage": "下一頁",
     "page": "第 {page} 頁",
     "shownOnPage": "本頁 {count} 筆"
+  },
+  "report": {
+    "title": "回報資料有誤",
+    "intro": "感謝協助更正資料。請附上可以查證的來源，審核通過後才會更新。",
+    "privacy": "請勿在欄位中填寫個人資料（姓名、電子郵件、電話等）。",
+    "target": "回報對象",
+    "entry": {
+      "column": "回報",
+      "row": "回報資料有誤",
+      "rowFor": "回報資料有誤：{platform}／{region}",
+      "addRegion": "補充我所在地區的上市日",
+      "addLanguage": "補充語言支援資料",
+      "platform": "回報這個平台的資料有誤",
+      "event": "回報這個活動的資料有誤"
+    },
+    "type": {
+      "wrong_date": "上市日有誤",
+      "missing_region_date": "補充某地區的上市日",
+      "wrong_stage": "上市階段有誤",
+      "language_support": "語言支援有誤或缺漏",
+      "cancelled": "已取消或停止開發",
+      "duplicate": "重複的資料",
+      "takedown": "下架或版權請求",
+      "other": "其他"
+    },
+    "targetType": {
+      "release_event": "上市日",
+      "game": "遊戲",
+      "platform": "平台",
+      "event": "活動"
+    },
+    "field": {
+      "type": "回報類型",
+      "platform": "平台",
+      "region": "地區",
+      "date": "日期",
+      "precision": "日期精度",
+      "stage": "上市階段",
+      "language": "語言",
+      "supportType": "支援類型",
+      "sourceUrl": "來源網址",
+      "note": "補充說明",
+      "captcha": "人機驗證"
+    },
+    "hint": {
+      "sourceUrl": "官方公告、商店頁面或可靠媒體的連結（http 或 https）。",
+      "sourceUrlRequired": "日期類回報必須附來源網址。",
+      "date": "精度為月、季、年時，填該期間內任一天即可。",
+      "stage": "不確定時選「未標示」。",
+      "takedown": "下架或版權請求只會通知站長，不會公開顯示。請在補充說明寫明對象與理由。",
+      "currentValue": "目前顯示：{value}",
+      "choose": "請選擇",
+      "note": "最多 {max} 字。"
+    },
+    "submit": "送出回報",
+    "submitting": "送出中…",
+    "success": {
+      "title": "已收到回報",
+      "body": "謝謝你的協助。審核通過後資料才會更新。",
+      "backTo": "回到「{name}」"
+    },
+    "errors": {
+      "summary": "請修正下列欄位後再送出。",
+      "required": "此欄位必填",
+      "invalid": "格式不正確或不存在",
+      "tooLong": "內容太長",
+      "rateLimited": "今天送出的回報太多了，請明天再試。",
+      "captchaFailed": "人機驗證沒有通過，請重新驗證後再送出。",
+      "captchaMissing": "請先完成人機驗證。",
+      "unavailable": "服務暫時無法使用，請稍後再試。",
+      "network": "無法連線，請檢查網路後再試。",
+      "generic": "送出失敗，請稍後再試。"
+    },
+    "captchaLoading": "人機驗證載入中…"
   }
 }

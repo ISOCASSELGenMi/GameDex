@@ -13,6 +13,7 @@ import type {
   ReleaseStatus,
   SourceStatus,
 } from "./enums";
+import type { GameRating } from "./game-rating";
 import type { ImageRef } from "./image-ref";
 import type { GameLanguageSupport } from "./language-support";
 
@@ -286,6 +287,8 @@ export interface GameDetail {
   upcomingEvents: CalendarEventItem[];
   /** 語言支援（Phase 3b，06 §語言支援區塊）：三態，絕不表示「不支援」。 */
   languageSupport: GameLanguageSupport;
+  /** 分數（Phase 4）：只含有分數的列（全部來源；站長 visible／使用者 selected 由 selectRatings 在顯示層套用）。 */
+  ratings: GameRating[];
 }
 
 // ── 篩選選項 ────────────────────────────────────────────────────────────

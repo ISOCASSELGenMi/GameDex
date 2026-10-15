@@ -1,5 +1,5 @@
 /**
- * 遊戲詳情頁 `/[locale]/games/[slug]`（06 §遊戲詳情頁；3a 範圍：評分區不顯示、平台純文字、無截圖區）。
+ * 遊戲詳情頁 `/[locale]/games/[slug]`（06 §遊戲詳情頁；3a 範圍：平台純文字、無截圖區；Phase 4 加評分區）。
  * 伺服器元件；找不到 → notFound()（回應開始前呼叫，真正的 404）。
  */
 import Image from "next/image";
@@ -8,7 +8,7 @@ import { cacheLife, cacheTag } from "next/cache";
 import { cache, type ReactElement, type ReactNode } from "react";
 import { formatDateTime, formatReleaseLabel, type Locale, type Translator } from "@sok/i18n";
 import type { CalendarEventItem, GameDetail, GameFranchiseGroup, GameReleaseRow, GameSummary, PlatformChip } from "../../domain/entities";
-import { getGameDetail } from "../../use-cases/read";
+import { getGameDetail, getRatingDisplayConfig } from "../../use-cases/read";
 import { joinList } from "../calendar/view-model";
 import { safeDecode } from "../entities/view-model";
 import { safeExternalUrl } from "../external-url";
@@ -24,7 +24,9 @@ import { siteOrigin } from "../seo/site-url";
 import { rethrowForPage } from "../page-errors";
 import { gameNameLang } from "../name-lang";
 import { releaseHistoryText } from "../release-history";
+import { reportHref } from "../report/links";
 import { LanguageSupportBody } from "./language-support";
+import { RatingsSection } from "./ratings-section";
 
 export interface GameDetailSlots {
   /** `game.actions`（追蹤／收藏；accounts）。3a 沒有提供者。 */
@@ -137,7 +139,7 @@ function historyText(row: GameReleaseRow, locale: Locale, t: Translator): string
   return releaseHistoryText(row.history, locale, t);
 }
 
-function ReleaseRowView({ row, locale, t }: { row: GameReleaseRow; locale: Locale; t: Translator }): ReactElement {
+function ReleaseRowView({ row, platformName, locale, t }: { row: GameReleaseRow; platformName: string; locale: Locale; t: Translator }): ReactElement {
   const history = historyText(row, locale, t);
   return (
     <tr>
@@ -169,6 +171,16 @@ function ReleaseRowView({ row, locale, t }: { row: GameReleaseRow; locale: Local
             <WarningIcon /> {t.t("ui.release.sourceUnconfirmed")}
           </span>
         ) : null}
+      </td>
+      <td>
+        <a
+          className="link inline-flex min-h-11 items-center"
+          href={reportHref(locale, { kind: "release_event", id: row.releaseEventId }, "wrong_date")}
+          aria-label={t.t("ui.report.entry.rowFor", { platform: platformName, region: regionLabel(t, row.regionCode) })}
+          rel="nofollow"
+        >
+          {t.t("ui.report.entry.row")}
+        </a>
       </td>
     </tr>
   );
@@ -211,7 +223,8 @@ export async function GameDetailPage({ locale, supportedLocales, slug, slots }: 
     const key = `enums.linkCategory.${category}`;
     return t.has(key) ? t.t(key) : category;
   };
-  const jsonLdCtx = { origin: siteOrigin(), locale };
+  const ratingConfig = getRatingDisplayConfig();
+  const jsonLdCtx = { origin: siteOrigin(), locale, ratingConfig };
   const roleText = (roles: readonly string[]) => joinList(locale, roles.map((r) => t.t(`enums.gameCompanyRole.${r}`)));
 
   return (
@@ -299,6 +312,8 @@ export async function GameDetailPage({ locale, supportedLocales, slug, slots }: 
           </Section>
         ) : null}
 
+        <RatingsSection ratings={game.ratings} config={ratingConfig} locale={locale} t={t} />
+
         <Section id="sec-releases" title={t.t("ui.game.sections.releaseDates")}>
           {game.releaseGroups.length === 0 ? <p>{t.t("ui.game.noReleaseDates")}</p> : null}
           {game.releaseGroups.map((group) => (
@@ -306,9 +321,10 @@ export async function GameDetailPage({ locale, supportedLocales, slug, slots }: 
               <h3 id={`release-group-${group.platform.slug}`} className="font-semibold">
                 <PlatformName platform={group.platform} locale={locale} />
               </h3>
-              {/* 窄螢幕表格會水平溢出：可捲動區域要能用鍵盤聚焦（axe scrollable-region-focusable） */}
+              {/* 窄螢幕表格會水平溢出：可捲動區域要能用鍵盤聚焦（axe scrollable-region-focusable）。
+                  relative：表頭的 sr-only（position:absolute）要以此為定位基準，否則表格溢出時會撐寬整頁 */}
               <div
-                className="overflow-x-auto"
+                className="relative overflow-x-auto"
                 tabIndex={0}
                 role="region"
                 aria-labelledby={`release-group-${group.platform.slug}`}
@@ -320,17 +336,25 @@ export async function GameDetailPage({ locale, supportedLocales, slug, slots }: 
                       <th scope="col">{t.t("ui.release.stage")}</th>
                       <th scope="col">{t.t("ui.release.date")}</th>
                       <th scope="col">{t.t("ui.release.status")}</th>
+                      <th scope="col">
+                        <span className="sr-only">{t.t("ui.report.entry.column")}</span>
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {group.releases.map((row) => (
-                      <ReleaseRowView key={row.releaseEventId} row={row} locale={locale} t={t} />
+                      <ReleaseRowView key={row.releaseEventId} row={row} platformName={group.platform.name} locale={locale} t={t} />
                     ))}
                   </tbody>
                 </table>
               </div>
             </div>
           ))}
+          <p className="mt-3">
+            <a className="link inline-flex min-h-11 items-center" href={reportHref(locale, { kind: "game", slug: game.slug }, "missing_region_date")} rel="nofollow">
+              {t.t("ui.report.entry.addRegion")}
+            </a>
+          </p>
         </Section>
 
         {game.developers.length > 0 || game.publishers.length > 0 || game.companies.length > 0 ? (
@@ -400,6 +424,11 @@ export async function GameDetailPage({ locale, supportedLocales, slug, slots }: 
 
         <Section id="sec-languages" title={t.t("ui.game.sections.languages")}>
           <LanguageSupportBody support={game.languageSupport} locale={locale} t={t} headingId="sec-languages" />
+          <p className="mt-2">
+            <a className="link inline-flex min-h-11 items-center" href={reportHref(locale, { kind: "game", slug: game.slug }, "language_support")} rel="nofollow">
+              {t.t("ui.report.entry.addLanguage")}
+            </a>
+          </p>
         </Section>
 
         {slots?.sections}

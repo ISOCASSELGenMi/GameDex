@@ -3,7 +3,7 @@ import { CatalogQueryTimeoutError, isCatalogQueryTimeoutError, type GameLink } f
 import { resolveImageRef } from "@/modules/catalog/providers/image-ref";
 import { parseIgdbImageId } from "@/modules/catalog/providers/igdb/images";
 import { monthBounds, normalizeRegionPref, normalizeReleaseFilter } from "@/modules/catalog/domain/release-filter";
-import { groupCompanies, groupReleases, sortLinks } from "@/modules/catalog/repository/game-detail";
+import { groupCompanies, groupReleases, sortLinks, visibleReleaseRows } from "@/modules/catalog/repository/game-detail";
 import { isStatementTimeout } from "@/modules/catalog/repository/read-tx";
 import { COMMON_PLATFORM_MIN_RECENT_RELEASES, isCommonPlatform } from "@/modules/catalog/repository/filter-options";
 
@@ -158,6 +158,38 @@ describe("詳情的排序與分組（純函式）", () => {
     expect(g[1].releases[1].history).toEqual([
       { oldDate: "2029-12-31", oldPrecision: "year", newDate: "2030-02-01", newPrecision: "day", changedAt: "2029-06-01T00:00:00.000Z" },
     ]);
+  });
+});
+
+describe("詳情頁上市列：同鍵 active manual 隱藏 igdb 列（2026-10-15）", () => {
+  const base = {
+    release_stage: "full" as const, period_start: null, precision: "day" as const, status: "scheduled" as const,
+    source_status: "active" as const, source: "igdb", platform_abbreviation: null, platform_kind: "console" as const,
+    platform_slug: "ps", platform_name: "PS", release_date: "2030-01-01",
+  };
+  const ids = (rows: Parameters<typeof visibleReleaseRows>[0]) => visibleReleaseRows(rows).map((r) => r.id);
+
+  it("同 (平台, 地區, 階段) 有 active manual → igdb 那筆不列；不同地區／階段／平台的 igdb 照列", () => {
+    const rows = [
+      { ...base, id: 1, region_code: "WW" },
+      { ...base, id: 2, region_code: "WW", source: "manual" },
+      { ...base, id: 3, region_code: "TW" },
+      { ...base, id: 4, region_code: "WW", release_stage: "demo" as const },
+      { ...base, id: 5, region_code: "WW", platform_slug: "sw" },
+    ];
+    expect(ids(rows)).toEqual([2, 3, 4, 5]);
+  });
+
+  it("manual 列 removed（被 IGDB 日期更新覆蓋或下架）→ 不列，igdb 列照列", () => {
+    const rows = [
+      { ...base, id: 1, region_code: "WW" },
+      { ...base, id: 2, region_code: "WW", source: "manual", source_status: "removed" as const },
+    ];
+    expect(ids(rows)).toEqual([1]);
+  });
+
+  it("igdb 列自己 removed 而同鍵沒有 manual → 照列（維持既有行為）", () => {
+    expect(ids([{ ...base, id: 1, region_code: "WW", source_status: "removed" as const }])).toEqual([1]);
   });
 });
 

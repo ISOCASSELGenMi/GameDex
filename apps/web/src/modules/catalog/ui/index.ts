@@ -23,3 +23,6 @@ export { STATIC_SHELL_SLUG } from "./seo/cache-tags";
 export { seoMetadata, seoSlug, gameDetailMetadata, eventDetailMetadata } from "./seo/metadata";
 export { PAGE_RULE, enumRule } from "./seo/alternates";
 export { sitemapIndexResponse, sitemapShardResponse, robotsResponse } from "./seo/sitemap-routes";
+
+// Phase 4：資料更正回報表單頁
+export { ReportPage, reportTitle } from "./report/report-page";

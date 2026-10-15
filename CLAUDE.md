@@ -7,6 +7,7 @@
 規格書 v2.0 的副本在 **`docs/spec/`**（00~16、90、91、CHANGELOG；2026-10-12 從 claude.ai Project「SoK-Game_Calendar」的 `spec/` 匯出）。
 正本仍在 Project；兩邊不一致時以 Project 為準，請使用者重新匯出。動工前讀對應章節；實作與規格衝突時先問使用者，不要自行改規格。關鍵章節：
 - 02 架構與模組（分層、模組邊界、manifest、排程）／03 資料模型／04 IGDB 同步／15 路線圖（每個 Phase 的完成標準）／16 部署與環境變數
+- **UI／UX 設計方向**：`docs/design/ui-direction.md`（Motion-Driven、Micro-interactions、Spatial UI、Feature-Rich Showcase；月曆一日一格左右切換、時間軸左右交錯）。**正式規劃或改版頁面設計時必讀並照做**，參考截圖在 `docs/design/references/`。
 - 進度 checklist：repo 副本 **`docs/checklist.md`**（正本在 Project 的 `claude/checklist.md`）。開工前先讀；做完打勾、新工作加進對應區塊並標日期。
 
 ## 五個硬性原則（摘自 spec/00）
@@ -28,7 +29,8 @@
 - ✅ **Phase 3b 完成**（2026-10-14，分支 `feat/phase3b`，尚未合併 main）：時間軸、完整篩選、瀏覽、平台／公司／系列／活動頁、熱度與熱門榜、語言支援、test:a11y 195；**接手先讀 `docs/handoff/2026-10-14-phase3b-done.md`**（待決、地雷、下一步）
 - ✅ **Phase 3.5 本機部分完成**（2026-10-14，分支 `feat/phase3.5`）：ja 語系、displayNames、i18n:report、sitemap／canonical／hreflang／JSON-LD／快取；Cloudflare 實設與搜尋主控台移到 Phase 9；**接手先讀 `docs/handoff/2026-10-14-phase3.5-done.md`**
 - ✅ PR `ISOCASSELGenMi/SoK-GameDB#1`（phase3b → main，含 3a）2026-10-14 已合併；PR `#2`（`feat/phase3.5` → main）2026-10-14 已合併
-- ⏭ Phase 4、5、9（見 spec 15）
+- ✅ **Phase 4 完成**（2026-10-15，分支 `feat/phase4`）：評分顯示（selectRatings、訪客來源選擇）、標題比對、資料更正回報＋admin `/internal/reports`；**接手先讀 `docs/handoff/2026-10-15-phase4-done.md`**
+- ⏭ Phase 5、9（見 spec 15）
   - 任務註冊在 `catalog/module.ts` 的 `jobs`；長任務用 `lockMode: "session"`；遊戲寫入一律經 `writeGameBatch`
 
 ## 工作方式（使用者指示，跨電腦／雲端都適用）

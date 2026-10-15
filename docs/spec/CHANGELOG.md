@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## v2.1（2026-10-15，Phase 4 實作後同步；repo 副本先改，Project 正本待使用者匯入）
+
+- 05 `normalizeTitle`：先移除 `™®©` 再 NFKC、NFKC 後才轉小寫（原範例 NFKC 會把 ™ 轉成 "TM"）。
+- 05 顯示規則：分數區永遠顯示、無分數欄位留白（D74）；站長隱藏 igdb 時的預設來源。
+- 12：IGDB 同鍵日期更新覆蓋人工更正（D75）；manual 列 sequence 下限；詳情頁隱藏同鍵 igdb 列；回報類型與目標組合；每 IP 上限為滾動 24 小時；IP HMAC 雜湊與 90 天清除；缺設定時 503／404 行為；管理頁 CSRF。
+- 03：`data_reports` 新增兩個索引；`source` 規則加 D75 例外。
+- 15：Phase 4 完成標準配合 D74、D75。
+- 06：詳情頁評分區與上市日列表配合上述規則。
+- 16：新增 `REPORT_IP_HASH_SECRET`、`TURNSTILE_VERIFY_URL`。
+- 90：新增 D74、D75。
+
 ## v2.0（2026-10-12）
 
 ### 結構

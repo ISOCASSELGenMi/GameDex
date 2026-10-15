@@ -18,3 +18,63 @@ export {
   type ReleaseFilterDefaults,
 } from "./domain/release-filter";
 export { regionPrefIssue } from "./domain/release-filter";
+
+// ── Phase 4：評分顯示規則與標題比對 ───────────────────────────────────
+export {
+  selectRatings,
+  selectableProviders,
+  shouldShowSourceSettings,
+  defaultSelectedProviders,
+  visibleRatings,
+  hasScore,
+  isCriticScoreType,
+  KNOWN_RATING_PROVIDERS,
+  DEFAULT_RATING_PRIORITY,
+  DEFAULT_SCORE_PROVIDERS,
+  CRITIC_SCORE_TYPES,
+  type KnownRatingProvider,
+  type RatingLike,
+  type RatingSelection,
+  type RatingSelectionOptions,
+} from "./domain/rating-display";
+export {
+  resolveRatingDisplayConfig,
+  RatingConfigError,
+  DEFAULT_RATING_DISPLAY_CONFIG,
+  type RatingDisplayConfig,
+} from "./domain/rating-config";
+export { normalizeTitle, levenshteinSimilarity, findBestMatch, MATCH_THRESHOLDS, type FindBestMatchOptions } from "./use-cases/matching";
+
+// ── Phase 4：資料更正回報（12）──────────────────────────────────────────
+export {
+  submitReport,
+  resolveReport,
+  listReportQueue,
+  getReportQueueItem,
+  clearOldReporterIpHashes,
+  getReportFormContext,
+  hashReporterIp,
+  normalizeClientIp,
+  REPORT_IP_RETENTION_DAYS,
+  type SubmitReportInput,
+  type SubmitReportResult,
+  type ResolveReportResult,
+  type ReportQueue,
+  type ReportFormContext,
+  type ReportTargetRef,
+} from "./use-cases/reports";
+export {
+  validateReportRequest,
+  reportTypesForTarget,
+  parseHttpUrl,
+  isValidIsoDate,
+  spanFromProposed,
+  REPORT_TYPE_RULES,
+  DATE_REPORT_TYPES,
+  REPORT_NOTE_MAX,
+  REPORT_URL_MAX,
+  type ReportFieldErrors,
+  type ReportValidation,
+  type ValidatedReport,
+} from "./domain/report-validation";
+export { CATALOG_TAG, gameDetailTag } from "./ui/seo/cache-tags";
