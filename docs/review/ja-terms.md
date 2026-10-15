@@ -22,7 +22,7 @@
 | `timeline.tbdSection` | 日期未定 | Date TBA | 発売日未定 |
 | `timeline.jumpTo` | 跳到日期 | Jump to date | 日付へ移動 |
 | `trending.title` | 熱門榜 | Trending | 注目ランキング |
-| `trending.upcoming` | 即將上市 | Upcoming | 発売予定 |
+| `trending.upcoming` | 即將上市 | Upcoming | 発売直前 |
 | `trending.released` | 已上市 | Released | 発売済み |
 | `enums.releaseStatus.scheduled` | 預定上市 | Scheduled | 発売予定 |
 | `enums.releaseStatus.delayed` | 已延期 | Delayed | 発売延期 |
@@ -37,7 +37,7 @@
 | `enums.releaseStage.other` | 其他 | Other | その他 |
 | `enums.datePrecision.day` | 確定日期 | Exact date | 日付確定 |
 | `enums.datePrecision.month` | 月份 | Month | 月 |
-| `enums.datePrecision.quarter` | 季 | Quarter | 四半期 |
+| `enums.datePrecision.quarter` | 季 | Quarter | シーズン |
 | `enums.datePrecision.year` | 年 | Year | 年 |
 | `enums.datePrecision.tbd` | 未定 | TBA | 未定 |
 | `enums.gameType.main_game` | 主遊戲 | Main game | 本編 |
@@ -118,7 +118,7 @@
 | `filters.dimensions.yearTo` | 結束年份 | To year | 終了年 |
 | `filters.dimensions.q` | 搜尋 | Search | 検索 |
 | `filters.dimensions.sort` | 排序 | Sort | 並べ替え |
-| `filters.statusValues.upcoming` | 即將上市 | Upcoming | 発売予定 |
+| `filters.statusValues.upcoming` | 即將上市 | Upcoming | 発売直前 |
 | `filters.statusValues.released` | 已上市 | Released | 発売済み |
 | `filters.statusValues.delayed` | 曾延期 | Previously delayed | 延期あり |
 | `filters.showValues.releases` | 遊戲上市 | Game releases | ゲームの発売 |

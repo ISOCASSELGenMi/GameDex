@@ -163,7 +163,7 @@
     "title": "注目ランキング",
     "note": "注目度は1時間ごとに更新されます。リアルタイムのランキングではありません。",
     "groupLabel": "ランキング",
-    "upcoming": "発売予定",
+    "upcoming": "発売直前",
     "released": "発売済み",
     "upcomingHint": "未発売、または発売から30日未満",
     "releasedHint": "発売から30日以上",

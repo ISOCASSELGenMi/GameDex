@@ -41,7 +41,7 @@
   "noFilters": "絞り込み条件はありません",
   "chipLabel": "{dimension}：{label}",
   "statusValues": {
-    "upcoming": "発売予定",
+    "upcoming": "発売直前",
     "released": "発売済み",
     "delayed": "延期あり"
   },
