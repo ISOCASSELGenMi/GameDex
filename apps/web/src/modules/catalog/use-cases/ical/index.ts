@@ -33,4 +33,4 @@ export {
   type ProtoStep,
   type ProtoStepResult,
 } from "./proto";
-export { renderStoredProtoFeed } from "./proto-feed";
+export { renderStoredProtoFeed, appendProtoAccess } from "./proto-feed";

@@ -8,7 +8,7 @@ import { createHash } from "node:crypto";
 import { getCoreEnv } from "@/kernel/config/env";
 import { getLocaleConfig } from "@/kernel/locale";
 import { icalLinks, ICAL_CONTENT_TYPE, slugFromIcsFile } from "./ical";
-import { icalUidDomain, isProtoFeedName, renderStoredProtoFeed, ifNoneMatchHits } from "../use-cases/ical";
+import { appendProtoAccess, icalUidDomain, isProtoFeedName, renderStoredProtoFeed, ifNoneMatchHits } from "../use-cases/ical";
 
 const NOT_FOUND = { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" } as const;
 
@@ -27,6 +27,11 @@ export async function protoFeedResponse(request: Request, file: string): Promise
   if (body === null) return new Response("not initialised: run `npm -w apps/web run ical:proto -- init`", { status: 404, headers: NOT_FOUND });
   const etag = `"${createHash("sha256").update(body).digest("hex").slice(0, 32)}"`;
   const headers = { "Cache-Control": "no-cache", ETag: etag, "X-Robots-Tag": "noindex" };
-  if (ifNoneMatchHits(request.headers.get("if-none-match"), etag)) return new Response(null, { status: 304, headers });
+  const hit = ifNoneMatchHits(request.headers.get("if-none-match"), etag);
+  // 原型驗證用：記錄誰在何時抓（觀察 Google／Apple 的拉取間隔）
+  const line = `${new Date().toISOString()} ${name} ${hit ? 304 : 200} ua=${request.headers.get("user-agent") ?? "-"}`;
+  console.info(`[ical-proto] ${line}`);
+  await appendProtoAccess(line);
+  if (hit) return new Response(null, { status: 304, headers });
   return new Response(body, { status: 200, headers: { ...headers, "Content-Type": ICAL_CONTENT_TYPE } });
 }

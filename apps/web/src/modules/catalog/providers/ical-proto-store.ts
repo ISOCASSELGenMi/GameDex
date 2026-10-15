@@ -30,3 +30,10 @@ export async function appendProtoLog(text: string, dir = protoDir()): Promise<vo
   await mkdir(dir, { recursive: true });
   await appendFile(path.join(dir, "log.md"), text, "utf8");
 }
+
+/** 原型驗證：記錄 feed 被抓取的時間與 User-Agent（access.log）。 */
+export async function appendProtoAccess(line: string, dir = protoDir()): Promise<void> {
+  await mkdir(dir, { recursive: true });
+  await appendFile(path.join(dir, "access.log"), `${line}
+`, "utf8");
+}

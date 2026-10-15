@@ -12,3 +12,5 @@ export async function renderStoredProtoFeed(
   if (raw === null) return null;
   return renderProtoFeed(parseProtoState(raw), feed, opts);
 }
+
+export { appendProtoAccess } from "../../providers/ical-proto-store";
