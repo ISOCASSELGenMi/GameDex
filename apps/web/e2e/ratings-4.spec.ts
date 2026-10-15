@@ -1,5 +1,6 @@
 /**
- * Phase 4 評分區（05 §顯示規則、06）：有分數的遊戲顯示 IGDB 分數與樣本數；沒有分數（沒有列、score=NULL 列）的遊戲沒有分數區；
+ * Phase 4 評分區（05 §顯示規則、06）：有分數的遊戲顯示 IGDB 分數與樣本數；沒有分數（沒有列、score=NULL 列）的遊戲
+ * 仍有評分區，顯示 IGDB 欄位、值空白（—，讀作「尚無評分」），不是 0 分（使用者 2026-10-15 決定）；
  * 三語各一頁；axe 0 違規；回應沒有 Set-Cookie；JSON-LD 的 aggregateRating 只用預設來源。
  * fixture：FIXTURE_4（support/fixture-data.ts）。目前只有 IGDB 一個來源 → 不出現來源設定 UI（兩個來源的情況見 unit 測試）。
  */
@@ -32,14 +33,25 @@ for (const locale of LOCALES) {
       await expect(row).toBeVisible();
     });
 
-    test("沒有分數（沒有列／score=NULL 列）：沒有分數區，也沒有 0 分", async ({ page }) => {
+    test("沒有分數（沒有列／score=NULL 列）：仍有評分區，IGDB 欄位值空白（—、讀作尚無評分），不是 0 分", async ({ page }) => {
       for (const slug of [FIXTURE_4.noRow.slug, FIXTURE_4.nullRow.slug]) {
         const res = await page.goto(`/${locale}/games/${slug}`);
         expect(res?.status()).toBe(200);
         await expect(page.locator("main h1").first()).toBeVisible();
-        await expect(page.locator("[data-ratings-section]"), slug).toHaveCount(0);
-        await expect(page.locator("[data-score-provider]"), slug).toHaveCount(0);
-        await expect(page.locator("#sec-ratings"), slug).toHaveCount(0);
+        const section = page.locator("[data-ratings-section]");
+        await expect(section, slug).toHaveCount(1);
+        await expect(section.getByRole("heading", { level: 2, name: msg(locale, "ui.game.sections.ratings") }), slug).toBeVisible();
+        const empty = section.locator('[data-rating-empty="igdb"]');
+        await expect(empty, slug).toBeVisible();
+        await expect(empty.locator('[aria-hidden="true"]'), slug).toHaveText("—");
+        await expect(empty.locator(".sr-only"), slug).toHaveText(msg(locale, "ui.game.noRatings"));
+        await expect(empty, slug).toContainText(msg(locale, "ui.game.rating.provider.igdb"));
+        await expect(section.locator("[data-score-provider]"), slug).toHaveCount(0);
+        await expect(section.locator("[data-rating-settings]"), slug).toHaveCount(0);
+        expect(await section.innerText(), slug).not.toMatch(/0/);
+        // 水合之後仍是空白欄位
+        await page.waitForLoadState("networkidle");
+        await expect(empty, slug).toBeVisible();
       }
     });
 
@@ -93,8 +105,11 @@ test.describe("快取與結構化資料", () => {
     await page.addInitScript(() => window.localStorage.setItem("sok:scoreProviders", JSON.stringify(["metacritic_scrape"])));
     await page.goto(`/en/games/${FIXTURE_4.rated.slug}`);
     await expect(page.locator("main h1").first()).toBeVisible();
-    // 讀到的偏好只保留這頁存在的來源（沒有 igdb）→ 依規格不退回沒選的來源：分數隱藏，並提示所選來源沒有分數
+    // 偏好是站長允許的來源（Metascore）但這款沒有它的分數 → 不退回沒選的來源：IGDB 分數隱藏，顯示 Metascore 空白欄位
     await expect(page.locator('[data-score-provider="igdb"]')).toBeHidden();
-    await expect(page.getByText(msg("en", "ui.game.rating.none"))).toBeVisible();
+    const empty = page.locator('[data-ratings-section] [data-rating-empty="metacritic_scrape"]');
+    await expect(empty).toBeVisible();
+    await expect(empty).toContainText(msg("en", "ui.game.rating.provider.metacritic_scrape"));
+    await expect(page.locator('[data-rating-empty="igdb"]')).toHaveCount(0);
   });
 });

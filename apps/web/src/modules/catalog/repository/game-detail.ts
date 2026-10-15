@@ -319,8 +319,22 @@ async function readDetail(tx: DbOrTx, q: GameDetailQuery): Promise<GameDetail | 
 const STAGE_ORDER = new Map(RELEASE_STAGES.map((s, i) => [s, i]));
 const ROLE_ORDER = new Map(GAME_COMPANY_ROLES.map((r, i) => [r, i]));
 
-/** 依平台分行；平台內：偏好地區 → WW → 其他（依代表日期，tbd 最後）→ 階段 → id。 */
-export function groupReleases(rows: readonly ReleaseRow[], history: readonly HistoryRow[], regionPref: RegionCode): GameReleaseGroup[] {
+/**
+ * 詳情頁要列出的上市列（使用者 2026-10-15 決定）：
+ * - 同 (平台, 地區, 階段) 有 active 的 manual 列 → 隱藏 igdb 那筆（人工更正取代顯示；IGDB 之後有日期更新時由同步把 manual 標 removed，
+ *   見 release-events.ts applyReleaseDiffPlan）。
+ * - sourceStatus='removed' 的 manual 列不顯示（被覆蓋或下架）。
+ * 與聚合（release-aggregate.ts）同一個優先序：active 優先於 removed，其次 manual 優先於 igdb。
+ */
+export function visibleReleaseRows(rows: readonly ReleaseRow[]): ReleaseRow[] {
+  const key = (r: ReleaseRow) => `${r.platform_slug}:${r.region_code}:${r.release_stage}`;
+  const manualActive = new Set(rows.filter((r) => r.source === "manual" && r.source_status === "active").map(key));
+  return rows.filter((r) => (r.source === "manual" ? r.source_status === "active" : !manualActive.has(key(r))));
+}
+
+/** 依平台分行；平台內：偏好地區 → WW → 其他（依代表日期，tbd 最後）→ 階段 → id。同鍵 manual 隱藏 igdb 列（visibleReleaseRows）。 */
+export function groupReleases(allRows: readonly ReleaseRow[], history: readonly HistoryRow[], regionPref: RegionCode): GameReleaseGroup[] {
+  const rows = visibleReleaseRows(allRows);
   const hist = new Map<number, GameReleaseRow["history"]>();
   for (const h of history) {
     const list = hist.get(h.release_event_id) ?? [];

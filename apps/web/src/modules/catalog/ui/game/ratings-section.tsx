@@ -1,17 +1,19 @@
 /**
  * 詳情頁評分區（伺服器元件；05 §顯示規則、06）。
  * 輸出第 1 層（站長）允許的所有來源分數，預設只顯示 IGDB；互動與重算在 ratings-panel（客戶端）。
- * 沒有任何可顯示的分數 → 不渲染整個區塊（不顯示「0 分」或空標題）。
+ * 評分區永遠渲染（使用者 2026-10-15 決定，取代 05 原本「沒有分數的遊戲不顯示分數區」）：沒有任何可顯示的分數時，
+ * 顯示目前選用來源的欄位名稱、值空白（「—」，螢幕閱讀器讀「尚無評分」）；不寫 0 分、不退回沒選的來源。
+ * JSON-LD 不受影響（沒分數就不輸出 aggregateRating）。
  */
 import type { ReactElement } from "react";
 import type { Locale, Translator } from "@sok/i18n";
 import type { GameRating } from "../../domain/entities";
 import type { RatingDisplayConfig } from "../../domain/rating-config";
 import {
+  KNOWN_RATING_PROVIDERS,
   defaultSelectedProviders,
   selectRatings,
   selectableProviders,
-  visibleRatings,
 } from "../../domain/rating-display";
 import { RatingsPanel, type RatingItem } from "./ratings-panel";
 
@@ -61,13 +63,11 @@ export function RatingsSection({
   config: RatingDisplayConfig;
   locale: Locale;
   t: Translator;
-}): ReactElement | null {
-  if (visibleRatings(ratings, config.visible).length === 0) return null;
+}): ReactElement {
   const defaultSelected = defaultSelectedProviders(config.visible);
   const providerIds = selectableProviders(ratings, config.visible, config.priority);
-  // 預設來源沒有分數、又沒有可切換的來源 → 使用者什麼都看不到也改不了：不顯示整區
-  const defaults = selectRatings(ratings, { visible: config.visible, selected: defaultSelected, priority: config.priority });
-  if (defaults.shown.length === 0 && providerIds.length < 2) return null;
+  // 有欄位可顯示的來源：站長允許的（visible 為空＝已知的全部）；偏好與空白欄位都以此為準
+  const fieldProviders = KNOWN_RATING_PROVIDERS.filter((id) => config.visible.length === 0 || config.visible.includes(id));
 
   const items = buildRatingItems(ratings, config, locale, t).map((r) => ({
     scoreProvider: r.scoreProvider,
@@ -88,10 +88,11 @@ export function RatingsSection({
         priority={config.priority}
         defaultSelected={defaultSelected}
         providers={providerIds.map((id) => ({ id, label: t.t(`ui.game.rating.provider.${id}`) }))}
+        fieldProviders={fieldProviders.map((id) => ({ id, label: t.t(`ui.game.rating.provider.${id}`) }))}
         labels={{
           legend: t.t("ui.game.rating.settings"),
           hint: t.t("ui.game.rating.settingsHint"),
-          none: t.t("ui.game.rating.none"),
+          noRatings: t.t("ui.game.noRatings"),
         }}
       />
     </section>

@@ -189,13 +189,30 @@ describe("詳情頁評分區 HTML", () => {
     expect(render("en", [row("igdb", 82, { reviewCount: null })])).toContain("IGDB 82/100<");
   });
 
-  it("沒有分數（空、全是 NULL 列）→ 不渲染整個區塊", () => {
-    expect(render("zh-Hant", [])).toBe("");
-    expect(render("en", [row("igdb", null)])).toBe("");
+  it("沒有分數（空、全是 NULL 列）→ 仍渲染評分區：預設來源（IGDB）欄位、值空白（—）、讀作「尚無評分」，沒有 0 分", () => {
+    for (const ratings of [[], [row("igdb", null)]]) {
+      const html = render("zh-Hant", ratings);
+      expect(html).toContain("data-ratings-section");
+      expect(html).toContain("評分");
+      expect(html).toContain('data-rating-empty="igdb"');
+      expect(html).toContain("IGDB");
+      expect(html).toContain('<span aria-hidden="true">—</span>');
+      expect(html).toContain('<span class="sr-only">尚無評分</span>');
+      expect(html).not.toContain("data-score-provider=");
+      expect(html).not.toMatch(/>0</);
+      expect(html).not.toContain("data-rating-settings");
+    }
+    expect(render("en", [])).toContain('<span class="sr-only">No ratings yet</span>');
+    expect(render("ja", [])).toContain('<span class="sr-only">評価はまだありません</span>');
   });
 
-  it("站長把所有有分數的來源都隱藏 → 不渲染", () => {
-    expect(render("en", [IGDB], { visible: ["metacritic_scrape"], priority: PRIORITY })).toBe("");
+  it("站長把有分數的來源都隱藏 → 仍顯示評分區，欄位是允許的來源（Metascore）、值空白，不洩漏 IGDB 分數", () => {
+    const html = render("en", [IGDB], { visible: ["metacritic_scrape"], priority: PRIORITY });
+    expect(html).toContain("data-ratings-section");
+    expect(html).toContain('data-rating-empty="metacritic_scrape"');
+    expect(html).toContain("Metascore");
+    expect(html).not.toContain("82");
+    expect(html).not.toContain('data-rating-empty="igdb"');
   });
 
   it("2 個可見來源 → 出現來源設定 UI；伺服器輸出全部來源、預設只顯示 IGDB（Metacritic 列 hidden）", () => {
@@ -223,8 +240,12 @@ describe("詳情頁評分區 HTML", () => {
     expect(html).not.toContain("metacritic_scrape");
   });
 
-  it("預設來源沒有分數、只有 Metacritic 一個來源 → 不渲染（使用者看不到也改不了）", () => {
-    expect(render("zh-Hant", [META])).toBe("");
+  it("預設來源（IGDB）沒有分數、只有 Metacritic 有 → 預設顯示 IGDB 空白欄位；Metacritic 列在 HTML 裡但 hidden；沒有設定 UI（可選來源只有 1 個）", () => {
+    const html = render("zh-Hant", [META]);
+    expect(html).toContain('data-rating-empty="igdb"');
+    const metaLi = (html.match(/<li [^>]*>/g) ?? []).find((i) => i.includes('data-score-provider="metacritic_scrape"'))!;
+    expect(metaLi).toContain("hidden");
+    expect(html).not.toContain("data-rating-settings");
   });
 });
 

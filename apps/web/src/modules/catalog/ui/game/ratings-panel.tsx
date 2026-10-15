@@ -3,6 +3,8 @@
  * 詳情頁評分區的互動部分（客戶端元件）。
  * 伺服器一律輸出第 1 層（站長）允許的所有來源分數，每列標 `data-score-provider`；沒有 JavaScript 時看到預設來源。
  * 水合後讀 localStorage 的偏好，用同一份 selectRatings（domain/rating-display）重算要顯示哪些列與主分數。
+ * 沒有可顯示的分數時（沒有任何評分，或所選來源都沒分數）顯示所選來源的欄位名稱、值空白（「—」＋螢幕閱讀器讀「尚無評分」），
+ * 不退回沒選的來源（使用者 2026-10-15 決定）。
  * 不寫 Cookie、不送 Set-Cookie（可快取頁面，06／D60）。偏好只存在這個瀏覽器。
  */
 import { useSyncExternalStore, type ReactElement } from "react";
@@ -19,7 +21,8 @@ export interface RatingItem extends RatingLike {
 export interface RatingsPanelLabels {
   legend: string;
   hint: string;
-  none: string;
+  /** 空白欄位給螢幕閱讀器讀的文字（「尚無評分」）。 */
+  noRatings: string;
 }
 
 export interface RatingsPanelProps {
@@ -32,6 +35,8 @@ export interface RatingsPanelProps {
   defaultSelected: readonly string[];
   /** 可選來源（層 1 之後實際有分數的來源）；少於 2 個不顯示設定 UI。 */
   providers: readonly { id: string; label: string }[];
+  /** 站長允許、有欄位可顯示的來源（不論有沒有分數）；偏好與空白欄位以此為準。 */
+  fieldProviders: readonly { id: string; label: string }[];
   labels: RatingsPanelLabels;
 }
 
@@ -86,14 +91,17 @@ function parseSelection(raw: string | null, allowed: readonly string[]): string[
 
 const noopSubscribe = () => () => {};
 
-export function RatingsPanel({ items, visible, priority, defaultSelected, providers, labels }: RatingsPanelProps): ReactElement {
+export function RatingsPanel({ items, visible, priority, defaultSelected, providers, fieldProviders, labels }: RatingsPanelProps): ReactElement {
   const raw = useSyncExternalStore(subscribe, getStoredRaw, () => null);
   const mounted = useSyncExternalStore(noopSubscribe, () => true, () => false);
-  const selected: readonly string[] = parseSelection(raw, providers.map((p) => p.id)) ?? defaultSelected;
+  const selected: readonly string[] = parseSelection(raw, fieldProviders.map((p) => p.id)) ?? defaultSelected;
 
   const { shown, primary } = selectRatings(items, { visible, selected, priority });
   const shownSet = new Set<RatingItem>(shown);
   const showSettings = providers.length >= 2;
+  // 沒有可顯示的分數 → 所選來源的空白欄位（所選都不在允許清單時退回預設來源；不退回沒選的來源）
+  const chosen = fieldProviders.filter((p) => selected.includes(p.id));
+  const emptyShown = shown.length > 0 ? [] : chosen.length > 0 ? chosen : fieldProviders.filter((p) => defaultSelected.includes(p.id));
 
   const toggle = (id: string, checked: boolean) => {
     const next = checked ? [...new Set([...selected, id])] : selected.filter((x) => x !== id);
@@ -117,8 +125,13 @@ export function RatingsPanel({ items, visible, priority, defaultSelected, provid
             </li>
           );
         })}
+        {emptyShown.map((p) => (
+          <li key={`empty:${p.id}`} data-rating-empty={p.id} className="text-base">
+            <span>{p.label}</span> <span aria-hidden="true">—</span>
+            <span className="sr-only">{labels.noRatings}</span>
+          </li>
+        ))}
       </ul>
-      {mounted && shown.length === 0 ? <p className="text-[var(--muted)]">{labels.none}</p> : null}
       {showSettings ? (
         // 無 JavaScript 時按了也不會有作用 → 水合前先 hidden
         <fieldset hidden={!mounted} className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1" data-rating-settings>

@@ -3,7 +3,8 @@
  * - submitReport：驗證、目標存在、每 IP 上限、Turnstile、IP 只存雜湊、takedown 通知
  * - 每日清除 90 天前的 IP 雜湊
  * - resolveReport：核可日期類回報 → manual 列＋history＋change_feed＋sequence 高於 igdb；其餘只改狀態；已處理／找不到
- * - 核可一筆 TW 上市日後跑同步 diff：manual 列不被覆蓋、不被標 removed；聚合顯示 manual 日期；sequence 不倒退
+ * - 同步與人工更正（2026-10-15）：status／別的鍵／igdb removed 不影響 manual；igdb 同鍵日期變動或新建 → manual removed、igdb sequence 高於 manual；
+ *   不同地區不受影響；覆蓋後再核可 → manual 重新 active
  * igdbId 96xxxx、slug 前綴 rep4-；每個測試用自己的 IP 字串（上限以 IP 雜湊計算）。
  */
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
@@ -11,11 +12,11 @@ import { and, asc, eq, inArray } from "drizzle-orm";
 import { closeDb, getDb } from "@/kernel/db/client";
 import { coreEnvSchema, type CoreEnv } from "@/kernel/config/env";
 import type { GameRecord } from "@/modules/catalog";
-import { clearOldReporterIpHashes, getCalendarMonth, getReportQueueItem, listReportQueue, resolveReport, submitReport } from "@/modules/catalog";
+import { clearOldReporterIpHashes, getCalendarMonth, getGameDetail, getReportQueueItem, listReportQueue, resolveReport, submitReport } from "@/modules/catalog";
 import type { GameDataProvider } from "@/modules/catalog/providers/game-data-provider.interface";
 import { toGameRecord } from "@/modules/catalog/providers/igdb";
 import { upsertPlatform } from "@/modules/catalog/repository/platforms";
-import { dataReports, changeFeed, gamePlatforms, games, platforms, regions, releaseDateHistory, releaseEvents } from "@/modules/catalog/schema";
+import { dataReports, changeFeed, gamePlatforms, games, regions, releaseDateHistory, releaseEvents } from "@/modules/catalog/schema";
 import { syncGames } from "@/modules/catalog/use-cases/sync/sync-games";
 
 const enabled = !!process.env.TEST_DATABASE_URL;
@@ -316,10 +317,11 @@ describe.skipIf(!enabled)("資料更正回報（整合）", () => {
     });
   });
 
-  describe("同步不覆蓋 manual（15 Phase 4 完成標準）", () => {
+  describe("同步與人工更正（使用者 2026-10-15：IGDB 日期更新覆蓋人工更正）", () => {
     const PS = 960167;
-    const raw = (releases: Array<{ date?: number; date_format: number; platform: number; release_region: number; status?: number }>) => ({
-      id: 960201, name: "Rep4 Sync Game", slug: "rep4-sync-game", game_type: 0, updated_at: ts("2037-01-01"), platforms: [PS], release_dates: releases,
+    type Rel = { date?: number; date_format: number; platform: number; release_region: number; status?: number };
+    const raw = (id: number, slug: string, releases: Rel[]) => ({
+      id, name: `Rep4 ${slug}`, slug, game_type: 0, updated_at: ts("2037-01-01"), platforms: [PS], release_dates: releases,
     });
     const provider = (r: () => ReturnType<typeof raw>): GameDataProvider => ({
       sourceName: "fake",
@@ -329,44 +331,152 @@ describe.skipIf(!enabled)("資料更正回報（整合）", () => {
         [toGameRecord(r())].filter((g: GameRecord) => q.afterId === undefined || g.igdbId > q.afterId).slice(0, q.limit),
     });
     const sync = (r: () => ReturnType<typeof raw>, at: string) => syncGames(provider(r), { startedAt: new Date(at), log: noLog });
+    // IGDB release_region：8＝WW、5＝JP；status 6＝Full Release（階段 full）
+    const rel = (region: number, date: string): Rel => ({ date: ts(date), date_format: 0, platform: PS, release_region: region, status: 6 });
+    const WW = 8;
+    const JP = 5;
+    const feedOf = (eventId: number) =>
+      getDb().select().from(changeFeed).where(and(eq(changeFeed.entityType, "release_event"), eq(changeFeed.entityId, eventId))).orderBy(asc(changeFeed.id));
+    const june = (pref: string) => getCalendarMonth({ year: 2037, month: 6, locale: "en", regionPref: pref });
 
-    it("核可台灣上市日後：同步更新 igdb 列、移除 igdb 列，manual 列都不變；聚合仍顯示 manual；sequence 不倒退", async () => {
-      const ps = await upsertPlatform({ igdbId: PS, slug: "rep4-sync-ps", name: "Rep4 Sync PS", kind: "console" });
-      const rel = (date: string) => [{ date: ts(date), date_format: 0, platform: PS, release_region: 8, status: 6 }];
-      await sync(() => raw(rel("2037-06-10")), "2037-01-01T00:00:00Z");
-      const db = getDb();
-      const [g] = await db.select().from(games).where(eq(games.igdbId, 960201));
-
+    let psId = 0;
+    /** 建立遊戲（第一輪同步）並回傳 id。 */
+    async function setup(id: number, slug: string, releases: Rel[]): Promise<number> {
+      psId = (await upsertPlatform({ igdbId: PS, slug: "rep4-sync-ps", name: "Rep4 Sync PS", kind: "console" })).id;
+      await sync(() => raw(id, slug, releases), "2037-01-01T00:00:00Z");
+      const [g] = await getDb().select().from(games).where(eq(games.igdbId, id));
+      return g.id;
+    }
+    /** 核可一筆 wrong_date（目標＝該遊戲該地區的 igdb 列）。 */
+    async function correctDate(gameId: number, region: string, date: string): Promise<void> {
+      const igdb = (await rowsOf(gameId)).find((r) => r.source === "igdb" && r.region === region)!;
       const id = await report({
-        reportType: "missing_region_date", targetType: "game", targetId: g.id, sourceUrl: "https://example.com/tw",
-        proposed: { platformId: ps.id, regionCode: "TW", date: "2037-06-12", precision: "day" },
+        reportType: "wrong_date", targetType: "release_event", targetId: igdb.id, sourceUrl: "https://example.com/fix",
+        proposed: { date, precision: "day" },
       });
-      const accepted = await resolveReport(id, "accept");
-      expect(accepted).toMatchObject({ ok: true, applied: { result: "created" } });
-      const manualBefore = (await rowsOf(g.id)).find((r) => r.source === "manual")!;
-      const igdbBefore = (await rowsOf(g.id)).find((r) => r.source === "igdb")!;
-      expect(manualBefore).toMatchObject({ region: "TW", date: "2037-06-12", sourceStatus: "active" });
-      expect(manualBefore.sequence).toBeGreaterThan(igdbBefore.sequence);
+      expect(await resolveReport(id, "accept")).toMatchObject({ ok: true });
+    }
 
-      // 來源把 WW 日期延後 → igdb 列更新（sequence+1），manual 列原封不動
-      await sync(() => raw(rel("2037-06-20")), "2037-01-02T00:00:00Z");
-      let rows = await rowsOf(g.id);
-      expect(rows.find((r) => r.source === "igdb")).toMatchObject({ date: "2037-06-20", status: "delayed", sequence: igdbBefore.sequence + 1 });
+    it("(a) igdb 只有 status 變動、別的鍵變動、或 igdb 列被標 removed → manual 列不變、仍 active", async () => {
+      const g = await setup(960201, "rep4-sync-a", [rel(WW, "2037-06-10"), rel(JP, "2037-06-15")]);
+      await correctDate(g, "WW", "2037-06-12");
+      const manualBefore = (await rowsOf(g)).find((r) => r.source === "manual")!;
+      expect(manualBefore).toMatchObject({ region: "WW", date: "2037-06-12", sourceStatus: "active" });
+
+      // 日期不變，但「今天」已過 igdb WW 的 06-10 → igdb 只有 status scheduled→released
+      await sync(() => raw(960201, "rep4-sync-a", [rel(WW, "2037-06-10"), rel(JP, "2037-06-15")]), "2037-06-11T00:00:00Z");
+      let rows = await rowsOf(g);
+      expect(rows.find((r) => r.source === "igdb" && r.region === "WW")).toMatchObject({ status: "released", date: "2037-06-10" });
       expect(rows.find((r) => r.source === "manual")).toEqual(manualBefore);
 
-      // 來源整個拿掉上市日 → igdb 列 removed，manual 列仍 active
-      await sync(() => raw([]), "2037-01-03T00:00:00Z");
-      rows = await rowsOf(g.id);
-      expect(rows.find((r) => r.source === "igdb")).toMatchObject({ sourceStatus: "removed" });
+      // 別的鍵（JP）日期變動 → WW manual 不變
+      await sync(() => raw(960201, "rep4-sync-a", [rel(WW, "2037-06-10"), rel(JP, "2037-06-18")]), "2037-06-11T01:00:00Z");
+      rows = await rowsOf(g);
+      expect(rows.find((r) => r.source === "igdb" && r.region === "JP")).toMatchObject({ date: "2037-06-18" });
       expect(rows.find((r) => r.source === "manual")).toEqual(manualBefore);
 
-      // 聚合：偏好 TW 與 WW 都以 manual 為準；removed 的 igdb 列不干擾
-      for (const pref of ["TW", "WW"]) {
-        const june = await getCalendarMonth({ year: 2037, month: 6, locale: "en", regionPref: pref });
-        expect(datesOf(june, "rep4-sync-game"), `regionPref=${pref}`).toEqual(["2037-06-12"]);
-      }
-      // 同一個平台沒有被誤建第二個 game_platforms
-      expect(await db.select().from(platforms).where(eq(platforms.id, ps.id))).toHaveLength(1);
+      // 來源拿掉 WW 上市日 → igdb WW 標 removed，manual 仍 active
+      await sync(() => raw(960201, "rep4-sync-a", [rel(JP, "2037-06-18")]), "2037-06-11T02:00:00Z");
+      rows = await rowsOf(g);
+      expect(rows.find((r) => r.source === "igdb" && r.region === "WW")).toMatchObject({ sourceStatus: "removed" });
+      expect(rows.find((r) => r.source === "manual")).toEqual(manualBefore);
+      expect((await feedOf(manualBefore.id)).map((f) => f.changeType)).toEqual(["created", "date_changed"]);
+
+      // 聚合：偏好 WW 仍以 manual 日期為準
+      expect(datesOf(await june("WW"), "rep4-sync-a")).toContain("2037-06-12");
+    });
+
+    it("(b) igdb 同鍵日期變動 → manual removed、igdb sequence > manual 原值、聚合與詳情顯示 igdb 新日期、change_feed 有紀錄", async () => {
+      const g = await setup(960202, "rep4-sync-b", [rel(WW, "2037-06-10")]);
+      await correctDate(g, "WW", "2037-06-12");
+      const before = await rowsOf(g);
+      const manualBefore = before.find((r) => r.source === "manual")!;
+      const igdbBefore = before.find((r) => r.source === "igdb")!;
+      expect(datesOf(await june("WW"), "rep4-sync-b")).toEqual(["2037-06-12"]);
+
+      await sync(() => raw(960202, "rep4-sync-b", [rel(WW, "2037-06-20")]), "2037-01-02T00:00:00Z");
+      const rows = await rowsOf(g);
+      const manual = rows.find((r) => r.source === "manual")!;
+      const igdb = rows.find((r) => r.source === "igdb")!;
+      expect(manual).toMatchObject({ sourceStatus: "removed", date: "2037-06-12", sequence: manualBefore.sequence });
+      expect(igdb).toMatchObject({ sourceStatus: "active", date: "2037-06-20" });
+      expect(igdb.sequence).toBeGreaterThan(manualBefore.sequence);
+      expect(igdb.sequence).toBeGreaterThan(igdbBefore.sequence);
+
+      const feed = await feedOf(manual.id);
+      expect(feed.at(-1)).toMatchObject({ changeType: "removed", payload: { reason: "superseded_by_igdb", igdbEventId: igdb.id } });
+      for (const pref of ["WW", "TW"]) expect(datesOf(await june(pref), "rep4-sync-b"), pref).toEqual(["2037-06-20"]);
+
+      // 詳情頁：只列 igdb 新日期，manual（removed）不列
+      const d = await getGameDetail({ slug: "rep4-sync-b", locale: "en" });
+      const listed = d!.releaseGroups.flatMap((x) => x.releases);
+      expect(listed.map((r) => [r.source, r.date])).toEqual([["igdb", "2037-06-20"]]);
+
+      // 再次同步同樣內容 → 沒有任何變動（不重複覆蓋、sequence 不再增加）
+      await sync(() => raw(960202, "rep4-sync-b", [rel(WW, "2037-06-20")]), "2037-01-02T01:00:00Z");
+      expect(await rowsOf(g)).toEqual(rows);
+    });
+
+    it("(c) igdb 新建同鍵列 → manual removed、igdb sequence > manual、聚合顯示 igdb 日期", async () => {
+      const g = await setup(960203, "rep4-sync-c", [rel(WW, "2037-06-10")]);
+      const id = await report({
+        reportType: "missing_region_date", targetType: "game", targetId: g, sourceUrl: "https://example.com/jp",
+        proposed: { platformId: psId, regionCode: "JP", date: "2037-06-12", precision: "day" },
+      });
+      expect(await resolveReport(id, "accept")).toMatchObject({ ok: true, applied: { result: "created" } });
+      const manualBefore = (await rowsOf(g)).find((r) => r.source === "manual")!;
+      expect(manualBefore).toMatchObject({ region: "JP", stage: "full", date: "2037-06-12", sourceStatus: "active" });
+      expect(datesOf(await june("JP"), "rep4-sync-c")).toEqual(["2037-06-12"]);
+
+      await sync(() => raw(960203, "rep4-sync-c", [rel(WW, "2037-06-10"), rel(JP, "2037-06-14")]), "2037-01-02T00:00:00Z");
+      const rows = await rowsOf(g);
+      const manual = rows.find((r) => r.source === "manual")!;
+      const igdbJp = rows.find((r) => r.source === "igdb" && r.region === "JP")!;
+      expect(manual).toMatchObject({ sourceStatus: "removed", sequence: manualBefore.sequence });
+      expect(igdbJp).toMatchObject({ date: "2037-06-14", sourceStatus: "active" });
+      expect(igdbJp.sequence).toBeGreaterThan(manualBefore.sequence);
+      expect((await feedOf(manual.id)).at(-1)).toMatchObject({ changeType: "removed", payload: { reason: "superseded_by_igdb" } });
+      expect(datesOf(await june("JP"), "rep4-sync-c")).toEqual(["2037-06-14"]);
+    });
+
+    it("(d) TW manual ＋ WW igdb 日期變動 → TW manual 不變，偏好 TW 仍顯示 manual", async () => {
+      const g = await setup(960204, "rep4-sync-d", [rel(WW, "2037-06-10")]);
+      const id = await report({
+        reportType: "missing_region_date", targetType: "game", targetId: g, sourceUrl: "https://example.com/tw",
+        proposed: { platformId: psId, regionCode: "TW", date: "2037-06-12", precision: "day" },
+      });
+      expect(await resolveReport(id, "accept")).toMatchObject({ ok: true });
+      const manualBefore = (await rowsOf(g)).find((r) => r.source === "manual")!;
+
+      await sync(() => raw(960204, "rep4-sync-d", [rel(WW, "2037-06-20")]), "2037-01-02T00:00:00Z");
+      const rows = await rowsOf(g);
+      expect(rows.find((r) => r.source === "igdb")).toMatchObject({ date: "2037-06-20" });
+      expect(rows.find((r) => r.source === "manual")).toEqual(manualBefore);
+      expect(datesOf(await june("TW"), "rep4-sync-d")).toEqual(["2037-06-12"]);
+      // 聚合 manual 優先於 igdb（不論地區）：TW manual 仍 active，偏好 WW 也挑 manual；igdb WW 的新日期在詳情頁與 iCal 之外不單獨出現
+      expect(datesOf(await june("WW"), "rep4-sync-d")).toEqual(["2037-06-12"]);
+    });
+
+    it("(e) 覆蓋後再核可同鍵回報 → manual 重新 active、sequence 再遞增並高於 igdb，詳情頁又隱藏 igdb 列", async () => {
+      const g = await setup(960205, "rep4-sync-e", [rel(WW, "2037-06-10")]);
+      await correctDate(g, "WW", "2037-06-12");
+      await sync(() => raw(960205, "rep4-sync-e", [rel(WW, "2037-06-20")]), "2037-01-02T00:00:00Z");
+      const overridden = await rowsOf(g);
+      const manualOld = overridden.find((r) => r.source === "manual")!;
+      const igdb = overridden.find((r) => r.source === "igdb")!;
+      expect(manualOld.sourceStatus).toBe("removed");
+
+      await correctDate(g, "WW", "2037-06-25");
+      const rows = await rowsOf(g);
+      const manual = rows.find((r) => r.source === "manual")!;
+      expect(rows.filter((r) => r.source === "manual")).toHaveLength(1); // 沿用同一列
+      expect(manual).toMatchObject({ id: manualOld.id, sourceStatus: "active", date: "2037-06-25" });
+      expect(manual.sequence).toBeGreaterThan(manualOld.sequence);
+      expect(manual.sequence).toBeGreaterThan(igdb.sequence);
+      expect((await feedOf(manual.id)).map((f) => f.changeType)).toContain("restored");
+      expect(datesOf(await june("WW"), "rep4-sync-e")).toEqual(["2037-06-25"]);
+      const d = await getGameDetail({ slug: "rep4-sync-e", locale: "en" });
+      expect(d!.releaseGroups.flatMap((x) => x.releases).map((r) => [r.source, r.date])).toEqual([["manual", "2037-06-25"]]);
     });
   });
 });

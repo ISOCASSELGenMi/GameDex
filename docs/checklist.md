@@ -132,7 +132,9 @@
 - [x] B：`data_reports`＋migration、`POST /api/v1/reports`（Turnstile、IP 每日上限、IP 雜湊 90 天清除）、核可寫 manual 上市日（同 transaction、sequence 遞增）、admin 模組 `/internal/reports`（Basic auth、CSRF）、回報入口與表單頁
 - [x] 驗收：全部檢查＋spec 15 Phase 4 完成標準（iCal sequence 只驗資料層，iCal 在 Phase 5）；commit；交接 `docs/handoff/2026-10-15-phase4-done.md`（2026-10-15）
 - [x] ja 日期格式與說明文字的「四半期」一併改為「シーズン」（使用者 2026-10-15 決定）
-- [ ] 待決：評分偏好與頁面來源不重疊時的行為（Phase 6 前決定）；缺金鑰行為（503／404）；詳情頁 igdb／manual 同鍵並列；missing_region_date 階段推測；takedown 專用動作（2026-10-15 新增，詳見交接）
-- [ ] 規格正本同步：05 normalizeTitle 順序 bug、03 data_reports 兩個索引、16 兩個新環境變數、12 回報細節（2026-10-15 新增）
-- [ ] 開發 DB 套 migration 0004（需使用者同意）（2026-10-15 新增）
+- [x] 使用者決定（2026-10-15）：無分數時評分區照顯示、欄位留白（D74）；詳情頁隱藏同鍵 igdb 列、IGDB 同鍵日期更新覆蓋人工更正（D75）——子代理 C 實作完成
+- [ ] 待決：缺金鑰行為（503／404，沿用中）；missing_region_date 階段推測；takedown 專用動作；被覆蓋的人工更正是否通知（2026-10-15 新增，詳見交接）
+- [x] 規格 repo 副本同步（CHANGELOG v2.1，2026-10-15）
+- [ ] 使用者把 `docs/spec/` v2.1 改動匯入 Project 正本
+- [x] 開發 DB 套 migration 0004（使用者同意，2026-10-15）
 - [ ] 開 PR `feat/phase4` → main

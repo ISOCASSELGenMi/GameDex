@@ -231,3 +231,48 @@ export function planReleaseEventDiff(
   }
   return plan;
 }
+
+// ── IGDB 日期更新覆蓋人工更正（使用者 2026-10-15 決定，取代 12 原本「manual 列不被 diff 覆蓋」）────────
+
+/** 本輪 diff 對某個 igdb 列的「日期有更新」：新建，或日期／精度變動。 */
+export interface IgdbDateUpdate extends ReleaseSlot {
+  igdbEventId: number;
+  /** 寫入後該 igdb 列的 sequence。 */
+  sequence: number;
+}
+
+/** 同遊戲、同鍵、仍有效的 manual 列。 */
+export interface ActiveManualRow extends ReleaseSlot {
+  id: number;
+  sequence: number;
+}
+
+export interface ManualSupersede {
+  /** 要標 sourceStatus='removed' 的 manual 列。 */
+  manualId: number;
+  /** 取代它的 igdb 列。 */
+  igdbEventId: number;
+  /** 該 igdb 列的 sequence 要提高到至少這個值（> 被取代 manual 的 sequence，聚合輸出的 sequence 不倒退）。 */
+  igdbMinSequence: number;
+}
+
+/**
+ * 哪些 active manual 列被這輪 IGDB 日期更新取代。純函式。
+ * 規則：同 (平台, 地區, 階段) 才算同鍵（TW manual 不受 WW 更新影響）；只看日期更新（新建、日期／精度變動），
+ * 只有 status 變動、igdb 被標 removed 都不呼叫這裡。
+ */
+export function planManualSupersedes(
+  updates: readonly IgdbDateUpdate[],
+  manuals: readonly ActiveManualRow[],
+): ManualSupersede[] {
+  const out: ManualSupersede[] = [];
+  const done = new Set<number>();
+  for (const u of updates) {
+    for (const m of manuals) {
+      if (done.has(m.id) || slotKey(m) !== slotKey(u)) continue;
+      done.add(m.id);
+      out.push({ manualId: m.id, igdbEventId: u.igdbEventId, igdbMinSequence: m.sequence + 1 });
+    }
+  }
+  return out;
+}

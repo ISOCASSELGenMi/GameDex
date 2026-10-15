@@ -3,7 +3,8 @@
  *
  * - wrong_date（目標是上市事件）：沿用該事件的 (遊戲, 平台, 地區, 階段)，改成提案日期。
  * - missing_region_date（目標是遊戲）：提案的平台與地區；階段取該平台現有列的階段（見 chooseSlotStage）。
- * - 同一個 (遊戲, 平台, 地區, 階段) 已有 manual 列就更新它，否則新增；igdb 列原樣保留（同步只動 igdb 列）。
+ * - 同一個 (遊戲, 平台, 地區, 階段) 已有 manual 列就更新它（含被 IGDB 日期更新覆蓋成 removed 的：改回 active），否則新增；igdb 列原樣保留。
+ *   詳情頁同鍵 active manual 時隱藏 igdb 列；IGDB 之後對同鍵有日期更新則覆蓋 manual（planManualSupersedes，使用者 2026-10-15）。
  * - sequence 下限：高於同 (遊戲, 平台, 階段) 全部 igdb 列的最大 sequence（iCal 以聚合結果輸出，manual 優先，sequence 不可倒退）。
  */
 import type { IsoDate, ReleaseEvent, ReleaseStage, ReleaseStatus, ReportProposed, ReportType } from "./entities";

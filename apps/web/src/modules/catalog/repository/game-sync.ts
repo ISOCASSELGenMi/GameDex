@@ -1,6 +1,7 @@
 /**
  * 同步一款 IGDB 遊戲（04 §各類資料的寫入規則）：遊戲本體與全部關聯在同一個 transaction 寫完。
- * 關聯 id（平台、公司…）由 Use Case 先對應好；這裡只負責持久化與「同步只動 igdb 列」的規則。
+ * 關聯 id（平台、公司…）由 Use Case 先對應好；這裡只負責持久化與「同步只動 igdb 列」的規則
+ * （上市日例外：IGDB 對同鍵日期有更新時，同交易把 active 的 manual 列標 removed，見 release-events.ts applyReleaseDiffPlan）。
  */
 import { and, eq, inArray, isNotNull, ne, notInArray, sql } from "drizzle-orm";
 import { getDb, type DbOrTx } from "@/kernel/db/client";

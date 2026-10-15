@@ -7,6 +7,7 @@ import { adminGateResponse, checkAdminGate, parseBasicAuth } from "@/kernel/http
 import { createCsrfToken, isSameOrigin, verifyCsrfToken } from "@/modules/admin/csrf";
 import type { ReleaseEvent } from "@/modules/catalog";
 import { validateReportRequest, spanFromProposed, isValidIsoDate, parseHttpUrl, reportTypesForTarget } from "@/modules/catalog/domain/report-validation";
+import { planManualSupersedes } from "@/modules/catalog/domain/release-diff";
 import { chooseSlotStage, planManualRelease } from "@/modules/catalog/domain/report-resolution";
 import { sendAlertWebhook } from "@/modules/catalog/providers/alert-webhook";
 import { verifyTurnstileToken } from "@/modules/catalog/providers/turnstile";
@@ -287,5 +288,30 @@ describe("admin：Basic auth 與 CSRF", () => {
     expect(isSameOrigin(h({ origin: "https://sok.example", host: "10.0.0.5:3000", "x-forwarded-host": "sok.example" }))).toBe(true);
     expect(isSameOrigin(h({ host: "sok.example" }))).toBe(false);
     expect(isSameOrigin(h({ origin: "null", host: "sok.example" }))).toBe(false);
+  });
+});
+
+describe("planManualSupersedes：IGDB 日期更新覆蓋人工更正（2026-10-15）", () => {
+  const slot = { platformId: 3, regionId: 1, releaseStage: "full" as const };
+  it("同 (平台, 地區, 階段) 的 active manual 被取代，igdb 的 sequence 下限＝manual + 1", () => {
+    expect(planManualSupersedes([{ ...slot, igdbEventId: 10, sequence: 2 }], [{ ...slot, id: 20, sequence: 5 }])).toEqual([
+      { manualId: 20, igdbEventId: 10, igdbMinSequence: 6 },
+    ]);
+  });
+  it("不同地區、平台、階段的 manual 不受影響（TW manual 不受 WW 更新影響）", () => {
+    const upd = [{ ...slot, igdbEventId: 10, sequence: 2 }];
+    expect(planManualSupersedes(upd, [{ ...slot, regionId: 9, id: 20, sequence: 5 }])).toEqual([]);
+    expect(planManualSupersedes(upd, [{ ...slot, platformId: 4, id: 21, sequence: 5 }])).toEqual([]);
+    expect(planManualSupersedes(upd, [{ ...slot, releaseStage: "demo", id: 22, sequence: 5 }])).toEqual([]);
+  });
+  it("沒有日期更新或沒有 manual → 空；同一筆 manual 只取代一次", () => {
+    expect(planManualSupersedes([], [{ ...slot, id: 20, sequence: 5 }])).toEqual([]);
+    expect(planManualSupersedes([{ ...slot, igdbEventId: 10, sequence: 2 }], [])).toEqual([]);
+    expect(
+      planManualSupersedes(
+        [{ ...slot, igdbEventId: 10, sequence: 2 }, { ...slot, igdbEventId: 11, sequence: 2 }],
+        [{ ...slot, id: 20, sequence: 5 }],
+      ),
+    ).toHaveLength(1);
   });
 });
