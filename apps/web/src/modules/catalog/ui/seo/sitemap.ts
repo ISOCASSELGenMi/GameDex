@@ -112,6 +112,10 @@ export function pageSpecs(input: {
     { path: "/platforms" },
     { path: "/events" },
     { path: "/subscribe" },
+    { path: "/about/data-sources" },
+    { path: "/about/privacy" },
+    { path: "/about/terms" },
+    { path: "/about/contact" },
     ...input.platforms.map(platformSitemapSpec),
     ...input.events.map(eventSitemapSpec),
   ];

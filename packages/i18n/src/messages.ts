@@ -3,6 +3,7 @@
  * 新增語系或命名空間時在這裡加一行；`i18n:check` 會比對磁碟上的檔案與各語系 key 集合。
  */
 import enA11y from "../messages/en/a11y.json";
+import enAbout from "../messages/en/about.json";
 import enEnums from "../messages/en/enums.json";
 import enErrors from "../messages/en/errors.json";
 import enFilters from "../messages/en/filters.json";
@@ -11,6 +12,7 @@ import enIcal from "../messages/en/ical.json";
 import enThemes from "../messages/en/themes.json";
 import enUi from "../messages/en/ui.json";
 import jaA11y from "../messages/ja/a11y.json";
+import jaAbout from "../messages/ja/about.json";
 import jaEnums from "../messages/ja/enums.json";
 import jaErrors from "../messages/ja/errors.json";
 import jaFilters from "../messages/ja/filters.json";
@@ -19,6 +21,7 @@ import jaIcal from "../messages/ja/ical.json";
 import jaThemes from "../messages/ja/themes.json";
 import jaUi from "../messages/ja/ui.json";
 import zhA11y from "../messages/zh-Hant/a11y.json";
+import zhAbout from "../messages/zh-Hant/about.json";
 import zhEnums from "../messages/zh-Hant/enums.json";
 import zhErrors from "../messages/zh-Hant/errors.json";
 import zhFilters from "../messages/zh-Hant/filters.json";
@@ -29,7 +32,7 @@ import zhUi from "../messages/zh-Hant/ui.json";
 import type { Locale } from "./locales";
 
 /** 各語系 key 集合必須一致，缺 key 讓 i18n:check 失敗（spec 06：UI、錯誤訊息、enum）。 */
-export const CORE_NAMESPACES = ["ui", "enums", "filters", "a11y", "errors", "ical"] as const;
+export const CORE_NAMESPACES = ["ui", "enums", "filters", "a11y", "errors", "ical", "about"] as const;
 /** 以 slug 為 key；缺翻譯 fallback 英文，只列入缺漏報告。 */
 export const LABEL_NAMESPACES = ["genres", "themes"] as const;
 export const NAMESPACES = [...CORE_NAMESPACES, ...LABEL_NAMESPACES] as const;
@@ -48,6 +51,7 @@ export const MESSAGES: Readonly<Record<Locale, LocaleMessages>> = {
     enums: zhEnums,
     filters: zhFilters,
     a11y: zhA11y,
+    about: zhAbout,
     errors: zhErrors,
     ical: zhIcal,
     genres: zhGenres,
@@ -58,6 +62,7 @@ export const MESSAGES: Readonly<Record<Locale, LocaleMessages>> = {
     enums: enEnums,
     filters: enFilters,
     a11y: enA11y,
+    about: enAbout,
     errors: enErrors,
     ical: enIcal,
     genres: enGenres,
@@ -68,6 +73,7 @@ export const MESSAGES: Readonly<Record<Locale, LocaleMessages>> = {
     enums: jaEnums,
     filters: jaFilters,
     a11y: jaA11y,
+    about: jaAbout,
     errors: jaErrors,
     ical: jaIcal,
     genres: jaGenres,

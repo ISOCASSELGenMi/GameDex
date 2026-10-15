@@ -5,7 +5,7 @@
 import type { ReactElement, ReactNode } from "react";
 import type { Locale } from "@sok/i18n";
 import { getTranslator } from "../labels";
-import { eventsHref, gamesBrowseHref, languageMenuLinks, localeHref, platformsHref, subscribeHref, type LocalPath } from "../links";
+import { aboutHref, eventsHref, gamesBrowseHref, languageMenuLinks, localeHref, platformsHref, subscribeHref, type LocalPath } from "../links";
 import { LanguageMenu } from "./language-menu";
 
 export interface PageShellProps {
@@ -83,6 +83,17 @@ export function SiteFooter({ locale }: { locale: Locale }): ReactElement {
             {t.t("ui.subscribe.footerLink")}
           </a>
         </p>
+        <nav aria-label={t.t("about.nav.label")}>
+          <ul className="flex flex-wrap gap-x-6">
+            {(["data-sources", "privacy", "terms", "contact"] as const).map((page) => (
+              <li key={page}>
+                <a href={aboutHref(locale, page)} className="inline-flex min-h-11 items-center underline">
+                  {t.t(`about.nav.${page === "data-sources" ? "dataSources" : page}`)}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
       </div>
     </footer>
   );

@@ -59,3 +59,78 @@ jobs:
       - run: npm -w apps/web run typecheck
       - run: npm -w apps/web run test:unit
       - run: npm -w apps/web run build
+
+  # Phase 9 準備：部署 image 與備份腳本驗證（16 §CI／CD）。不影響其他 job。
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: sok
+          POSTGRES_PASSWORD: sok_ci_password
+          POSTGRES_DB: sok_studio
+          POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C.UTF-8"
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U sok -d sok_studio" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgres://sok:sok_ci_password@localhost:5432/sok_studio
+      SITE_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+      - name: shellcheck（備份／還原腳本）
+        run: shellcheck -x infra/backup/*.sh
+      - name: compose 設定可解析
+        run: |
+          cd infra
+          cp .env.example .env
+          POSTGRES_PASSWORD=x SITE_DOMAIN=example.com docker compose config --quiet
+      - name: Caddyfile 可通過驗證（用拋棄式自簽憑證）
+        run: |
+          mkdir -p /tmp/certs
+          openssl req -x509 -newkey rsa:2048 -nodes -days 1 -subj "/CN=example.com"             -keyout /tmp/certs/origin.key -out /tmp/certs/origin.pem
+          chmod 644 /tmp/certs/origin.key
+          docker run --rm -e SITE_DOMAIN=example.com             -v "$PWD/infra/Caddyfile:/etc/caddy/Caddyfile:ro"             -v /tmp/certs:/etc/caddy/certs:ro             caddy:2-alpine caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+      - name: build web image
+        run: docker build -f apps/web/Dockerfile --build-arg NEXT_PUBLIC_SITE_URL="$SITE_URL" -t sok-web:ci .
+      - name: migration 與 seed（容器內）
+        run: |
+          docker run --rm --network host -e DATABASE_URL sok-web:ci npm run db:migrate
+          docker run --rm --network host -e DATABASE_URL sok-web:ci npm run db:seed
+      - name: 啟動 web
+        run: |
+          # IGDB 憑證用假值（catalog 的 requiredEnv 檢查）；關閉排程以免對外連線
+          docker run -d --name web --network host \
+            -e DATABASE_URL -e NEXT_PUBLIC_SITE_URL="$SITE_URL" \
+            -e IGDB_CLIENT_ID=ci -e IGDB_CLIENT_SECRET=ci -e SCHEDULER_ENABLED=false \
+            sok-web:ci
+          for i in $(seq 1 60); do
+            curl -fsS http://localhost:3000/readyz >/dev/null 2>&1 && break
+            sleep 2
+          done
+          curl -fsS http://localhost:3000/readyz
+      - name: smoke（空資料也要 200）
+        run: |
+          set -e
+          month="$(date -u +%Y-%m)"
+          check() { # $1=路徑 $2=body 必須包含的字串（可省略）
+            code="$(curl -sS -L -o /tmp/body -w '%{http_code}' "http://localhost:3000$1")"
+            echo "$code $1"
+            test "$code" = "200"
+            if [ -n "${2:-}" ]; then grep -q "$2" /tmp/body; fi
+          }
+          check /healthz
+          check /readyz
+          check "/zh-Hant/calendar/$month"
+          check /en/games
+          check /ical/zh-Hant/releases.ics BEGIN:VCALENDAR
+          # 容器以非 root 執行、HEALTHCHECK 通過
+          test "$(docker exec web id -u)" != "0"
+          for i in $(seq 1 12); do
+            s="$(docker inspect -f '{{.State.Health.Status}}' web)"; [ "$s" = healthy ] && break; sleep 5
+          done
+          test "$s" = healthy
+      - if: failure()
+        run: docker logs web --tail 200 || true

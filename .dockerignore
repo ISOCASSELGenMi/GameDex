@@ -1,0 +1,27 @@
+# docker build context = repo 根目錄（apps/web/Dockerfile）。只排除不該進 image 的東西。
+**/node_modules
+**/.next
+**/.next-*
+**/build
+**/out
+**/coverage
+**/*.tsbuildinfo
+**/next-env.d.ts
+.git
+.github
+.claude
+.local
+# 環境變數與金鑰絕不進 image（執行期由 compose env_file 注入）
+**/.env
+**/.env.*
+!**/.env.example
+**/*.pem
+**/*.key
+# 與執行無關（注意：e2e／test 不能排除——tsconfig 的 include 是 **/*.ts，next build 的型別檢查會讀到它們）
+docs
+infra
+**/playwright-report
+**/test-results
+**/*.log
+.DS_Store
+Thumbs.db

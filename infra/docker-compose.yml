@@ -1,0 +1,79 @@
+# SoK Game Calendar 正式環境（Oracle VM，16 §docker-compose）。
+# 用法：cd infra && cp .env.example .env（填入）&& docker compose up -d --build
+# 只有 caddy 對外（80／443）；postgres、web 只在 compose 內網（縱深防禦）。
+name: sok
+
+x-logging: &default-logging
+  driver: json-file
+  options: { max-size: "10m", max-file: "5" }   # 避免 log 填滿 VM 磁碟
+
+services:
+  postgres:
+    image: postgres:16            # Debian 版；alpine（musl）的中日文搜尋行為未測
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: sok
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD 未設定（infra/.env）}
+      POSTGRES_DB: sok_studio
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C.UTF-8"   # 不可用 C／POSIX（pg_trgm 對中日文失效）；只在第一次建立資料目錄時生效
+    volumes: [postgres_data:/var/lib/postgresql/data]
+    expose: ["5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sok -d sok_studio"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    logging: *default-logging
+
+  web:
+    build:
+      context: ..                              # repo 根目錄（workspaces 的 packages/ 要進來）
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-}
+        MODULES: ${MODULES:-}
+    restart: unless-stopped
+    init: true                                 # 轉送 SIGTERM、回收殭屍行程
+    env_file: .env
+    environment:
+      # 覆寫 .env 內的同名項目（密碼要 URL 安全，建議 openssl rand -hex 24）
+      DATABASE_URL: postgres://sok:${POSTGRES_PASSWORD}@postgres:5432/sok_studio
+      NODE_ENV: production
+    depends_on:
+      postgres: { condition: service_healthy }
+    expose: ["3000"]
+    logging: *default-logging
+    # 容器的 HEALTHCHECK 定義在 Dockerfile（/healthz）
+
+  # 反向代理＋TLS。選擇放進 compose 的理由：16 的架構圖把 Caddy 放在同一台 VM，
+  # 這樣 web 完全不需要發布埠，防火牆只需對外開 80／443。若之後改成 VM 上直接裝 Caddy，刪掉此 service 並讓 web 發布 127.0.0.1:3000 即可。
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN:?SITE_DOMAIN 未設定（infra/.env，例如 example.com，不含 https://）}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./caddy/certs:/etc/caddy/certs:ro      # Cloudflare Origin CA：origin.pem、origin.key（不進版控）
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [web]
+    logging: *default-logging
+
+  # Phase 8 才加（尚無程式）：
+  # discord-game-calendar:
+  #   build: { context: .., dockerfile: bots/discord-game-calendar/Dockerfile }
+  #   restart: unless-stopped
+  #   env_file: .env
+  #   environment: { SITE_API_BASE: "http://web:3000" }
+  #   depends_on: [web]
+  #
+  # 既有 TTS Bot 是獨立部署，不受本 compose 管理，不要動它。
+
+volumes:
+  postgres_data:
+  caddy_data:
+  caddy_config:

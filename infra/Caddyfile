@@ -1,0 +1,40 @@
+# 反向代理（16 §Caddy）。網域由環境變數 SITE_DOMAIN 帶入（compose 注入；正式網域未定）。
+# TLS 用 Cloudflare Origin CA 憑證（不向 Let's Encrypt 要），Cloudflare 設 Full (Strict)。
+# 憑證放 infra/caddy/certs/origin.pem、origin.key（掛載為唯讀，檔案不進版控）。
+
+{
+	# 只有 Cloudflare 的來源位址可以宣告真實客戶端 IP（見下方 trusted_proxies）。
+	servers {
+		trusted_proxies static 173.245.48.0/20 103.21.244.0/22 103.22.200.0/22 103.31.4.0/22 141.101.64.0/18 108.162.192.0/18 190.93.240.0/20 188.114.96.0/20 197.234.240.0/22 198.41.128.0/17 162.158.0.0/15 104.16.0.0/13 104.24.0.0/14 172.64.0.0/13 131.0.72.0/22 2400:cb00::/32 2606:4700::/32 2803:f800::/32 2405:b500::/32 2405:8100::/32 2a06:98c0::/29 2c0f:f248::/32
+		# 對受信任的來源，用 CF-Connecting-IP 當真實客戶端 IP；其他來源一律用 TCP 對端位址
+		client_ip_headers CF-Connecting-IP
+	}
+}
+
+{$SITE_DOMAIN}, www.{$SITE_DOMAIN} {
+	tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin.key
+
+	encode zstd gzip
+
+	# 內部端點只給 Bot 走 docker 內網（Bot 直連 web:3000，不經 Caddy）
+	@internal path /api/v1/discord-*
+	respond @internal 404
+
+	# 私人 iCal 網址含 token：不寫 access log（網址本身就是密碼）。公開 feed /ical/{locale}/* 照常記錄。
+	@icalu path /ical/u/*
+	log_skip @icalu
+
+	log {
+		output stdout
+		format json
+	}
+
+	reverse_proxy web:3000 {
+		# 應用程式（回報功能取 IP，見 catalog/api/reports.ts clientIpFromHeaders）信任 CF-Connecting-IP，所以由 Caddy 負責保證它可信：
+		# {client_ip} 在來源是 Cloudflare 時＝CF-Connecting-IP 的值；來源不是 Cloudflare（直連源站 IP）時＝TCP 對端位址，
+		# 外部帶來的偽造標頭會被這幾行整個覆寫掉。
+		header_up CF-Connecting-IP {client_ip}
+		header_up X-Forwarded-For {client_ip}
+		header_up X-Real-IP {client_ip}
+	}
+}

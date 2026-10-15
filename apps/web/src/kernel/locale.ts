@@ -49,6 +49,7 @@ export function pickRequestLocale(
  * 像語系代碼但不支援的（例如 `/fr/...`、`/ja/...` 在 ja 未開放時）不導向，交給 [locale] 版面回 404。
  */
 const SITE_ROUTE_ROOTS = new Set([
+  "about",
   "calendar",
   "timeline",
   "games",
