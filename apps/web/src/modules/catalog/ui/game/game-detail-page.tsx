@@ -21,7 +21,7 @@ import { CATALOG_TAG, STATIC_SHELL_SLUG } from "../seo/cache-tags";
 import { breadcrumbJsonLd, gameJsonLd } from "../seo/json-ld";
 import { JsonLdScript } from "../seo/json-ld-script";
 import { siteOrigin } from "../seo/site-url";
-import { rethrowForPage } from "../page-errors";
+import { rethrowForPage, timeoutMarkerOrRethrow, unwrapCachedForPage, type CachedTimeout } from "../page-errors";
 import { gameNameLang } from "../name-lang";
 import { releaseHistoryText } from "../release-history";
 import { reportHref } from "../report/links";
@@ -47,13 +47,21 @@ export interface GameDetailPageProps {
  * 所以兩個語系各有自己的條目、不會互相污染。例外不快取（逾時等錯誤會原樣往外丟，由外層轉成頁面錯誤）。
  * 找不到（軟 404）只快取一下下，避免爬蟲掃不存在的 slug 每次都打 DB。
  */
-async function readGameDetailCached(slug: string, locale: Locale): Promise<GameDetail | null> {
+async function readGameDetailCached(slug: string, locale: Locale): Promise<GameDetail | null | CachedTimeout> {
   "use cache";
   if (slug === STATIC_SHELL_SLUG) {
     cacheLife("catalogMiss");
     return null;
   }
-  const game = await getGameDetail({ slug: safeDecode(slug), locale });
+  let game: GameDetail | null;
+  try {
+    game = await getGameDetail({ slug: safeDecode(slug), locale });
+  } catch (err) {
+    // 逾時要在快取邊界內攔下（跨過邊界後型別會遺失，見 page-errors.ts）；其他錯誤原樣丟出
+    const marker = timeoutMarkerOrRethrow(err);
+    cacheLife("seconds");
+    return marker;
+  }
   if (game) {
     cacheLife("catalogDetail");
     cacheTag(CATALOG_TAG, `${CATALOG_TAG}:game`, `${CATALOG_TAG}:game:${game.slug}`);
@@ -66,7 +74,7 @@ async function readGameDetailCached(slug: string, locale: Locale): Promise<GameD
 /** generateMetadata 與頁面共用（React cache：同一請求只呼叫一次）；找不到回 null。 */
 export const loadGameDetail = cache(async (slug: string, locale: Locale): Promise<GameDetail | null> => {
   try {
-    return await readGameDetailCached(slug, locale);
+    return unwrapCachedForPage(await readGameDetailCached(slug, locale));
   } catch (err) {
     rethrowForPage(err);
   }

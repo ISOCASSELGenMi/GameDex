@@ -12,6 +12,7 @@ import { connection } from "next/server";
 import type { SitemapCounts } from "../../domain/entities";
 import { isCatalogQueryTimeoutError } from "../../domain/entities/read-errors";
 import { getSitemapCounts, listSitemapEntries, listSitemapSmall } from "../../use-cases/read/sitemap";
+import { QueryTimeoutPageError, timeoutMarkerOrRethrow, unwrapCachedForPage, type CachedTimeout } from "../page-errors";
 import { siteOrigin } from "./site-url";
 import type { SeoLocaleConfig } from "./metadata";
 import {
@@ -31,10 +32,22 @@ const XML_HEADERS = {
 };
 const NOT_FOUND_HEADERS = { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, s-maxage=60" };
 
-async function readCounts(): Promise<SitemapCounts> {
+async function readCountsCached(): Promise<SitemapCounts | CachedTimeout> {
   "use cache";
-  cacheLife("catalogSitemap");
-  return getSitemapCounts();
+  try {
+    const counts = await getSitemapCounts();
+    cacheLife("catalogSitemap");
+    return counts;
+  } catch (err) {
+    // 逾時要在快取邊界內攔下（跨過邊界後型別會遺失，見 page-errors.ts）；failure() 再轉成 503
+    const marker = timeoutMarkerOrRethrow(err);
+    cacheLife("seconds");
+    return marker;
+  }
+}
+
+async function readCounts(): Promise<SitemapCounts> {
+  return unwrapCachedForPage(await readCountsCached());
 }
 
 function originOf(request: Request): string {
@@ -42,7 +55,7 @@ function originOf(request: Request): string {
 }
 
 function failure(err: unknown): Response {
-  if (isCatalogQueryTimeoutError(err)) {
+  if (isCatalogQueryTimeoutError(err) || err instanceof QueryTimeoutPageError) {
     return new Response("temporarily unavailable", {
       status: 503,
       headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store", "Retry-After": "60" },

@@ -1,0 +1,10 @@
+# 預設：文字檔由 git 判斷並正規化（索引一律 LF）
+* text=auto
+
+# 容器與 VM（Linux）上 CRLF 會壞：一律 LF，工作目錄也不轉成 CRLF
+*.sh text eol=lf
+Dockerfile text eol=lf
+Caddyfile text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+crontab.example text eol=lf
