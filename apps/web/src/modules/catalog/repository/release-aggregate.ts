@@ -66,6 +66,16 @@ export interface AggregateReleasesInput {
   rangeColumn?: AggregateRangeColumn;
   /** 「今天」（UTC 日期），`filter.releaseStates` 判斷 upcoming／released 用；未給＝執行當下的 UTC 日期。 */
   today?: IsoDate;
+  /**
+   * Phase 5（iCal）：整個取代 from／to／precisions 的區間條件（候選鍵階段用別名 `r`、挑完之後用 `p`）。
+   * 公開 feed 的視窗（90 天視窗、60 天內改期、tbd／取消過渡期）無法用單一日期區間表達。未給＝沿用 from／to／precisions。
+   */
+  windowSql?: (alias: "r" | "p") => SQL;
+  /**
+   * Phase 5（iCal）：挑選時未取消（status ≠ cancelled）的列優先於 cancelled 列（排在「來源仍存在」之後）。
+   * 預設 false＝既有行為（月曆等預設 statuses 不含 cancelled，本來就沒有差別）。
+   */
+  preferLiveStatus?: boolean;
 }
 
 export type AggregateRangeColumn = "release_date" | "period_start";
@@ -139,6 +149,112 @@ export function delayedHistoryCondition(alias: string): SQL {
  * 這是聚合規則的唯一實作。
  */
 export function buildAggregateCardsQuery(input: Omit<AggregateReleasesInput, "resolveImage" | "limit">): SQL {
+  const { ctes, pickedConds } = buildAggregateCtes(input);
+  return sql`
+    WITH ${ctes}
+    SELECT
+      p.game_id,
+      g.slug,
+      COALESCE(NULLIF(g.display_names ->> ${input.locale}, ''), g.name) AS name,
+      g.name AS original_name,
+      g.cover_url,
+      p.release_date::text AS release_date,
+      MIN(p.period_start)::text AS period_start,
+      p.precision,
+      p.release_stage,
+      CASE
+        WHEN bool_or(p.status = 'delayed') THEN 'delayed'
+        WHEN bool_or(p.status = 'scheduled') THEN 'scheduled'
+        WHEN bool_or(p.status = 'released') THEN 'released'
+        ELSE 'cancelled'
+      END AS status,
+      CASE WHEN bool_and(p.source_status = 'removed') THEN 'removed' ELSE 'active' END AS source_status,
+      jsonb_agg(
+        jsonb_build_object('slug', pl.slug, 'name', pl.name, 'abbreviation', pl.abbreviation, 'kind', pl.kind)
+        ORDER BY pl.name, pl.id
+      ) AS platforms,
+      array_agg(p.id ORDER BY pl.name, pl.id) AS release_event_ids,
+      g.popularity_score,
+      g.heat_level,
+      COALESCE(g.game_type, 'main_game') AS game_type,
+      g.game_status,
+      bool_or(p.has_history) AS has_date_history
+    FROM picked p
+    JOIN games g ON g.id = p.game_id
+    JOIN platforms pl ON pl.id = p.platform_id
+    WHERE ${sql.join(pickedConds, sql` AND `)}
+    GROUP BY p.game_id, p.release_date, p.precision, p.release_stage, g.id
+  `;
+}
+
+/**
+ * Phase 5（iCal）：每個 (遊戲, 平台, 階段) 挑出的那一列，**不**按日期合併平台（iCal 的 UID 粒度是 (遊戲, 平台, 階段)，08）。
+ * 和卡片查詢共用同一組 `keys`／`picked` CTE，所以挑選規則只有一份。
+ * 輸出欄位見 AggregatePickRow。`sequence_sum`＝這個鍵**全部**上市列（含其他地區、removed）的 sequence 總和——
+ * 不受篩選影響，所以來源切換（manual 被 IGDB 覆蓋，igdb sequence ≥ manual + 1）時不倒退；
+ * `group_updated_at`＝同一組列 updated_at 的最大值（DTSTAMP／LAST-MODIFIED／ETag 用）。
+ */
+export function buildAggregatePicksQuery(input: Omit<AggregateReleasesInput, "resolveImage" | "limit">): SQL {
+  const { ctes, pickedConds } = buildAggregateCtes(input);
+  return sql`
+    WITH ${ctes}
+    SELECT
+      p.id AS release_event_id,
+      p.game_id,
+      g.slug AS game_slug,
+      COALESCE(NULLIF(g.display_names ->> ${input.locale}, ''), g.name) AS name,
+      g.name AS original_name,
+      g.popularity_score,
+      p.platform_id,
+      pl.slug AS platform_slug,
+      pl.name AS platform_name,
+      pl.abbreviation AS platform_abbreviation,
+      rg.code AS region_code,
+      p.release_stage,
+      p.release_date::text AS release_date,
+      p.period_start::text AS period_start,
+      p.precision,
+      p.status,
+      p.source_status,
+      grp.sequence_sum,
+      grp.group_updated_at
+    FROM picked p
+    JOIN games g ON g.id = p.game_id
+    JOIN platforms pl ON pl.id = p.platform_id
+    JOIN regions rg ON rg.id = p.region_id
+    CROSS JOIN LATERAL (
+      SELECT COALESCE(SUM(x.sequence), 0)::int AS sequence_sum, MAX(x.updated_at) AS group_updated_at
+      FROM release_events x
+      WHERE x.game_id = p.game_id AND x.platform_id = p.platform_id AND x.release_stage = p.release_stage
+    ) grp
+    WHERE ${sql.join(pickedConds, sql` AND `)}
+  `;
+}
+
+export interface AggregatePickRow extends Record<string, unknown> {
+  release_event_id: number;
+  game_id: number;
+  game_slug: string;
+  name: string;
+  original_name: string;
+  popularity_score: number;
+  platform_id: number;
+  platform_slug: string;
+  platform_name: string;
+  platform_abbreviation: string | null;
+  region_code: RegionCode;
+  release_stage: ReleaseStage;
+  release_date: string | null;
+  period_start: string | null;
+  precision: DatePrecision;
+  status: ReleaseStatus;
+  source_status: SourceStatus;
+  sequence_sum: number;
+  group_updated_at: Date | string | null;
+}
+
+/** `keys`＋`picked` 兩個 CTE（聚合規則本體）與挑完之後套用的條件。卡片查詢與逐列查詢共用。 */
+function buildAggregateCtes(input: Omit<AggregateReleasesInput, "resolveImage" | "limit">): { ctes: SQL; pickedConds: SQL[] } {
   const f = input.filter;
   const rangeCol = sql.raw(input.rangeColumn === "period_start" ? "period_start" : "release_date");
   const today = input.today ?? utcToday();
@@ -154,6 +270,7 @@ export function buildAggregateCardsQuery(input: Omit<AggregateReleasesInput, "re
 
   // 區間＋精度：先用來找候選鍵，挑完再套一次（alias r＝原始列、p＝挑出的列）
   const range = (alias: "r" | "p") => {
+    if (input.windowSql) return input.windowSql(alias);
     const a = sql.raw(alias);
     const parts: SQL[] = [];
     if (dated.length > 0) {
@@ -220,8 +337,8 @@ export function buildAggregateCardsQuery(input: Omit<AggregateReleasesInput, "re
     pickedConds.push(sql`(${sql.join(states, sql` OR `)})`);
   }
 
-  return sql`
-    WITH keys AS (
+  const ctes = sql`
+    keys AS (
       SELECT DISTINCT r.game_id, r.platform_id, r.release_stage
       FROM release_events r
       JOIN games g ON g.id = r.game_id
@@ -231,7 +348,7 @@ export function buildAggregateCardsQuery(input: Omit<AggregateReleasesInput, "re
     picked AS (
       SELECT DISTINCT ON (r.game_id, r.platform_id, r.release_stage)
         r.id, r.game_id, r.platform_id, r.release_stage, r.release_date, r.period_start,
-        r.precision, r.status, r.source_status,
+        r.precision, r.status, r.source_status, r.region_id, r.sequence, r.updated_at,
         EXISTS (SELECT 1 FROM release_date_history hh WHERE hh.release_event_id = r.id) AS has_history
       FROM keys k
       JOIN release_events r
@@ -240,6 +357,7 @@ export function buildAggregateCardsQuery(input: Omit<AggregateReleasesInput, "re
       WHERE ${sql.join(rowConds, sql` AND `)}
       ORDER BY r.game_id, r.platform_id, r.release_stage,
         (r.source_status = 'active') DESC,
+        ${input.preferLiveStatus ? sql`(r.status <> 'cancelled') DESC,` : sql``}
         (COALESCE(r.source, 'igdb') = 'manual') DESC,
         (r.precision <> 'tbd' AND r.release_date IS NOT NULL) DESC,
         (rg.code = ${input.regionPref}) DESC,
@@ -247,39 +365,8 @@ export function buildAggregateCardsQuery(input: Omit<AggregateReleasesInput, "re
         r.release_date ASC NULLS LAST,
         r.id ASC
     )
-    SELECT
-      p.game_id,
-      g.slug,
-      COALESCE(NULLIF(g.display_names ->> ${input.locale}, ''), g.name) AS name,
-      g.name AS original_name,
-      g.cover_url,
-      p.release_date::text AS release_date,
-      MIN(p.period_start)::text AS period_start,
-      p.precision,
-      p.release_stage,
-      CASE
-        WHEN bool_or(p.status = 'delayed') THEN 'delayed'
-        WHEN bool_or(p.status = 'scheduled') THEN 'scheduled'
-        WHEN bool_or(p.status = 'released') THEN 'released'
-        ELSE 'cancelled'
-      END AS status,
-      CASE WHEN bool_and(p.source_status = 'removed') THEN 'removed' ELSE 'active' END AS source_status,
-      jsonb_agg(
-        jsonb_build_object('slug', pl.slug, 'name', pl.name, 'abbreviation', pl.abbreviation, 'kind', pl.kind)
-        ORDER BY pl.name, pl.id
-      ) AS platforms,
-      array_agg(p.id ORDER BY pl.name, pl.id) AS release_event_ids,
-      g.popularity_score,
-      g.heat_level,
-      COALESCE(g.game_type, 'main_game') AS game_type,
-      g.game_status,
-      bool_or(p.has_history) AS has_date_history
-    FROM picked p
-    JOIN games g ON g.id = p.game_id
-    JOIN platforms pl ON pl.id = p.platform_id
-    WHERE ${sql.join(pickedConds, sql` AND `)}
-    GROUP BY p.game_id, p.release_date, p.precision, p.release_stage, g.id
   `;
+  return { ctes, pickedConds };
 }
 
 function toCard(r: CardRow, resolveImage: ImageResolver): ReleaseCard {

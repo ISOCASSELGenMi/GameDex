@@ -5,7 +5,7 @@
 import type { ReactElement, ReactNode } from "react";
 import type { Locale } from "@sok/i18n";
 import { getTranslator } from "../labels";
-import { eventsHref, gamesBrowseHref, languageMenuLinks, localeHref, platformsHref, type LocalPath } from "../links";
+import { eventsHref, gamesBrowseHref, languageMenuLinks, localeHref, platformsHref, subscribeHref, type LocalPath } from "../links";
 import { LanguageMenu } from "./language-menu";
 
 export interface PageShellProps {
@@ -72,10 +72,15 @@ export function SiteFooter({ locale }: { locale: Locale }): ReactElement {
   const t = getTranslator(locale);
   return (
     <footer className="border-t border-[var(--border)] px-4 py-4 text-sm text-[var(--muted)]">
-      <div className="mx-auto max-w-screen-2xl">
+      <div className="mx-auto flex max-w-screen-2xl flex-wrap items-center gap-x-6 gap-y-1">
         <p>
           <a href="https://www.igdb.com/" lang="en" className="underline" rel="noopener noreferrer">
             {t.t("ui.footer.dataAttribution")}
+          </a>
+        </p>
+        <p>
+          <a href={subscribeHref(locale)} className="inline-flex min-h-11 items-center underline">
+            {t.t("ui.subscribe.footerLink")}
           </a>
         </p>
       </div>

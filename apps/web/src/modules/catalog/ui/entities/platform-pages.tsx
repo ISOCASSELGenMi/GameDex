@@ -11,7 +11,7 @@ import { getPlatformPage } from "../../use-cases/read/get-platform-page";
 import { listPlatforms } from "../../use-cases/read/list-platforms";
 import { getTranslator, platformKindLabel, regionLabel } from "../labels";
 import { PageShell } from "../layout/page-shell";
-import { platformHref, platformsHref } from "../links";
+import { platformHref, platformsHref, subscribeHref } from "../links";
 import { reportHref } from "../report/links";
 import { rethrowForPage } from "../page-errors";
 import { EntityGameList, EntityLogo, LinkTabs, Pager } from "./shared";
@@ -188,7 +188,10 @@ export async function PlatformDetailPage({
           </div>
         ))}
       </dl>
-      <p className="mt-2">
+      <p className="mt-2 flex flex-wrap gap-x-6">
+        <a className="link inline-flex min-h-11 items-center" href={`${subscribeHref(locale)}?platform=${encodeURIComponent(p.slug)}#feed-platform`} data-action="subscribe-platform">
+          {t.t("ui.platforms.subscribeFeed")}
+        </a>
         <a className="link inline-flex min-h-11 items-center" href={reportHref(locale, { kind: "platform", slug: p.slug })} rel="nofollow">
           {t.t("ui.report.entry.platform")}
         </a>

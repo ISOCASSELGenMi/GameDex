@@ -55,6 +55,10 @@ export const coreEnvSchema = z.object({
   /** admin 模組的 /internal/* Basic auth（12）；未設＝整個 /internal 回 404。 */
   ADMIN_BASIC_AUTH_USER: z.preprocess(emptyToUndefined, z.string().optional()),
   ADMIN_BASIC_AUTH_PASS: z.preprocess(emptyToUndefined, z.string().optional()),
+  /** 公開 iCal feed 事件上限（08、16）：releases.ics 依熱度取前 N 筆；起始值 500，依實測調整。 */
+  ICAL_PUBLIC_MAX_EVENTS: z.preprocess(emptyToUndefined, z.coerce.number().int().min(1).max(100000).default(500)),
+  /** 原型驗證用 feed（/ical/_proto/*，08、15 Phase 5）；只在本機／暫時性公開網址驗證客戶端行為時開啟，預設 false＝404。 */
+  ICAL_PROTO_ENABLED: bool("false"),
   /** 熱度（03 §熱度、16）：站內追蹤權重達滿所需的全站追蹤總數（未驗證的起始值）。 */
   HEAT_COLD_START_FOLLOWS: z.preprocess(emptyToUndefined, z.coerce.number().int().min(1).default(5000)),
 });

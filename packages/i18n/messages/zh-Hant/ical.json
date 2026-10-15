@@ -1,0 +1,39 @@
+{
+  "calendarName": {
+    "releases": "SoK 遊戲月曆：即將上市",
+    "events": "SoK 遊戲月曆：遊戲活動",
+    "platform": "SoK 遊戲月曆：{platform}",
+    "game": "{game}"
+  },
+  "calendarDescription": {
+    "releases": "近期即將上市的遊戲，延期、取消與日期更新會自動反映在這個行事曆。",
+    "events": "發表會、展會與頒獎典禮的時間表。",
+    "platform": "{platform} 近期即將上市的遊戲。",
+    "game": "{game} 的上市日期。"
+  },
+  "mark": {
+    "provisional": "[暫定]",
+    "provisionalLabel": "[暫定 {label}]",
+    "postponed": "[延期・日期未定]",
+    "cancelled": "[已取消]"
+  },
+  "summaryDetail": "（{text}）",
+  "description": {
+    "platform": "平台：{value}",
+    "region": "地區：{value}",
+    "stage": "階段：{value}",
+    "status": "狀態：{value}",
+    "kind": "類型：{value}",
+    "organizer": "主辦：{value}",
+    "stream": "直播：{value}",
+    "detail": "詳細資料：{value}",
+    "attribution": "資料來源：IGDB.com",
+    "note": {
+      "month": "上市日期只確定到月份。",
+      "quarter": "上市日期只確定到季度，這裡標在該季的最後一天。",
+      "year": "上市日期只確定到年份，這裡標在該年的最後一天。",
+      "postponed": "原定日期已延期，新日期尚未公布；這裡保留原本的位置。",
+      "cancelled": "這個項目已取消。"
+    }
+  }
+}
