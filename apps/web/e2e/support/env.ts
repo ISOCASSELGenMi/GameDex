@@ -13,6 +13,13 @@ export const E2E_SITE_ORIGIN = "https://sok.example";
 export const E2E_PORT = Number(process.env.E2E_PORT || 3200);
 export const E2E_BASE_URL = `http://localhost:${E2E_PORT}`;
 
+/** admin 模組 /internal/* 的 Basic auth（reports-4.spec.ts 用；只存在於 e2e 伺服器的環境變數）。 */
+export const E2E_ADMIN_USER = "e2e-admin";
+export const E2E_ADMIN_PASS = "e2e-admin-pass";
+/** Cloudflare Turnstile 官方測試金鑰（永遠通過；12）。伺服器端驗證會連到 Cloudflare 的 siteverify。 */
+export const E2E_TURNSTILE_SITE_KEY = "1x00000000000000000000AA";
+export const E2E_TURNSTILE_SECRET_KEY = "1x0000000000000000000000000000000AA";
+
 /** apps/web 目錄（Playwright 與 tsx 都以它為 cwd 執行）。 */
 export const WEB_DIR = path.resolve(__dirname, "..", "..");
 
@@ -55,6 +62,13 @@ export function serverEnv(): NodeJS.ProcessEnv {
     // catalog manifest 把 IGDB 憑證列為 requiredEnv；排程關閉時不會呼叫 IGDB，用假值通過啟動檢查
     IGDB_CLIENT_ID: "e2e-dummy",
     IGDB_CLIENT_SECRET: "e2e-dummy",
+    // 資料更正回報與管理介面（Phase 4 Slice 2）：e2e 專用的帳密與測試金鑰；上限放寬（所有請求都來自同一個 IP）
+    ADMIN_BASIC_AUTH_USER: E2E_ADMIN_USER,
+    ADMIN_BASIC_AUTH_PASS: E2E_ADMIN_PASS,
+    TURNSTILE_SITE_KEY: E2E_TURNSTILE_SITE_KEY,
+    TURNSTILE_SECRET_KEY: E2E_TURNSTILE_SECRET_KEY,
+    REPORT_IP_HASH_SECRET: "e2e-report-ip-hash-secret-0123456789",
+    REPORT_MAX_PER_IP_PER_DAY: "500",
     NEXT_DIST_DIR: E2E_DIST_DIR,
     NEXT_TELEMETRY_DISABLED: "1",
     PORT: String(E2E_PORT),

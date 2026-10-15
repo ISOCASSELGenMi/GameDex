@@ -18,3 +18,5 @@ export { getTimeline, expandTimelineGroup, getReleaseDateHistory, type GetTimeli
 export { browseGames, type BrowseGamesInput } from "./browse-games";
 // Phase 3.5：sitemap
 export { getSitemapCounts, listSitemapEntries, listSitemapSmall, type ListSitemapShardInput } from "./sitemap";
+// Phase 4：評分顯示設定（環境變數驗證）
+export { getRatingDisplayConfig, validateRatingDisplayEnv } from "./rating-config";

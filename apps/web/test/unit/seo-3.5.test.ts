@@ -159,6 +159,7 @@ const baseGame = {
   summary: "A game.",
   cover: { original: "o", small: "s", medium: "m", large: "https://img.example/l.jpg", resized: false },
   trailerUrl: null,
+  ratings: [],
   firstReleaseDate: "2019-08-27",
   firstReleasePrecision: "day",
   platforms: [{ slug: "ps5", name: "PlayStation 5", abbreviation: "PS5", kind: "console" }],

@@ -18,6 +18,7 @@ import { EventIcon, ExternalIcon } from "../icons";
 import { eventKindLabel, getTranslator } from "../labels";
 import { PageShell } from "../layout/page-shell";
 import { eventHref, eventsHref } from "../links";
+import { reportHref } from "../report/links";
 import { rethrowForPage } from "../page-errors";
 import { CATALOG_TAG, STATIC_SHELL_SLUG } from "../seo/cache-tags";
 import { breadcrumbJsonLd, eventJsonLd } from "../seo/json-ld";
@@ -268,6 +269,11 @@ export async function EventDetailPage({
             {site ? external(site, t.t("ui.events.officialSite")) : null}
           </p>
         ) : null}
+        <p className="mt-2">
+          <a className="link inline-flex min-h-11 items-center" href={reportHref(locale, { kind: "event", slug: ev.slug })} rel="nofollow">
+            {t.t("ui.report.entry.event")}
+          </a>
+        </p>
         {ev.description ? (
           <section className="mt-4" aria-labelledby="ev-desc">
             <h2 id="ev-desc" className="text-xl font-semibold">

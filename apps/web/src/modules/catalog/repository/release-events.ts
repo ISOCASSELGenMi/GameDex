@@ -83,9 +83,10 @@ export async function upsertReleaseEvent(
     const existing = await findReleaseEventByKey(input, source, tx);
 
     if (!existing) {
+      const { minSequence, ...values } = input;
       const [created] = await tx
         .insert(releaseEvents)
-        .values({ ...input, source })
+        .values({ ...values, source, ...(minSequence !== undefined ? { sequence: minSequence } : {}) })
         .returning();
       await appendChange(tx, {
         entityType: "release_event",
@@ -118,7 +119,10 @@ export async function upsertReleaseEvent(
         status: input.status,
         sourceStatus,
         ...(input.sourceUpdatedAt !== undefined ? { sourceUpdatedAt: input.sourceUpdatedAt } : {}),
-        sequence: dateChanged || statusChanged ? existing.sequence + 1 : existing.sequence,
+        sequence:
+          dateChanged || statusChanged
+            ? Math.max(existing.sequence + 1, input.minSequence ?? 0)
+            : existing.sequence,
       })
       .where(eq(releaseEvents.id, existing.id))
       .returning();

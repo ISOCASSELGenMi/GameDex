@@ -1,6 +1,7 @@
 import { getCoreEnv } from "@/kernel/config/env";
 import { describeModules, validateModules } from "@/kernel/modules/startup";
 import { startScheduler } from "@/kernel/scheduler";
+import { validateRatingDisplayEnv } from "@/modules/catalog";
 import { enabledModules } from "@/modules/registry";
 
 /**
@@ -11,6 +12,7 @@ export async function bootstrap(): Promise<void> {
   const env = getCoreEnv();
   const modules = enabledModules();
   validateModules(modules);
+  validateRatingDisplayEnv(env); // 評分來源名稱拼字（05）：未知名稱 → 拒絕啟動
   console.log(describeModules(modules));
   if (env.SCHEDULER_ENABLED) {
     startScheduler(modules);

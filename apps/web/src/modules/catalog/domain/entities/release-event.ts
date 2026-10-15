@@ -32,7 +32,13 @@ export interface ReleaseEventKey {
 
 export type ReleaseEventInput = ReleaseEventKey &
   Pick<ReleaseEvent, "releaseDate" | "periodStart" | "precision" | "status"> &
-  Partial<Pick<ReleaseEvent, "sourceStatus" | "source" | "sourceUpdatedAt">>;
+  Partial<Pick<ReleaseEvent, "sourceStatus" | "source" | "sourceUpdatedAt">> & {
+    /**
+     * 寫入後 sequence 至少要有這個值（回報核可：新的 manual 列必須大於同鍵 igdb 列的 sequence，12）。
+     * 新增時 sequence＝minSequence；更新且日期／status 有變時 sequence＝max(舊值+1, minSequence)。省略＝照原規則。
+     */
+    minSequence?: number;
+  };
 
 /** upsert 的結果，供 Use Case 判斷（例如統計、log）。 */
 export type ReleaseEventUpsertResult =

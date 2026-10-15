@@ -32,7 +32,7 @@
     "listSeparator": "、"
   },
   "releaseLabel": {
-    "quarter": "{year}年第{quarter}四半期",
+    "quarter": "{year}年第{quarter}シーズン",
     "year": "{year}年",
     "tbd": "発売日未定"
   },
@@ -43,7 +43,7 @@
     "today": "今日",
     "thisMonth": "今月",
     "undatedThisMonth": "今月の日付未定",
-    "undatedDescription": "発売日が月・四半期・年までしか決まっていないゲーム",
+    "undatedDescription": "発売日が月・シーズン・年までしか決まっていないゲーム",
     "moreItems": "＋{count}件",
     "gamesCount": "{count}本のゲーム",
     "noReleases": "今月は条件に一致するゲームがありません",
@@ -54,7 +54,7 @@
     "viewGame": "ゲームの詳細を見る",
     "undatedGroups": {
       "month": "月のみ確定",
-      "quarter": "四半期のみ確定",
+      "quarter": "シーズンのみ確定",
       "year": "年のみ確定"
     },
     "undatedEmpty": "今月は日付未定のゲームはありません",
@@ -91,6 +91,28 @@
     "releaseHistory": "延期の履歴",
     "previouslyAnnounced": "以前の発表：{date}",
     "noRatings": "評価はまだありません",
+    "rating": {
+      "line": "{source} {score}／{max}（{reviews}）",
+      "lineNoCount": "{source} {score}／{max}",
+      "reviewsOne": "レビュー{count}件",
+      "reviewsOther": "レビュー{count}件",
+      "settings": "表示する評価の提供元",
+      "settingsHint": "この設定はこのブラウザーにのみ保存されます。",
+      "none": "選択した提供元には、このゲームの評価がありません。",
+      "provider": {
+        "igdb": "IGDB",
+        "metacritic_scrape": "Metascore"
+      },
+      "label": {
+        "igdb": {
+          "critic_aggregate": "IGDB"
+        },
+        "metacritic_scrape": {
+          "metascore": "Metascore",
+          "user_score": "Metacritic ユーザースコア"
+        }
+      }
+    },
     "reportError": "データの誤りを報告",
     "brokenLink": "リンクが無効になっている可能性があります",
     "originalName": "原題",
@@ -236,7 +258,7 @@
     "recent": "最近発売",
     "sortDate": "発売日",
     "sortPopularity": "注目度",
-    "upcomingHint": "このプラットフォームで発売予定のゲームを近い順に表示します。月のみ確定のゲームはその月の1日として並べ（その月の先頭）、四半期・年のみ確定のゲームはその期間の最後に並べます。",
+    "upcomingHint": "このプラットフォームで発売予定のゲームを近い順に表示します。月のみ確定のゲームはその月の1日として並べ（その月の先頭）、シーズン・年のみ確定のゲームはその期間の最後に並べます。",
     "recentHint": "直近90日以内にこのプラットフォームで発売されたゲームです。",
     "emptyUpcoming": "このプラットフォームには発売予定のゲームがありません",
     "emptyRecent": "このプラットフォームには最近発売されたゲームがありません"
@@ -299,5 +321,79 @@
     "nextPage": "次のページ",
     "page": "{page}ページ目",
     "shownOnPage": "このページ{count}件"
+  },
+  "report": {
+    "title": "データの誤りを報告",
+    "intro": "データの修正にご協力ありがとうございます。確認できる情報源を添えてください。審査を通過した場合のみ反映されます。",
+    "privacy": "個人情報（氏名、メールアドレス、電話番号など）は入力しないでください。",
+    "target": "報告の対象",
+    "entry": {
+      "column": "報告",
+      "row": "データの誤りを報告",
+      "rowFor": "データの誤りを報告：{platform}／{region}",
+      "addRegion": "お住まいの地域の発売日を追加",
+      "addLanguage": "言語対応の情報を追加",
+      "platform": "このプラットフォームの誤りを報告",
+      "event": "このイベントの誤りを報告"
+    },
+    "type": {
+      "wrong_date": "発売日の誤り",
+      "missing_region_date": "地域別の発売日を追加",
+      "wrong_stage": "リリース段階の誤り",
+      "language_support": "言語対応の誤り・不足",
+      "cancelled": "中止・開発中止",
+      "duplicate": "重複したデータ",
+      "takedown": "削除・著作権に関する申請",
+      "other": "その他"
+    },
+    "targetType": {
+      "release_event": "発売日",
+      "game": "ゲーム",
+      "platform": "プラットフォーム",
+      "event": "イベント"
+    },
+    "field": {
+      "type": "報告の種類",
+      "platform": "プラットフォーム",
+      "region": "地域",
+      "date": "日付",
+      "precision": "日付の精度",
+      "stage": "リリース段階",
+      "language": "言語",
+      "supportType": "対応の種類",
+      "sourceUrl": "情報源のURL",
+      "note": "補足説明",
+      "captcha": "人間であることの確認"
+    },
+    "hint": {
+      "sourceUrl": "公式発表、ストアのページ、信頼できるメディアへのリンク（http または https）。",
+      "sourceUrlRequired": "日付に関する報告には情報源のURLが必要です。",
+      "date": "精度が月・シーズン・年の場合は、その期間内の任意の日を入力してください。",
+      "stage": "不明な場合は「未設定」を選んでください。",
+      "takedown": "削除・著作権に関する申請はサイト運営者にのみ通知され、公開されません。対象と理由を補足説明に書いてください。",
+      "currentValue": "現在の表示：{value}",
+      "choose": "選択してください",
+      "note": "{max}文字まで。"
+    },
+    "submit": "報告を送信",
+    "submitting": "送信中…",
+    "success": {
+      "title": "報告を受け付けました",
+      "body": "ご協力ありがとうございます。審査後にデータが更新されます。",
+      "backTo": "「{name}」に戻る"
+    },
+    "errors": {
+      "summary": "次の項目を修正してから送信してください。",
+      "required": "この項目は必須です",
+      "invalid": "形式が正しくないか、存在しません",
+      "tooLong": "長すぎます",
+      "rateLimited": "本日の報告が多すぎます。明日もう一度お試しください。",
+      "captchaFailed": "人間であることの確認に失敗しました。もう一度確認してから送信してください。",
+      "captchaMissing": "先に人間であることの確認を完了してください。",
+      "unavailable": "サービスを一時的にご利用いただけません。しばらくしてからお試しください。",
+      "network": "接続できません。ネットワークを確認してもう一度お試しください。",
+      "generic": "送信に失敗しました。しばらくしてからお試しください。"
+    },
+    "captchaLoading": "確認機能を読み込み中…"
   }
 }

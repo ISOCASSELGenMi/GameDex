@@ -49,3 +49,13 @@ export const FIXTURE_3B = {
   /** 瀏覽頁：fixture 遊戲總數遠大於 24（一頁），才有下一頁。 */
   browsePageSize: 24,
 } as const;
+
+/**
+ * Phase 4（評分）：hero 有 IGDB 分數；month-precision 只有 score=NULL 的列；Aurora Prequel 完全沒有列。
+ * 兩款「無分數」的遊戲都不該顯示評分區。
+ */
+export const FIXTURE_4 = {
+  rated: { slug: "e2e-aurora-odyssey", score: 82, reviewCount: 12 },
+  nullRow: { slug: "e2e-month-precision" },
+  noRow: { slug: "e2e-aurora-prequel" },
+} as const;

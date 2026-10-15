@@ -11,7 +11,7 @@ export interface GetGameDetailInput {
 }
 
 /**
- * 遊戲詳情（06 §遊戲詳情頁；3a＋3b 語言支援 languageSupport，評分區留空）。找不到回 null。
+ * 遊戲詳情（06 §遊戲詳情頁；3a＋3b 語言支援 languageSupport＋Phase 4 ratings）。找不到回 null。
  * rumored 遊戲照常回傳（詳情頁可進入並標「傳聞」，04）。逾時丟 CatalogQueryTimeoutError。
  */
 export async function getGameDetail(input: GetGameDetailInput): Promise<GameDetail | null> {

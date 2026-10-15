@@ -1,5 +1,5 @@
 /**
- * 遊戲詳情頁的讀取（06 §遊戲詳情頁；Phase 3a，3b 補語言支援）。評分（05）不在這裡。
+ * 遊戲詳情頁的讀取（06 §遊戲詳情頁；Phase 3a，3b 補語言支援）。分數列（ratings，score 非 NULL）一併讀出，顯示規則在 domain/rating-display.ts。
  * 全部查詢在同一個唯讀 transaction（statement_timeout 保護）。
  */
 import { sql, type SQL } from "drizzle-orm";
@@ -25,6 +25,7 @@ import {
   type PlatformKind,
   type RegionCode,
   type ReleaseStage,
+  type ScoreProvider,
   type ReleaseStatus,
   type SourceStatus,
   type TaxonomyItem,
@@ -115,6 +116,16 @@ interface ReleaseRow extends Record<string, unknown> {
   platform_name: string;
   platform_abbreviation: string | null;
   platform_kind: PlatformKind;
+}
+
+interface RatingRow extends Record<string, unknown> {
+  score_provider: ScoreProvider;
+  score_type: string;
+  score: number;
+  score_max: number;
+  review_count: number | null;
+  platform_id: number | null;
+  source_url: string | null;
 }
 
 interface HistoryRow extends Record<string, unknown> {
@@ -244,6 +255,14 @@ async function readDetail(tx: DbOrTx, q: GameDetailQuery): Promise<GameDetail | 
 
   const languageEntries = await readLanguageSupportEntries(tx, id);
 
+  // 分數：score=NULL（負向快取、分數消失）的列不是分數，不讀
+  const ratingRes = await tx.execute<RatingRow>(sql`
+    SELECT r.score_provider, r.score_type, r.score, COALESCE(r.score_max, 100) AS score_max, r.review_count,
+      r.platform_id, r.source_url
+    FROM ratings r WHERE r.game_id = ${id} AND r.score IS NOT NULL
+    ORDER BY r.id
+  `);
+
   const taxonomy = (dim: "genre" | "theme"): TaxonomyItem[] =>
     taxRes.rows.filter((r) => r.dim === dim).map((r) => ({ slug: r.slug, name: r.name }));
   const companies = groupCompanies(companyRes.rows);
@@ -283,6 +302,15 @@ async function readDetail(tx: DbOrTx, q: GameDetailQuery): Promise<GameDetail | 
     dlcs: dlcRes.rows.map((r) => toSummary(r, q.resolveImage)),
     upcomingEvents: eventRes.rows.map((r) => toCalendarEvent(r, q.resolveImage)),
     languageSupport: buildLanguageSupport(languageEntries, locale),
+    ratings: ratingRes.rows.map((r) => ({
+      scoreProvider: r.score_provider,
+      scoreType: r.score_type,
+      score: r.score,
+      scoreMax: r.score_max,
+      reviewCount: r.review_count,
+      platformId: r.platform_id,
+      sourceUrl: r.source_url,
+    })),
   };
 }
 

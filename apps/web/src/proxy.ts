@@ -4,6 +4,7 @@
 // 2. 帶前綴的網址一律不依偏好導向；語系不支援 → 404
 // 3. catalog 路由不需查 DB 的導向／404（月份格式等）在這裡做，才能回真正的狀態碼（見 modules/catalog/ui/request-routing.ts；proxy 只經 ui/routing.ts 這個輕量入口取得）
 import { NextResponse, type NextRequest } from "next/server";
+import { adminGateResponse, checkAdminGate, warnIfAdminUnconfigured } from "@/kernel/http/admin-gate";
 import { LOCALE_COOKIE, getLocaleConfig, isSupportedLocale, needsLocalePrefix, pickRequestLocale } from "@/kernel/locale";
 import type { Locale } from "@sok/i18n";
 import { decideFilterRedirect, decideLocalizedRoute, renderNotFoundHtml } from "@/modules/catalog/ui/routing";
@@ -21,8 +22,24 @@ function applyLocation(target: URL, location: string): void {
   target.search = q < 0 ? "" : location.slice(q);
 }
 
+/**
+ * `/internal/*`（admin 模組，12）：Basic auth＋no-store＋noindex。不做語系導向（內部頁面不分語系）。
+ * 判斷邏輯在 kernel/http/admin-gate.ts（admin 的 POST route handler 也呼叫同一個函式）。
+ */
+function gateInternal(request: NextRequest): NextResponse {
+  const result = checkAdminGate(request.headers.get("authorization"));
+  if (result === "unconfigured") warnIfAdminUnconfigured();
+  const denied = adminGateResponse(result);
+  if (denied) return new NextResponse(denied.body, { status: denied.status, headers: denied.headers });
+  const res = NextResponse.next();
+  res.headers.set("Cache-Control", "no-store");
+  res.headers.set("X-Robots-Tag", "noindex");
+  return res;
+}
+
 export function proxy(request: NextRequest): NextResponse | undefined {
   const { pathname, search } = request.nextUrl;
+  if (pathname === "/internal" || pathname.startsWith("/internal/")) return gateInternal(request);
   const config = getLocaleConfig();
 
   if (needsLocalePrefix(pathname, config)) {

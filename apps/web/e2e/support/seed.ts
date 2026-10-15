@@ -34,12 +34,13 @@ import {
   genres,
   languages,
   platforms,
+  ratings,
   regions,
   releaseDateHistory,
   releaseEvents,
 } from "@/modules/catalog/schema";
 import resetTestDatabase from "../../test/integration/global-setup";
-import { FIXTURE, FIXTURE_3B } from "./fixture-data";
+import { FIXTURE, FIXTURE_3B, FIXTURE_4 } from "./fixture-data";
 
 
 type Precision = "day" | "month" | "quarter" | "year" | "tbd";
@@ -204,6 +205,12 @@ export async function seedE2eDatabase(): Promise<void> {
       .from(releaseEvents)
       .where(sql`${releaseEvents.gameId} = ${gameId[440001]!} AND ${releaseEvents.platformId} = ${platform["e2e-ps5"]!}`);
     await db.insert(releaseDateHistory).values({ releaseEventId: ps!.id, oldDate: "2035-12-31", oldPrecision: "year", newDate: "2036-05-15", newPrecision: "day" });
+
+    // ── Phase 4 評分：hero 有 IGDB 分數；month-precision 只有 score=NULL 的列（等同無分數）；其餘遊戲沒有列 ──
+    await db.insert(ratings).values([
+      { gameId: gameId[440001]!, scoreOrigin: "igdb-aggregate", scoreProvider: "igdb", scoreType: "critic_aggregate", score: FIXTURE_4.rated.score, scoreMax: 100, reviewCount: FIXTURE_4.rated.reviewCount },
+      { gameId: gameId[440020]!, scoreOrigin: "igdb-aggregate", scoreProvider: "igdb", scoreType: "critic_aggregate", score: null, scoreMax: 100, reviewCount: null },
+    ]);
 
     // ── Wave 3（3b）追加 ──────────────────────────────────────────────
     const tl = FIXTURE_3B.timeline;
