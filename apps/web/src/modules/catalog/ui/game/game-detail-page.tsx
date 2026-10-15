@@ -321,9 +321,10 @@ export async function GameDetailPage({ locale, supportedLocales, slug, slots }: 
               <h3 id={`release-group-${group.platform.slug}`} className="font-semibold">
                 <PlatformName platform={group.platform} locale={locale} />
               </h3>
-              {/* 窄螢幕表格會水平溢出：可捲動區域要能用鍵盤聚焦（axe scrollable-region-focusable） */}
+              {/* 窄螢幕表格會水平溢出：可捲動區域要能用鍵盤聚焦（axe scrollable-region-focusable）。
+                  relative：表頭的 sr-only（position:absolute）要以此為定位基準，否則表格溢出時會撐寬整頁 */}
               <div
-                className="overflow-x-auto"
+                className="relative overflow-x-auto"
                 tabIndex={0}
                 role="region"
                 aria-labelledby={`release-group-${group.platform.slug}`}

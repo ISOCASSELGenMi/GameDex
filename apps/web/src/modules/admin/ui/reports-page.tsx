@@ -75,7 +75,7 @@ function CompareTable({ item }: { item: ReportQueueItem }): ReactElement | null 
   }
   if (rows.length === 0) return null;
   return (
-    <div className="overflow-x-auto" tabIndex={0} role="region" aria-label={`回報 #${report.id} 的目前值與提案值`}>
+    <div className="relative overflow-x-auto" tabIndex={0} role="region" aria-label={`回報 #${report.id} 的目前值與提案值`}>
       <table className="release-table">
         <thead>
           <tr>
