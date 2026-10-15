@@ -140,6 +140,8 @@
 - [x] PR `ISOCASSELGenMi/SoK-GameDB#3`（feat/phase4 → main）2026-10-15 已合併（CI 修正：表格捲動容器 relative）
 
 ### Phase 5：iCal（2026-10-15 開工，分支 `feat/phase5`）
-- [ ] D：ics 產生函式（聚合 UID、SEQUENCE、精度、tbd／取消過渡期、字典標記）、公開 feed 三種、視窗與視窗離開、ETag／304、訂閱頁、原型驗證用 feed
+- [x] D：ics 產生函式（聚合 UID、SEQUENCE、精度、tbd／取消過渡期、字典標記）、公開 feed 三種、視窗與視窗離開、ETag／304、訂閱頁、原型驗證用 feed
+- [x] E：events.sequence（migration 0005，已套開發 DB）、活動同步無變動不寫 updated_at（2026-10-15）
+- [x] cloudflared 安裝與通道（使用者同意，2026-10-15）
 - [ ] 原型驗證：Apple 與 Google 各驗 (a) 地區偏好切換 (b) 延期成 tbd (c) 取消後復原 (d) SEQUENCE 是否被採用（需公開網址與使用者實際訂閱）
 - [ ] 驗收：全部檢查＋spec 15 Phase 5 完成標準；commit；交接

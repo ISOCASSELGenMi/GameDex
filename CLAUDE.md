@@ -31,7 +31,7 @@
 - ✅ PR `ISOCASSELGenMi/SoK-GameDB#1`（phase3b → main，含 3a）2026-10-14 已合併；PR `#2`（`feat/phase3.5` → main）2026-10-14 已合併
 - ✅ **Phase 4 完成**（2026-10-15，分支 `feat/phase4`）：評分顯示（selectRatings、訪客來源選擇）、標題比對、資料更正回報＋admin `/internal/reports`；**接手先讀 `docs/handoff/2026-10-15-phase4-done.md`**
 - ✅ PR `#3`（`feat/phase4` → main）2026-10-15 已合併
-- 🚧 **Phase 5 iCal**（2026-10-15 開工，分支 `feat/phase5`）
+- 🚧 **Phase 5 iCal**（2026-10-15 開工，分支 `feat/phase5`）：主體完成，原型驗證進行中；**接手先讀 `docs/handoff/2026-10-15-phase5-wip.md`**
 - ⏭ Phase 9（見 spec 15）
   - 任務註冊在 `catalog/module.ts` 的 `jobs`；長任務用 `lockMode: "session"`；遊戲寫入一律經 `writeGameBatch`
 
