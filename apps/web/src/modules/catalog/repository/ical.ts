@@ -206,9 +206,7 @@ export async function listIcalEvents(
   const res = await withReadTimeout(
     (tx) =>
       tx.execute<IcalEventRow>(sql`
-        SELECT e.id, e.slug, e.name, e.kind, e.description, e.start_time, e.end_time, e.url, e.stream_url, e.organizer, e.updated_at,
-          (SELECT count(*)::int FROM change_feed c
-            WHERE c.entity_type = 'event' AND c.entity_id = e.id AND c.change_type = 'date_changed') AS sequence
+        SELECT e.id, e.slug, e.name, e.kind, e.description, e.start_time, e.end_time, e.url, e.stream_url, e.organizer, e.updated_at, e.sequence
         FROM events e
         WHERE ${eventWhere(input.today)}
         ORDER BY e.start_time ASC, e.id ASC

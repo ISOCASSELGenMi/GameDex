@@ -44,7 +44,7 @@
 - 季／年不做整季整年的橫幅：會在行事曆頂端佔好幾個月，訂閱者容易嫌吵退訂。精度從 `quarter` 收斂成 `day` 時，同一 UID 搬位置、`SEQUENCE + 1`。
 - 標記文字來自 `ical.*` 字典，依 feed 的語系；季／年標籤由 `formatReleaseLabel()` 產生。程式碼不得寫死中文。
 
-**活動**：輸出絕對時間點，不用 `TZID=`，讓各客戶端換算成使用者當地時間。`endTime` 為 NULL 時 `DTEND = startTime + 1 小時`；`startTime` 為 NULL 不輸出。
+**活動**：`SEQUENCE` 讀 `events.sequence`；IGDB 同步只在欄位實際變動時更新 `updated_at`，開始或結束時間變動時 `sequence + 1` 並寫 `change_feed.date_changed`（同一 transaction），其餘欄位變動只更新 `updated_at`。輸出絕對時間點，不用 `TZID=`，讓各客戶端換算成使用者當地時間。`endTime` 為 NULL 時 `DTEND = startTime + 1 小時`；`startTime` 為 NULL 不輸出。
 
 ## 公開 feed
 
