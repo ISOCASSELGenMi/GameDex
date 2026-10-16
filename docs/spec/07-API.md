@@ -26,8 +26,11 @@ POST /api/v1/reports                      資料更正回報（允許匿名，ra
 **帳號（accounts）**
 
 ```
-POST   /api/v1/auth/register | /auth/login | /auth/logout | /auth/verify-email | /auth/reset-password
-GET    /api/v1/auth/oauth/{provider}      provider ∈ discord|google|twitch|twitter|steam|xbox
+/api/v1/auth/*                           Better Auth 提供（basePath /api/v1/auth，D81），不在 OpenAPI：
+                                         sign-up/email、sign-in/email、sign-out、verify-email、request-password-reset、reset-password、
+                                         sign-in/social、callback/{provider}（discord|google|twitch|twitter|microsoft）、get-session；
+                                         Steam 為自寫 plugin：steam/sign-in、steam/callback
+                                         OAuth app 的 redirect URI＝{站台}/api/v1/auth/callback/{provider}
 DELETE /api/v1/account                    需重新驗證身分（09）
 GET    /api/v1/account/export             資料匯出 JSON／CSV
 GET|PATCH /api/v1/account/preferences     locale、timezone、preferredRegion、scoreProviders、preferredPlatformIds、隱私預設

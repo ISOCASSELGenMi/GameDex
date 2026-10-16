@@ -10,6 +10,7 @@
 - 06：詳情頁評分區與上市日列表配合上述規則。
 - 16：新增 `REPORT_IP_HASH_SECRET`、`TURNSTILE_VERIFY_URL`。
 - 90：新增 D74、D75。
+- 03、07、09、16、90（Phase 7 Better Auth，2026-10-16）：users／connected_accounts 改為 Better Auth 對應（email NOT NULL＋placeholder、email_verified boolean、provider varchar、密碼併入 connected_accounts、刪 password_credentials、新增 sessions／auth_verifications、auth_tokens 縮小）；07 認證端點改為 BA 原生路徑；16 新增 ACCOUNTS_SIGNUP_ENABLED、MICROSOFT_*；90 新增 D77～D81。
 - 03／08（Phase 5）：`events` 新增 `sequence` 欄位；活動同步只在欄位實際變動時更新 `updated_at`，iCal 活動 SEQUENCE 改讀該欄位（不再數 change_feed）。
 
 ## v2.0（2026-10-12）
