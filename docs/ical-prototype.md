@@ -60,3 +60,70 @@
 ## 驗證完
 
 關掉通道、把 `ICAL_PROTO_ENABLED` 拿掉（預設 false＝`/ical/_proto/*` 回 404）、在行事曆裡取消訂閱兩個原型日曆。`.local/ical-proto/` 不進 git。
+
+## 實測結果（2026-10-15～16）
+
+以下為負責人逐步記錄（Google 日曆網頁版由負責人操作；Apple 日曆由使用者以 iPadOS 26.6.1 操作）。
+
+
+## 第 1 步 init（2026-10-15 06:14Z 建立；Google 06:2x 首次抓取，訂閱後立即）
+| 項目 | Google a | Google b | 符合？ |
+| --- | --- | --- | --- |
+| day（11/4、11/9、11/14、11/19、11/24） | 皆出現、全天 | 同 a | ✅ |
+| month（12 月） | 「12月1日 – 31日」整月，最後一天未被吃掉 | 同 | ✅ |
+| quarter（2026 Q4） | 12/31 單日，標題「[暫定 2026 年第 4 季]」 | 同 | ✅ |
+| 活動 17:00Z | 台北 10/26 01:00–02:00（1 小時） | 同 | ✅ |
+Apple：未測（需使用者裝置）。
+
+## 第 2 步 region（2026-10-15 06:27:54Z）
+Proto Region Game：11/14 → 11/17，地區 WW → JP；a SEQUENCE 0→1，b 維持 0。
+等待 Google 下一次抓取（`.local/ical-proto/access.log` 記錄 UA 與時間）。
+- Google 抓取 b：07:31:02Z（第 2 步後約 63 分鐘）。b 的 Proto Region Game 從 11/14 搬到 11/17、**沒有重複事件**；b 的 SEQUENCE 沒變也更新了 → Google 依內容更新，不依賴 SEQUENCE。
+- a 尚未被重新抓取（仍在 11/14）。
+- Google 抓取 a：08:00:32Z（第 2 步後約 93 分鐘）。a 也搬到 11/17、無重複。**第 2 步結論：聚合 UID 換地區＝更新原事件，不重複建立 ✅（D26）；SEQUENCE 有無不影響 Google 更新。**
+- 第 3 步 tbd：08:01Z 推出；第 4 步 cancel：08:58Z 推出（Google 期間未重抓，3、4 步一起觀察）
+- Google 抓取：b 13:31:02Z、a 14:00:33Z（距上一輪正好 6 小時；第一次重抓是訂閱後約 1 小時，之後每 6 小時：b 於 :31、a 於 :00）。
+- **第 3 步 tbd（Google）**：a、b 都留在 11/9，標題「[延期・日期未定] Proto Delay Game（PC1）」✅；TENTATIVE 在此介面無明顯樣式差異（只能靠標題標記）。
+- **第 4 步 cancel（Google）**：a、b 的 Proto Cancel Game **從日曆消失**（不是刪除線）。→ 取消在 Google 等同移除；30 天保留期對 Google 使用者只是讓它「被移除」而非「停在原樣」。
+- 第 5 步 restore：14:01Z 推出
+- 第 6 步 seq-only：14:02Z 推出（與第 5 步不同遊戲，下一輪一起觀察）
+- Google 抓取：a 19:00:32Z、b 19:31:02Z（a 這輪間隔 5 小時、b 6 小時）。
+- **第 5 步 restore（Google）**：a、b 的 Proto Cancel Game 回到 11/19 ✅（取消時被移除、復原後重新出現，同一 UID）。
+- **第 6 步 seq-only（Google）**：a、b 標題都更新為「(rev B)」✅；b 的 SEQUENCE 從未變動也更新 → **Google 不依賴 SEQUENCE，依內容更新**。
+- 第 7 步 no-seq：19:32Z 推出
+- Google 抓取：a 00:00:32Z、b 01:31:02Z（2026-10-16）。
+- **第 7 步 no-seq（Google）**：a、b 的 Proto Seq Probe 都搬到 12/1 ✅（兩個 feed 的 SEQUENCE 都沒變）。
+
+## Google 結論
+1. 聚合 UID（遊戲×平台×階段）換地區屬性與日期 → 更新原事件，不重複（D26 成立）。
+2. **Google 不依賴 SEQUENCE**：只改標題、只改日期、SEQUENCE 不變都會更新（依內容比對）。SEQUENCE 規則保留給 Apple／Outlook。
+3. 延期成 tbd：事件留在原日期，標題標記可見；TENTATIVE 無明顯樣式。
+4. **取消（STATUS:CANCELLED）→ 事件從 Google 日曆消失**；復原後同一 UID 重新出現。
+5. 月精度整月、季精度單日、活動 1 小時皆正確。
+6. 抓取間隔：訂閱後約 1 小時首次重抓，之後約每 5～6 小時（a、b 各自排程）。
+
+## Apple（iPad）— 2026-10-16 重新 init 開始
+- init：01:32Z
+- **第 1 步 init（Apple iPad）**：全部正確（日期依 init 當天計算，較 Google 輪晚一天：11/5、10、15、20、25；12 月整月含 31 日；12/31 季度；活動台北 10/27 01:00–02:00）✅
+- 第 2 步 region：11:25Z
+- **第 2 步 region（Apple）**：a、b 都搬到 11/18、說明的地區為日本 ✅；b（SEQUENCE 未變）也更新 → Apple 也依內容更新
+- 第 3 步 tbd：11:28Z
+- **第 3 步 tbd（Apple）**：a、b 都留在 11/10、標題有延期標記 ✅；TENTATIVE 外觀與一般事件相同
+- 第 4 步 cancel：11:32Z
+- **第 4 步 cancel（Apple）**：a、b 事件仍在 11/20，以刪除線／灰色顯示 ✅（與 Google 直接移除不同）
+- 第 5 步 restore：11:33Z
+- **第 5 步 restore（Apple）**：a、b 回到一般樣式、標題無取消標記 ✅
+- 第 6 步 seq-only：11:35Z
+- **第 6 步 seq-only（Apple）**：a、b 標題都更新為 (rev B) ✅；b 的 SEQUENCE 未變也更新
+- 第 7 步 no-seq：11:37Z
+- **第 7 步 no-seq（Apple）**：a、b 都搬到 12/2、11/25 無殘留 ✅
+
+## Apple（iPadOS 26.6.1）結論
+1. 聚合 UID 換地區＝更新原事件，不重複 ✅。
+2. **Apple 也不依賴 SEQUENCE**：只改標題、只改日期都會更新。
+3. TENTATIVE 無視覺差異；延期標記靠標題。
+4. **取消 → 事件保留並以刪除線／灰色顯示**（Google 是移除）；復原後恢復一般樣式。
+5. 手動下拉即重新抓取（UA `iOS/… dataaccessd/1.0`）。
+
+## 總結（寫回 spec 08）
+D26 聚合 UID 成立；SEQUENCE 兩個客戶端都不依賴，但維持遞增（RFC 5545、Outlook 未測）；取消在 Google 移除、Apple 刪除線，兩者都符合「不停在原樣」；TENTATIVE 不可依賴，標題標記必要；Google 間隔約 1 小時首抓、之後 5~6 小時。
