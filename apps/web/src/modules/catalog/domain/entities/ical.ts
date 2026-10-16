@@ -1,8 +1,8 @@
 // iCal 輸出用的資料形狀（08）。Domain 型別，零外部依賴。
 import type { DatePrecision, EventKind, IsoDate, ReleaseStage, ReleaseStatus } from "./enums";
 
-/** feed 種類：公開三種＋單一遊戲下載。 */
-export type IcalFeedKind = "releases" | "events" | "platform" | "game";
+/** feed 種類：公開三種＋單一遊戲下載＋私人追蹤 feed（Phase 7 第 6 波；日曆名稱由使用者設定）。 */
+export type IcalFeedKind = "releases" | "events" | "platform" | "game" | "following";
 
 /**
  * 一個 iCal 上市項目＝聚合規則在 (遊戲, 平台, 階段) 挑出的那一列（UID 粒度，D26）。

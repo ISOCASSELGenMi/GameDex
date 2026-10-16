@@ -21,3 +21,6 @@ export * from "./game-rating";
 export * from "./data-report";
 export * from "./ical";
 export * from "./game-card";
+export * from "./follow-target";
+export * from "./game-filter";
+export * from "./my-games";

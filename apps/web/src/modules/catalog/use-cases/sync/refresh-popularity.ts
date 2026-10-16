@@ -11,6 +11,7 @@
 import { getSyncState, saveSyncProgress } from "@/kernel/db/sync-state";
 import {
   EXTERNAL_HYPE_KINDS,
+  KNOWN_EXTERNAL_SIGNAL_NAMES,
   POPULARITY_GROUPS,
   type ExternalHypeSource,
   type ExternalHypeVersion,
@@ -129,9 +130,16 @@ export async function refreshPopularity(
   if (result.hype.error) ctx.log("IGDB 熱度訊號未更新，沿用既有值", { error: result.hype.error });
 
   // 2. 外部擴充點訊號（全量取代）
+  const registered = new Set((opts.externalSignals ?? []).map((s) => s.name));
   for (const signal of opts.externalSignals ?? []) {
     const rows = await signal.fetch({});
     result.external.push({ name: signal.name, write: await replaceExternalSignal(signal.name, rows) });
+  }
+  // 提供者沒註冊（例如 accounts 被停用）：清掉該訊號的舊列，行為與「從來沒有提供者」相同（wSite 不會被過期的追蹤數影響）
+  for (const name of KNOWN_EXTERNAL_SIGNAL_NAMES) {
+    if (registered.has(name)) continue;
+    const cleared = await replaceExternalSignal(name, []);
+    if (cleared.deleted > 0) result.external.push({ name, write: cleared });
   }
 
   // 3~4. 結構訊號與分數（各群獨立）

@@ -19,6 +19,10 @@ export type CatalogSignalName = (typeof CATALOG_SIGNAL_NAMES)[number];
 
 /** 站內追蹤人數訊號名稱（accounts 提供）；有這個訊號時才有 wSite（03 §熱度 步驟 3）。 */
 export const SITE_FOLLOWS_SIGNAL = "site_follows";
+/** 站內近 7 天新增追蹤數（accounts 提供）；`/trending` 排序與「上升中」用（06 §熱度顯示）。 */
+export const SITE_FOLLOWS_7D_SIGNAL = "site_follows_7d";
+/** catalog 認得、由可選模組提供的外部訊號名稱；提供者沒註冊（模組停用）時，refresh_popularity 會清掉這些訊號的舊列。 */
+export const KNOWN_EXTERNAL_SIGNAL_NAMES = [SITE_FOLLOWS_SIGNAL, SITE_FOLLOWS_7D_SIGNAL] as const;
 
 /** 外部來源的人氣原始訊號種類（我方名稱）。IGDB：2＝Want to Play、10＝Most Wishlisted Upcoming。 */
 export const EXTERNAL_HYPE_KINDS = ["want_to_play", "most_wishlisted_upcoming"] as const;
@@ -74,6 +78,8 @@ export interface TrendingPage {
   offset: number;
   /** 還有下一頁（多抓一筆判斷）。 */
   hasMore: boolean;
+  /** 這一頁實際使用的排序依據（accounts 啟用時 site_follows_7d）。 */
+  rankedBy?: "popularity" | "site_follows_7d";
 }
 
 /** 熱門榜篩選（已解析成 id）；與月曆共用 ResolvedReleaseFilter 的維度子集。 */

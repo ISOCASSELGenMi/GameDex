@@ -3,13 +3,15 @@
     "releases": "SoK Game Calendar: Upcoming releases",
     "events": "SoK Game Calendar: Game events",
     "platform": "SoK Game Calendar: {platform}",
-    "game": "{game}"
+    "game": "{game}",
+    "following": "SoK Game Calendar: My follows"
   },
   "calendarDescription": {
     "releases": "Upcoming game releases. Delays, cancellations and date changes are reflected in this calendar automatically.",
     "events": "Schedule of showcases, expos and award shows.",
     "platform": "Upcoming game releases on {platform}.",
-    "game": "Release dates for {game}."
+    "game": "Release dates for {game}.",
+    "following": "Games and events you follow. Delays, cancellations and date changes are reflected in this calendar automatically."
   },
   "mark": {
     "provisional": "[TBC]",

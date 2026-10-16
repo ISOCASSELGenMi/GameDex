@@ -20,3 +20,5 @@ export { browseGames, type BrowseGamesInput } from "./browse-games";
 export { getSitemapCounts, listSitemapEntries, listSitemapSmall, type ListSitemapShardInput } from "./sitemap";
 // Phase 4：評分顯示設定（環境變數驗證）
 export { getRatingDisplayConfig, validateRatingDisplayEnv } from "./rating-config";
+// Phase 7 第 6 波：我的遊戲
+export { getMyGames, pickNextRelease, type GetMyGamesInput } from "./get-my-games";

@@ -1,4 +1,5 @@
-import type { IgnoredFilterValue, PopularityGroup, ReleaseFilter, TrendingFilter, TrendingPage } from "../../domain/entities";
+import { SITE_FOLLOWS_7D_SIGNAL, type IgnoredFilterValue, type PopularityGroup, type ReleaseFilter, type TrendingFilter, type TrendingPage } from "../../domain/entities";
+import { hasPopularitySignal } from "../../extensions";
 import { resolveImageRef } from "../../providers/image-ref";
 import { listTrending, TRENDING_MAX_LIMIT } from "../../repository/trending";
 import { resolveFilterSlugs } from "./resolve-filter";
@@ -16,6 +17,8 @@ export interface GetTrendingInput {
   limit?: number;
   /** ≥ 0，預設 0。 */
   offset?: number;
+  /** 排序依據；預設：accounts 啟用（有 site_follows_7d 提供者）→ site_follows_7d，否則 popularity。 */
+  rankBy?: "popularity" | "site_follows_7d";
   /** 分群用的「今天」（UTC `YYYY-MM-DD`）；預設現在的 UTC 日期。 */
   today?: string;
 }
@@ -25,6 +28,7 @@ export interface GetTrendingInput {
  * 逾時丟 CatalogQueryTimeoutError。
  */
 export async function getTrending(input: GetTrendingInput): Promise<TrendingPage & { ignored: IgnoredFilterValue[] }> {
+  const rankedBy = input.rankBy ?? (hasPopularitySignal(SITE_FOLLOWS_7D_SIGNAL) ? "site_follows_7d" : "popularity");
   const group: PopularityGroup = input.group === "released" ? "released" : "upcoming";
   const limit = Math.min(TRENDING_MAX_LIMIT, Math.max(1, finiteInt(input.limit, TRENDING_DEFAULT_LIMIT)));
   const offset = Math.max(0, finiteInt(input.offset, 0));
@@ -44,8 +48,9 @@ export async function getTrending(input: GetTrendingInput): Promise<TrendingPage
     limit,
     offset,
     resolveImage: resolveImageRef,
+    rankBySiteFollows7d: rankedBy === "site_follows_7d",
   });
-  return { group, items, limit, offset, hasMore, ignored };
+  return { group, items, limit, offset, hasMore, rankedBy, ignored };
 }
 
 const finiteInt = (v: number | undefined, fallback: number) => (v != null && Number.isFinite(v) ? Math.floor(v) : fallback);

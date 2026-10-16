@@ -1,10 +1,11 @@
 /**
- * 熱門榜（06 §熱度顯示：/trending）。accounts 停用時依 popularityScore（site_follows_7d 排序在 Phase 7 加）。
+ * 熱門榜（06 §熱度顯示：/trending）。accounts 啟用（有 site_follows_7d 訊號提供者）時依近 7 天新增追蹤數，同數再依 popularityScore；
+ * 停用時依 popularityScore。
  * 分群條件與 refresh_popularity 共用 popularityGroupCondition（repository/popularity.ts）。
  *
  * 篩選語意與月曆一致：同維度 OR、跨維度 AND；平台與平台種類要落在同一個平台上；mobile 平台不計
  * （只在 mobile 上市的遊戲不上榜，與月曆、篩選選項一致）。heatLevel 0（完全無訊號）與 cancelled 的遊戲不上榜。
- * 排序：popularity_score DESC, id ASC（07 §分頁 `popularity` 的鍵）。
+ * 排序：[site_follows_7d DESC,] popularity_score DESC, id ASC（07 §分頁 `popularity` 的鍵）。
  */
 import { sql, type SQL } from "drizzle-orm";
 import type {
@@ -15,6 +16,7 @@ import type {
   TrendingCard,
   TrendingFilter,
 } from "../domain/entities";
+import { SITE_FOLLOWS_7D_SIGNAL } from "../domain/entities";
 import { popularityGroupCondition } from "./popularity";
 import { pgArray, withReadTimeout, type ReadOptions } from "./read-tx";
 
@@ -28,6 +30,8 @@ export interface ListTrendingInput {
   limit: number;
   offset: number;
   resolveImage: ImageResolver;
+  /** true＝先依 site_follows_7d 排序（accounts 啟用）；預設 false。 */
+  rankBySiteFollows7d?: boolean;
 }
 
 interface TrendingRow extends Record<string, unknown> {
@@ -98,8 +102,11 @@ export function buildTrendingQuery(input: Omit<ListTrendingInput, "resolveImage"
       g.first_release_date::text AS first_release_date, g.first_release_precision,
       COALESCE(g.game_type, 'main_game') AS game_type, g.game_status
     FROM games g
+    ${input.rankBySiteFollows7d
+      ? sql`LEFT JOIN game_popularity_signals s7 ON s7.game_id = g.id AND s7.signal_name = ${SITE_FOLLOWS_7D_SIGNAL}`
+      : sql``}
     WHERE ${sql.join(conds, sql` AND `)}
-    ORDER BY g.popularity_score DESC, g.id ASC
+    ORDER BY ${input.rankBySiteFollows7d ? sql`COALESCE(s7.value, 0) DESC, ` : sql``}g.popularity_score DESC, g.id ASC
     LIMIT ${input.limit + 1} OFFSET ${input.offset}
   `;
 }

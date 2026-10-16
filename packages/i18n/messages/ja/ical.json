@@ -3,13 +3,15 @@
     "releases": "SoK ゲームカレンダー：発売予定",
     "events": "SoK ゲームカレンダー：ゲームイベント",
     "platform": "SoK ゲームカレンダー：{platform}",
-    "game": "{game}"
+    "game": "{game}",
+    "following": "SoK ゲームカレンダー：フォロー中"
   },
   "calendarDescription": {
     "releases": "近日発売のゲーム。延期・中止・日付の変更はこのカレンダーに自動で反映されます。",
     "events": "発表会、展示会、授賞式のスケジュールです。",
     "platform": "{platform} で近日発売のゲームです。",
-    "game": "{game} の発売日です。"
+    "game": "{game} の発売日です。",
+    "following": "フォロー中のゲームとイベントです。延期・中止・日程変更はこのカレンダーに自動で反映されます。"
   },
   "mark": {
     "provisional": "[仮]",

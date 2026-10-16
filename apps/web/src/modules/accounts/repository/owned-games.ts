@@ -2,7 +2,7 @@
  * owned_games 與「匯入對象」連結帳號的查詢。匯入對象一律排除 provider='credential'（密碼不是外部帳號；03 註解、D7）——
  * 這個條件只在這個檔案出現一次（externalAccountCondition）。
  */
-import { and, asc, eq, inArray, isNull, max, ne, sql, type SQL } from "drizzle-orm";
+import { and, asc, eq, inArray, isNotNull, isNull, max, ne, sql, type SQL } from "drizzle-orm";
 import { getDb } from "@/kernel/db/client";
 import { IMPORT_PROVIDERS, type ExternalOwnedGame, type OwnedGameMatch, type OwnedGameStatus, type OwnedGamesSummary } from "../domain/entities/owned-game";
 import { connectedAccounts, ownedGames } from "../schema";
@@ -224,4 +224,15 @@ export async function setOwnedGameManualMatch(
     .where(and(eq(ownedGames.id, ownedGameId), eq(ownedGames.connectedAccountId, connectedAccountId)))
     .returning(rowColumns);
   return row ?? null;
+}
+
+/** 這位使用者已比對到 catalog 遊戲的 owned_games（去重；`mine=owned` 用）。需要連到 connected_accounts 取得擁有者。 */
+export async function matchedOwnedGameIds(userId: number): Promise<number[]> {
+  const rows = await getDb()
+    .selectDistinct({ gameId: ownedGames.matchedGameId })
+    .from(ownedGames)
+    .innerJoin(connectedAccounts, eq(connectedAccounts.id, ownedGames.connectedAccountId))
+    .where(and(eq(connectedAccounts.userId, userId), externalAccountCondition(), isNotNull(ownedGames.matchedGameId)))
+    .orderBy(asc(ownedGames.matchedGameId));
+  return rows.flatMap((r) => (r.gameId === null ? [] : [r.gameId]));
 }

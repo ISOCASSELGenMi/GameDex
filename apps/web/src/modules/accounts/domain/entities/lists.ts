@@ -27,12 +27,12 @@ export type FieldErrors = Record<string, string>;
 
 export type Validated<T> = { ok: true; value: T } | { ok: false; fields: FieldErrors };
 
-function isRecord(v: unknown): v is Record<string, unknown> {
+export function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
 }
 
 /** 字串欄位：trim；空字串視為 null（僅 nullable 欄位）。 */
-function readText(
+export function readText(
   body: Record<string, unknown>,
   key: string,
   max: number,

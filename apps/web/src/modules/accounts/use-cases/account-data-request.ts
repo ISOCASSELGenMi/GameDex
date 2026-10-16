@@ -48,7 +48,7 @@ export function json(body: unknown, status: number, extra: Record<string, string
   return Response.json(body, { status, headers: { ...NO_STORE, ...extra } });
 }
 
-const code = (c: string, status: number): Response => json({ code: c }, status);
+export const code = (c: string, status: number): Response => json({ code: c }, status);
 
 const FAILURE_STATUS: Record<string, number> = {
   list_not_found: 404,
@@ -63,17 +63,17 @@ const FAILURE_STATUS: Record<string, number> = {
 };
 const failure = (c: string): Response => code(c, FAILURE_STATUS[c] ?? 400);
 
-type Authed = { user: CurrentUser } | { response: Response };
+export type Authed = { user: CurrentUser } | { response: Response };
 
 /** 寫入：先檢查 Origin（403），再檢查登入（401）。讀取只檢查登入。 */
-async function authenticate(request: Request, write: boolean): Promise<Authed> {
+export async function authenticate(request: Request, write: boolean): Promise<Authed> {
   if (write && !isTrustedRequestOrigin(request, parseAccountsEnv().trustedOrigins)) return { response: code("invalid_origin", 403) };
   const user = await getCurrentUser(request.headers);
   if (!user) return { response: code("unauthorized", 401) };
   return { user };
 }
 
-async function readBody(request: Request): Promise<{ ok: true; body: unknown } | { ok: false; response: Response }> {
+export async function readBody(request: Request): Promise<{ ok: true; body: unknown } | { ok: false; response: Response }> {
   const declared = Number(request.headers.get("content-length") ?? "0");
   if (declared > MAX_BODY_BYTES) return { ok: false, response: code("payload_too_large", 413) };
   const text = await request.text();
@@ -86,19 +86,19 @@ async function readBody(request: Request): Promise<{ ok: true; body: unknown } |
   }
 }
 
-const invalid = (fields: Record<string, string>): Response => json({ code: "validation_failed", fields }, 400);
+export const invalid = (fields: Record<string, string>): Response => json({ code: "validation_failed", fields }, 400);
 
-function localeParam(request: Request): string | null {
+export function localeParam(request: Request): string | null {
   const raw = new URL(request.url).searchParams.get("locale");
   return raw && isSupportedLocale(raw, getLocaleConfig()) ? raw : null;
 }
 
-function intParam(request: Request, name: string): number | undefined {
+export function intParam(request: Request, name: string): number | undefined {
   const v = Number.parseInt(new URL(request.url).searchParams.get(name) ?? "", 10);
   return Number.isFinite(v) ? v : undefined;
 }
 
-const methodNotAllowed = (allow: string): Response => json({ code: "method_not_allowed" }, 405, { Allow: allow });
+export const methodNotAllowed = (allow: string): Response => json({ code: "method_not_allowed" }, 405, { Allow: allow });
 
 // ── /api/v1/lists ─────────────────────────────────────────────────────────
 

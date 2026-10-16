@@ -264,3 +264,14 @@ export async function existingListIdsOf(userId: number, ids: readonly number[]):
   const rows = await getDb().select({ id: userLists.id }).from(userLists).where(and(eq(userLists.userId, userId), inArray(userLists.id, [...ids])));
   return rows.map((r) => r.id);
 }
+
+/** 這位使用者所有清單內的遊戲 id（去重；`mine=collected` 用）。 */
+export async function allListedGameIds(userId: number): Promise<number[]> {
+  const rows = await getDb()
+    .selectDistinct({ gameId: userListGames.gameId })
+    .from(userListGames)
+    .innerJoin(userLists, eq(userLists.id, userListGames.listId))
+    .where(eq(userLists.userId, userId))
+    .orderBy(asc(userListGames.gameId));
+  return rows.map((r) => r.gameId);
+}

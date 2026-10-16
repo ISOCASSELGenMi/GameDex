@@ -8,3 +8,5 @@ export * from "./owned-game";
 export * from "./lists";
 export * from "./play-records";
 export * from "./player-rating";
+export * from "./follows";
+export * from "./calendar-feeds";

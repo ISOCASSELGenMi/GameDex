@@ -289,6 +289,13 @@ export interface GameDetail {
   languageSupport: GameLanguageSupport;
   /** 分數（Phase 4）：只含有分數的列（全部來源；站長 visible／使用者 selected 由 selectRatings 在顯示層套用）。 */
   ratings: GameRating[];
+  /**
+   * 站內追蹤人數（Phase 7 第 6 波；07 的 heat.followerCount）：accounts 啟用、且人數 ≥ FOLLOW_COUNT_MIN_DISPLAY 才有值，否則 null（D48）。
+   * 來自每小時更新的熱度訊號，不是即時。未填＝呼叫端沒有取（舊測試資料）。
+   */
+  followerCount?: number | null;
+  /** 「上升中」（06 §熱度顯示）：近 7 天新增追蹤數在群內前 5%；accounts 停用時 false。 */
+  rising?: boolean;
 }
 
 // ── 篩選選項 ────────────────────────────────────────────────────────────

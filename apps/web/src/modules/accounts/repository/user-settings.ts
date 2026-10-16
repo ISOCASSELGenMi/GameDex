@@ -20,3 +20,9 @@ export async function findUserSettings(userId: number): Promise<UserSettings | n
   if (!row) return null;
   return { defaultListVisibility: row.l, defaultReviewVisibility: row.r, suspended: row.s !== null };
 }
+
+/** users.locale（使用者偏好語系；沒設為 null）。私人 feed 建立時的預設語系用。 */
+export async function findUserLocale(userId: number): Promise<string | null> {
+  const [row] = await getDb().select({ locale: users.locale }).from(users).where(eq(users.id, userId)).limit(1);
+  return row?.locale ?? null;
+}

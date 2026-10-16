@@ -1,6 +1,7 @@
 import { getCoreEnv } from "@/kernel/config/env";
 import type { ModuleManifestBase } from "@/kernel/modules/types";
-import type { PopularitySignal } from "./domain/entities";
+import type { GameFilterProvider, PopularitySignal } from "./domain/entities";
+import { getCatalogExtensions } from "./extensions";
 import { getIgdbProvider } from "./providers/igdb";
 import { backfillGames, parseBackfillArgs } from "./use-cases/sync/backfill-games";
 import { checkDictionaryDrift } from "./use-cases/sync/dictionary-drift";
@@ -14,13 +15,14 @@ import { syncPlatforms } from "./use-cases/sync/sync-platforms";
 
 /**
  * catalog 的擴充點型別（02 §Manifest 與擴充點）。
- * RatingProvider／GameFilterProvider 的介面在需要它們的 Phase 才定義（4、7），現在先保留欄位名稱，避免可選模組各自發明。
- * PopularitySignal 於 3b 定義（domain/entities/popularity.ts）。
+ * RatingProvider 的介面在需要它的 Phase 才定義，現在先保留欄位名稱，避免可選模組各自發明。
+ * PopularitySignal 於 3b 定義（domain/entities/popularity.ts）；GameFilterProvider 於 Phase 7 第 6 波定義（domain/entities/game-filter.ts）。
+ * 已啟用模組提供的擴充點由 modules/registry.ts 收集後經 setCatalogExtensions() 注入（extensions.ts）。
  */
 export interface CatalogExtensions {
   ratingProviders?: unknown[];
   popularitySignals?: PopularitySignal[];
-  gameFilters?: unknown[];
+  gameFilters?: GameFilterProvider[];
 }
 
 export type ModuleManifest = ModuleManifestBase & CatalogExtensions;
@@ -106,8 +108,8 @@ export const catalogModule: ModuleManifest = {
         const env = getCoreEnv();
         await refreshPopularity(getIgdbProvider({ maxReqPerSec: env.BACKFILL_MAX_REQ_PER_SEC }), ctx, {
           coldStartFollows: env.HEAT_COLD_START_FOLLOWS,
-          // 外部訊號（accounts 的 site_follows）要由 registry 收集已啟用模組的 popularitySignals 後注入；目前沒有提供者
-          externalSignals: [],
+          // 外部訊號（accounts 的 site_follows、site_follows_7d）：registry 收集已啟用模組的 popularitySignals 後注入（extensions.ts）；沒有提供者＝空
+          externalSignals: getCatalogExtensions().popularitySignals,
           ...parseRefreshPopularityArgs(ctx.args),
         });
       },
