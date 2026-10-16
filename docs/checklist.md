@@ -178,8 +178,15 @@
   - 私人 iCal：`includeEvents=false` 時明確追蹤的活動仍輸出；`filterRegions` 只當地區偏好不是限制；要不要加地區與類型篩選 UI
   - 孤兒清理：某類目標一次 ≥ 20 個全不存在時不刪（防誤刪的保險，spec 沒寫）
   - ja 用語請過目
+- [x] 第 7 波：資料匯出、刪除帳號、停權、偏好設定頁（分支 `feat/phase7-w7`，PR 疊在 #10 上，2026-10-17；待合併；無 migration）
+- [ ] 第 7 波待使用者決定（已採可回退做法）：
+  - 停權者目前可以登入、讀寫自己的資料、匯出與刪除帳號；要不要改成不能登入
+  - 停權後 Better Auth 的 cookie cache 最多 5 分鐘內仍認得舊 cookie（可接受或縮短）
+  - 隱私權政策帳號段落是草稿，需律師審閱（備份保留 8／29／190 天、IP 保存期間、en／ja 措辭）
+  - 匯出要不要包含 role、handle、emailVerified
+  - 刪除帳號後玩家平均與熱度要等下一次每小時重算才更新
 - [ ] spec 待補：06 路由表（account/follows、games、calendar、lists、plays、/lists/*）、02 slot 清單（entity.actions、subscribe.private）、07（follows、me/games、calendar feeds、第 5 波 API）
 - [ ] Steam 真實連線實測（需使用者提供 `STEAM_WEB_API_KEY`）
 - [ ] 第 2 波：Discord／Google／Twitch／Microsoft 社群登入（需使用者申請 OAuth app，建議正式網域定了再申請）
-- [ ] 第 4 波 Xbox 匯入、第 5 波清單／遊玩紀錄／玩家平均＋手動指定比對 UI、第 6 波追蹤與私人 iCal、第 7 波匯出與刪帳號
+- [ ] 第 4 波 Xbox 匯入（依賴第 2 波 Microsoft 登入）
 - [ ] Phase 7.5 寄信服務（正式開放註冊前必須完成）
