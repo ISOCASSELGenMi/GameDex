@@ -511,5 +511,115 @@
       "confirmButton": "確定重新產生",
       "done": "已產生新網址。請在你的日曆 App 用新網址重新訂閱。"
     }
+  },
+  "settings": {
+    "title": "帳號設定",
+    "intro": "這些偏好只影響你自己看到的內容。沒有設定的項目，會使用網站的預設行為。",
+    "loadError": "無法載入設定，請稍後再試。",
+    "formTitle": "偏好設定",
+    "displayName": "顯示名稱",
+    "displayNameHint": "公開的清單與評論會顯示這個名稱。",
+    "locale": "偏好語言",
+    "localeHint": "用於私人行事曆的預設語言等。網站本身的語言仍由網址和語言選單決定。",
+    "localeAuto": "沒有偏好（依瀏覽器語言）",
+    "timezone": "時區",
+    "timezoneHint": "例如 Asia/Taipei。留空表示沒有設定。",
+    "timezoneUseBrowser": "使用這個瀏覽器的時區",
+    "region": "偏好地區",
+    "regionHint": "查看上市日期時優先使用的地區。留空表示使用網站預設。",
+    "regionAuto": "沒有偏好（網站預設）",
+    "scores": "評分來源",
+    "scoresHint": "遊戲頁要顯示哪些來源的評分。站長可以另外限制可用的來源。",
+    "scoresDefault": "使用網站預設",
+    "scoresCustom": "自己選擇",
+    "scoresNone": "沒有勾選任何來源：遊戲頁不會顯示評分。",
+    "scoreProvider": {
+      "igdb": "IGDB",
+      "metacritic_scrape": "Metacritic"
+    },
+    "platforms": "常用平台",
+    "platformsHint": "你常玩的平台（最多 20 個）。",
+    "platformsFull": "已達上限，取消其他平台後才能再選。",
+    "defaultListVisibility": "新清單的預設可見度",
+    "defaultListVisibilityHint": "建立清單時，如果沒有另外指定，就使用這個可見度。已存在的清單不會改變。",
+    "defaultReviewVisibility": "新評論的預設可見度",
+    "defaultReviewVisibilityHint": "記錄遊玩時，如果沒有另外指定，評論就使用這個可見度。已存在的紀錄不會改變。",
+    "save": "儲存設定",
+    "saving": "儲存中…",
+    "saved": "已儲存設定。",
+    "unchanged": "沒有變更。",
+    "toPrivacy": "隱私與資料（匯出、刪除帳號）",
+    "toAccount": "回到我的帳號",
+    "nav": {
+      "title": "設定與隱私",
+      "hint": "調整偏好、匯出你的資料，或刪除帳號。",
+      "settings": "帳號設定",
+      "privacy": "隱私與資料"
+    }
+  },
+  "privacy": {
+    "title": "隱私與資料",
+    "policyLink": "隱私權政策",
+    "toSettings": "帳號設定",
+    "export": {
+      "title": "匯出我的資料",
+      "intro": "下載你在本站的資料副本。檔案含有你的私人筆記，請妥善保管。",
+      "includes": {
+        "profile": "個人資料與偏好設定",
+        "connections": "綁定的登入方式（只有種類與時間）",
+        "lists": "清單與清單內的遊戲",
+        "plays": "遊玩紀錄（含評論與私人筆記）",
+        "follows": "追蹤的遊戲、活動、平台、系列與公司",
+        "owned": "Steam 遊戲庫與比對結果",
+        "calendar": "私人行事曆的設定"
+      },
+      "excludes": "不含密碼、登入憑證，以及私人行事曆的訂閱網址。沒有信箱的帳號，信箱欄位是系統產生的占位值，並已標示。",
+      "json": "下載全部資料（JSON）",
+      "csvTitle": "分段下載（CSV）",
+      "csvHint": "CSV 可用試算表開啟，每一段是一個檔案。",
+      "part": {
+        "profile": "個人資料",
+        "lists": "清單",
+        "list_games": "清單內的遊戲",
+        "plays": "遊玩紀錄",
+        "follows": "追蹤",
+        "owned_games": "Steam 遊戲庫"
+      },
+      "preparing": "正在準備檔案…",
+      "done": "已下載 {file}。",
+      "rateLimited": "匯出次數太多，請稍後再試（每小時有次數上限）。",
+      "failed": "匯出失敗，請稍後再試。"
+    },
+    "delete": {
+      "title": "刪除帳號",
+      "intro": "刪除帳號會永久移除你在本站的資料：",
+      "removes": {
+        "account": "帳號、登入方式與偏好設定",
+        "lists": "所有清單與清單內的項目",
+        "plays": "所有遊玩紀錄，包含已公開的評論與私人筆記",
+        "follows": "所有追蹤",
+        "owned": "Steam 遊戲庫與比對結果",
+        "calendar": "私人行事曆的訂閱網址會立刻失效（行事曆程式讀取時會得到「找不到」）"
+      },
+      "irreversible": "這個操作無法復原。建議先匯出你的資料。",
+      "backups": "為了災難還原，資料庫備份會再保留一段時間（最長約 6 個月），期間不會被用於網站運作，之後自然過期。詳見隱私權政策。",
+      "noPassword": "你的帳號沒有密碼。為了安全，刪除前需要在最近 {minutes} 分鐘內登入過；如果超過，請先重新登入。",
+      "reauthButton": "登出並重新登入",
+      "password": "目前的密碼",
+      "passwordHint": "請輸入密碼確認是你本人。",
+      "passwordRequired": "請輸入密碼。",
+      "wrongPassword": "密碼不正確。",
+      "reauthNeeded": "你的登入已超過 {minutes} 分鐘。請重新登入後再刪除帳號。",
+      "ack": "我了解帳號與資料會被永久刪除，無法復原。",
+      "button": "刪除我的帳號",
+      "confirm": "最後確認：真的要永久刪除帳號嗎？",
+      "confirmButton": "永久刪除",
+      "rateLimited": "嘗試次數過多，請稍後再試。"
+    },
+    "deleted": {
+      "title": "帳號已刪除",
+      "body": "你的帳號與資料已刪除，並已登出。謝謝你使用本站。",
+      "home": "回到首頁"
+    }
   }
 }

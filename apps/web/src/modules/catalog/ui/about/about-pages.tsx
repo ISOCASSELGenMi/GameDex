@@ -33,13 +33,13 @@ const NAV_KEY: Record<AboutPage, string> = {
 
 const SECTIONS: Record<AboutPage, readonly string[]> = {
   "data-sources": ["igdb", "covers", "manual", "ratings", "accuracy", "corrections"],
-  privacy: ["cookies", "storage", "logs", "reports", "feeds", "accounts", "backups", "thirdParties", "changes"],
+  privacy: ["cookies", "storage", "logs", "reports", "feeds", "accounts", "accountVisibility", "accountRetention", "backups", "thirdParties", "changes"],
   terms: ["scope", "accuracy", "ip", "use", "reports", "links", "availability", "liability", "changes"],
   contact: ["general", "takedown", "privacy"],
 };
 
 /** 草稿最後修訂日（法律文件有實質修改時更新）。 */
-export const ABOUT_DRAFT_DATE = "2026-10-15";
+export const ABOUT_DRAFT_DATE = "2026-10-17";
 
 export function aboutTitle(locale: Locale, page: AboutPage): string {
   return getTranslator(locale).t(`about.${PAGE_KEY[page]}.title`);

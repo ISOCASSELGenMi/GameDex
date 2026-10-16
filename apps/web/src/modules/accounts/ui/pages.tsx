@@ -11,6 +11,8 @@ import { AccountListDetail } from "./account-list-detail";
 import { AccountLists } from "./account-lists";
 import { AccountMyGames } from "./account-my-games";
 import { AccountPanel } from "./account-panel";
+import { AccountPrivacy } from "./account-privacy";
+import { AccountSettings, type RegionOption } from "./account-settings";
 import { AccountPlays } from "./account-plays";
 import { ForgotPasswordForm } from "./forgot-form";
 import { LoginForm } from "./login-form";
@@ -99,7 +101,7 @@ export function AccountPageView({ locale }: { locale: Locale }): ReactElement {
 }
 
 // ── 第 5 波：帳號子頁（清單、清單內容、遊玩紀錄）。需登入：由客戶端的 RequireUser 判斷，伺服器端 HTML 與使用者無關 ──
-export type AccountSubPage = "lists" | "list" | "plays" | "follows" | "games" | "calendar";
+export type AccountSubPage = "lists" | "list" | "plays" | "follows" | "games" | "calendar" | "settings" | "privacy" | "deleted";
 const SUB_TITLE_KEY: Record<AccountSubPage, string> = {
   lists: "list.pageTitle",
   list: "list.detailTitle",
@@ -107,6 +109,9 @@ const SUB_TITLE_KEY: Record<AccountSubPage, string> = {
   follows: "follows.title",
   games: "mygames.title",
   calendar: "feedcal.title",
+  settings: "settings.title",
+  privacy: "privacy.title",
+  deleted: "privacy.deleted.title",
 };
 
 export function accountSubPageTitle(locale: Locale, page: AccountSubPage): string {
@@ -122,7 +127,7 @@ function WideFrame({ title, children }: { title: string; children: ReactNode }):
   );
 }
 
-const SUB_STRING_PREFIXES = ["list.", "play.", "error.", "common.", "account.signed", "account.signIn", "account.error.", "account.track.", "follows.", "mygames.", "feedcal."] as const;
+const SUB_STRING_PREFIXES = ["list.", "play.", "error.", "common.", "account.signed", "account.signIn", "account.error.", "account.track.", "follows.", "mygames.", "feedcal.", "settings.", "privacy."] as const;
 
 export function AccountListsPageView({ locale }: { locale: Locale }): ReactElement {
   const s = accountStrings(locale, SUB_STRING_PREFIXES);
@@ -177,6 +182,42 @@ export function AccountCalendarPageView({ locale, platformGroups, children }: { 
     <WideFrame title={str(s, "feedcal.title")}>
       <AccountCalendar strings={s} locale={locale} platformGroups={platformGroups} />
       {children}
+    </WideFrame>
+  );
+}
+
+// ── 第 7 波：設定、隱私與資料、刪除完成 ──
+export function AccountSettingsPageView({ locale, platformGroups, regions, scoreProviders }: { locale: Locale; platformGroups: PlatformGroup[]; regions: RegionOption[]; scoreProviders: string[] }): ReactElement {
+  const s = accountStrings(locale, SUB_STRING_PREFIXES);
+  return (
+    <WideFrame title={str(s, "settings.title")}>
+      <AccountSettings strings={s} locale={locale} platformGroups={platformGroups} regions={regions} scoreProviders={scoreProviders} />
+    </WideFrame>
+  );
+}
+
+export function AccountPrivacyPageView({ locale }: { locale: Locale }): ReactElement {
+  const s = accountStrings(locale, SUB_STRING_PREFIXES);
+  return (
+    <WideFrame title={str(s, "privacy.title")}>
+      <AccountPrivacy strings={s} locale={locale} />
+    </WideFrame>
+  );
+}
+
+/** 刪除帳號後的完成頁（不需登入；伺服器 HTML 與使用者無關）。 */
+export function AccountDeletedPageView({ locale, homeHref }: { locale: Locale; homeHref: string }): ReactElement {
+  const s = accountStrings(locale, ["privacy.deleted."]);
+  return (
+    <WideFrame title={str(s, "privacy.deleted.title")}>
+      <p role="status" data-testid="account-deleted">
+        {str(s, "privacy.deleted.body")}
+      </p>
+      <p>
+        <a className="btn-primary" href={homeHref}>
+          {str(s, "privacy.deleted.home")}
+        </a>
+      </p>
     </WideFrame>
   );
 }

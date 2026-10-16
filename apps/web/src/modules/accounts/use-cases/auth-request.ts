@@ -5,11 +5,11 @@
  * 2. 封鎖我們不開放的 BA 端點（回傳 token 密文／帳號資訊；本專案的匯入走自己的 use case）。
  * 3. 註冊欄位長度（資料庫欄位上限）：超過回 400，避免變成 500。
  */
+import { DISPLAY_NAME_MAX } from "../domain/entities/account-self";
 import { AUTH_BASE_PATH, readAccountsPublicConfig } from "../providers/auth";
 import { getAuth } from "./auth-instance";
 
 const BLOCKED_PATHS = new Set(["/get-access-token", "/refresh-token", "/account-info"]);
-export const DISPLAY_NAME_MAX = 100;
 export const EMAIL_MAX = 255;
 
 function notFound(): Response {

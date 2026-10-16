@@ -13,6 +13,7 @@ import { formatLocalDateTime, maskFeedUrl } from "./follow-format";
 import { CONTROL_CLASS, Field } from "./form-parts";
 import { accountFollowsHref } from "./links";
 import { fieldErrorText } from "./play-format";
+import { PlatformPicker, type PlatformGroup } from "./platform-picker";
 import { apiErrorText } from "./play-record-form";
 import { RequireUser } from "./require-user";
 import { str } from "./str";
@@ -22,10 +23,7 @@ import type { AccountStrings } from "./strings";
 const STAGES = ["unspecified", "full", "early_access", "beta", "alpha", "demo", "other"] as const;
 const LOCALES = ["zh-Hant", "en", "ja"] as const;
 
-export interface PlatformGroup {
-  kind: string;
-  platforms: { id: number; name: string }[];
-}
+export type { PlatformGroup };
 
 type Notice = { tone: "ok" | "error"; text: string } | null;
 
@@ -181,8 +179,6 @@ function SettingsForm({ strings, feed, platformGroups, onFeed }: { strings: Acco
   const [includeEvents, setIncludeEvents] = useState(feed.includeEvents);
   const [stages, setStages] = useState<Set<string>>(() => new Set(feed.filterStages));
   const [platforms, setPlatforms] = useState<Set<number>>(() => new Set(feed.filterPlatforms));
-  // 一開始就有勾選的平台群組預設展開；之後不再被勾選動作影響（避免取消最後一個勾選時整組收起）
-  const [openKinds] = useState(() => new Set(platformGroups.filter((g) => g.platforms.some((p) => feed.filterPlatforms.includes(p.id))).map((g) => g.kind)));
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState<Notice>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -225,7 +221,6 @@ function SettingsForm({ strings, feed, platformGroups, onFeed }: { strings: Acco
     } else setNotice({ tone: "error", text: apiErrorText(strings, res) });
   }
 
-  const platformsFull = platforms.size >= FEED_FILTER_MAX;
   return (
     <form onSubmit={(e) => void onSubmit(e)} noValidate className="flex min-w-0 flex-col gap-4" aria-labelledby={`${uid}-title`} data-section="private-feed-settings">
       <h2 id={`${uid}-title`} className="text-xl font-bold">
@@ -275,38 +270,17 @@ function SettingsForm({ strings, feed, platformGroups, onFeed }: { strings: Acco
         {fieldErrors.filterStages ? <p className="text-sm text-[var(--danger)]">{fieldErrorText(strings, fieldErrors.filterStages)}</p> : null}
       </fieldset>
 
-      {platformGroups.length > 0 ? (
-        <fieldset className="flex min-w-0 flex-col gap-1">
-          <legend className="font-semibold">{str(strings, "feedcal.settings.platforms")}</legend>
-          <p className="text-sm text-[var(--muted)]">{str(strings, "feedcal.settings.platformsHint")}</p>
-          {platformsFull ? <p className="text-sm">{str(strings, "feedcal.settings.tooManyPlatforms")}</p> : null}
-          {platformGroups.map((g) => {
-            const selected = g.platforms.filter((p) => platforms.has(p.id)).length;
-            return (
-              <details key={g.kind} className="rounded-md border border-[var(--border)] px-3" open={openKinds.has(g.kind)}>
-                <summary className="min-h-11 cursor-pointer py-2 font-medium">
-                  {str(strings, `feedcal.kind.${g.kind}`)}
-                  {selected > 0 ? ` (${selected})` : ""}
-                </summary>
-                <div className="flex flex-wrap gap-x-4 pb-2">
-                  {g.platforms.map((p) => (
-                    <label key={p.id} className="inline-flex min-h-11 min-w-0 items-center gap-2 [overflow-wrap:anywhere]">
-                      <input
-                        type="checkbox"
-                        checked={platforms.has(p.id)}
-                        disabled={platformsFull && !platforms.has(p.id)}
-                        onChange={(e) => setPlatforms((all) => toggle(all, p.id, e.target.checked))}
-                      />
-                      <span>{p.name}</span>
-                    </label>
-                  ))}
-                </div>
-              </details>
-            );
-          })}
-          {fieldErrors.filterPlatforms ? <p className="text-sm text-[var(--danger)]">{fieldErrorText(strings, fieldErrors.filterPlatforms)}</p> : null}
-        </fieldset>
-      ) : null}
+      <PlatformPicker
+        strings={strings}
+        groups={platformGroups}
+        selected={platforms}
+        onChange={setPlatforms}
+        max={FEED_FILTER_MAX}
+        legend={str(strings, "feedcal.settings.platforms")}
+        hint={str(strings, "feedcal.settings.platformsHint")}
+        fullText={str(strings, "feedcal.settings.tooManyPlatforms")}
+        error={fieldErrors.filterPlatforms ? fieldErrorText(strings, fieldErrors.filterPlatforms) : null}
+      />
 
       <div role="status" aria-live="polite" className="min-h-6">
         {notice ? <p className={notice.tone === "error" ? "text-[var(--danger)]" : ""}>{notice.text}</p> : null}

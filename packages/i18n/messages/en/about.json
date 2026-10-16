@@ -44,11 +44,11 @@
   },
   "privacy": {
     "title": "Privacy policy",
-    "intro": "This page describes what information the site processes when you use it. At the time of writing the site has no user accounts, no advertising and no analytics.",
+    "intro": "This page explains what information the site handles when you use it. The site has no ads and no analytics. Accounts are optional: every public feature works without signing in.",
     "sections": {
       "cookies": {
         "title": "Cookies",
-        "body": "We do not use tracking or advertising cookies.\nThe only cookie we set is sok_locale. It is set only if you choose a language from the language menu, it contains only the language code, and it is kept for up to one year so that the site can open in your language next time. You can delete it in your browser at any time; the site works without it."
+        "body": "We do not use tracking or advertising cookies.\nWe set only two kinds of cookies:\n- sok_locale: set only when you pick a language from the language menu. It holds just the language code and is kept for up to a year, so the site opens in that language next time.\n- Sign-in cookies (names starting with better-auth): set only when you sign in to an account, to recognize your signed-in state. A sign-in lasts up to 30 days and the cookies are cleared when you sign out or delete your account.\nYou can delete these cookies in your browser at any time; the public features keep working without the sign-in cookies."
       },
       "storage": {
         "title": "Data stored in your browser",
@@ -68,7 +68,7 @@
       },
       "accounts": {
         "title": "Accounts",
-        "body": "There are no user accounts at the moment. If sign-in or other features that process personal data are added, this page will be updated before they go live."
+        "body": "You may choose to create an account (with email and password, or by signing in with Discord, Google, Twitch, X, Microsoft or Steam). Once you have an account, we handle the following data:\n- Account data: display name, email address (if your sign-in method provides one), avatar URL, the sign-in methods you link and your identifier at each service, and your password stored only as a hash (never in plain text).\n- Sign-in state: the IP address and browser information from when you signed in, used to recognize and protect your sign-in.\n- Authorization credentials from other services: if you use social sign-in, we store the credentials that service gives us, encrypted, and use them only for features you ask for.\n- Content you create: lists, play records (including reviews and private notes), follows, and your preferences.\n- Game library: if you link Steam and import, we store the game IDs and titles in your library and how they were matched to games on this site.\n- Private calendar: we generate a personal subscription URL for you (treat it like a password and do not share it) and record when it was last read.\nThis data is used to provide the account features (sign-in, collections, follows, private calendar, library matching). It is not used for advertising and is not sold."
       },
       "backups": {
         "title": "Backups",
@@ -81,6 +81,14 @@
       "changes": {
         "title": "Changes",
         "body": "We may update this page. The date of the latest revision is shown at the top."
+      },
+      "accountVisibility": {
+        "title": "Public and private content",
+        "body": "By default only you can see your data. You choose the visibility of lists and reviews (public, unlisted but visible to anyone with the link, or private); private notes and your follow list are never public. Public lists and reviews show your display name. Only aggregated numbers are shown publicly (for example follower counts or the player average rating), never who is behind them. An administrator may suspend an account for abuse; a suspended account can still access and export its own data."
+      },
+      "accountRetention": {
+        "title": "Retention, export and deletion",
+        "body": "We keep the data above while you have an account. At any time, on your account's \"Privacy and data\" page, you can:\n- Export your data (JSON, or CSV in parts).\n- Delete your account: the account and its lists, play records (including public reviews and private notes), follows, game library and private calendar settings are permanently deleted, your private calendar URL stops working immediately, and this cannot be undone. Deleting requires re-verifying your identity (entering your password, or having just signed in again).\nAfter deletion, aggregated anonymous statistics (such as the player average rating) stop including your data at the next recalculation. Database backups may still contain deleted data during their retention period (see \"Backups\" below: 8 days for daily, 29 days for weekly, about 190 days at most for monthly) and then expire on their own; backups are not used to run the site."
       }
     }
   },

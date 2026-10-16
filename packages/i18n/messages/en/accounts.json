@@ -511,5 +511,115 @@
       "confirmButton": "Yes, regenerate",
       "done": "A new URL was generated. Subscribe again with it in your calendar app."
     }
+  },
+  "settings": {
+    "title": "Account settings",
+    "intro": "These preferences only affect what you see. Anything you leave unset uses the site default.",
+    "loadError": "Could not load your settings. Please try again later.",
+    "formTitle": "Preferences",
+    "displayName": "Display name",
+    "displayNameHint": "Public lists and reviews show this name.",
+    "locale": "Preferred language",
+    "localeHint": "Used for things like the default language of your private calendar. The site language is still set by the URL and the language menu.",
+    "localeAuto": "No preference (follow browser language)",
+    "timezone": "Time zone",
+    "timezoneHint": "For example Asia/Taipei. Leave empty for no preference.",
+    "timezoneUseBrowser": "Use this browser's time zone",
+    "region": "Preferred region",
+    "regionHint": "The region used first when showing release dates. Leave empty to use the site default.",
+    "regionAuto": "No preference (site default)",
+    "scores": "Score sources",
+    "scoresHint": "Which sources' scores to show on game pages. The site owner may also limit which sources are available.",
+    "scoresDefault": "Use the site default",
+    "scoresCustom": "Choose myself",
+    "scoresNone": "No source is selected: game pages will not show scores.",
+    "scoreProvider": {
+      "igdb": "IGDB",
+      "metacritic_scrape": "Metacritic"
+    },
+    "platforms": "Favorite platforms",
+    "platformsHint": "The platforms you play most (up to 20).",
+    "platformsFull": "Limit reached. Uncheck another platform to pick more.",
+    "defaultListVisibility": "Default visibility for new lists",
+    "defaultListVisibilityHint": "Used when you create a list without choosing a visibility. Existing lists do not change.",
+    "defaultReviewVisibility": "Default visibility for new reviews",
+    "defaultReviewVisibilityHint": "Used when you log a play without choosing a review visibility. Existing records do not change.",
+    "save": "Save settings",
+    "saving": "Saving…",
+    "saved": "Settings saved.",
+    "unchanged": "No changes.",
+    "toPrivacy": "Privacy and data (export, delete account)",
+    "toAccount": "Back to my account",
+    "nav": {
+      "title": "Settings and privacy",
+      "hint": "Adjust preferences, export your data, or delete your account.",
+      "settings": "Account settings",
+      "privacy": "Privacy and data"
+    }
+  },
+  "privacy": {
+    "title": "Privacy and data",
+    "policyLink": "Privacy policy",
+    "toSettings": "Account settings",
+    "export": {
+      "title": "Export my data",
+      "intro": "Download a copy of your data on this site. The file contains your private notes, so keep it safe.",
+      "includes": {
+        "profile": "Profile and preferences",
+        "connections": "Linked sign-in methods (type and date only)",
+        "lists": "Lists and the games in them",
+        "plays": "Play records (including reviews and private notes)",
+        "follows": "Followed games, events, platforms, franchises and companies",
+        "owned": "Steam library and match results",
+        "calendar": "Private calendar settings"
+      },
+      "excludes": "Passwords, sign-in credentials and your private calendar subscription URL are not included. For accounts without an email, the email field holds a system-generated placeholder and is marked as such.",
+      "json": "Download everything (JSON)",
+      "csvTitle": "Download in parts (CSV)",
+      "csvHint": "CSV files open in a spreadsheet. Each part is a separate file.",
+      "part": {
+        "profile": "Profile",
+        "lists": "Lists",
+        "list_games": "Games in lists",
+        "plays": "Play records",
+        "follows": "Follows",
+        "owned_games": "Steam library"
+      },
+      "preparing": "Preparing the file…",
+      "done": "Downloaded {file}.",
+      "rateLimited": "Too many exports. Please try again later (there is an hourly limit).",
+      "failed": "Export failed. Please try again later."
+    },
+    "delete": {
+      "title": "Delete account",
+      "intro": "Deleting your account permanently removes your data on this site:",
+      "removes": {
+        "account": "Your account, sign-in methods and preferences",
+        "lists": "All lists and the items in them",
+        "plays": "All play records, including public reviews and private notes",
+        "follows": "All follows",
+        "owned": "Your Steam library and match results",
+        "calendar": "Your private calendar URL stops working immediately (calendar apps will get \"not found\")"
+      },
+      "irreversible": "This cannot be undone. We recommend exporting your data first.",
+      "backups": "For disaster recovery, database backups are kept for a while longer (up to about 6 months). They are not used to run the site and expire on their own. See the privacy policy.",
+      "noPassword": "Your account has no password. For safety, you must have signed in within the last {minutes} minutes before deleting; if it has been longer, sign in again first.",
+      "reauthButton": "Sign out and sign in again",
+      "password": "Current password",
+      "passwordHint": "Enter your password to confirm it is you.",
+      "passwordRequired": "Enter your password.",
+      "wrongPassword": "That password is incorrect.",
+      "reauthNeeded": "You signed in more than {minutes} minutes ago. Please sign in again, then delete your account.",
+      "ack": "I understand my account and data will be permanently deleted and cannot be recovered.",
+      "button": "Delete my account",
+      "confirm": "Final check: permanently delete your account?",
+      "confirmButton": "Delete permanently",
+      "rateLimited": "Too many attempts. Please try again later."
+    },
+    "deleted": {
+      "title": "Account deleted",
+      "body": "Your account and data have been deleted, and you have been signed out. Thanks for using the site.",
+      "home": "Back to the home page"
+    }
   }
 }
