@@ -3,8 +3,11 @@
 import { useCallback, useEffect, useState, type ReactElement } from "react";
 import { isExternalProvider } from "../domain/entities/providers";
 import { isPlaceholderEmail } from "../domain/entities/email";
-import { getSession, listAccounts, signOut, unlinkAccount, type LinkedAccountRow, type SessionUser } from "./auth-api";
+import { getSession, listAccounts, signInSteam, signOut, unlinkAccount, type LinkedAccountRow, type SessionUser } from "./auth-api";
 import { accountPageHref } from "./links";
+import { oauthErrorText } from "./oauth-error";
+import { SteamLibrary } from "./steam-library";
+import { useSearchParam } from "./use-search-param";
 import { str } from "./str";
 import type { AccountStrings } from "./strings";
 
@@ -15,6 +18,9 @@ export function AccountPanel({ strings, locale }: { strings: AccountStrings; loc
   const [linked, setLinked] = useState<LinkedAccountRow[]>([]);
   const [message, setMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
   const [leaving, setLeaving] = useState(false);
+  const [linking, setLinking] = useState(false);
+  // Steam／OAuth 綁定失敗會帶 ?error= 回來（在客戶端讀，伺服器端 HTML 與使用者、網址無關）
+  const returnedError = useSearchParam("error");
 
   const loadLinked = useCallback(async () => {
     const res = await listAccounts();
@@ -40,6 +46,7 @@ export function AccountPanel({ strings, locale }: { strings: AccountStrings; loc
   if (state.kind === "anonymous") {
     return (
       <div className="flex flex-col gap-3">
+        {returnedError ? <p role="alert" className="notice text-[var(--danger)]">{oauthErrorText(strings, returnedError)}</p> : null}
         <h2 className="text-xl font-bold">{str(strings, "account.signedOutTitle")}</h2>
         <p>{str(strings, "account.signedOutBody")}</p>
         <p>
@@ -53,6 +60,7 @@ export function AccountPanel({ strings, locale }: { strings: AccountStrings; loc
 
   const user = state.user;
   const showEmail = !isPlaceholderEmail(user.email);
+  const steamLinked = linked.some((a) => a.providerId === "steam");
 
   async function onUnlink(row: LinkedAccountRow): Promise<void> {
     setMessage(null);
@@ -66,6 +74,19 @@ export function AccountPanel({ strings, locale }: { strings: AccountStrings; loc
     else setMessage({ tone: "error", text: res.network ? str(strings, "common.network") : str(strings, "common.generic") });
   }
 
+  async function onLinkSteam(): Promise<void> {
+    setLinking(true);
+    setMessage(null);
+    const here = accountPageHref(locale, "account");
+    const res = await signInSteam(here, here);
+    if (res.ok && res.data?.url) {
+      window.location.assign(res.data.url);
+      return;
+    }
+    setLinking(false);
+    setMessage({ tone: "error", text: res.network ? str(strings, "common.network") : res.status === 429 ? str(strings, "common.rateLimited") : str(strings, "login.error.steamInvalid") });
+  }
+
   async function onSignOut(): Promise<void> {
     setLeaving(true);
     await signOut();
@@ -74,11 +95,11 @@ export function AccountPanel({ strings, locale }: { strings: AccountStrings; loc
 
   return (
     <div className="flex flex-col gap-6">
-      <dl className="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-2">
+      <dl className="grid grid-cols-[max-content_minmax(0,1fr)] gap-x-4 gap-y-2">
         <dt className="font-semibold">{str(strings, "account.name")}</dt>
-        <dd data-testid="account-name">{user.name}</dd>
+        <dd data-testid="account-name" className="min-w-0 [overflow-wrap:anywhere]">{user.name}</dd>
         <dt className="font-semibold">{str(strings, "account.email")}</dt>
-        <dd data-testid="account-email">
+        <dd data-testid="account-email" className="min-w-0 [overflow-wrap:anywhere]">
           {showEmail ? (
             <>
               {user.email}
@@ -95,6 +116,11 @@ export function AccountPanel({ strings, locale }: { strings: AccountStrings; loc
           {str(strings, "account.linked")}
         </h2>
         <p className="text-sm text-[var(--muted)]">{str(strings, "account.linkedHint")}</p>
+        {returnedError && !message ? (
+          <p role="alert" className="notice text-[var(--danger)]">
+            {oauthErrorText(strings, returnedError)}
+          </p>
+        ) : null}
         {message ? (
           <p role={message.tone === "error" ? "alert" : "status"} className={`notice ${message.tone === "error" ? "text-[var(--danger)]" : ""}`}>
             {message.text}
@@ -114,7 +140,16 @@ export function AccountPanel({ strings, locale }: { strings: AccountStrings; loc
             ))}
           </ul>
         )}
+        {!steamLinked ? (
+          <p>
+            <button type="button" className="btn-secondary" disabled={linking} onClick={() => void onLinkSteam()}>
+              {str(strings, "account.linkSteam")}
+            </button>
+          </p>
+        ) : null}
       </section>
+
+      {steamLinked ? <SteamLibrary strings={strings} locale={locale} /> : null}
 
       <p>
         <button type="button" className="btn-secondary" disabled={leaving} onClick={() => void onSignOut()}>

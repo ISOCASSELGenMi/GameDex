@@ -2,6 +2,7 @@ import type { ComponentType } from "react";
 import type { ModuleManifestBase } from "@/kernel/modules/types";
 import { HeaderRightSlot } from "./ui/header-slot";
 import { cleanupExpiredAuthRows } from "./use-cases/cleanup-expired";
+import { matchOwnedGames } from "./use-cases/owned-games";
 
 /**
  * accounts 模組（02、09）：帳號、登入（Better Auth；D76）、之後的收藏／追蹤／遊玩紀錄。
@@ -15,13 +16,23 @@ export const accountsModule: ModuleManifestBase = {
   kind: "optional",
   requires: [],
   requiredEnv: ["AUTH_SECRET", "TOKEN_ENCRYPTION_KEY"],
-  ownedTables: ["users", "connected_accounts", "sessions", "auth_verifications", "auth_tokens"],
+  ownedTables: ["users", "connected_accounts", "sessions", "auth_verifications", "auth_tokens", "owned_games"],
   jobs: [
     {
       name: "cleanup_auth_rows",
       cron: "35 3 * * *", // 每日：過期 session 與 auth_verifications
       run: async (ctx) => {
         await cleanupExpiredAuthRows(ctx.startedAt, ctx.log);
+      },
+    },
+    {
+      // 第 3 波：遊戲庫（Steam）比對。每次最多 500 列、只處理尚未比對的列；匯入當下另由 after() 先比對該帳號
+      name: "match_owned_games",
+      cron: "7,22,37,52 * * * *",
+      lockMode: "session",
+      run: async (ctx) => {
+        const s = await matchOwnedGames({ log: ctx.log });
+        ctx.log("match_owned_games", { ...s });
       },
     },
   ],

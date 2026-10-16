@@ -32,7 +32,11 @@
       "accountNotLinked": "這個信箱已經用其他方式註冊過。請先用原本的方式登入，再到帳號頁綁定新的登入方式。",
       "emailNotFound": "該服務沒有提供信箱，無法用它建立帳號。",
       "signupDisabled": "目前不開放註冊新帳號。",
-      "oauthFailed": "第三方登入失敗，請再試一次。"
+      "oauthFailed": "第三方登入失敗，請再試一次。",
+      "steamInvalid": "Steam 回傳的資料不正確，請重新登入一次。",
+      "steamVerification": "Steam 沒有確認這次登入，請再試一次。",
+      "steamAlreadyLinked": "這個 Steam 帳號已經綁定在另一個帳號上。",
+      "steamNetwork": "無法連到 Steam 完成驗證，請稍後再試。"
     }
   },
   "signup": {
@@ -90,7 +94,8 @@
     "error": {
       "unlinkLast": "這是你唯一的登入方式，不能解除綁定。",
       "notFresh": "為了安全，請重新登入後再操作。"
-    }
+    },
+    "linkSteam": "綁定 Steam"
   },
   "providers": {
     "credential": "信箱與密碼",
@@ -100,5 +105,36 @@
     "twitter": "X（Twitter）",
     "microsoft": "Microsoft／Xbox",
     "steam": "Steam"
+  },
+  "steam": {
+    "title": "Steam 遊戲庫",
+    "privacyNote": "匯入需要你的 Steam 個人檔案與「遊戲詳細資料」都設為公開。匯入完成後可以再改回私人。",
+    "privacyHow": "設定位置：Steam 個人檔案 → 編輯個人檔案 → 隱私設定 → 把「個人檔案」與「遊戲詳細資料」設為公開。",
+    "import": "匯入遊戲庫",
+    "reimport": "重新匯入",
+    "importing": "匯入中…",
+    "imported": "已匯入 {count} 款遊戲，正在比對資料庫中的遊戲。",
+    "unavailable": "目前站台尚未設定 Steam 匯入，暫時無法使用。",
+    "cooldown": "為避免過度呼叫 Steam，請約 {minutes} 分鐘後再匯入。",
+    "summary": "共 {total} 款：已比對 {matched}、待確認 {review}、找不到 {notFound}。",
+    "summaryQueued": "另有 {queued} 款比對中。",
+    "listLabel": "Steam 遊戲清單",
+    "showMore": "顯示更多",
+    "empty": "還沒有匯入任何遊戲。",
+    "status": {
+      "matched": "已比對",
+      "needs_review": "待確認",
+      "not_found": "找不到",
+      "queued": "比對中"
+    },
+    "error": {
+      "load": "無法載入遊戲庫，請稍後再試。",
+      "generic": "匯入失敗，請稍後再試。",
+      "private": "讀不到你的遊戲庫：請把 Steam 個人檔案的「遊戲詳細資料」設為公開後再試。",
+      "cooldown": "剛匯入過，請稍後再試。",
+      "unavailable": "目前站台無法使用 Steam 匯入。",
+      "upstream": "Steam 暫時沒有回應，請稍後再試。",
+      "notLinked": "尚未綁定 Steam。"
+    }
   }
 }

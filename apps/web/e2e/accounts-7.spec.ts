@@ -9,7 +9,8 @@
  */
 import { spawn, type ChildProcess } from "node:child_process";
 import path from "node:path";
-import { E2E_BASE_URL, E2E_CLOSED_BASE_URL, E2E_CLOSED_PORT, WEB_DIR, serverEnv } from "./support/env";
+import pg from "pg";
+import { E2E_BASE_URL, E2E_CLOSED_BASE_URL, E2E_CLOSED_PORT, WEB_DIR, serverEnv, testDatabaseUrl } from "./support/env";
 import { FIXTURE, LOCALES, calendarUrl, expect, expectNoA11yViolations, gameUrl, msg, test, type TestLocale } from "./support/helpers";
 import { request as pwRequest, type Page } from "@playwright/test";
 
@@ -33,7 +34,7 @@ async function login(page: Page, locale: TestLocale, email: string, password = P
   await page.goto(`/${locale}/login`);
   await page.getByLabel(m(locale, "common.email")).fill(email);
   await page.getByLabel(m(locale, "common.password")).fill(password);
-  await page.getByRole("button", { name: m(locale, "login.submit") }).click();
+  await page.getByRole("button", { name: m(locale, "login.submit"), exact: true }).click();
 }
 
 const header = (page: Page) => page.getByRole("banner");
@@ -276,8 +277,130 @@ test.describe("註冊關閉（ACCOUNTS_SIGNUP_ENABLED=false；第二個伺服器
     await page.goto(`${E2E_CLOSED_BASE_URL}/${locale}/login`);
     await page.getByLabel(m(locale, "common.email")).fill(closedEmail);
     await page.getByLabel(m(locale, "common.password")).fill(PASSWORD);
-    await page.getByRole("button", { name: m(locale, "login.submit") }).click();
+    await page.getByRole("button", { name: m(locale, "login.submit"), exact: true }).click();
     await page.waitForURL(`**/${locale}/calendar**`);
     await expect(header(page).getByRole("button", { name: m(locale, "header.menu", { name: "既有帳號" }) })).toBeVisible();
+  });
+});
+
+// ── 第 3 波：Steam 登入按鈕與遊戲庫區 ─────────────────────────────────────────
+let steamSeq = 0;
+/** 為已註冊的信箱建立 Steam 綁定與 owned_games（直接寫測試資料庫；不連 Steam）。 */
+async function seedSteamLibrary(email: string): Promise<void> {
+  const client = new pg.Client({ connectionString: testDatabaseUrl() });
+  await client.connect();
+  try {
+    const steamId = `76561199${(Date.now() % 100_000_000).toString().padStart(8, "0")}${steamSeq++ % 10}`;
+    const { rows: u } = await client.query<{ id: number }>("SELECT id FROM users WHERE email = $1", [email.toLowerCase()]);
+    const { rows: a } = await client.query<{ id: number }>(
+      "INSERT INTO connected_accounts (user_id, provider, provider_account_id) VALUES ($1, 'steam', $2) RETURNING id",
+      [u[0]!.id, steamId],
+    );
+    const { rows: g } = await client.query<{ id: number }>("SELECT id FROM games WHERE slug = $1", [FIXTURE.hero.slug]);
+    const acct = a[0]!.id;
+    const insert = (appId: string, title: string, gameId: number | null, pct: number | null) =>
+      client.query(
+        "INSERT INTO owned_games (connected_account_id, external_game_id, external_title, matched_game_id, match_confidence_pct) VALUES ($1,$2,$3,$4,$5)",
+        [acct, appId, title, gameId, pct],
+      );
+    await insert("1001", "Aurora Odyssey (Steam)", g[0]!.id, 100);
+    await insert("1002", "Borderline Title", null, 70);
+    await insert("1003", "Nowhere Title", null, 0);
+    await insert("1004", "Waiting Title", null, null);
+    for (let i = 0; i < 55; i++) await insert(String(2000 + i), `Filler Game ${String(i).padStart(2, "0")}`, null, 0);
+  } finally {
+    await client.end();
+  }
+}
+
+test.describe("Steam（第 3 波）", () => {
+  test("登入頁有「用 Steam 登入」按鈕（三語）；點下去會取得 Steam 授權網址並導向（攔截，不連 Steam）", async ({ page }) => {
+    for (const locale of LOCALES) {
+      await page.route("https://steamcommunity.com/**", (route) => route.fulfill({ status: 200, contentType: "text/html", body: "<title>steam</title>" }));
+      await page.goto(`/${locale}/login`);
+      const button = page.getByRole("button", { name: m(locale, "common.continueWith", { provider: "Steam" }) });
+      await expect(button).toBeVisible();
+      await expect(button).toBeEnabled();
+      await button.click();
+      await page.waitForURL("https://steamcommunity.com/openid/login**");
+      const u = new URL(page.url());
+      expect(u.searchParams.get("openid.mode")).toBe("checkid_setup");
+      expect(u.searchParams.get("openid.return_to")).toContain("/api/v1/auth/steam/callback?n=");
+      await page.unroute("https://steamcommunity.com/**");
+    }
+  });
+
+  test("?error= 的 Steam 錯誤碼在登入頁顯示對應文案（三語）", async ({ page }) => {
+    const codes: [string, string][] = [
+      ["steam_invalid_response", "login.error.steamInvalid"],
+      ["steam_verification_failed", "login.error.steamVerification"],
+      ["steam_already_linked", "login.error.steamAlreadyLinked"],
+      ["steam_network_error", "login.error.steamNetwork"],
+      ["signup_disabled", "login.error.signupDisabled"],
+    ];
+    for (const locale of LOCALES) {
+      for (const [code, key] of codes) {
+        await page.goto(`/${locale}/login?error=${code}`);
+        await expect(page.locator("main").getByRole("alert")).toHaveText(m(locale, key));
+      }
+    }
+  });
+
+  test("匿名請求 POST／GET /api/v1/imports/steam → 401（no-store）；不支援的平台 → 404；Origin 不符 → 403", async ({ request }) => {
+    const post = await request.post("/api/v1/imports/steam", { headers: { origin: E2E_BASE_URL } });
+    expect(post.status()).toBe(401);
+    expect(post.headers()["cache-control"]).toBe("no-store");
+    expect((await request.get("/api/v1/imports/steam")).status()).toBe(401);
+    expect((await request.post("/api/v1/imports/xbox", { headers: { origin: E2E_BASE_URL } })).status()).toBe(404);
+    expect((await request.post("/api/v1/imports/steam", { headers: { origin: "https://evil.example" } })).status()).toBe(403);
+  });
+
+  for (const locale of LOCALES) {
+    test(`${locale} 帳號頁：Steam 遊戲庫區（提示、停用的匯入鈕與原因、摘要、清單、顯示更多）；三種寬度 axe 與無水平溢出`, async ({ page }) => {
+      const email = uniqueEmail(`steam-lib-${locale}`);
+      await register(E2E_BASE_URL, email, `Steam ${locale}`);
+      await seedSteamLibrary(email);
+      await page.context().clearCookies();
+      await login(page, locale, email);
+      await page.waitForURL(`**/${locale}/calendar**`);
+      for (const width of [1280, 375, 320]) {
+        await page.setViewportSize({ width, height: 900 });
+        await page.goto(`/${locale}/account`);
+        await expect(page.getByRole("heading", { level: 2, name: m(locale, "steam.title") })).toBeVisible();
+        await expect(page.getByText(m(locale, "steam.privacyNote"))).toBeVisible();
+        await expect(page.getByText(m(locale, "steam.privacyHow"))).toBeVisible();
+        // e2e 伺服器沒有 STEAM_WEB_API_KEY：匯入鈕停用並說明原因
+        const importButton = page.getByRole("button", { name: m(locale, "steam.reimport") });
+        await expect(importButton).toBeDisabled();
+        await expect(page.getByText(m(locale, "steam.unavailable"))).toBeVisible();
+        await expect(page.getByTestId("steam-summary")).toContainText(m(locale, "steam.summary", { total: "59", matched: "1", review: "1", notFound: "56" }));
+        // 已比對的遊戲連到詳情頁；其他狀態顯示文字
+        await expect(page.getByRole("link", { name: FIXTURE.hero.name })).toHaveAttribute("href", `/${locale}/games/${FIXTURE.hero.slug}`);
+        await expect(page.getByText(m(locale, "steam.status.needs_review"), { exact: true })).toBeVisible();
+        await expect(page.getByRole("list", { name: m(locale, "steam.listLabel") }).getByRole("listitem")).toHaveCount(50);
+        const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+        const offenders = await page.evaluate(() => [...document.querySelectorAll("*")].filter((e) => e.getBoundingClientRect().right > document.documentElement.clientWidth + 0.5).map((e) => e.tagName + "." + e.className + " " + (e.textContent ?? "").slice(0, 30)).slice(0, 8));
+        expect(overflow, `${width} 寬不可水平捲動（溢出 ${overflow}px）${JSON.stringify(offenders)}`).toBeLessThanOrEqual(0);
+        await expectNoA11yViolations(page, `${locale} /account Steam ${width}`);
+      }
+      await page.setViewportSize({ width: 1280, height: 900 });
+      await page.getByRole("button", { name: m(locale, "steam.showMore") }).click();
+      await expect(page.getByRole("list", { name: m(locale, "steam.listLabel") }).getByRole("listitem")).toHaveCount(59);
+      await expect(page.getByRole("button", { name: m(locale, "steam.showMore") })).toHaveCount(0);
+    });
+  }
+
+  test("沒綁 Steam 的帳號：帳號頁有「綁定 Steam」，沒有遊戲庫區；GET／POST /api/v1/imports/steam → 409", async ({ page }) => {
+    const locale: TestLocale = "en";
+    const email = uniqueEmail("steam-none");
+    await register(E2E_BASE_URL, email, "No Steam");
+    await page.context().clearCookies();
+    await login(page, locale, email);
+    await page.waitForURL(`**/${locale}/calendar**`);
+    await page.goto(`/${locale}/account`);
+    await expect(page.getByRole("button", { name: m(locale, "account.linkSteam") })).toBeVisible();
+    await expect(page.getByRole("heading", { name: m(locale, "steam.title") })).toHaveCount(0);
+    expect((await page.request.get("/api/v1/imports/steam")).status()).toBe(409);
+    expect((await page.request.post("/api/v1/imports/steam", { headers: { origin: E2E_BASE_URL } })).status()).toBe(409);
   });
 });

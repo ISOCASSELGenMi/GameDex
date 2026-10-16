@@ -63,3 +63,7 @@ export interface LinkedAccountRow {
 }
 export const listAccounts = () => call<LinkedAccountRow[]>("/list-accounts", { cache: "no-store" });
 export const unlinkAccount = (accountId: string) => post<{ status: boolean }>("/unlink-account", { accountId });
+
+/** Steam 登入／綁定：取得 Steam 的授權網址（有 session ＝ 綁定）。成功後前端 location.assign(url)。 */
+export const signInSteam = (callbackURL: string, errorCallbackURL: string) =>
+  post<{ url?: string }>("/steam/sign-in", { callbackURL, errorCallbackURL });

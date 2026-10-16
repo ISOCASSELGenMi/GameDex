@@ -78,3 +78,6 @@ export {
   type ValidatedReport,
 } from "./domain/report-validation";
 export { CATALOG_TAG, gameDetailTag } from "./ui/seo/cache-tags";
+
+// ── Phase 7 第 3 波：外部遊戲庫（Steam）比對用的唯讀查詢 ─────────────────
+export { findTitleMatchCandidates, findGameIdsByExternalIds, getGameBriefsByIds, TITLE_CANDIDATE_LIMIT, type GameBrief } from "./use-cases/matching";

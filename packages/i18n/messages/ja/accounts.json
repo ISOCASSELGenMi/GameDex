@@ -32,7 +32,11 @@
       "accountNotLinked": "このメールアドレスは別の方法で登録済みです。まず元の方法でログインし、アカウントページで新しい方法を連携してください。",
       "emailNotFound": "そのサービスからメールアドレスが提供されなかったため、アカウントを作成できません。",
       "signupDisabled": "現在、新規登録は受け付けていません。",
-      "oauthFailed": "外部サービスでのログインに失敗しました。もう一度お試しください。"
+      "oauthFailed": "外部サービスでのログインに失敗しました。もう一度お試しください。",
+      "steamInvalid": "Steam から想定外の応答がありました。もう一度ログインしてください。",
+      "steamVerification": "Steam がこのログインを確認しませんでした。もう一度お試しください。",
+      "steamAlreadyLinked": "この Steam アカウントはすでに別のアカウントに連携されています。",
+      "steamNetwork": "Steam に接続して認証できませんでした。しばらくしてからお試しください。"
     }
   },
   "signup": {
@@ -90,7 +94,8 @@
     "error": {
       "unlinkLast": "これは唯一のログイン方法のため、連携を解除できません。",
       "notFresh": "安全のため、もう一度ログインしてからやり直してください。"
-    }
+    },
+    "linkSteam": "Steam を連携"
   },
   "providers": {
     "credential": "メールとパスワード",
@@ -100,5 +105,36 @@
     "twitter": "X（Twitter）",
     "microsoft": "Microsoft／Xbox",
     "steam": "Steam"
+  },
+  "steam": {
+    "title": "Steam ライブラリ",
+    "privacyNote": "インポートには、Steam のプロフィールと「ゲームの詳細」を公開に設定する必要があります。インポート後は非公開に戻して構いません。",
+    "privacyHow": "設定場所：Steam プロフィール → プロフィールを編集 → プライバシー設定 →「マイプロフィール」と「ゲームの詳細」を公開に。",
+    "import": "ライブラリをインポート",
+    "reimport": "再インポート",
+    "importing": "インポート中…",
+    "imported": "{count} 本のゲームをインポートしました。データベースと照合しています。",
+    "unavailable": "このサイトでは Steam インポートがまだ設定されていません。",
+    "cooldown": "Steam への負荷を避けるため、約 {minutes} 分後に再度お試しください。",
+    "summary": "全 {total} 本：照合済み {matched}、確認待ち {review}、見つからず {notFound}。",
+    "summaryQueued": "ほかに {queued} 本を照合中です。",
+    "listLabel": "Steam のゲーム一覧",
+    "showMore": "さらに表示",
+    "empty": "まだゲームがインポートされていません。",
+    "status": {
+      "matched": "照合済み",
+      "needs_review": "確認待ち",
+      "not_found": "見つからず",
+      "queued": "照合中"
+    },
+    "error": {
+      "load": "ライブラリを読み込めませんでした。しばらくしてからお試しください。",
+      "generic": "インポートに失敗しました。しばらくしてからお試しください。",
+      "private": "ライブラリを読み取れません。Steam プロフィールの「ゲームの詳細」を公開にしてから再度お試しください。",
+      "cooldown": "先ほどインポートしたばかりです。しばらくしてからお試しください。",
+      "unavailable": "現在このサイトでは Steam インポートを利用できません。",
+      "upstream": "Steam が応答していません。しばらくしてからお試しください。",
+      "notLinked": "Steam が連携されていません。"
+    }
   }
 }

@@ -43,6 +43,8 @@ const accountsEnvSchema = z.object({
   TWITTER_CLIENT_SECRET: optionalString,
   MICROSOFT_CLIENT_ID: optionalString,
   MICROSOFT_CLIENT_SECRET: optionalString,
+  /** Steam Web API 金鑰（GetOwnedGames／GetPlayerSummaries）。Steam 登入本身不需要；沒有金鑰時遊戲庫匯入停用、暱稱用「Steam <id>」。 */
+  STEAM_WEB_API_KEY: optionalString,
 });
 
 export type AccountsEnvInput = Readonly<Record<string, string | undefined>>;
@@ -58,6 +60,8 @@ export interface AccountsEnv {
   rateLimitEnabled: boolean;
   /** 兩個值都有才啟用。 */
   socialCredentials: Partial<Record<SocialProvider, { clientId: string; clientSecret: string }>>;
+  /** 未設為 undefined。絕不可寫進 log 或錯誤訊息。 */
+  steamApiKey: string | undefined;
 }
 
 export class AccountsConfigError extends Error {
@@ -91,6 +95,7 @@ export function parseAccountsEnv(env: AccountsEnvInput = process.env): AccountsE
     signupEnabled: d.ACCOUNTS_SIGNUP_ENABLED,
     rateLimitEnabled: d.AUTH_RATE_LIMIT_ENABLED === undefined ? d.NODE_ENV === "production" : d.AUTH_RATE_LIMIT_ENABLED === "true",
     socialCredentials: credentials,
+    steamApiKey: d.STEAM_WEB_API_KEY,
   };
 }
 

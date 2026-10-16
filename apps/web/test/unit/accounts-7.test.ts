@@ -277,8 +277,8 @@ describe("可移除性（02）", () => {
     expect(accountsModule.name).toBe("accounts");
     expect(accountsModule.kind).toBe("optional");
     expect(accountsModule.requiredEnv).toEqual(["AUTH_SECRET", "TOKEN_ENCRYPTION_KEY"]);
-    expect(accountsModule.ownedTables).toEqual(["users", "connected_accounts", "sessions", "auth_verifications", "auth_tokens"]);
-    expect(accountsModule.jobs?.map((j) => j.name)).toEqual(["cleanup_auth_rows"]);
+    expect(accountsModule.ownedTables).toEqual(["users", "connected_accounts", "sessions", "auth_verifications", "auth_tokens", "owned_games"]);
+    expect(accountsModule.jobs?.map((j) => j.name)).toEqual(["cleanup_auth_rows", "match_owned_games"]);
     expect(accountsModule.uiSlots?.["header.right"]).toBeTypeOf("function");
   });
   it("MODULES=none：registry 不含 accounts（沒有 slot、沒有任務、不檢查 AUTH_SECRET）", () => {

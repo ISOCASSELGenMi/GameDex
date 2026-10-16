@@ -10,3 +10,4 @@ export {
 export { createTokenCipher, type TokenCipher } from "./token-cipher";
 export { hashPassword, verifyPassword, ARGON2_PARAMS } from "./password";
 export { createLogMailer, skipPlaceholderRecipients, type AccountMailer, type AccountMailMessage } from "./mailer";
+export { steam, STEAM_ERROR_CODES, STEAM_RATE_LIMIT, defaultSteamCallbackPath, verifySteamAssertion, buildSteamAuthUrl, STEAM_OP_ENDPOINT, STEAM_PROVIDER_ID, type SteamErrorCode } from "./steam";

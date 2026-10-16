@@ -3,6 +3,7 @@ import { useId, useState, type FormEvent, type ReactElement } from "react";
 import { signInEmail } from "./auth-api";
 import { CONTROL_CLASS, Field, FormError } from "./form-parts";
 import { accountPageHref } from "./links";
+import { oauthErrorText } from "./oauth-error";
 import { SocialButtons } from "./social-buttons";
 import { str } from "./str";
 import { useHydrated } from "./use-hydrated";
@@ -18,15 +19,6 @@ export interface LoginFormProps {
   signupHref: string | null;
   /** OAuth 錯誤回到登入頁時的 `?error=`（Better Auth 的錯誤碼）。 */
   initialError: string | null;
-}
-
-function oauthErrorText(strings: AccountStrings, code: string | null): string | null {
-  if (!code) return null;
-  const c = code.toLowerCase();
-  if (c === "account_not_linked") return str(strings, "login.error.accountNotLinked");
-  if (c === "email_not_found") return str(strings, "login.error.emailNotFound");
-  if (c === "signup_disabled") return str(strings, "login.error.signupDisabled");
-  return str(strings, "login.error.oauthFailed");
 }
 
 export function LoginForm({ strings, locale, next, socialProviders, signupHref, initialError }: LoginFormProps): ReactElement {
