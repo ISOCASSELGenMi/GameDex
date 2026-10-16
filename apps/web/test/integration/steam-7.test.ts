@@ -482,13 +482,17 @@ describe.skipIf(!enabled)("accounts 第 3 波：遊戲庫匯入與比對", () =>
     expect(await again.json()).toEqual({ imported: 5, total: 5 });
     const rows = await owned();
     expect(rows).toHaveLength(5);
-    expect(rows.map((r) => [r.externalGameId, r.matchedGameId, r.matchConfidencePct]).sort()).toEqual(matchedBefore);
+    // matched／needs_review 保留；not_found（信心 0）被重設為未比對（NULL）
+    const expectedAfter = matchedBefore.map(([id, gid, pct]) => (gid === null && pct === 0 ? [id, null, null] : [id, gid, pct])).sort();
+    expect(rows.map((r) => [r.externalGameId, r.matchedGameId, r.matchConfidencePct]).sort()).toEqual(expectedAfter);
     expect(rows.every((r) => r.importedAt.getTime() === later.getTime())).toBe(true);
+    for (const t of deferred.splice(0)) await t(); // 重新比對 → 回到原本結果
+    expect((await owned()).map((r) => [r.externalGameId, r.matchedGameId, r.matchConfidencePct]).sort()).toEqual(matchedBefore);
     // Steam 回應裡消失的遊戲先保留
     libraryReply = { status: 200, body: { response: { game_count: 1, games: [{ appid: 1145360, name: "Hades" }] } } };
     const third = await handleImportRequest(post(cookie), "steam", deps(new Date(later.getTime() + 11 * 60_000)));
     expect(await third.json()).toEqual({ imported: 1, total: 5 });
-    deferred.length = 0;
+    for (const t of deferred.splice(0)) await t();
   });
 
   it("比對兩步驟：AppID 命中 100／標題自動採用／子集待確認（不採用）／找不到 0；之後 GET 清單的狀態與遊戲連結", async () => {
@@ -517,6 +521,52 @@ describe.skipIf(!enabled)("accounts 第 3 波：遊戲庫匯入與比對", () =>
     expect(p1.hasMore).toBe(true);
     expect(p2.items).toHaveLength(2);
     expect(new Set([...p1.items, ...p2.items].map((i: { id: number }) => i.id)).size).toBe(4);
+  });
+
+  it("再匯入重比「找不到」：not_found → queued；needs_review、matched 不動；他人的 not_found 不受影響；catalog 新增對應遊戲後比對成 matched", async () => {
+    // 他人的 not_found 列
+    const otherCookie = await signUp("stm7-other-nf@example.com");
+    const ob = await begin({ cookie: otherCookie });
+    await callback(assertion("76561198000008002", ob.n), ob.cookie);
+    const [ou] = await getDb().select().from(users).where(eq(users.email, "stm7-other-nf@example.com"));
+    const [oacct] = (await getDb().select().from(connectedAccounts).where(eq(connectedAccounts.userId, ou!.id))).filter((x) => x.provider === "steam");
+    const [otherRow] = await getDb()
+      .insert(ownedGames)
+      .values({ connectedAccountId: oacct!.id, externalGameId: "555002", externalTitle: "Zzqx Unknownable Fqwerty Title", matchConfidencePct: 0 })
+      .returning();
+
+    const snapshot = async () => Object.fromEntries((await owned()).map((r) => [r.externalGameId, [r.matchedGameId, r.matchConfidencePct]]));
+    const before = await snapshot();
+    expect(before["555002"]).toEqual([null, 0]);
+    expect(before["555001"]![1]).toBeGreaterThan(0);
+
+    libraryReply = {
+      status: 200,
+      body: { response: { game_count: 1, games: [{ appid: 1145360, name: "Hades" }] } },
+    };
+    const t1 = new Date(T0.getTime() + 60 * 60_000);
+    deferred.length = 0;
+    const res = await handleImportRequest(post(cookie), "steam", deps(t1));
+    expect(res.status).toBe(202);
+    const mid = await snapshot();
+    expect(mid["555002"]).toEqual([null, null]); // queued
+    expect(mid["555003"]).toEqual([null, null]);
+    expect(mid["555001"]).toEqual(before["555001"]); // needs_review 不動
+    expect(mid["1145360"]).toEqual(before["1145360"]); // matched 不動
+    const [otherAfter] = await getDb().select().from(ownedGames).where(eq(ownedGames.id, otherRow!.id));
+    expect(otherAfter).toMatchObject({ matchedGameId: null, matchConfidencePct: 0 }); // 他人不受影響
+
+    // catalog 之後新增對應遊戲 → 再匯入（越過冷卻）＋比對 → matched
+    const newGame = await insertGame(970021, "stm7-zzqx", "Zzqx Unknownable Fqwerty Title");
+    gameIds.push(newGame);
+    const t2 = new Date(t1.getTime() + 11 * 60_000);
+    expect((await handleImportRequest(post(cookie), "steam", deps(t2))).status).toBe(202);
+    for (const t of deferred.splice(0)) await t();
+    const end = await snapshot();
+    expect(end["555002"]![0]).toBe(newGame);
+    expect(end["555002"]![1]).toBeGreaterThanOrEqual(85);
+    expect(end["555003"]).toEqual([null, 0]); // 仍找不到
+    expect(end["555001"]).toEqual(before["555001"]);
   });
 
   it("排程批次：只處理 matchConfidencePct IS NULL 的列，單次不超過上限；已比對的不重比", async () => {

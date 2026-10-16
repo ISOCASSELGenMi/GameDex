@@ -29,7 +29,11 @@ POST /api/v1/reports                      資料更正回報（允許匿名，ra
 /api/v1/auth/*                           Better Auth 提供（basePath /api/v1/auth，D81），不在 OpenAPI：
                                          sign-up/email、sign-in/email、sign-out、verify-email、request-password-reset、reset-password、
                                          sign-in/social、callback/{provider}（discord|google|twitch|twitter|microsoft）、get-session；
-                                         Steam 為自寫 plugin：steam/sign-in、steam/callback
+                                         Steam 為自寫 plugin：POST steam/sign-in（body { callbackURL?, errorCallbackURL? }，
+                                         回 { url }；有 session＝綁定、沒有＝登入；受 BA origin 檢查）、GET steam/callback
+                                         （成功 302 到 callbackURL；失敗 302 到 errorCallbackURL?error=steam_invalid_response|
+                                         steam_verification_failed|steam_already_linked|steam_network_error|signup_disabled）；
+                                         callbackURL 只收站內相對路徑
                                          OAuth app 的 redirect URI＝{站台}/api/v1/auth/callback/{provider}
 DELETE /api/v1/account                    需重新驗證身分（09）
 GET    /api/v1/account/export             資料匯出 JSON／CSV
@@ -49,7 +53,13 @@ PUT|DELETE       /api/v1/follows/{targetType}/{targetId}
 
 GET|POST         /api/v1/calendar/feeds   私人 feed；GET 可再次顯示訂閱網址（P9）
 POST             /api/v1/calendar/feeds/{id}/rotate
-POST             /api/v1/imports/{provider}   Steam／Xbox 遊戲庫匯入（非同步）
+POST             /api/v1/imports/{provider}   Steam／Xbox 遊戲庫匯入（目前只有 steam）：抓清單＋寫入後回 202 { imported, total }，
+                                         比對在回應後與排程進行。未登入 401、Origin 不受信任 403、未綁 Steam 409 steam_not_linked、
+                                         缺或失效的 STEAM_WEB_API_KEY 503 steam_import_unavailable、10 分鐘冷卻 429 import_cooldown（Retry-After）、
+                                         個人檔案非公開 422 steam_profile_private、上游錯誤 502 steam_upstream_error；no-store
+GET              /api/v1/imports/{provider}?limit=1..100&offset=   匯入摘要與清單（帳號頁 client 端用）：
+                                         { importAvailable, cooldownSec, summary:{ total, matched, needsReview, notFound, queued,
+                                         lastImportedAt }, items:[{ id, externalGameId, title, status, confidencePct, game }], hasMore }
 ```
 
 **通知（notifications）**：`GET|PATCH /api/v1/notifications/preferences`、`POST /api/v1/notifications/unsubscribe`（RFC 8058 一鍵退訂）。

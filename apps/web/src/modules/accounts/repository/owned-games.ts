@@ -39,7 +39,9 @@ const UPSERT_CHUNK = 1000;
 
 /**
  * 以 (connectedAccountId, externalGameId) upsert：更新 externalTitle、importedAt；新列 matchedGameId／matchConfidencePct 為 NULL。
- * 已存在的列保留比對結果；平台回應裡沒有的舊列不刪。回傳該帳號目前的總列數。
+ * 已存在的列保留比對結果（matched、needs_review 不動）；平台回應裡沒有的舊列不刪。
+ * 同一個 transaction 內把該帳號「找不到」（matchedGameId IS NULL 且 matchConfidencePct = 0）的列重設為未比對（NULL），
+ * 讓之後 catalog 新增的遊戲有機會被重新比對；只動這個 connectedAccountId。回傳該帳號目前的總列數。
  */
 export async function upsertOwnedGames(connectedAccountId: number, games: readonly ExternalOwnedGame[], now: Date): Promise<{ total: number }> {
   const db = getDb();
@@ -55,6 +57,10 @@ export async function upsertOwnedGames(connectedAccountId: number, games: readon
           set: { externalTitle: sql`excluded.external_title`, importedAt: sql`excluded.imported_at` },
         });
     }
+    await tx
+      .update(ownedGames)
+      .set({ matchConfidencePct: null })
+      .where(and(eq(ownedGames.connectedAccountId, connectedAccountId), isNull(ownedGames.matchedGameId), eq(ownedGames.matchConfidencePct, 0)));
   });
   const [row] = await db.select({ n: sql<number>`count(*)::int` }).from(ownedGames).where(eq(ownedGames.connectedAccountId, connectedAccountId));
   return { total: row?.n ?? 0 };

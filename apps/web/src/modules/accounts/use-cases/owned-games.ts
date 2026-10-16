@@ -1,6 +1,6 @@
 /**
  * 遊戲庫匯入與比對（09 §遊戲庫匯入）。
- * - importOwnedGames：抓清單 → upsert（不比對）。比對由 matchOwnedGames 做（after() 觸發 + 排程兜底）。
+ * - importOwnedGames：抓清單 → upsert（不比對；同 transaction 把該帳號 not_found 的列重設為未比對）。比對由 matchOwnedGames 做（after() 觸發 + 排程兜底）。
  * - matchOwnedGames：AppID 對 external_ids 精確比對（信心 100）→ 其餘標題 trigram 候選 → findBestMatch。
  *   ≥ 自動門檻且非 needsReview 才寫 matchedGameId；needsReview 寫信心但 matchedGameId 保持 NULL；無候選寫 0。
  * - getOwnedGamesPage：帳號頁清單（含已比對遊戲的 slug／名稱）。
