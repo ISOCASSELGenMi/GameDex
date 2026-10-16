@@ -143,5 +143,7 @@
 - [x] D：ics 產生函式（聚合 UID、SEQUENCE、精度、tbd／取消過渡期、字典標記）、公開 feed 三種、視窗與視窗離開、ETag／304、訂閱頁、原型驗證用 feed
 - [x] E：events.sequence（migration 0005，已套開發 DB）、活動同步無變動不寫 updated_at（2026-10-15）
 - [x] cloudflared 安裝與通道（使用者同意，2026-10-15）
-- [ ] 原型驗證：Apple 與 Google 各驗 (a) 地區偏好切換 (b) 延期成 tbd (c) 取消後復原 (d) SEQUENCE 是否被採用（需公開網址與使用者實際訂閱）
-- [ ] 驗收：全部檢查＋spec 15 Phase 5 完成標準；commit；交接
+- [x] 原型驗證：Google（網頁版）與 Apple（iPadOS 26.6.1）7 步全部通過，結論寫回 spec 08（2026-10-16）
+- [x] F：訂閱頁文案依實測更新（2026-10-16）
+- [x] 驗收：全部檢查＋spec 15 Phase 5 完成標準；交接 `docs/handoff/2026-10-16-phase5-done.md`（2026-10-16）
+- [ ] PR `feat/phase5` → main
