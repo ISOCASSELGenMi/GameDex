@@ -104,6 +104,13 @@
       "hint": "清單與遊玩紀錄是你自己的整理，不會加入行事曆，也不會發出提醒。",
       "lists": "我的清單",
       "plays": "遊玩紀錄"
+    },
+    "track": {
+      "title": "追蹤與行事曆",
+      "hint": "追蹤的遊戲與活動會放進你的私人行事曆；追蹤清單只有你看得到。",
+      "follows": "我的追蹤",
+      "games": "我的遊戲",
+      "calendar": "私人行事曆"
     }
   },
   "providers": {
@@ -190,7 +197,7 @@
   "game": {
     "addToList": "加入清單",
     "logPlay": "記錄遊玩",
-    "notTracking": "加入清單與記錄遊玩只是你自己的整理，不會出現在行事曆，也不會發提醒（那是「追蹤」，之後另外提供）。",
+    "notTracking": "追蹤＝收到上市與活動的變動，並放進你的私人行事曆。加入清單與記錄遊玩只是你自己的整理，不會出現在行事曆。",
     "inLists": "已在 {count} 個清單",
     "playCount": "{count} 筆遊玩紀錄",
     "loadError": "無法載入你的清單與紀錄，請重新整理後再試。"
@@ -363,7 +370,9 @@
     "listGamesLimit": "這份清單已達遊戲數量上限。",
     "gameNotFound": "找不到這款遊戲。",
     "notFound": "找不到這個項目，可能已被刪除。請重新整理後再試。",
-    "unauthorized": "登入已過期，請重新登入。"
+    "unauthorized": "登入已過期，請重新登入。",
+    "followLimit": "追蹤太頻繁了（每 24 小時有上限），請稍後再試。",
+    "followNotFound": "找不到要追蹤的項目，它可能已被移除。"
   },
   "playerRating": {
     "title": "玩家平均",
@@ -371,5 +380,136 @@
     "notEnough": "評分的人還不夠多，暫時不顯示玩家平均。",
     "avgTime": "玩家平均遊玩時間：{time}",
     "note": "資料來自本站使用者的遊玩紀錄，每位使用者只算一票，約每小時更新一次。"
+  },
+  "follow": {
+    "button": "追蹤",
+    "statusOn": "已追蹤。",
+    "statusOff": "已取消追蹤。",
+    "hint": {
+      "event": "追蹤後，這個活動會放進你的私人行事曆。",
+      "group": "追蹤後，旗下遊戲的上市日期會放進你的私人行事曆。"
+    },
+    "private": {
+      "text": "也可以訂閱只含你追蹤內容的私人行事曆。",
+      "link": "前往私人行事曆"
+    }
+  },
+  "follows": {
+    "title": "我的追蹤",
+    "note": "追蹤清單只有你看得到，別人無法查看。",
+    "tabsLabel": "追蹤類型",
+    "type": {
+      "game": "遊戲",
+      "event": "活動",
+      "platform": "平台",
+      "franchise": "系列",
+      "company": "公司"
+    },
+    "empty": "這個類別還沒有追蹤任何項目。",
+    "unfollow": "取消追蹤",
+    "unfollowed": "已取消追蹤「{name}」。",
+    "removed": "已不存在的項目",
+    "loadMore": "顯示更多",
+    "listLabel": "{type}的追蹤清單",
+    "eventTime": "{time} UTC",
+    "loadError": "無法載入追蹤清單，請稍後再試。",
+    "collection": "合集"
+  },
+  "mygames": {
+    "title": "我的遊戲",
+    "note": "列出你追蹤、擁有或收藏的遊戲，依最近的上市日排序。這頁只有你看得到。",
+    "followedHint": "「我追蹤的」只含你直接追蹤的遊戲；追蹤平台、系列或公司不會展開成遊戲清單。",
+    "sourceLabel": "顯示哪些遊戲",
+    "source": {
+      "followed": "我追蹤的",
+      "owned": "我擁有的（遊戲庫）",
+      "collected": "我收藏的（任一清單）",
+      "list": "清單：{name}"
+    },
+    "rangeLabel": "上市日期範圍（選填）",
+    "from": "從",
+    "to": "到",
+    "clearRange": "清除範圍",
+    "count": "{count} 款遊戲",
+    "empty": "沒有符合的遊戲。",
+    "noRelease": "沒有上市資料",
+    "tbd": "日期未定",
+    "past": "最近一次：{date}",
+    "loadMore": "顯示更多",
+    "loadError": "無法載入，請稍後再試。",
+    "badRange": "結束日期不能早於開始日期。",
+    "listLabel": "遊戲清單",
+    "status": {
+      "delayed": "已延期",
+      "released": "已上市",
+      "cancelled": "已取消"
+    },
+    "date": {
+      "quarter": "{year} 年第 {quarter} 季",
+      "year": "{year} 年",
+      "tbd": "日期未定"
+    }
+  },
+  "feedcal": {
+    "title": "私人行事曆",
+    "intro": "一份只含你追蹤的遊戲與活動的 iCal 行事曆，可加進 Google、Apple 或 Outlook 日曆。",
+    "secretWarning": "這個網址等同密碼：知道網址的人都能看到你的行事曆內容。不要分享，也不要貼到公開的地方。",
+    "delay": "日曆 App 不會即時更新，Google 日曆通常要數小時才會同步。",
+    "urlLabel": "私人訂閱網址",
+    "masked": "網址已隱藏",
+    "show": "顯示網址",
+    "hide": "隱藏網址",
+    "copy": "複製網址",
+    "copied": "已複製網址。",
+    "copyFailed": "無法自動複製，已顯示網址，請手動選取複製。",
+    "open": "用行事曆 App 開啟",
+    "urlUnavailable": "目前無法顯示網址（伺服器金鑰已更換）。請重新產生網址。",
+    "lastAccessed": "上次被日曆 App 讀取：{date}",
+    "neverAccessed": "還沒有日曆 App 讀取過這個網址。",
+    "loadError": "無法載入私人行事曆，請稍後再試。",
+    "settings": {
+      "title": "設定",
+      "name": "行事曆名稱",
+      "locale": "行事曆語系",
+      "includeReleases": "包含遊戲上市日期",
+      "includeEvents": "包含與追蹤遊戲相關的活動",
+      "includeEventsHint": "你直接追蹤的活動一律會出現在行事曆。",
+      "stages": "只包含這些上市階段",
+      "stagesHint": "都不勾選＝預設（正式版、搶先體驗、未標示）。",
+      "platforms": "只包含這些平台",
+      "platformsHint": "都不勾選＝不限平台（最多 20 個）。",
+      "save": "儲存設定",
+      "saved": "設定已儲存。日曆 App 下次更新時才會套用。",
+      "unchanged": "沒有變更。",
+      "tooManyPlatforms": "最多只能選 20 個平台。"
+    },
+    "stage": {
+      "unspecified": "未標示",
+      "full": "正式版",
+      "early_access": "搶先體驗",
+      "beta": "測試版",
+      "alpha": "Alpha",
+      "demo": "試玩版",
+      "other": "其他"
+    },
+    "kind": {
+      "console": "主機",
+      "hybrid": "掌機兼主機",
+      "handheld": "掌機",
+      "pc": "PC",
+      "arcade": "街機",
+      "other": "其他"
+    },
+    "locale": {
+      "zh-Hant": "繁體中文",
+      "en": "English",
+      "ja": "日本語"
+    },
+    "rotate": {
+      "button": "重新產生網址",
+      "confirm": "重新產生後，舊網址會先顯示空白的行事曆，30 天後失效；你需要在日曆 App 用新網址重新訂閱。確定嗎？",
+      "confirmButton": "確定重新產生",
+      "done": "已產生新網址。請在你的日曆 App 用新網址重新訂閱。"
+    }
   }
 }

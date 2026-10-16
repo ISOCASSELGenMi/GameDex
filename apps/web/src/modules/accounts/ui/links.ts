@@ -27,3 +27,14 @@ export function accountPlaysHref(locale: string): string {
 export function publicListHref(locale: string, list: { id: number; visibility: string; shareToken: string | null }): string {
   return list.visibility === "unlisted" && list.shareToken ? `/${locale}/lists/s/${encodeURIComponent(list.shareToken)}` : `/${locale}/lists/${list.id}`;
 }
+
+/** 第 6 波：我的追蹤、我的遊戲、私人行事曆。 */
+export function accountFollowsHref(locale: string): string {
+  return `/${locale}/account/follows`;
+}
+export function accountGamesHref(locale: string, query = ""): string {
+  return `/${locale}/account/games${query ? `?${query}` : ""}`;
+}
+export function accountPrivateCalendarHref(locale: string): string {
+  return `/${locale}/account/calendar`;
+}

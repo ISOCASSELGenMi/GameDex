@@ -31,7 +31,12 @@ export function apiErrorText(strings: AccountStrings, res: ApiResult<unknown>): 
     case "list_not_found":
     case "record_not_found":
     case "not_in_list":
+    case "feed_not_found":
       return str(strings, "error.notFound");
+    case "follow_limit_reached":
+      return str(strings, "error.followLimit");
+    case "target_not_found":
+      return str(strings, "error.followNotFound");
     case "unauthorized":
       return str(strings, "error.unauthorized");
     case "invalid_origin":

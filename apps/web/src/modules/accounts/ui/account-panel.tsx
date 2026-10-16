@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState, type ReactElement } from "react";
 import { isExternalProvider } from "../domain/entities/providers";
 import { isPlaceholderEmail } from "../domain/entities/email";
 import { getSession, listAccounts, signInSteam, signOut, unlinkAccount, type LinkedAccountRow, type SessionUser } from "./auth-api";
-import { accountListsHref, accountPageHref, accountPlaysHref } from "./links";
+import { accountFollowsHref, accountGamesHref, accountListsHref, accountPageHref, accountPlaysHref, accountPrivateCalendarHref } from "./links";
 import { oauthErrorText } from "./oauth-error";
 import { SteamLibrary } from "./steam-library";
 import { useSearchParam } from "./use-search-param";
@@ -125,6 +125,30 @@ export function AccountPanel({ strings, locale }: { strings: AccountStrings; loc
           <li>
             <a className="link inline-flex min-h-11 items-center" href={accountPlaysHref(locale)}>
               {str(strings, "account.mine.plays")}
+            </a>
+          </li>
+        </ul>
+      </section>
+
+      <section aria-labelledby="track-heading" className="flex flex-col gap-2">
+        <h2 id="track-heading" className="text-xl font-bold">
+          {str(strings, "account.track.title")}
+        </h2>
+        <p className="text-sm text-[var(--muted)]">{str(strings, "account.track.hint")}</p>
+        <ul className="flex flex-col gap-1">
+          <li>
+            <a className="link inline-flex min-h-11 items-center" href={accountFollowsHref(locale)}>
+              {str(strings, "account.track.follows")}
+            </a>
+          </li>
+          <li>
+            <a className="link inline-flex min-h-11 items-center" href={accountGamesHref(locale)}>
+              {str(strings, "account.track.games")}
+            </a>
+          </li>
+          <li>
+            <a className="link inline-flex min-h-11 items-center" href={accountPrivateCalendarHref(locale)}>
+              {str(strings, "account.track.calendar")}
             </a>
           </li>
         </ul>

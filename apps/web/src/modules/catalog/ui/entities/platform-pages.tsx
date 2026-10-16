@@ -14,7 +14,7 @@ import { PageShell } from "../layout/page-shell";
 import { platformHref, platformsHref, subscribeHref } from "../links";
 import { reportHref } from "../report/links";
 import { rethrowForPage } from "../page-errors";
-import { EntityGameList, EntityLogo, LinkTabs, Pager } from "./shared";
+import { EntityActions, EntityGameList, EntityLogo, LinkTabs, Pager, type EntityActionsRenderer } from "./shared";
 import {
   firstParam,
   pagingForPage,
@@ -144,11 +144,13 @@ export async function PlatformDetailPage({
   supportedLocales,
   slug,
   searchParams,
+  renderActions,
 }: {
   locale: Locale;
   supportedLocales: readonly Locale[];
   slug: string;
   searchParams: EntitySearchParams;
+  renderActions?: EntityActionsRenderer;
 }): Promise<ReactElement> {
   const { section, sort, page } = parseParams(searchParams);
   const data = await loadPlatformPage(slug, locale, section, sort, page);
@@ -180,6 +182,7 @@ export async function PlatformDetailPage({
         <EntityLogo logo={p.logo} name={p.name} />
         <h1 className="text-3xl font-bold [overflow-wrap:anywhere]">{p.name}</h1>
       </div>
+      <EntityActions render={renderActions} target={{ targetType: "platform", targetId: p.id, slug: p.slug }} />
       <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm" data-platform-info="">
         {info.map((row) => (
           <div key={row.label} className="contents">

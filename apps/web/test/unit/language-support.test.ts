@@ -92,6 +92,7 @@ describe("normalizePaging", () => {
 
 describe("groupPlatformsByKind", () => {
   const p = (slug: string, kind: PlatformListItem["kind"], extra: Partial<PlatformListItem> = {}): PlatformListItem => ({
+    id: 1,
     slug,
     name: slug.toUpperCase(),
     abbreviation: null,

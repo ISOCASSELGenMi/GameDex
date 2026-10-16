@@ -104,6 +104,13 @@
       "hint": "Lists and play records are your own notes. They are not added to the calendar and do not send reminders.",
       "lists": "My lists",
       "plays": "Play records"
+    },
+    "track": {
+      "title": "Following and calendar",
+      "hint": "Games and events you follow go into your private calendar; your follow list is visible only to you.",
+      "follows": "My follows",
+      "games": "My games",
+      "calendar": "Private calendar"
     }
   },
   "providers": {
@@ -190,7 +197,7 @@
   "game": {
     "addToList": "Add to list",
     "logPlay": "Log play",
-    "notTracking": "Adding to a list or logging a play is just your own bookkeeping. It does not appear in your calendar or send reminders (that is \"tracking\", coming separately).",
+    "notTracking": "Following means getting release and event changes in your private calendar. Adding to a list or logging a play is just your own bookkeeping and does not appear in the calendar.",
     "inLists": "In {count} list(s)",
     "playCount": "{count} play record(s)",
     "loadError": "Could not load your lists and records. Please reload and try again."
@@ -363,7 +370,9 @@
     "listGamesLimit": "This list has reached its game limit.",
     "gameNotFound": "That game was not found.",
     "notFound": "That item was not found; it may have been deleted. Please reload and try again.",
-    "unauthorized": "Your session has expired. Please sign in again."
+    "unauthorized": "Your session has expired. Please sign in again.",
+    "followLimit": "You are following too quickly (there is a limit per 24 hours). Please try again later.",
+    "followNotFound": "That item was not found; it may have been removed."
   },
   "playerRating": {
     "title": "Player average",
@@ -371,5 +380,136 @@
     "notEnough": "Not enough players have rated this game to show an average yet.",
     "avgTime": "Average play time reported by players: {time}",
     "note": "Based on play records from users of this site, one vote per user, refreshed about hourly."
+  },
+  "follow": {
+    "button": "Follow",
+    "statusOn": "Following.",
+    "statusOff": "Unfollowed.",
+    "hint": {
+      "event": "Once followed, this event appears in your private calendar.",
+      "group": "Once followed, release dates of its games appear in your private calendar."
+    },
+    "private": {
+      "text": "You can also subscribe to a private calendar that contains only what you follow.",
+      "link": "Go to your private calendar"
+    }
+  },
+  "follows": {
+    "title": "My follows",
+    "note": "Only you can see your follow list. Nobody else can view it.",
+    "tabsLabel": "Follow type",
+    "type": {
+      "game": "Games",
+      "event": "Events",
+      "platform": "Platforms",
+      "franchise": "Series",
+      "company": "Companies"
+    },
+    "empty": "You are not following anything in this category yet.",
+    "unfollow": "Unfollow",
+    "unfollowed": "Unfollowed “{name}”.",
+    "removed": "Item that no longer exists",
+    "loadMore": "Show more",
+    "listLabel": "Follow list: {type}",
+    "eventTime": "{time} UTC",
+    "loadError": "Could not load your follow list. Please try again later.",
+    "collection": "Collection"
+  },
+  "mygames": {
+    "title": "My games",
+    "note": "Games you follow, own or have collected, sorted by their nearest release date. Only you can see this page.",
+    "followedHint": "“Followed” only includes games you follow directly; following a platform, series or company does not expand into a game list.",
+    "sourceLabel": "Which games to show",
+    "source": {
+      "followed": "Followed",
+      "owned": "Owned (game library)",
+      "collected": "Collected (any list)",
+      "list": "List: {name}"
+    },
+    "rangeLabel": "Release date range (optional)",
+    "from": "From",
+    "to": "To",
+    "clearRange": "Clear range",
+    "count": "{count} game(s)",
+    "empty": "No matching games.",
+    "noRelease": "No release data",
+    "tbd": "Date to be announced",
+    "past": "Most recent: {date}",
+    "loadMore": "Show more",
+    "loadError": "Could not load. Please try again later.",
+    "badRange": "The end date cannot be earlier than the start date.",
+    "listLabel": "Games",
+    "status": {
+      "delayed": "Delayed",
+      "released": "Released",
+      "cancelled": "Cancelled"
+    },
+    "date": {
+      "quarter": "Q{quarter} {year}",
+      "year": "{year}",
+      "tbd": "TBA"
+    }
+  },
+  "feedcal": {
+    "title": "Private calendar",
+    "intro": "An iCal calendar with only the games and events you follow. Add it to Google, Apple or Outlook calendar.",
+    "secretWarning": "This URL works like a password: anyone who has it can see your calendar. Do not share it or post it anywhere public.",
+    "delay": "Calendar apps do not update instantly; Google Calendar usually takes hours to sync.",
+    "urlLabel": "Private subscription URL",
+    "masked": "URL hidden",
+    "show": "Show URL",
+    "hide": "Hide URL",
+    "copy": "Copy URL",
+    "copied": "URL copied.",
+    "copyFailed": "Could not copy automatically. The URL is now shown; select and copy it by hand.",
+    "open": "Open in calendar app",
+    "urlUnavailable": "The URL cannot be shown right now (the server key was changed). Please regenerate the URL.",
+    "lastAccessed": "Last read by a calendar app: {date}",
+    "neverAccessed": "No calendar app has read this URL yet.",
+    "loadError": "Could not load your private calendar. Please try again later.",
+    "settings": {
+      "title": "Settings",
+      "name": "Calendar name",
+      "locale": "Calendar language",
+      "includeReleases": "Include game release dates",
+      "includeEvents": "Include events related to games I follow",
+      "includeEventsHint": "Events you follow directly always appear in the calendar.",
+      "stages": "Only include these release stages",
+      "stagesHint": "Tick none for the default (full release, early access, unspecified).",
+      "platforms": "Only include these platforms",
+      "platformsHint": "Tick none for no platform limit (up to 20).",
+      "save": "Save settings",
+      "saved": "Settings saved. Calendar apps apply them the next time they refresh.",
+      "unchanged": "Nothing changed.",
+      "tooManyPlatforms": "You can pick at most 20 platforms."
+    },
+    "stage": {
+      "unspecified": "Unspecified",
+      "full": "Full release",
+      "early_access": "Early access",
+      "beta": "Beta",
+      "alpha": "Alpha",
+      "demo": "Demo",
+      "other": "Other"
+    },
+    "kind": {
+      "console": "Consoles",
+      "hybrid": "Hybrid consoles",
+      "handheld": "Handhelds",
+      "pc": "PC",
+      "arcade": "Arcade",
+      "other": "Other"
+    },
+    "locale": {
+      "zh-Hant": "繁體中文",
+      "en": "English",
+      "ja": "日本語"
+    },
+    "rotate": {
+      "button": "Regenerate URL",
+      "confirm": "After regenerating, the old URL shows an empty calendar and stops working after 30 days; you will need to subscribe again with the new URL. Continue?",
+      "confirmButton": "Yes, regenerate",
+      "done": "A new URL was generated. Subscribe again with it in your calendar app."
+    }
   }
 }

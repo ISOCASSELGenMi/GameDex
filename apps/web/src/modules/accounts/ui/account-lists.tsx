@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type FormEvent, type ReactElement } from "
 import { LIST_DESCRIPTION_MAX, LIST_NAME_MAX, type ListSummaryView, type ListVisibility } from "../domain/entities/lists";
 import { LIST_VISIBILITIES } from "../domain/entities/providers";
 import { ConfirmButton } from "./confirm-button";
+import { copyText } from "./clipboard";
 import { createList, deleteList, getMyLists, patchList, reorderLists, type MyListsResponse } from "./data-api";
 import { CONTROL_CLASS, Field } from "./form-parts";
 import { accountListHref, publicListHref } from "./links";
@@ -275,10 +276,8 @@ function ShareInfo({ strings, locale, list, onChanged, onNotice }: { strings: Ac
   const full = typeof window === "undefined" ? href : `${window.location.origin}${href}`;
 
   async function copy(): Promise<void> {
-    try {
-      await navigator.clipboard.writeText(full);
-      onNotice({ tone: "ok", text: str(strings, "list.copied") });
-    } catch {
+    if (await copyText(full)) onNotice({ tone: "ok", text: str(strings, "list.copied") });
+    else {
       // 沒有剪貼簿權限：選取文字讓使用者自己複製
       inputRef.current?.select();
       onNotice({ tone: "error", text: str(strings, "list.copyFailed") });

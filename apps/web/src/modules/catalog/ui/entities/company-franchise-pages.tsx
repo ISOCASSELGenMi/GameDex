@@ -16,7 +16,7 @@ import { getTranslator } from "../labels";
 import { PageShell } from "../layout/page-shell";
 import { companyHref, franchiseHref } from "../links";
 import { rethrowForPage } from "../page-errors";
-import { EntityGameList, EntityLogo, LinkTabs, Pager } from "./shared";
+import { EntityActions, EntityGameList, EntityLogo, LinkTabs, Pager, type EntityActionsRenderer } from "./shared";
 import type { EntitySearchParams } from "./platform-pages";
 import {
   firstParam,
@@ -56,11 +56,13 @@ export async function CompanyDetailPage({
   supportedLocales,
   slug,
   searchParams,
+  renderActions,
 }: {
   locale: Locale;
   supportedLocales: readonly Locale[];
   slug: string;
   searchParams: EntitySearchParams;
+  renderActions?: EntityActionsRenderer;
 }): Promise<ReactElement> {
   const { role, page } = companyParams(searchParams);
   const data = await loadCompanyPage(slug, locale, role ?? "", page);
@@ -91,6 +93,7 @@ export async function CompanyDetailPage({
         <EntityLogo logo={c.logo} name={c.name} />
         <h1 className="text-3xl font-bold [overflow-wrap:anywhere]">{c.name}</h1>
       </div>
+      <EntityActions render={renderActions} target={{ targetType: "company", targetId: c.id, slug: c.slug }} />
       {website ? (
         <p className="mt-2">
           <a className="ext-link" href={website} target="_blank" rel="noopener noreferrer">
@@ -156,11 +159,13 @@ export async function FranchiseDetailPage({
   supportedLocales,
   slug,
   searchParams,
+  renderActions,
 }: {
   locale: Locale;
   supportedLocales: readonly Locale[];
   slug: string;
   searchParams: EntitySearchParams;
+  renderActions?: EntityActionsRenderer;
 }): Promise<ReactElement> {
   const { kind, page } = franchiseParams(searchParams);
   const data = await loadFranchisePage(slug, locale, kind ?? "", page);
@@ -177,6 +182,7 @@ export async function FranchiseDetailPage({
         <span className="chip">{kindLabel(f.kind)}</span>
         <span>{t.t("ui.franchises.total", { count: formatNumber(data.total, locale) })}</span>
       </p>
+      <EntityActions render={renderActions} target={{ targetType: "franchise", targetId: f.id, slug: f.slug }} />
       {f.otherKinds.length > 0 ? (
         <nav aria-label={t.t("ui.franchises.otherKindsLabel")} className="mt-3">
           <p className="text-sm text-[var(--muted)]">{t.t("ui.franchises.otherKindsHint")}</p>

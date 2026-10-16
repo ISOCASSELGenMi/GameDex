@@ -146,7 +146,9 @@
     "title": "ゲームのプレビュー"
   },
   "heat": {
-    "label": "注目度 {level}/{max}"
+    "label": "注目度 {level}/{max}",
+    "followers": "{count}人がフォロー中",
+    "rising": "上昇中"
   },
   "timeline": {
     "title": "発売タイムライン",
@@ -185,6 +187,10 @@
   "trending": {
     "title": "注目ランキング",
     "note": "注目度は1時間ごとに更新されます。リアルタイムのランキングではありません。",
+    "rankedBy": {
+      "popularity": "注目度スコア順です。",
+      "site_follows_7d": "過去7日間にこのサイトで新しく増えたフォロー数の順で、同数の場合は注目度スコア順です。フォロー数は1時間ごとに更新されます。"
+    },
     "groupLabel": "ランキング",
     "upcoming": "発売直前",
     "released": "発売済み",

@@ -214,7 +214,7 @@ describe.skipIf(!enabled)("平台／公司／系列頁（整合）", () => {
   // ── 公司 ──
   it("getCompanyPage：作品依首發日新到舊（未定最後）、角色合併、DLC 不列、角色計數", async () => {
     const page = await getCompanyPage({ slug: "h3b-studio", locale: "en" });
-    expect(page!.company).toEqual({ slug: "h3b-studio", name: "H3B Studio", logo: null, logoUrl: null, websiteUrl: "https://example.com" });
+    expect(page!.company).toEqual({ id: expect.any(Number), slug: "h3b-studio", name: "H3B Studio", logo: null, logoUrl: null, websiteUrl: "https://example.com" });
     expect(page!.role).toBeNull();
     expect(page!.works.items.map((w) => [w.slug, w.roles])).toEqual([
       ["h3b-830101", ["developer", "publisher"]],
@@ -239,7 +239,7 @@ describe.skipIf(!enabled)("平台／公司／系列頁（整合）", () => {
   // ── 系列 ──
   it("getFranchisePage：franchise 優先、首發日舊到新（未定最後）、DLC 不列、locale 名稱、otherKinds", async () => {
     const page = await getFranchisePage({ slug: "h3b-saga", locale: "zh-Hant" });
-    expect(page!.franchise).toEqual({ slug: "h3b-saga", name: "H3B Saga", kind: "franchise", otherKinds: ["collection"] });
+    expect(page!.franchise).toEqual({ id: expect.any(Number), slug: "h3b-saga", name: "H3B Saga", kind: "franchise", otherKinds: ["collection"] });
     expect(page!.total).toBe(3);
     expect(page!.games.items.map((g) => g.slug)).toEqual(["h3b-830202", "h3b-830201", "h3b-830203"]);
     expect(page!.games.items[1].name).toBe("傳說一");

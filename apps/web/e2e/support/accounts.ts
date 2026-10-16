@@ -92,3 +92,33 @@ export async function seedManualSteam(email: string, heroSlug: string): Promise<
 export async function horizontalOverflow(page: Page): Promise<number> {
   return page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 }
+
+/** 第 6 波：各種追蹤目標的 id（fixture 以 slug 查）。table 只接受固定清單。 */
+export async function targetIdBySlug(table: "games" | "events" | "platforms" | "franchises" | "companies", slug: string): Promise<number> {
+  return withDb(async (c) => {
+    const { rows } = await c.query<{ id: number }>(`SELECT id FROM ${table} WHERE slug = $1 ORDER BY id LIMIT 1`, [slug]);
+    if (!rows[0]) throw new Error(`fixture 沒有 ${table}:${slug}`);
+    return rows[0].id;
+  });
+}
+
+export async function userIdByEmail(email: string): Promise<number> {
+  return withDb(async (c) => {
+    const { rows } = await c.query<{ id: number }>("SELECT id FROM users WHERE email = $1", [email.toLowerCase()]);
+    if (!rows[0]) throw new Error(`沒有使用者 ${email}`);
+    return rows[0].id;
+  });
+}
+
+/** 站內追蹤熱度訊號（refresh_popularity 在 e2e 不執行，直接寫 game_popularity_signals）。 */
+export async function seedFollowSignals(slug: string, signals: { siteFollows: number; siteFollows7d: number }): Promise<void> {
+  const id = await gameIdBySlug(slug);
+  await withDb(async (c) => {
+    for (const [name, value] of [["site_follows", signals.siteFollows], ["site_follows_7d", signals.siteFollows7d]] as const) {
+      await c.query(
+        "INSERT INTO game_popularity_signals (game_id, signal_name, value) VALUES ($1,$2,$3) ON CONFLICT (game_id, signal_name) DO UPDATE SET value = EXCLUDED.value",
+        [id, name, value],
+      );
+    }
+  });
+}

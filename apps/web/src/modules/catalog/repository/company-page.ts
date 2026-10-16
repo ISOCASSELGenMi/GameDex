@@ -71,7 +71,7 @@ async function readCompanyPage(tx: DbOrTx, q: CompanyPageQuery): Promise<Company
   `);
   const rows = worksRes.rows.slice(0, q.limit);
   return {
-    company: { slug: c.slug, name: c.name, logo: q.resolveImage(c.logo_url, "logo"), logoUrl: c.logo_url, websiteUrl: c.website_url },
+    company: { id: c.id, slug: c.slug, name: c.name, logo: q.resolveImage(c.logo_url, "logo"), logoUrl: c.logo_url, websiteUrl: c.website_url },
     roleCounts,
     total,
     works: {

@@ -241,8 +241,9 @@ for (const locale of LOCALES) {
         await expect(page.locator('[data-section="changes"]')).toContainText(m(`ui.subscribe.changes.${k}`));
       }
       await expect(page.locator('[data-section="realtime"]')).toContainText(m("ui.subscribe.realtime.body"));
-      // 私人 feed 屬 accounts：3a 沒有提供者，頁面上不該有私人 feed 的區塊
-      await expect(page.locator('[data-slot="subscribe.private"]')).toHaveCount(0);
+      // 私人 feed 入口屬 accounts（Phase 7 第 6 波）：未登入時不該出現（slot 外殼在伺服器 HTML，入口由登入後的客戶端元件決定）
+      await page.waitForLoadState("networkidle");
+      await expect(page.locator('[data-section="private-feed"]')).toHaveCount(0);
     });
 
     test("axe：桌機", async ({ page }) => {

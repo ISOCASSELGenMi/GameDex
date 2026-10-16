@@ -64,7 +64,7 @@ async function readFranchisePage(tx: DbOrTx, q: FranchisePageQuery): Promise<Fra
   `);
   const rows = gamesRes.rows.slice(0, q.limit);
   return {
-    franchise: { slug: f.slug, name: f.name, kind: f.kind, otherKinds },
+    franchise: { id: f.id, slug: f.slug, name: f.name, kind: f.kind, otherKinds },
     total: countRes.rows[0]?.n ?? 0,
     games: {
       items: rows.map((r) => ({ ...toSummary(r, q.resolveImage), gameStatus: r.game_status })),

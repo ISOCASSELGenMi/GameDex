@@ -8,6 +8,7 @@ import { useEffect, useState, type ReactElement } from "react";
 import type { PlayRecordView } from "../domain/entities/play-records";
 import { getSession } from "./auth-api";
 import { getMyGameState, type MyGameState } from "./data-api";
+import { FollowButton } from "./follow-button";
 import { ListPicker, type GameListRow } from "./list-picker";
 import { accountListsHref, accountPageHref, accountPlaysHref, safeNextPath } from "./links";
 import { Modal } from "./modal";
@@ -61,7 +62,8 @@ export function GameActions({ strings, locale, gameId }: { strings: AccountStrin
 
   return (
     <div className="flex w-full min-w-0 flex-col gap-1" data-game-actions={session}>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-start gap-2">
+        <FollowButton strings={strings} locale={locale} targetType="game" targetId={gameId} session={session} />
         <button type="button" className="btn-secondary" aria-haspopup="dialog" disabled={disabled} data-action="add-to-list" onClick={() => open("lists")}>
           {str(strings, "game.addToList")}
         </button>

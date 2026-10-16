@@ -12,6 +12,7 @@ import { PageShell } from "../layout/page-shell";
 import { rethrowForPage } from "../page-errors";
 import { siteOrigin } from "../seo/site-url";
 import { icalFeedPath } from "../links";
+import { SubscribeClientsSection } from "./clients-section";
 import { FeedCard, PlatformFeedCard, type PlatformGroupOption } from "./feed-card";
 
 export interface SubscribeSlots {
@@ -58,13 +59,6 @@ export async function SubscribePage({
     copied: s("feed.copied"),
     copyFailed: s("feed.copyFailed"),
   };
-  const steps = (client: "apple" | "google" | "outlook") => (
-    <ol className="mt-2 list-decimal space-y-1 pl-6">
-      {(["s1", "s2", "s3"] as const).map((k) => (
-        <li key={k}>{s(`clients.${client}.${k}`)}</li>
-      ))}
-    </ol>
-  );
 
   return (
     <PageShell locale={locale} supportedLocales={supportedLocales} path="/subscribe">
@@ -128,28 +122,9 @@ export async function SubscribePage({
           </div>
         </section>
 
-        {slots?.privateFeed ? <section className="mt-8" data-slot="subscribe.private">{slots.privateFeed}</section> : null}
+        {slots?.privateFeed ? <section data-slot="subscribe.private">{slots.privateFeed}</section> : null}
 
-        <section aria-labelledby="subscribe-clients-title" className="mt-8 max-w-3xl">
-          <h2 id="subscribe-clients-title" className="text-xl font-bold">
-            {s("clients.title")}
-          </h2>
-          <div className="mt-3 space-y-5">
-            <section data-client="apple">
-              <h3 className="font-bold">{s("clients.apple.title")}</h3>
-              {steps("apple")}
-            </section>
-            <section data-client="google">
-              <h3 className="font-bold">{s("clients.google.title")}</h3>
-              {steps("google")}
-              <p className="notice mt-2">{s("clients.google.note")}</p>
-            </section>
-            <section data-client="outlook">
-              <h3 className="font-bold">{s("clients.outlook.title")}</h3>
-              {steps("outlook")}
-            </section>
-          </div>
-        </section>
+        <SubscribeClientsSection locale={locale} />
 
         <section aria-labelledby="subscribe-realtime-title" className="mt-8 max-w-3xl" data-section="realtime">
           <h2 id="subscribe-realtime-title" className="text-xl font-bold">

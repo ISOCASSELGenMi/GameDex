@@ -12,7 +12,7 @@ import { getGameDetail, getRatingDisplayConfig } from "../../use-cases/read";
 import { joinList } from "../calendar/view-model";
 import { safeDecode } from "../entities/view-model";
 import { safeExternalUrl } from "../external-url";
-import { HeatBadge, heatBadgeLabel } from "../heat-badge";
+import { followerCountLabel, HeatBadge, heatBadgeLabel, RisingMark } from "../heat-badge";
 import { EventIcon, ExternalIcon, StageIcon, StatusIcon, WarningIcon } from "../icons";
 import { eventKindLabel, genreLabel, getTranslator, regionLabel, stageLabel, statusLabel } from "../labels";
 import { PageShell } from "../layout/page-shell";
@@ -275,6 +275,12 @@ export async function GameDetailPage({ locale, supportedLocales, slug, slots }: 
               {game.gameStatus ? <span className="chip">{t.t(`enums.gameStatus.${game.gameStatus}`)}</span> : null}
               <HeatBadge level={game.heatLevel} label={heatBadgeLabel(t, game.heatLevel)} />
             </p>
+            {game.followerCount || game.rising ? (
+              <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm" data-heat-follow="">
+                {followerCountLabel(t, locale, game.followerCount) ? <span data-follower-count="">{followerCountLabel(t, locale, game.followerCount)}</span> : null}
+                {game.rising ? <RisingMark label={t.t("ui.heat.rising")} /> : null}
+              </p>
+            ) : null}
             {game.platforms.length > 0 ? (
               <p>
                 <span className="font-semibold">{t.t("ui.game.sections.platforms")}

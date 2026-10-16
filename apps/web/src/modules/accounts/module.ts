@@ -1,6 +1,6 @@
 import type { ComponentType } from "react";
 import type { ModuleManifest } from "@/modules/catalog";
-import { GameActionsSlot, PlayerRatingSlot } from "./ui/game-slots";
+import { EntityActionsSlot, GameActionsSlot, PlayerRatingSlot, SubscribePrivateSlot } from "./ui/game-slots";
 import { HeaderRightSlot } from "./ui/header-slot";
 import { cleanupExpiredAuthRows } from "./use-cases/cleanup-expired";
 import { mineGameFilter, siteFollows7dSignal, siteFollowsSignal } from "./use-cases/catalog-extensions";
@@ -68,6 +68,9 @@ export const accountsModule: ModuleManifest = {
     // 第 5 波：詳情頁動作列（加入清單、記錄遊玩）與玩家平均區。伺服器 HTML 與使用者無關，使用者狀態由客戶端元件取得
     "game.actions": GameActionsSlot as ComponentType,
     "game.sections": PlayerRatingSlot as ComponentType,
+    // 第 6 波：活動、平台、系列、公司頁的追蹤按鈕；公開訂閱頁的私人行事曆入口（已登入才顯示）
+    "entity.actions": EntityActionsSlot as ComponentType,
+    "subscribe.private": SubscribePrivateSlot as ComponentType,
   },
   i18nNamespaces: ["accounts"],
 };

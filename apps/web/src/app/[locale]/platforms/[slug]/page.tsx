@@ -2,6 +2,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getLocaleConfig, isSupportedLocale } from "@/kernel/locale";
+import { renderUiSlot } from "../../../_lib/slots";
 import { PAGE_RULE, PlatformDetailPage, platformPageTitle, seoMetadata, seoSlug } from "@/modules/catalog/ui";
 
 export const instant = false;
@@ -21,5 +22,5 @@ export default async function Platform({ params, searchParams }: PageProps<"/[lo
   if (!isSupportedLocale(locale, config)) notFound();
   // 先確認存在再渲染（與遊戲詳情頁同做法）；不存在 → 軟 404（production 為 200＋noindex，3a 已接受）
   if (!(await platformPageTitle(slug, locale, await searchParams))) notFound();
-  return <PlatformDetailPage locale={locale} supportedLocales={config.supported} slug={slug} searchParams={await searchParams} />;
+  return <PlatformDetailPage locale={locale} supportedLocales={config.supported} slug={slug} searchParams={await searchParams} renderActions={(target) => renderUiSlot("entity.actions", { locale, ...target })} />;
 }

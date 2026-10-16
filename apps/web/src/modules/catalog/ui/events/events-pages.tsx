@@ -11,7 +11,7 @@ import { formatNumber, type Locale, type Translator } from "@sok/i18n";
 import { EVENT_KINDS, type EventDetail, type EventList, type EventListItem } from "../../domain/entities";
 import { getEventDetail } from "../../use-cases/read/get-event-detail";
 import { listEvents } from "../../use-cases/read/list-events";
-import { EntityGameList, LinkTabs, Pager } from "../entities/shared";
+import { EntityActions, EntityGameList, LinkTabs, Pager, type EntityActionsRenderer } from "../entities/shared";
 import { firstParam, safeDecode, type RawParam } from "../entities/view-model";
 import { safeExternalUrl } from "../external-url";
 import { EventIcon, ExternalIcon } from "../icons";
@@ -195,10 +195,12 @@ export async function EventDetailPage({
   locale,
   supportedLocales,
   slug,
+  renderActions,
 }: {
   locale: Locale;
   supportedLocales: readonly Locale[];
   slug: string;
+  renderActions?: EntityActionsRenderer;
 }): Promise<ReactElement> {
   const ev = await loadEventDetail(slug, locale);
   if (!ev) notFound();
@@ -277,6 +279,7 @@ export async function EventDetailPage({
             {site ? external(site, t.t("ui.events.officialSite")) : null}
           </p>
         ) : null}
+        <EntityActions render={renderActions} target={{ targetType: "event", targetId: ev.id, slug: ev.slug }} />
         <p className="mt-2">
           <a className="link inline-flex min-h-11 items-center" href={reportHref(locale, { kind: "event", slug: ev.slug })} rel="nofollow">
             {t.t("ui.report.entry.event")}
