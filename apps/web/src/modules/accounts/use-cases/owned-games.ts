@@ -5,22 +5,37 @@
  *   ≥ 自動門檻且非 needsReview 才寫 matchedGameId；needsReview 寫信心但 matchedGameId 保持 NULL；無候選寫 0。
  * - getOwnedGamesPage：帳號頁清單（含已比對遊戲的 slug／名稱）。
  */
-import { findGameIdsByExternalIds, findBestMatch, findTitleMatchCandidates, getGameBriefsByIds, MATCH_THRESHOLDS } from "@/modules/catalog";
+import {
+  findGameIdsByExternalIds,
+  findBestMatch,
+  findTitleMatchCandidates,
+  gameExists,
+  getGameBriefsByIds,
+  getGameCardsByIds,
+  MATCH_THRESHOLDS,
+  type GameMiniCard,
+} from "@/modules/catalog";
 import {
   EXTERNAL_ID_SOURCE,
   IMPORT_COOLDOWN_MS,
   MATCH_BATCH_SIZE,
+  asMatchMethod,
   isImportProvider,
   ownedGameStatus,
   type ImportErrorCode,
   type ImportProvider,
   type OwnedGameMatch,
   type OwnedGamesPage,
+  type OwnedGamesSummary,
+  type OwnedGameView,
 } from "../domain/entities/owned-game";
 import { createSteamClient, SteamApiError } from "../providers/steam";
 import {
   applyOwnedGameMatches,
   findImportTarget,
+  findOwnedGameRow,
+  setOwnedGameManualMatch,
+  type OwnedGameRow,
   lastImportedAt,
   listOwnedGameRows,
   pickUnmatched,
@@ -157,6 +172,7 @@ export async function getOwnedGamesPage(target: ImportTarget, limit: number, off
         title: r.externalTitle,
         status: ownedGameStatus(r),
         confidencePct: r.matchConfidencePct,
+        matchMethod: asMatchMethod(r.matchMethod),
         game: brief ? { slug: brief.slug, name: brief.name } : null,
       };
     }),
@@ -165,4 +181,55 @@ export async function getOwnedGamesPage(target: ImportTarget, limit: number, off
 
 export async function findOwnedGamesTarget(userId: number, provider: ImportProvider): Promise<ImportTarget | null> {
   return findImportTarget(userId, provider);
+}
+
+// ── 第 5 波：手動指定／否決／重設，與候選查詢 ─────────────────────────────
+
+async function toOwnedGameView(row: OwnedGameRow): Promise<OwnedGameView> {
+  const brief = row.matchedGameId === null ? undefined : (await getGameBriefsByIds([row.matchedGameId])).get(row.matchedGameId);
+  return {
+    id: row.id,
+    externalGameId: row.externalGameId,
+    title: row.externalTitle,
+    status: ownedGameStatus(row),
+    confidencePct: row.matchConfidencePct,
+    matchMethod: asMatchMethod(row.matchMethod),
+    game: brief ? { slug: brief.slug, name: brief.name } : null,
+  };
+}
+
+export type ManualMatchChange = { kind: "assign"; gameId: number } | { kind: "dismiss" } | { kind: "reset" };
+
+export type ManualMatchOutcome =
+  | { ok: true; item: OwnedGameView; summary: OwnedGamesSummary }
+  | { ok: false; code: "owned_game_not_found" | "game_not_found" };
+
+/** 手動指定／否決／重設。只能改該連結帳號底下的列；重設後由 after() 或排程比對重跑（呼叫端負責觸發 matchOwnedGames）。 */
+export async function setManualMatch(target: ImportTarget, ownedGameId: number, change: ManualMatchChange): Promise<ManualMatchOutcome> {
+  if (!(await findOwnedGameRow(target.id, ownedGameId))) return { ok: false, code: "owned_game_not_found" };
+  if (change.kind === "assign" && !(await gameExists(change.gameId))) return { ok: false, code: "game_not_found" };
+  const row = await setOwnedGameManualMatch(target.id, ownedGameId, change);
+  if (!row) return { ok: false, code: "owned_game_not_found" };
+  return { ok: true, item: await toOwnedGameView(row), summary: await summarizeOwnedGames(target.id) };
+}
+
+export interface MatchCandidateView {
+  game: GameMiniCard;
+  /** 標題相似度（0~100；findBestMatch 的信心，低於 60 記為 0）。 */
+  confidencePct: number;
+}
+
+/** 候選：標題 trigram 取前幾名，逐一用 findBestMatch 評信心，高到低。列不屬於該帳號 → null。 */
+export async function getMatchCandidates(target: ImportTarget, ownedGameId: number, locale: string | null): Promise<MatchCandidateView[] | null> {
+  const row = await findOwnedGameRow(target.id, ownedGameId);
+  if (!row) return null;
+  const candidates = await findTitleMatchCandidates(row.externalTitle);
+  const cards = await getGameCardsByIds(candidates.map((c) => Number(c.externalId)), locale);
+  const out: MatchCandidateView[] = [];
+  for (const c of candidates) {
+    const game = cards.get(Number(c.externalId));
+    if (!game) continue;
+    out.push({ game, confidencePct: findBestMatch(row.externalTitle, [], null, [c])?.confidencePct ?? 0 });
+  }
+  return out.sort((a, b) => b.confidencePct - a.confidencePct);
 }

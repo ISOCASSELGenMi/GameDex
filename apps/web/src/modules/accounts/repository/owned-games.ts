@@ -41,7 +41,7 @@ const UPSERT_CHUNK = 1000;
  * 以 (connectedAccountId, externalGameId) upsert：更新 externalTitle、importedAt；新列 matchedGameId／matchConfidencePct 為 NULL。
  * 已存在的列保留比對結果（matched、needs_review 不動）；平台回應裡沒有的舊列不刪。
  * 同一個 transaction 內把該帳號「找不到」（matchedGameId IS NULL 且 matchConfidencePct = 0）的列重設為未比對（NULL），
- * 讓之後 catalog 新增的遊戲有機會被重新比對；只動這個 connectedAccountId。回傳該帳號目前的總列數。
+ * 讓之後 catalog 新增的遊戲有機會被重新比對；只動這個 connectedAccountId，且不動 match_method='manual' 的列（手動否決）。回傳該帳號目前的總列數。
  */
 export async function upsertOwnedGames(connectedAccountId: number, games: readonly ExternalOwnedGame[], now: Date): Promise<{ total: number }> {
   const db = getDb();
@@ -60,7 +60,14 @@ export async function upsertOwnedGames(connectedAccountId: number, games: readon
     await tx
       .update(ownedGames)
       .set({ matchConfidencePct: null })
-      .where(and(eq(ownedGames.connectedAccountId, connectedAccountId), isNull(ownedGames.matchedGameId), eq(ownedGames.matchConfidencePct, 0)));
+      .where(
+        and(
+          eq(ownedGames.connectedAccountId, connectedAccountId),
+          isNull(ownedGames.matchedGameId),
+          eq(ownedGames.matchConfidencePct, 0),
+          ne(ownedGames.matchMethod, "manual"), // 使用者手動否決的列不重比
+        ),
+      );
   });
   const [row] = await db.select({ n: sql<number>`count(*)::int` }).from(ownedGames).where(eq(ownedGames.connectedAccountId, connectedAccountId));
   return { total: row?.n ?? 0 };
@@ -72,7 +79,8 @@ export async function summarizeOwnedGames(connectedAccountId: number): Promise<O
       total: sql<number>`count(*)::int`,
       matched: sql<number>`(count(*) FILTER (WHERE ${ownedGames.matchedGameId} IS NOT NULL))::int`,
       needsReview: sql<number>`(count(*) FILTER (WHERE ${ownedGames.matchedGameId} IS NULL AND ${ownedGames.matchConfidencePct} > 0))::int`,
-      notFound: sql<number>`(count(*) FILTER (WHERE ${ownedGames.matchedGameId} IS NULL AND ${ownedGames.matchConfidencePct} = 0))::int`,
+      notFound: sql<number>`(count(*) FILTER (WHERE ${ownedGames.matchedGameId} IS NULL AND ${ownedGames.matchConfidencePct} = 0 AND ${ownedGames.matchMethod} <> 'manual'))::int`,
+      dismissed: sql<number>`(count(*) FILTER (WHERE ${ownedGames.matchedGameId} IS NULL AND ${ownedGames.matchConfidencePct} = 0 AND ${ownedGames.matchMethod} = 'manual'))::int`,
       queued: sql<number>`(count(*) FILTER (WHERE ${ownedGames.matchConfidencePct} IS NULL))::int`,
       last: max(ownedGames.importedAt),
     })
@@ -83,6 +91,7 @@ export async function summarizeOwnedGames(connectedAccountId: number): Promise<O
     matched: row?.matched ?? 0,
     needsReview: row?.needsReview ?? 0,
     notFound: row?.notFound ?? 0,
+    dismissed: row?.dismissed ?? 0,
     queued: row?.queued ?? 0,
     lastImportedAt: row?.last ? row.last.toISOString() : null,
   };
@@ -94,6 +103,7 @@ export interface OwnedGameRow {
   externalTitle: string;
   matchedGameId: number | null;
   matchConfidencePct: number | null;
+  matchMethod: string;
 }
 
 /** 清單（標題排序）。多取一筆用來判斷還有沒有下一頁。 */
@@ -105,6 +115,7 @@ export async function listOwnedGameRows(connectedAccountId: number, limit: numbe
       externalTitle: ownedGames.externalTitle,
       matchedGameId: ownedGames.matchedGameId,
       matchConfidencePct: ownedGames.matchConfidencePct,
+      matchMethod: ownedGames.matchMethod,
     })
     .from(ownedGames)
     .where(eq(ownedGames.connectedAccountId, connectedAccountId))
@@ -149,4 +160,46 @@ export async function applyOwnedGameMatches(results: readonly OwnedGameMatch[]):
     }
   });
   return updated;
+}
+
+const rowColumns = {
+  id: ownedGames.id,
+  externalGameId: ownedGames.externalGameId,
+  externalTitle: ownedGames.externalTitle,
+  matchedGameId: ownedGames.matchedGameId,
+  matchConfidencePct: ownedGames.matchConfidencePct,
+  matchMethod: ownedGames.matchMethod,
+};
+
+/** 某連結帳號底下的一列（不屬於該帳號回 null，不洩漏別人的列）。 */
+export async function findOwnedGameRow(connectedAccountId: number, ownedGameId: number): Promise<OwnedGameRow | null> {
+  const [row] = await getDb()
+    .select(rowColumns)
+    .from(ownedGames)
+    .where(and(eq(ownedGames.id, ownedGameId), eq(ownedGames.connectedAccountId, connectedAccountId)))
+    .limit(1);
+  return row ?? null;
+}
+
+/**
+ * 手動指定（第 5 波）：assign＝指定（信心 100）；dismiss＝否決（matchedGameId NULL、信心 0）；兩者 match_method 都是 manual。
+ * reset＝回到自動（matchedGameId NULL、信心 NULL、auto），交給比對重跑。只改該連結帳號的列。
+ */
+export async function setOwnedGameManualMatch(
+  connectedAccountId: number,
+  ownedGameId: number,
+  change: { kind: "assign"; gameId: number } | { kind: "dismiss" } | { kind: "reset" },
+): Promise<OwnedGameRow | null> {
+  const set =
+    change.kind === "assign"
+      ? { matchedGameId: change.gameId, matchConfidencePct: 100, matchMethod: "manual" }
+      : change.kind === "dismiss"
+        ? { matchedGameId: null, matchConfidencePct: 0, matchMethod: "manual" }
+        : { matchedGameId: null, matchConfidencePct: null, matchMethod: "auto" };
+  const [row] = await getDb()
+    .update(ownedGames)
+    .set(set)
+    .where(and(eq(ownedGames.id, ownedGameId), eq(ownedGames.connectedAccountId, connectedAccountId)))
+    .returning(rowColumns);
+  return row ?? null;
 }

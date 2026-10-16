@@ -5,3 +5,6 @@ export * from "./password-policy";
 export * from "./public-config";
 export * from "./safe-path";
 export * from "./owned-game";
+export * from "./lists";
+export * from "./play-records";
+export * from "./player-rating";

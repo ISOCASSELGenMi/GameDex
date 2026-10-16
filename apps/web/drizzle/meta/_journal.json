@@ -64,6 +64,13 @@
       "when": 1792168387204,
       "tag": "0008_dusty_colleen_wing",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792173760020,
+      "tag": "0009_unknown_black_knight",
+      "breakpoints": true
     }
   ]
 }

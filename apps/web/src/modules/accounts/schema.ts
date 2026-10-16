@@ -1,11 +1,12 @@
 /**
  * accounts 擁有的表（03 §帳號、§表歸屬）。只能被 accounts 自己的 repository 使用。
- * 第 1 波：users、connected_accounts、sessions、auth_verifications、auth_tokens；第 3 波：owned_games。
+ * 第 1 波：users、connected_accounts、sessions、auth_verifications、auth_tokens；第 3 波：owned_games；第 5 波：user_lists、user_list_games、play_records、game_player_ratings。
  * users／connected_accounts／sessions／auth_verifications 是 Better Auth 的 user／account／session／verification
  * （modelName 與欄位對應見 providers/auth/options.ts；D76～D81）。
  */
 import { sql } from "drizzle-orm";
-import { boolean, index, integer, jsonb, pgEnum, pgTable, serial, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/pg-core";
+import { boolean, date, index, integer, jsonb, numeric, pgEnum, pgTable, primaryKey, serial, smallint, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/pg-core";
+import { PLAY_STATUSES } from "./domain/entities/play-records";
 import { LIST_VISIBILITIES, REVIEW_VISIBILITIES } from "./domain/entities/providers";
 
 const tz = { withTimezone: true } as const;
@@ -113,6 +114,8 @@ export const ownedGames = pgTable(
     externalTitle: text("external_title").notNull(),
     matchedGameId: integer("matched_game_id"),
     matchConfidencePct: integer("match_confidence_pct"),
+    /** 'auto'｜'manual'（第 5 波）。manual＝使用者手動指定（pct 100）或否決（matchedGameId NULL、pct 0）；匯入重比與排程比對都不碰。 */
+    matchMethod: varchar("match_method", { length: 8 }).notNull().default("auto"),
     importedAt: timestamp("imported_at", tz).notNull().defaultNow(),
   },
   (t) => [
@@ -121,3 +124,78 @@ export const ownedGames = pgTable(
     index("owned_games_matched_game_idx").on(t.matchedGameId),
   ],
 );
+
+// ── 第 5 波：收藏清單、遊玩紀錄、玩家平均（03 §收藏、遊玩紀錄、追蹤）─────────────────────────
+// 對 catalog 表的外鍵（games／platforms）不能寫在這裡（lint:arch：accounts 的 schema 不能 import catalog 的 schema）；
+// 寫在 migration 0009 的手寫段落：user_list_games.game_id、play_records.game_id、game_player_ratings.game_id → games(id) ON DELETE CASCADE；
+// play_records.platform_id → platforms(id) ON DELETE SET NULL。
+
+export const userLists = pgTable(
+  "user_lists",
+  {
+    id: serial("id").primaryKey(),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    name: varchar("name", { length: 100 }).notNull(),
+    description: text("description"),
+    visibility: listVisibilityEnum("visibility").notNull().default("private"),
+    shareToken: varchar("share_token", { length: 32 }).unique(), // 只有 unlisted 才有
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdAt: timestamp("created_at", tz).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", tz).notNull().defaultNow(),
+  },
+  (t) => [index("user_lists_user_sort_idx").on(t.userId, t.sortOrder, t.id)],
+);
+
+export const userListGames = pgTable(
+  "user_list_games",
+  {
+    listId: integer("list_id")
+      .notNull()
+      .references(() => userLists.id, { onDelete: "cascade" }),
+    gameId: integer("game_id").notNull(),
+    position: integer("position").notNull().default(0),
+    note: text("note"),
+    addedAt: timestamp("added_at", tz).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.listId, t.gameId] }), index("user_list_games_game_idx").on(t.gameId), index("user_list_games_list_position_idx").on(t.listId, t.position)],
+);
+
+export const playStatusEnum = pgEnum("play_status", PLAY_STATUSES);
+
+export const playRecords = pgTable(
+  "play_records",
+  {
+    id: serial("id").primaryKey(),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    gameId: integer("game_id").notNull(),
+    platformId: integer("platform_id"),
+    status: playStatusEnum("status").notNull(),
+    startedOn: date("started_on"),
+    finishedOn: date("finished_on"),
+    playMinutes: integer("play_minutes"),
+    ratingHalfSteps: smallint("rating_half_steps"), // 1~20 = 0.5~10 分（P42）；NULL = 未評分
+    review: text("review"),
+    reviewHasSpoilers: boolean("review_has_spoilers").notNull().default(false),
+    reviewVisibility: reviewVisibilityEnum("review_visibility").notNull().default("public"),
+    privateNote: text("private_note"), // 永遠不公開
+    createdAt: timestamp("created_at", tz).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", tz).notNull().defaultNow(),
+  },
+  (t) => [
+    index("play_records_user_game_idx").on(t.userId, t.gameId),
+    index("play_records_game_rated_idx").on(t.gameId).where(sql`${t.ratingHalfSteps} IS NOT NULL`),
+    index("play_records_user_updated_idx").on(t.userId, t.updatedAt),
+  ],
+);
+
+export const gamePlayerRatings = pgTable("game_player_ratings", {
+  gameId: integer("game_id").primaryKey(),
+  avgHalfSteps: numeric("avg_half_steps", { precision: 4, scale: 2 }),
+  ratingCount: integer("rating_count").notNull().default(0),
+  avgPlayMinutes: integer("avg_play_minutes"),
+  updatedAt: timestamp("updated_at", tz).notNull().defaultNow(),
+});

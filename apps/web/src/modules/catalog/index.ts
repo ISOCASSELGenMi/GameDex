@@ -81,3 +81,6 @@ export { CATALOG_TAG, gameDetailTag } from "./ui/seo/cache-tags";
 
 // ── Phase 7 第 3 波：外部遊戲庫（Steam）比對用的唯讀查詢 ─────────────────
 export { findTitleMatchCandidates, findGameIdsByExternalIds, getGameBriefsByIds, TITLE_CANDIDATE_LIMIT, type GameBrief } from "./use-cases/matching";
+
+// ── Phase 7 第 5 波：清單、遊玩紀錄、手動比對用的唯讀查詢 ─────────────────
+export { getGameCardsByIds, getGamePlatformOptions, searchGameCards, gameExists, gameHasPlatform } from "./use-cases/game-cards";

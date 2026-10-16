@@ -3,6 +3,7 @@ import type { ModuleManifestBase } from "@/kernel/modules/types";
 import { HeaderRightSlot } from "./ui/header-slot";
 import { cleanupExpiredAuthRows } from "./use-cases/cleanup-expired";
 import { matchOwnedGames } from "./use-cases/owned-games";
+import { runRefreshPlayerRatings } from "./use-cases/play-records";
 
 /**
  * accounts 模組（02、09）：帳號、登入（Better Auth；D76）、之後的收藏／追蹤／遊玩紀錄。
@@ -16,7 +17,7 @@ export const accountsModule: ModuleManifestBase = {
   kind: "optional",
   requires: [],
   requiredEnv: ["AUTH_SECRET", "TOKEN_ENCRYPTION_KEY"],
-  ownedTables: ["users", "connected_accounts", "sessions", "auth_verifications", "auth_tokens", "owned_games"],
+  ownedTables: ["users", "connected_accounts", "sessions", "auth_verifications", "auth_tokens", "owned_games", "user_lists", "user_list_games", "play_records", "game_player_ratings"],
   jobs: [
     {
       name: "cleanup_auth_rows",
@@ -33,6 +34,16 @@ export const accountsModule: ModuleManifestBase = {
       run: async (ctx) => {
         const s = await matchOwnedGames({ log: ctx.log });
         ctx.log("match_owned_games", { ...s });
+      },
+    },
+    {
+      // 第 5 波：玩家平均（D68）。全量重算（一個 SQL statement、毫秒～秒級）；每小時、避開整點與其他任務。
+      // 用 tx 鎖即可：單一 statement，不是長任務。
+      name: "refresh_player_ratings",
+      cron: "17 * * * *",
+      run: async (ctx) => {
+        const r = await runRefreshPlayerRatings();
+        ctx.log("refresh_player_ratings", { ...r });
       },
     },
   ],

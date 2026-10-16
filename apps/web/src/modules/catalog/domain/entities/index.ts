@@ -20,3 +20,4 @@ export * from "./matching";
 export * from "./game-rating";
 export * from "./data-report";
 export * from "./ical";
+export * from "./game-card";
