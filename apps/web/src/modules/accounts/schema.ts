@@ -1,9 +1,10 @@
 /**
  * accounts 擁有的表（03 §帳號、§表歸屬）。只能被 accounts 自己的 repository 使用。
- * 第 1 波：users、connected_accounts、sessions、auth_verifications、auth_tokens。
+ * 第 1 波：users、connected_accounts、sessions、auth_verifications、auth_tokens；第 3 波：owned_games。
  * users／connected_accounts／sessions／auth_verifications 是 Better Auth 的 user／account／session／verification
  * （modelName 與欄位對應見 providers/auth/options.ts；D76～D81）。
  */
+import { sql } from "drizzle-orm";
 import { boolean, index, integer, jsonb, pgEnum, pgTable, serial, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/pg-core";
 import { LIST_VISIBILITIES, REVIEW_VISIBILITIES } from "./domain/entities/providers";
 
@@ -94,3 +95,29 @@ export const authTokens = pgTable("auth_tokens", {
   expiresAt: timestamp("expires_at", tz).notNull(),
   usedAt: timestamp("used_at", tz),
 });
+
+/**
+ * 平台匯入的原始紀錄（03；第 3 波：Steam）。需比對才能對到 catalog 的 games。
+ * matchConfidencePct：NULL＝尚未比對；0＝比對過但沒有候選；其他＝信心（matchedGameId 為 NULL 表示低信心待確認，不自動採用）。
+ * matchedGameId 刻意不用 .references()：accounts 的 schema 不能 import catalog 的 schema（lint:arch）。
+ * 外鍵 owned_games_matched_game_id_games_id_fk（ON DELETE SET NULL）寫在 migration 0008 的手寫段落。
+ */
+export const ownedGames = pgTable(
+  "owned_games",
+  {
+    id: serial("id").primaryKey(),
+    connectedAccountId: integer("connected_account_id")
+      .notNull()
+      .references(() => connectedAccounts.id, { onDelete: "cascade" }),
+    externalGameId: varchar("external_game_id", { length: 128 }).notNull(), // Steam AppID
+    externalTitle: text("external_title").notNull(),
+    matchedGameId: integer("matched_game_id"),
+    matchConfidencePct: integer("match_confidence_pct"),
+    importedAt: timestamp("imported_at", tz).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("owned_games_account_external_uq").on(t.connectedAccountId, t.externalGameId),
+    index("owned_games_unmatched_idx").on(t.id).where(sql`${t.matchConfidencePct} IS NULL`),
+    index("owned_games_matched_game_idx").on(t.matchedGameId),
+  ],
+);

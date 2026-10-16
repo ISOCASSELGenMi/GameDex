@@ -6,7 +6,7 @@
 import { createAuthDatabaseAdapter } from "../repository/auth-database";
 import { createAuth, createLogMailer, parseAccountsEnv, type AccountMailer, type AccountsAuth } from "../providers/auth";
 
-type Holder = { auth?: AccountsAuth; mailer?: AccountMailer };
+type Holder = { auth?: AccountsAuth; mailer?: AccountMailer; steamFetch?: typeof fetch };
 const g = globalThis as typeof globalThis & { __sokAccounts?: Holder };
 const holder: Holder = (g.__sokAccounts ??= {});
 
@@ -21,11 +21,23 @@ export function setAccountMailer(mailer: AccountMailer | undefined): void {
   holder.auth = undefined;
 }
 
+/** Steam 相關呼叫（OpenID 驗證、Web API）使用的 fetch；預設全域 fetch。測試注入假回應，絕不連 Steam。 */
+export function getSteamFetch(): typeof fetch {
+  return (...args) => (holder.steamFetch ?? fetch)(...args);
+}
+
+/** 測試用：換 Steam 的 fetch。會使既有實例失效。 */
+export function setSteamFetch(f: typeof fetch | undefined): void {
+  holder.steamFetch = f;
+  holder.auth = undefined;
+}
+
 export function getAuth(): AccountsAuth {
   if (!holder.auth) {
     holder.auth = createAuth({
       env: parseAccountsEnv(),
       database: createAuthDatabaseAdapter(),
+      steamFetch: getSteamFetch(),
       // 包一層：寄信實作可在建立後替換（setAccountMailer 也會重建，這裡保持最新）
       mailer: {
         sendVerification: (m) => getAccountMailer().sendVerification(m),
@@ -40,4 +52,5 @@ export function getAuth(): AccountsAuth {
 export function resetAuthForTests(): void {
   holder.auth = undefined;
   holder.mailer = undefined;
+  holder.steamFetch = undefined;
 }

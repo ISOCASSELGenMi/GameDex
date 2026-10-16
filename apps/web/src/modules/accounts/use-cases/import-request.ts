@@ -1,0 +1,93 @@
+/**
+ * `/api/v1/imports/{provider}` 的請求處理（薄路由 app/api/v1/imports/[provider] 經 api/imports.ts 呼叫）。非 Better Auth 端點，
+ * 所以自己做登入與 Origin 檢查（來源清單與 Better Auth 的 trustedOrigins 是同一份：parseAccountsEnv().trustedOrigins）。
+ *
+ * POST：404（不支援的 provider）→ 403（Origin）→ 401（未登入）→ 409 steam_not_linked → 503 steam_import_unavailable（沒設金鑰）
+ *       → 429 import_cooldown（10 分鐘）→ 202 { imported, total }；比對不在請求內做，交給 deps.defer（Next 的 after）。
+ * GET ：目前使用者的匯入摘要與清單（?limit=1..100，預設 50；?offset=）。
+ * 回應一律 Cache-Control: no-store。
+ */
+import { IMPORT_COOLDOWN_MS, isImportProvider, type ImportErrorCode } from "../domain/entities/owned-game";
+import { parseAccountsEnv } from "../providers/auth";
+import { getCurrentUser } from "./current-user";
+import { findOwnedGamesTarget, getOwnedGamesPage, importOwnedGames, matchOwnedGames } from "./owned-games";
+
+export interface ImportRequestDeps {
+  /** 回應之後執行背景工作（Next 的 after）。 */
+  defer: (task: () => Promise<void>) => void;
+  /** 測試注入假的 Steam 回應。 */
+  fetch?: typeof fetch;
+  now?: Date;
+  log?: (message: string, extra?: Record<string, unknown>) => void;
+}
+
+const STATUS: Record<ImportErrorCode, number> = {
+  steam_not_linked: 409,
+  steam_import_unavailable: 503,
+  steam_profile_private: 422,
+  steam_upstream_error: 502,
+  import_cooldown: 429,
+};
+
+function json(body: unknown, status: number, extra: Record<string, string> = {}): Response {
+  return Response.json(body, { status, headers: { "Cache-Control": "no-store", ...extra } });
+}
+
+/** Origin（沒有時用 Referer）必須在信任清單內。沒有信任清單時（未設 NEXT_PUBLIC_SITE_URL）退回請求自己的 origin。 */
+export function isTrustedRequestOrigin(request: Request, trusted: readonly string[]): boolean {
+  const raw = request.headers.get("origin") ?? request.headers.get("referer");
+  if (!raw || raw === "null") return false;
+  let origin: string;
+  try {
+    origin = new URL(raw).origin;
+  } catch {
+    return false;
+  }
+  const allowed = trusted.length > 0 ? trusted : [new URL(request.url).origin];
+  return allowed.includes(origin);
+}
+
+/** 回應之後的背景比對：一個帳號最多連跑幾批（每批上限見 MATCH_BATCH_SIZE），其餘交給排程。 */
+const AFTER_MAX_BATCHES = 10;
+
+export async function handleImportRequest(request: Request, providerParam: string, deps: ImportRequestDeps): Promise<Response> {
+  if (!isImportProvider(providerParam)) return json({ code: "not_found" }, 404);
+  const provider = providerParam;
+  if (request.method !== "POST" && request.method !== "GET") return json({ code: "method_not_allowed" }, 405, { Allow: "GET, POST" });
+  const isPost = request.method === "POST";
+  const env = parseAccountsEnv();
+  if (isPost && !isTrustedRequestOrigin(request, env.trustedOrigins)) return json({ code: "invalid_origin" }, 403);
+
+  const user = await getCurrentUser(request.headers);
+  if (!user) return json({ code: "unauthorized" }, 401);
+  const target = await findOwnedGamesTarget(user.id, provider);
+  if (!target) return json({ code: "steam_not_linked" }, STATUS.steam_not_linked);
+
+  if (!isPost) {
+    const url = new URL(request.url);
+    const limit = Math.min(100, Math.max(1, Number.parseInt(url.searchParams.get("limit") ?? "50", 10) || 50));
+    const offset = Math.max(0, Number.parseInt(url.searchParams.get("offset") ?? "0", 10) || 0);
+    const page = await getOwnedGamesPage(target, limit, offset);
+    const last = page.summary.lastImportedAt ? Date.parse(page.summary.lastImportedAt) : null;
+    const now = (deps.now ?? new Date()).getTime();
+    const cooldownSec = last !== null && last + IMPORT_COOLDOWN_MS > now ? Math.ceil((last + IMPORT_COOLDOWN_MS - now) / 1000) : 0;
+    return json({ importAvailable: !!env.steamApiKey, cooldownSec, ...page }, 200);
+  }
+
+  const outcome = await importOwnedGames({ userId: user.id, provider, apiKey: env.steamApiKey, now: deps.now, fetch: deps.fetch });
+  if (!outcome.ok) {
+    return json({ code: outcome.code }, STATUS[outcome.code], outcome.retryAfterSec ? { "Retry-After": String(outcome.retryAfterSec) } : {});
+  }
+  const accountId = outcome.connectedAccountId;
+  deps.defer(async () => {
+    try {
+      for (let i = 0; i < AFTER_MAX_BATCHES; i++) {
+        const s = await matchOwnedGames({ connectedAccountId: accountId, log: deps.log });
+        if (s.processed === 0) break;
+      }
+    } catch (e) {
+      deps.log?.("match_owned_games_after_failed", { error: e instanceof Error ? e.message : String(e) });
+    }
+  });
+  return json({ imported: outcome.imported, total: outcome.total }, 202);
+}

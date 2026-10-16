@@ -13,6 +13,8 @@ import { hashPassword, verifyPassword } from "./password";
 import { MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH } from "../../domain/entities/password-policy";
 import { skipPlaceholderRecipients, type AccountMailer } from "./mailer";
 import { SOCIAL_PROVIDERS, type SocialProvider } from "../../domain/entities/providers";
+import { createSteamClient } from "../steam";
+import { steam } from "./steam";
 
 /** 對外路徑（D81）：OAuth redirect URI 為 `{站台}/api/v1/auth/callback/{provider}`。 */
 export const AUTH_BASE_PATH = "/api/v1/auth";
@@ -31,6 +33,8 @@ export interface BuildAuthOptionsInput {
   mailer: AccountMailer;
   /** 測試用：覆寫限流開關（優先於 env.rateLimitEnabled；後者預設只在 production 啟用）。 */
   rateLimitEnabled?: boolean;
+  /** Steam 登入的 fetch（測試注入假的 Steam 回應；預設全域 fetch）。同時用於 OpenID 驗證與 GetPlayerSummaries。 */
+  steamFetch?: typeof fetch;
 }
 
 const DISCORD_SCOPES = ["guilds"]; // 預設已含 identify email；guilds 供 10 §網站建立活動判斷伺服器權限
@@ -127,6 +131,16 @@ export function buildAuthOptions(input: BuildAuthOptionsInput): BetterAuthOption
       },
     },
     socialProviders: socialProviders(env),
+    plugins: [
+      steam({
+        signupEnabled: env.signupEnabled,
+        fetch: input.steamFetch,
+        // 有 STEAM_WEB_API_KEY 才取暱稱與頭像；失敗不擋登入（plugin 端 catch）
+        fetchProfile: env.steamApiKey
+          ? (steamId) => createSteamClient({ apiKey: env.steamApiKey as string, fetch: input.steamFetch }).getPlayerSummary(steamId)
+          : undefined,
+      }),
+    ],
     rateLimit: {
       enabled: input.rateLimitEnabled ?? env.rateLimitEnabled,
       customRules: { ...AUTH_RATE_LIMIT_RULES },

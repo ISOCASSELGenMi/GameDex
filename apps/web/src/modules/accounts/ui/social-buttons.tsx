@@ -1,7 +1,10 @@
 "use client";
-/** 社群登入按鈕：只列出已設定憑證的 provider（由伺服器傳入）。點下去向 Better Auth 取得授權網址再導向。 */
+/**
+ * 社群登入按鈕：只列出已設定憑證的 provider（由伺服器傳入）＋Steam（OpenID，不需要憑證，accounts 啟用就提供）。
+ * 點下去向 Better Auth 取得授權網址再導向。
+ */
 import { useState, type ReactElement } from "react";
-import { signInSocial } from "./auth-api";
+import { signInSocial, signInSteam } from "./auth-api";
 import { str } from "./str";
 import type { AccountStrings } from "./strings";
 
@@ -17,13 +20,13 @@ export function SocialButtons({
   callbackPath: string;
   errorPath: string;
   onError: (message: string) => void;
-}): ReactElement | null {
+}): ReactElement {
   const [busy, setBusy] = useState<string | null>(null);
-  if (providers.length === 0) return null;
+  const all = [...providers, "steam"];
 
   async function go(provider: string): Promise<void> {
     setBusy(provider);
-    const res = await signInSocial(provider, callbackPath, errorPath);
+    const res = provider === "steam" ? await signInSteam(callbackPath, errorPath) : await signInSocial(provider, callbackPath, errorPath);
     if (res.ok && res.data?.url) {
       window.location.assign(res.data.url);
       return;
@@ -38,7 +41,7 @@ export function SocialButtons({
         {str(strings, "common.orSocial")}
       </h2>
       <ul className="flex flex-col gap-2">
-        {providers.map((p) => (
+        {all.map((p) => (
           <li key={p}>
             <button type="button" className="btn-secondary w-full" disabled={busy !== null} onClick={() => void go(p)}>
               {str(strings, "common.continueWith", { provider: str(strings, `providers.${p}`) })}

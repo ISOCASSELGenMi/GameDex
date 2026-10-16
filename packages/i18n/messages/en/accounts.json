@@ -32,7 +32,11 @@
       "accountNotLinked": "This email is already registered with a different sign-in method. Sign in the original way first, then link the new one on your account page.",
       "emailNotFound": "That service did not share an email address, so it cannot be used to create an account.",
       "signupDisabled": "New sign-ups are closed right now.",
-      "oauthFailed": "Sign-in with the other service failed. Please try again."
+      "oauthFailed": "Sign-in with the other service failed. Please try again.",
+      "steamInvalid": "Steam returned unexpected data. Please sign in again.",
+      "steamVerification": "Steam did not confirm this sign-in. Please try again.",
+      "steamAlreadyLinked": "This Steam account is already linked to another account.",
+      "steamNetwork": "Could not reach Steam to verify the sign-in. Please try again later."
     }
   },
   "signup": {
@@ -90,7 +94,8 @@
     "error": {
       "unlinkLast": "This is your only sign-in method, so it cannot be unlinked.",
       "notFresh": "For your security, sign in again and retry."
-    }
+    },
+    "linkSteam": "Link Steam"
   },
   "providers": {
     "credential": "Email and password",
@@ -100,5 +105,36 @@
     "twitter": "X (Twitter)",
     "microsoft": "Microsoft / Xbox",
     "steam": "Steam"
+  },
+  "steam": {
+    "title": "Steam library",
+    "privacyNote": "Importing needs your Steam profile and \"Game details\" to be public. You can switch them back to private afterwards.",
+    "privacyHow": "Where to find it: Steam profile → Edit Profile → Privacy Settings → set \"My profile\" and \"Game details\" to Public.",
+    "import": "Import library",
+    "reimport": "Import again",
+    "importing": "Importing…",
+    "imported": "Imported {count} games. Matching them against the database now.",
+    "unavailable": "Steam import is not configured on this site yet.",
+    "cooldown": "To avoid hammering Steam, please wait about {minutes} min before importing again.",
+    "summary": "{total} games: {matched} matched, {review} to confirm, {notFound} not found.",
+    "summaryQueued": "{queued} more are being matched.",
+    "listLabel": "Steam games",
+    "showMore": "Show more",
+    "empty": "No games imported yet.",
+    "status": {
+      "matched": "Matched",
+      "needs_review": "To confirm",
+      "not_found": "Not found",
+      "queued": "Matching…"
+    },
+    "error": {
+      "load": "Could not load your library. Please try again later.",
+      "generic": "Import failed. Please try again later.",
+      "private": "Could not read your library: set \"Game details\" on your Steam profile to Public and try again.",
+      "cooldown": "You just imported. Please try again in a while.",
+      "unavailable": "Steam import is unavailable on this site right now.",
+      "upstream": "Steam is not responding right now. Please try again later.",
+      "notLinked": "Steam is not linked."
+    }
   }
 }
