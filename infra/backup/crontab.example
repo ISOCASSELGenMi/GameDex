@@ -1,0 +1,5 @@
+# 安裝：crontab -e（用有權使用 docker 的使用者），貼上並改路徑；或放 /etc/cron.d/sok-backup（要多一個使用者欄位）。
+# 每天 03:17（以 VM 時區為準；建議 VM 設 UTC）備份。cron 的 PATH 很短，要明列 age、rclone、docker 所在目錄。
+PATH=/usr/local/bin:/usr/bin:/bin
+17 3 * * * /opt/sok/infra/backup/backup.sh >> /var/log/sok-backup.log 2>&1
+# 為了讓「cron 沒跑」也會有人發現：設定 BACKUP_PING_URL（dead man's switch，沒收到 ping 就告警），見 README。

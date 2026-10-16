@@ -162,6 +162,11 @@ export function subscribeHref(locale: Locale): string {
   return localeHref(locale, "/subscribe");
 }
 
+/** 法務與說明頁 `/about/{data-sources,privacy,terms,contact}`。 */
+export function aboutHref(locale: Locale, page: "data-sources" | "privacy" | "terms" | "contact"): string {
+  return localeHref(locale, `/about/${page}`);
+}
+
 /**
  * 公開 feed 的站內路徑（不含語系以外的前綴；不經 localeHref，因為 /ical 不是頁面路由、語系在 /ical 之後）：
  * `/ical/{locale}/releases.ics`、`/ical/{locale}/events.ics`、`/ical/{locale}/platform/{slug}.ics`、`/ical/{locale}/game/{slug}.ics`。

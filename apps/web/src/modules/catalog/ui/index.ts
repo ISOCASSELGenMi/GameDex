@@ -29,3 +29,6 @@ export { ReportPage, reportTitle } from "./report/report-page";
 
 // Phase 5：iCal 訂閱頁
 export { SubscribePage, subscribeTitle, type SubscribeSlots } from "./subscribe/subscribe-page";
+
+// Phase 9 準備：法務與說明頁（資料來源、隱私權、服務條款、聯絡）
+export { ABOUT_PAGES, ABOUT_DRAFT_DATE, AboutPageView, aboutTitle, isAboutPage, type AboutPage } from "./about/about-pages";

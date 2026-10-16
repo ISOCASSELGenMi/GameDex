@@ -1,0 +1,5 @@
+# 正式環境設定與憑證不進版控（.env.example 除外，已由根目錄 .gitignore 處理）
+caddy/certs/*
+!caddy/certs/.gitkeep
+backup/*.env
+backup/age-key*.txt

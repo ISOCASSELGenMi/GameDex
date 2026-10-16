@@ -44,6 +44,8 @@ const nextConfig: NextConfig = {
       { source: "/:locale/companies/:slug", headers: medium },
       { source: "/:locale/franchises/:slug", headers: medium },
       { source: "/:locale/events", headers: medium },
+      // 法務與說明頁（靜態內容）：Next 預設的一年太長（改文字要等 CDN 過期），改 1 小時；改動後部署即生效
+      { source: "/:locale/about/:page", headers: [{ key: "Cache-Control", value: "public, s-maxage=3600, stale-while-revalidate=86400" }] },
     ];
   },
   turbopack: {

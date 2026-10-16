@@ -19,7 +19,7 @@ import { eventKindLabel, getTranslator } from "../labels";
 import { PageShell } from "../layout/page-shell";
 import { eventHref, eventsHref } from "../links";
 import { reportHref } from "../report/links";
-import { rethrowForPage } from "../page-errors";
+import { rethrowForPage, timeoutMarkerOrRethrow, unwrapCachedForPage, type CachedTimeout } from "../page-errors";
 import { CATALOG_TAG, STATIC_SHELL_SLUG } from "../seo/cache-tags";
 import { breadcrumbJsonLd, eventJsonLd } from "../seo/json-ld";
 import { JsonLdScript } from "../seo/json-ld-script";
@@ -154,13 +154,21 @@ export async function EventsListPage({
  * 快取層（同遊戲詳情：`use cache` 鍵含 slug、locale；找不到只短暫快取）。
  * timeStatus（upcoming／ongoing／past）由資料庫的 now() 在建立快取時算出，最多落後 catalogDetail.revalidate（1 小時）。
  */
-async function readEventDetailCached(slug: string, locale: Locale): Promise<EventDetail | null> {
+async function readEventDetailCached(slug: string, locale: Locale): Promise<EventDetail | null | CachedTimeout> {
   "use cache";
   if (slug === STATIC_SHELL_SLUG) {
     cacheLife("catalogMiss");
     return null;
   }
-  const ev = await getEventDetail({ slug: safeDecode(slug), locale });
+  let ev: EventDetail | null;
+  try {
+    ev = await getEventDetail({ slug: safeDecode(slug), locale });
+  } catch (err) {
+    // 逾時要在快取邊界內攔下（見 page-errors.ts）；其他錯誤原樣丟出
+    const marker = timeoutMarkerOrRethrow(err);
+    cacheLife("seconds");
+    return marker;
+  }
   if (ev) {
     cacheLife("catalogDetail");
     cacheTag(CATALOG_TAG, `${CATALOG_TAG}:event`, `${CATALOG_TAG}:event:${ev.slug}`);
@@ -172,7 +180,7 @@ async function readEventDetailCached(slug: string, locale: Locale): Promise<Even
 
 export const loadEventDetail = cache(async (slug: string, locale: Locale): Promise<EventDetail | null> => {
   try {
-    return await readEventDetailCached(slug, locale);
+    return unwrapCachedForPage(await readEventDetailCached(slug, locale));
   } catch (err) {
     rethrowForPage(err);
   }

@@ -1,0 +1,148 @@
+{
+  "nav": {
+    "label": "About this site",
+    "dataSources": "Data sources and credits",
+    "privacy": "Privacy policy",
+    "terms": "Terms of use",
+    "contact": "Contact and takedown requests"
+  },
+  "draft": {
+    "title": "Draft document",
+    "body": "This page is a working draft written by the site operator. It is not legal advice and has not been reviewed by a lawyer. It will be reviewed by a qualified professional before the site is promoted publicly, and it may change."
+  },
+  "updated": "Draft last revised: {date}",
+  "related": "Related pages",
+  "dataSources": {
+    "title": "Data sources and credits",
+    "intro": "SoK Game Calendar is a release calendar and database for video games. This page lists where the information comes from and who owns the material shown on the site.",
+    "sections": {
+      "igdb": {
+        "title": "IGDB",
+        "body": "Game, platform, release date and event data comes from IGDB.com. We retrieve it through the IGDB API on a regular schedule and store a copy in our own database.\nThe credit \"Data from IGDB.com\" is shown in the footer of every page and links to https://www.igdb.com/. IGDB's own terms apply to its data."
+      },
+      "covers": {
+        "title": "Cover art and trademarks",
+        "body": "Cover images, logos, game titles and platform names belong to their respective publishers, developers and platform holders. Cover images are loaded from IGDB's image servers and are shown only to identify the games on this site.\nThis site is not affiliated with, sponsored by or endorsed by any publisher, developer or platform holder."
+      },
+      "manual": {
+        "title": "Manual corrections",
+        "body": "Some release dates and details are corrected by the site operator, often after a report from a visitor. Entries that were confirmed by hand are marked as such in the data, and when they disagree with IGDB the manually confirmed entry is shown first."
+      },
+      "ratings": {
+        "title": "Scores",
+        "body": "Where scores are shown, the name of the source is shown next to each score. A score is an opinion of its source, not of this site."
+      },
+      "accuracy": {
+        "title": "Accuracy",
+        "body": "Release dates are announced, delayed and cancelled often. The information on this site can be wrong, incomplete or out of date. Please confirm with the publisher or the store before you rely on it, for example before you make a purchase."
+      },
+      "corrections": {
+        "title": "Corrections and removal requests",
+        "body": "If you find a mistake, use the report link on the game, platform or event page. If you hold rights to material shown here and want it removed, see the contact page."
+      }
+    }
+  },
+  "privacy": {
+    "title": "Privacy policy",
+    "intro": "This page describes what information the site processes when you use it. At the time of writing the site has no user accounts, no advertising and no analytics.",
+    "sections": {
+      "cookies": {
+        "title": "Cookies",
+        "body": "We do not use tracking or advertising cookies.\nThe only cookie we set is sok_locale. It is set only if you choose a language from the language menu, it contains only the language code, and it is kept for up to one year so that the site can open in your language next time. You can delete it in your browser at any time; the site works without it."
+      },
+      "storage": {
+        "title": "Data stored in your browser",
+        "body": "If you choose which rating sources to show on a game page, your choice is saved in your browser's local storage on your own device. It is not sent to our server."
+      },
+      "logs": {
+        "title": "Server and network logs",
+        "body": "To deliver pages and protect the site against abuse, the servers and the content delivery network in front of them (Cloudflare) process technical information such as your IP address, browser type and the address you requested. We keep access logs only as long as needed for security and troubleshooting."
+      },
+      "reports": {
+        "title": "Data correction reports",
+        "body": "If you send a report we store what you submitted (the type of report, the item concerned, the proposed value, the source link and the note), the time of the report, and a keyed hash of your IP address that is used to limit abuse. The hash is erased after 90 days. We do not ask for your name or email address; please do not enter personal information in the form.\nTakedown requests are not shown publicly and are sent to the site owner only.\nThe form uses Cloudflare Turnstile to tell people from bots. Turnstile is operated by Cloudflare and processes technical information about your browser under Cloudflare's own privacy policy."
+      },
+      "feeds": {
+        "title": "Calendar feeds",
+        "body": "The public calendar feeds (.ics) need no sign-in. We do not identify who subscribes; your calendar application requests the feed address from our server and the request appears in the server logs described above."
+      },
+      "accounts": {
+        "title": "Accounts",
+        "body": "There are no user accounts at the moment. If sign-in or other features that process personal data are added, this page will be updated before they go live."
+      },
+      "backups": {
+        "title": "Backups",
+        "body": "The database is backed up every day to storage outside the server, encrypted. Backups are kept for 7 days (daily), 4 weeks (weekly) and 6 months (monthly), and these periods may be adjusted. Information removed from the live database can remain in backups until they expire."
+      },
+      "thirdParties": {
+        "title": "Other services",
+        "body": "Game data and cover images come from IGDB (see the data sources page). Pages are delivered through Cloudflare. Links to other sites lead to services we do not control, and their own privacy policies apply."
+      },
+      "changes": {
+        "title": "Changes",
+        "body": "We may update this page. The date of the latest revision is shown at the top."
+      }
+    }
+  },
+  "terms": {
+    "title": "Terms of use",
+    "intro": "By using this site you agree to these terms. If you do not agree, please do not use the site.",
+    "sections": {
+      "scope": {
+        "title": "What the site is",
+        "body": "SoK Game Calendar provides information about video game release dates and related events. It is free to use and offered for personal, non-commercial information."
+      },
+      "accuracy": {
+        "title": "No guarantee of accuracy",
+        "body": "The information is provided \"as is\". Release dates and other details can be wrong, incomplete or out of date, and we do not guarantee otherwise. Check with the publisher or the store before you rely on it."
+      },
+      "ip": {
+        "title": "Ownership of material",
+        "body": "Game titles, cover art, logos and platform names belong to their respective owners (see the data sources page). Data from IGDB is subject to IGDB's terms. Using the site does not give you any rights in third-party material."
+      },
+      "use": {
+        "title": "Acceptable use",
+        "body": "Please do not:\n- overload the site or try to disrupt it or its security;\n- collect large parts of the data by automated means. Use the public calendar feeds instead;\n- submit false, abusive or unlawful reports."
+      },
+      "reports": {
+        "title": "Reports you submit",
+        "body": "When you send a report you confirm that the content is yours to share and is not unlawful. We may accept, change or reject any report at our discretion."
+      },
+      "links": {
+        "title": "External links",
+        "body": "Links to other sites are provided for convenience. We do not control those sites and are not responsible for them."
+      },
+      "availability": {
+        "title": "Availability",
+        "body": "We may change, suspend or stop any part of the site at any time without notice."
+      },
+      "liability": {
+        "title": "Limitation of liability",
+        "body": "To the extent permitted by law, the operator is not liable for any loss arising from the use of, or inability to use, the site or from reliance on its information."
+      },
+      "changes": {
+        "title": "Changes",
+        "body": "We may update these terms. The date of the latest revision is shown at the top. Continued use after a change means you accept the updated terms."
+      }
+    }
+  },
+  "contact": {
+    "title": "Contact and takedown requests",
+    "intro": "At the moment the site has no public email address. Requests are handled through the report form.",
+    "sections": {
+      "general": {
+        "title": "Questions and corrections",
+        "body": "To report wrong or missing information, open the page of the game, platform or event and use its \"Report a problem\" link. For anything else, choose the report type \"Something else\" in the same form."
+      },
+      "takedown": {
+        "title": "Takedown and copyright requests",
+        "body": "If you own rights to material shown on the site (for example a cover image, a trademark or text) and want it removed:\n- open the page of the game, platform or event that shows it;\n- use its \"Report a problem\" link and choose the report type \"Takedown or copyright request\";\n- say what should be removed, where it appears and why, and how you are connected to the rights.\nTakedown requests are never shown publicly and are sent to the site owner only. We honor takedown requests: after receiving one we remove the material concerned and record the outcome."
+      },
+      "privacy": {
+        "title": "Privacy questions",
+        "body": "Questions about how information is handled are covered by the privacy policy. Because reports are anonymous, we may not be able to find a particular report from the IP address alone."
+      }
+    },
+    "findGame": "Find a game"
+  }
+}

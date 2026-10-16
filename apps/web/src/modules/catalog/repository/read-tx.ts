@@ -1,4 +1,5 @@
 import { sql } from "drizzle-orm";
+import { getCoreEnv } from "@/kernel/config/env";
 import { getDb, type DbOrTx } from "@/kernel/db/client";
 import { CatalogQueryTimeoutError } from "../domain/entities";
 
@@ -29,7 +30,7 @@ export function isStatementTimeout(err: unknown): boolean {
  */
 export async function withReadTimeout<T>(fn: (tx: DbOrTx) => Promise<T>, opts: ReadOptions = {}): Promise<T> {
   const db = opts.db ?? getDb();
-  const ms = Math.max(1, Math.floor(opts.timeoutMs ?? READ_STATEMENT_TIMEOUT_MS));
+  const ms = Math.max(1, Math.floor(opts.timeoutMs ?? getCoreEnv().CATALOG_READ_TIMEOUT_MS ?? READ_STATEMENT_TIMEOUT_MS));
   try {
     return await db.transaction(
       async (tx) => {

@@ -1,4 +1,4 @@
-import { bigint, jsonb, pgTable, text, timestamp, varchar } from "drizzle-orm/pg-core";
+import { bigint, integer, jsonb, pgTable, text, timestamp, varchar } from "drizzle-orm/pg-core";
 
 // kernel 擁有的表（03 §同步狀態與變更紀錄、§表歸屬）
 
@@ -10,6 +10,10 @@ export const syncState = pgTable("sync_state", {
   lastSuccessAt: timestamp("last_success_at", { withTimezone: true }), // 任務心跳，供告警
   lastFailureAt: timestamp("last_failure_at", { withTimezone: true }),
   lastError: text("last_error"),
+  /** 連續失敗次數（成功時歸零）；心跳告警用（16 §Uptime 與告警）。 */
+  consecutiveFailures: integer("consecutive_failures").notNull().default(0),
+  /** 最近一次針對這個任務送出告警的時間（去重用；成功時清除）。 */
+  lastAlertedAt: timestamp("last_alerted_at", { withTimezone: true }),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().$onUpdate(() => new Date()),
 });
 

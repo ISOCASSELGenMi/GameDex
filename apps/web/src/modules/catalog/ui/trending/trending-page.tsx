@@ -24,7 +24,7 @@ import { PageShell } from "../layout/page-shell";
 import { gameHref, localeHref, trendingHref } from "../links";
 import { gameNameLang } from "../name-lang";
 import { PageNav } from "../page-nav";
-import { rethrowForPage } from "../page-errors";
+import { rethrowForPage, timeoutMarkerOrRethrow, unwrapCachedForPage, type CachedTimeout } from "../page-errors";
 import { TRENDING_PAGE_MAX, TRENDING_PAGE_SIZE, parseTrendingGroup, parseTrendingPage } from "./params";
 
 export type SearchParamsRecord = Readonly<Record<string, string | string[] | undefined>>;
@@ -45,12 +45,29 @@ interface CachedTrending {
 }
 
 /** 熱度每小時更新：同一組條件 15 分鐘內共用結果。參數都可序列化（快取鍵）。 */
-async function loadTrending(locale: string, group: PopularityGroup, specJson: string, offset: number, today: string): Promise<CachedTrending> {
+async function readTrendingCached(
+  locale: string,
+  group: PopularityGroup,
+  specJson: string,
+  offset: number,
+  today: string,
+): Promise<CachedTrending | CachedTimeout> {
   "use cache";
-  cacheLife({ stale: 300, revalidate: 900, expire: 3600 });
   const spec = JSON.parse(specJson) as FilterSpec;
-  const { ignored, ...page } = await getTrending({ group, filter: filterSpecToReleaseFilter(spec), locale, limit: TRENDING_PAGE_SIZE, offset, today });
-  return { page, ignored };
+  try {
+    const { ignored, ...page } = await getTrending({ group, filter: filterSpecToReleaseFilter(spec), locale, limit: TRENDING_PAGE_SIZE, offset, today });
+    cacheLife({ stale: 300, revalidate: 900, expire: 3600 });
+    return { page, ignored };
+  } catch (err) {
+    // 逾時要在快取邊界內攔下（跨過邊界後型別會遺失，見 page-errors.ts）；其他錯誤原樣丟出
+    const marker = timeoutMarkerOrRethrow(err);
+    cacheLife("seconds");
+    return marker;
+  }
+}
+
+async function loadTrending(locale: string, group: PopularityGroup, specJson: string, offset: number, today: string): Promise<CachedTrending> {
+  return unwrapCachedForPage(await readTrendingCached(locale, group, specJson, offset, today));
 }
 
 function first(v: string | string[] | undefined): string | undefined {

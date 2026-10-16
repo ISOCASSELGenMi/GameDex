@@ -537,7 +537,7 @@ describe("字典與原始碼", () => {
     const src = readFileSync(path.join(root, rel), "utf8");
     const noBlock = src.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, " "));
     return noBlock
-      .split("\n")
+      .split(/\r?\n/) // Windows CRLF checkout：`.` 不跨 \r，不切掉的話 `//.*$` 刪不到行尾註解
       .map((l) => l.replace(/\/\/.*$/, ""))
       .filter((l) => CJK.test(l));
   }
