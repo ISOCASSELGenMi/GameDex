@@ -8,9 +8,9 @@
 
 | 客戶端 | 間隔 | 可自訂 |
 | --- | --- | --- |
-| Google 日曆 | 約 8~24 小時，有時更久；無手動重新整理；忽略 feed 內的更新間隔提示 🔶 | 否 |
+| Google 日曆 | 實測（2026-10-15）：訂閱後約 1 小時首次重抓，之後約每 5~6 小時（每個 feed 各自排程）；無手動重新整理；忽略 feed 內的更新間隔提示 🧪 | 否 |
 | Outlook | 數小時 🔶 | 否 |
-| Apple 日曆 | 使用者設定 | 是 |
+| Apple 日曆 | 使用者設定（iPadOS 最短每 15 分鐘）；行事曆清單下拉可立即重新抓取 🧪 | 是 |
 
 - UI 文案寫「可能需要數小時到一天」，不寫死數字、不宣稱即時。
 - `REFRESH-INTERVAL`／`X-PUBLISHED-TTL` 照加，但別指望 Google。
@@ -23,11 +23,11 @@
 
 1. **UID 永久不變，不從日期或標題算出**。
    - 單一上市事件：`release-{release_events.id}@{網域}`；活動：`event-{events.id}@{網域}`。
-   - **聚合 feed**（公開 feed、私人 feed 都套 06 的聚合規則）：UID 粒度 = (遊戲, 平台, 階段)，`release-g{gameId}-p{platformId}-s{stage}@{網域}`，地區只是屬性；`SEQUENCE` 取該組所有上市事件 sequence 的總和（單調不減）。**未經客戶端實測 ❓**，Phase 5 先做原型驗證（D26）。
-2. **日期或 status 變動時 `SEQUENCE` 遞增**（含取消與復原）。客戶端是否依賴 SEQUENCE ❓ 併入原型驗證。
+   - **聚合 feed**（公開 feed、私人 feed 都套 06 的聚合規則）：UID 粒度 = (遊戲, 平台, 階段)，`release-g{gameId}-p{platformId}-s{stage}@{網域}`，地區只是屬性；`SEQUENCE` 取該組所有上市事件 sequence 的總和（單調不減）。**原型實測通過** 🧪（2026-10-15～16，Google 日曆網頁版、Apple 日曆 iPadOS 26.6.1）：同一 UID 換地區屬性與日期 → 兩個客戶端都更新原事件、不重複（D26）。
+2. **日期或 status 變動時 `SEQUENCE` 遞增**（含取消與復原）。實測 🧪：Google 與 Apple **都不依賴 SEQUENCE**（SEQUENCE 不變時只改標題或日期也會更新，依內容比對）；仍照 RFC 5545 遞增，保留給 Outlook 等未測客戶端。
 3. **事件不憑空消失**（D33、D-Bug15）：
-   - 取消 → `STATUS:CANCELLED`，保留 30 天再移除；
-   - 延期成 `tbd` → 保留 30 天，`SUMMARY` 加 `[延期・日期未定]`、`STATUS:TENTATIVE`（各客戶端顯示 ❓）；
+   - 取消 → `STATUS:CANCELLED`，保留 30 天再移除（實測 🧪：**Google 直接從日曆移除**；**Apple 保留並以刪除線／灰色顯示**；復原後兩者都以同一 UID 恢復。訂閱頁文案要寫明這個差異）；
+   - 延期成 `tbd` → 保留 30 天，`SUMMARY` 加 `[延期・日期未定]`、`STATUS:TENTATIVE`（實測 🧪：Google、Apple 都沒有 TENTATIVE 的視覺差異，**只能靠標題標記**，標記不可省略）；
    - 移出公開 feed 視窗 → 見 §公開 feed。
 4. **`DTSTAMP`／`LAST-MODIFIED` 取事件的 `updatedAt`**，不取產生當下，否則每次內容都不同、ETag 全失效。
 
