@@ -9,6 +9,8 @@ export interface ApiResult<T = unknown> {
   status: number;
   code?: string;
   data?: T;
+  /** 欄位驗證錯誤（validation_failed）：欄位名 → 原因碼。 */
+  fields?: Record<string, string>;
   /** 連線失敗（沒有取得回應）。 */
   network?: boolean;
 }

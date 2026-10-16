@@ -12,3 +12,18 @@ export function accountPageHref(locale: string, page: AccountPage, query = ""): 
 export function safeNextPath(next: string | null | undefined, fallback: string): string {
   return safeRelativePath(next, fallback);
 }
+
+/** 帳號下的子頁（第 5 波）：我的清單、清單內容、遊玩紀錄。 */
+export function accountListsHref(locale: string): string {
+  return `/${locale}/account/lists`;
+}
+export function accountListHref(locale: string, listId: number): string {
+  return `/${locale}/account/lists/${listId}`;
+}
+export function accountPlaysHref(locale: string): string {
+  return `/${locale}/account/plays`;
+}
+/** 公開清單頁：public 用 id；unlisted 用 shareToken。 */
+export function publicListHref(locale: string, list: { id: number; visibility: string; shareToken: string | null }): string {
+  return list.visibility === "unlisted" && list.shareToken ? `/${locale}/lists/s/${encodeURIComponent(list.shareToken)}` : `/${locale}/lists/${list.id}`;
+}

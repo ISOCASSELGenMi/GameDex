@@ -7,7 +7,7 @@
  * GET ：目前使用者的匯入摘要與清單（?limit=1..100，預設 50；?offset=）。
  * 回應一律 Cache-Control: no-store。
  */
-import { IMPORT_COOLDOWN_MS, isImportProvider, type ImportErrorCode } from "../domain/entities/owned-game";
+import { IMPORT_COOLDOWN_MS, OWNED_GAME_STATUSES, isImportProvider, type ImportErrorCode, type OwnedGameStatus } from "../domain/entities/owned-game";
 import { parseAccountsEnv } from "../providers/auth";
 import { getLocaleConfig, isSupportedLocale } from "@/kernel/locale";
 import { parseIdParam } from "../domain/entities/lists";
@@ -69,7 +69,10 @@ export async function handleImportRequest(request: Request, providerParam: strin
     const url = new URL(request.url);
     const limit = Math.min(100, Math.max(1, Number.parseInt(url.searchParams.get("limit") ?? "50", 10) || 50));
     const offset = Math.max(0, Number.parseInt(url.searchParams.get("offset") ?? "0", 10) || 0);
-    const page = await getOwnedGamesPage(target, limit, offset);
+    // ?status= 篩選（第 5 波畫面需要：清單分頁載入，不能只在前端過濾已載入的列）；不認得的值忽略＝全部
+    const statusParam = url.searchParams.get("status");
+    const status = (OWNED_GAME_STATUSES as readonly string[]).includes(statusParam ?? "") ? (statusParam as OwnedGameStatus) : undefined;
+    const page = await getOwnedGamesPage(target, limit, offset, status);
     const last = page.summary.lastImportedAt ? Date.parse(page.summary.lastImportedAt) : null;
     const now = (deps.now ?? new Date()).getTime();
     const cooldownSec = last !== null && last + IMPORT_COOLDOWN_MS > now ? Math.ceil((last + IMPORT_COOLDOWN_MS - now) / 1000) : 0;

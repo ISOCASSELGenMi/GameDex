@@ -25,6 +25,7 @@ import {
   type ImportErrorCode,
   type ImportProvider,
   type OwnedGameMatch,
+  type OwnedGameStatus,
   type OwnedGamesPage,
   type OwnedGamesSummary,
   type OwnedGameView,
@@ -158,8 +159,8 @@ export async function matchOwnedGames(opts: MatchOwnedGamesOptions = {}): Promis
   return summary;
 }
 
-export async function getOwnedGamesPage(target: ImportTarget, limit: number, offset: number): Promise<OwnedGamesPage> {
-  const [summary, { rows, hasMore }] = await Promise.all([summarizeOwnedGames(target.id), listOwnedGameRows(target.id, limit, offset)]);
+export async function getOwnedGamesPage(target: ImportTarget, limit: number, offset: number, status?: OwnedGameStatus): Promise<OwnedGamesPage> {
+  const [summary, { rows, hasMore }] = await Promise.all([summarizeOwnedGames(target.id), listOwnedGameRows(target.id, limit, offset, status)]);
   const briefs = await getGameBriefsByIds(rows.flatMap((r) => (r.matchedGameId === null ? [] : [r.matchedGameId])));
   return {
     summary,

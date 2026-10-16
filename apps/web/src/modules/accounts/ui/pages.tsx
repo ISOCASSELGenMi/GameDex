@@ -5,7 +5,10 @@
 import type { ReactElement, ReactNode } from "react";
 import type { Locale } from "@sok/i18n";
 import type { AccountsPublicConfig } from "../domain/entities/public-config";
+import { AccountListDetail } from "./account-list-detail";
+import { AccountLists } from "./account-lists";
 import { AccountPanel } from "./account-panel";
+import { AccountPlays } from "./account-plays";
 import { ForgotPasswordForm } from "./forgot-form";
 import { LoginForm } from "./login-form";
 import { accountPageHref, safeNextPath, type AccountPage } from "./links";
@@ -89,5 +92,51 @@ export function AccountPageView({ locale }: { locale: Locale }): ReactElement {
     <Frame title={str(s, "account.title")}>
       <AccountPanel strings={s} locale={locale} />
     </Frame>
+  );
+}
+
+// ── 第 5 波：帳號子頁（清單、清單內容、遊玩紀錄）。需登入：由客戶端的 RequireUser 判斷，伺服器端 HTML 與使用者無關 ──
+export type AccountSubPage = "lists" | "list" | "plays";
+const SUB_TITLE_KEY: Record<AccountSubPage, string> = { lists: "list.pageTitle", list: "list.detailTitle", plays: "play.pageTitle" };
+
+export function accountSubPageTitle(locale: Locale, page: AccountSubPage): string {
+  return str(accountStrings(locale, [SUB_TITLE_KEY[page]]), SUB_TITLE_KEY[page]);
+}
+
+function WideFrame({ title, children }: { title: string; children: ReactNode }): ReactElement {
+  return (
+    <article className="mx-auto flex w-full max-w-3xl min-w-0 flex-col gap-4 py-4">
+      <h1 className="text-3xl font-bold">{title}</h1>
+      {children}
+    </article>
+  );
+}
+
+const SUB_STRING_PREFIXES = ["list.", "play.", "error.", "common.", "account.signed", "account.signIn", "account.error."] as const;
+
+export function AccountListsPageView({ locale }: { locale: Locale }): ReactElement {
+  const s = accountStrings(locale, SUB_STRING_PREFIXES);
+  return (
+    <WideFrame title={str(s, "list.pageTitle")}>
+      <AccountLists strings={s} locale={locale} />
+    </WideFrame>
+  );
+}
+
+export function AccountListDetailPageView({ locale, listId }: { locale: Locale; listId: number }): ReactElement {
+  const s = accountStrings(locale, SUB_STRING_PREFIXES);
+  return (
+    <WideFrame title={str(s, "list.detailTitle")}>
+      <AccountListDetail strings={s} locale={locale} listId={listId} />
+    </WideFrame>
+  );
+}
+
+export function AccountPlaysPageView({ locale }: { locale: Locale }): ReactElement {
+  const s = accountStrings(locale, SUB_STRING_PREFIXES);
+  return (
+    <WideFrame title={str(s, "play.pageTitle")}>
+      <AccountPlays strings={s} locale={locale} />
+    </WideFrame>
   );
 }

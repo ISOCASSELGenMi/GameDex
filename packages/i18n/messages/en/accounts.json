@@ -10,7 +10,10 @@
     "errorSummary": "Could not submit. Please check the problems below:",
     "network": "Could not reach the server. Please try again later.",
     "generic": "Something went wrong. Please try again later.",
-    "rateLimited": "Too many attempts. Please try again later."
+    "rateLimited": "Too many attempts. Please try again later.",
+    "cancel": "Cancel",
+    "close": "Close",
+    "confirmDelete": "Yes, delete"
   },
   "header": {
     "signIn": "Sign in",
@@ -95,7 +98,13 @@
       "unlinkLast": "This is your only sign-in method, so it cannot be unlinked.",
       "notFresh": "For your security, sign in again and retry."
     },
-    "linkSteam": "Link Steam"
+    "linkSteam": "Link Steam",
+    "mine": {
+      "title": "My collection and records",
+      "hint": "Lists and play records are your own notes. They are not added to the calendar and do not send reminders.",
+      "lists": "My lists",
+      "plays": "Play records"
+    }
   },
   "providers": {
     "credential": "Email and password",
@@ -125,7 +134,8 @@
       "matched": "Matched",
       "needs_review": "To confirm",
       "not_found": "Not found",
-      "queued": "Matching…"
+      "queued": "Matching…",
+      "dismissed": "Dismissed"
     },
     "error": {
       "load": "Could not load your library. Please try again later.",
@@ -135,6 +145,231 @@
       "unavailable": "Steam import is unavailable on this site right now.",
       "upstream": "Steam is not responding right now. Please try again later.",
       "notLinked": "Steam is not linked."
+    },
+    "summaryDismissed": "{dismissed} more were marked \"not a game\".",
+    "filter": {
+      "label": "Show",
+      "all": "All ({count})",
+      "needs_review": "To confirm ({count})",
+      "not_found": "Not found ({count})",
+      "dismissed": "Dismissed ({count})",
+      "matched": "Matched ({count})"
+    },
+    "emptyFiltered": "No games match.",
+    "match": {
+      "title": "Choose the matching game",
+      "steamTitle": "Name on Steam: ",
+      "current": "Currently matched to: {name}",
+      "candidates": "Possible games",
+      "candidatesNone": "No close candidates were found. Try searching below.",
+      "candidatesFailed": "Could not load candidates. Try searching below.",
+      "confidence": "{pct}% similar",
+      "search": "Search yourself",
+      "searchLabel": "Game name",
+      "searchButton": "Search",
+      "searching": "Searching…",
+      "searchNone": "No matching games found.",
+      "searchResults": "Search results",
+      "searchFailed": "The search failed. Please try again later.",
+      "queryTooShort": "Please type at least 2 characters.",
+      "choose": "Choose",
+      "dismiss": "This is not any game",
+      "reset": "Leave it to automatic matching",
+      "actionsHint": "\"This is not any game\" suits soundtracks, betas and other items the database does not have; it will not be matched automatically again. \"Leave it to automatic matching\" clears your choice and lets the system match it again.",
+      "open": {
+        "matched": "Correct",
+        "other": "Choose game"
+      },
+      "done": {
+        "assigned": "Matched \"{title}\" to \"{name}\".",
+        "dismissed": "Marked \"{title}\" as not any game.",
+        "reset": "Handed \"{title}\" back to automatic matching."
+      }
     }
+  },
+  "game": {
+    "addToList": "Add to list",
+    "logPlay": "Log play",
+    "notTracking": "Adding to a list or logging a play is just your own bookkeeping. It does not appear in your calendar or send reminders (that is \"tracking\", coming separately).",
+    "inLists": "In {count} list(s)",
+    "playCount": "{count} play record(s)",
+    "loadError": "Could not load your lists and records. Please reload and try again."
+  },
+  "list": {
+    "pageTitle": "My lists",
+    "detailTitle": "List contents",
+    "pageHint": "Lists organize games. They are private by default; public lists can be seen by anyone and by search engines, and unlisted lists can only be seen by people who have the share link.",
+    "pickerHint": "Tick a list to put this game in it; untick to take it out.",
+    "pickerEmpty": "You have no lists yet. Create one below.",
+    "pickerLabel": "My lists",
+    "newTitle": "New list",
+    "field": {
+      "name": "List name",
+      "description": "Description (optional)",
+      "visibility": "Visibility"
+    },
+    "visibility": {
+      "default": "Use my default setting",
+      "public": "Public",
+      "unlisted": "Unlisted (anyone with the link)",
+      "private": "Private (only you)"
+    },
+    "visibilityHint": "Public lists show your display name and can be indexed by search engines.",
+    "create": "Create list",
+    "createAndAdd": "Create and add this game",
+    "creating": "Creating…",
+    "added": "Added to \"{name}\".",
+    "removed": "Removed from \"{name}\".",
+    "created": "Created the list \"{name}\".",
+    "createdAndAdded": "Created the list \"{name}\" and added this game.",
+    "manage": "Manage my lists",
+    "error": {
+      "load": "Could not load your lists. Please try again later."
+    },
+    "moved": "\"{name}\" moved to position {position}.",
+    "deleted": "Deleted the list \"{name}\".",
+    "saved": "Saved \"{name}\".",
+    "empty": "No lists yet.",
+    "listLabel": "My lists",
+    "gameCount": "{count} game(s)",
+    "edit": "Edit",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "delete": "Delete",
+    "confirmDelete": "Delete \"{name}\"? Everything in it is deleted too and this cannot be undone.",
+    "saving": "Saving…",
+    "save": "Save",
+    "viewPublic": "View public page",
+    "shareUrl": "Share link",
+    "shareHint": "Anyone with this link can see the list. If you generate a new link, the old one stops working immediately.",
+    "copy": "Copy link",
+    "copied": "Share link copied.",
+    "copyFailed": "Could not copy automatically. Please select the link above and copy it.",
+    "rotate": "Generate new link",
+    "confirmRotate": "The old share link stops working immediately. Continue?",
+    "confirmRotateButton": "Yes, generate",
+    "rotated": "The share link for \"{name}\" was renewed.",
+    "notFound": "That list was not found.",
+    "backToLists": "Back to my lists",
+    "gameMoved": "\"{name}\" moved to position {position}.",
+    "gameRemoved": "Removed \"{name}\" from the list.",
+    "emptyGames": "This list has no games yet. Use \"Add to list\" on a game page to add some.",
+    "gamesLabel": "Games in this list",
+    "noteSaved": "Saved the note for \"{name}\".",
+    "noteEdit": "Edit note",
+    "noteAdd": "Add note",
+    "gameRemove": "Remove",
+    "confirmRemoveGame": "Remove \"{name}\" from this list?",
+    "showMore": "Show more",
+    "noteLabel": "Note for \"{name}\"",
+    "noteHint": "Up to {limit} characters.",
+    "public": {
+      "title": "{name} (a list by {owner})",
+      "by": "By {owner}",
+      "unlistedNote": "This is an unlisted list: only people with the link can see it.",
+      "empty": "This list has no games yet.",
+      "pager": "List pages",
+      "prev": "Previous page",
+      "next": "Next page",
+      "ownerHint": "This is your list.",
+      "edit": "Edit it"
+    }
+  },
+  "play": {
+    "pageTitle": "Play records",
+    "status": {
+      "want_to_play": "Want to play",
+      "playing": "Playing",
+      "finished": "Finished",
+      "completed": "Completed 100%",
+      "paused": "Paused",
+      "abandoned": "Dropped"
+    },
+    "field": {
+      "status": "Status (required)",
+      "platform": "Platform",
+      "startedOn": "Start date",
+      "finishedOn": "Finish date",
+      "time": "Play time",
+      "hours": "hours",
+      "minutes": "minutes",
+      "rating": "Rating",
+      "review": "Review",
+      "spoilers": "This review contains spoilers",
+      "reviewVisibility": "Review visibility",
+      "privateNote": "Private note"
+    },
+    "platformNone": "Not specified",
+    "platformOther": "Other platform",
+    "ratingHint": "0.5 to 10, in steps of 0.5.",
+    "ratingNone": "No rating",
+    "ratingValue": "Rated {rating}",
+    "reviewHint": "Up to {limit} characters.",
+    "reviewVisibilityHint": "Nothing shows reviews yet, so only you can see it for now. It will follow this setting once community features open.",
+    "visibility": {
+      "default": "Use my default setting",
+      "public": "Public",
+      "followers": "People who follow me",
+      "private": "Only me"
+    },
+    "privateNoteHint": "Only you can see this, ever. Up to {limit} characters.",
+    "saving": "Saving…",
+    "save": "Save",
+    "spoilerTag": "(review contains spoilers)",
+    "confirmDelete": "Delete this record? This cannot be undone.",
+    "edit": "Edit",
+    "delete": "Delete",
+    "deleted": "Deleted the record.",
+    "created": "Play record added.",
+    "updated": "Play record updated.",
+    "listLabel": "Play records for this game",
+    "addAnother": "Add another record",
+    "viewAll": "See all play records",
+    "duration": {
+      "h": "{h} h",
+      "m": "{m} min",
+      "hm": "{h} h {m} min"
+    },
+    "editTitle": "Edit play record",
+    "error": {
+      "load": "Could not load your play records. Please try again later."
+    },
+    "stats": {
+      "title": "Statistics",
+      "finishedThisYear": "Finished in {year} (finished or completed)",
+      "totalTime": "Total play time",
+      "note": "Counted per record: several records of the same game count separately. A finish date is needed to count as finished this year."
+    },
+    "recordsTitle": "All records",
+    "empty": "No play records yet. Use \"Log play\" on a game page to add one.",
+    "showMore": "Show more"
+  },
+  "error": {
+    "summary": "Could not submit. Please check these fields:",
+    "field": {
+      "required": "This field is required.",
+      "invalid": "This is not in a valid format.",
+      "too_long": "This is too long.",
+      "out_of_range": "This value is out of range.",
+      "duplicate": "Duplicate entry.",
+      "too_many": "Too many entries.",
+      "empty": "Nothing to update.",
+      "immutable": "This field cannot be changed.",
+      "before_started_on": "The finish date cannot be earlier than the start date.",
+      "not_in_game": "This game is not on that platform."
+    },
+    "playRecordLimit": "You have reached the play record limit. Delete some old records first.",
+    "listLimit": "You have reached the list limit. Delete lists you no longer need first.",
+    "listGamesLimit": "This list has reached its game limit.",
+    "gameNotFound": "That game was not found.",
+    "notFound": "That item was not found; it may have been deleted. Please reload and try again.",
+    "unauthorized": "Your session has expired. Please sign in again."
+  },
+  "playerRating": {
+    "title": "Player average",
+    "avg": "Player average {avg}/{scale} ({count} players)",
+    "notEnough": "Not enough players have rated this game to show an average yet.",
+    "avgTime": "Average play time reported by players: {time}",
+    "note": "Based on play records from users of this site, one vote per user, refreshed about hourly."
   }
 }

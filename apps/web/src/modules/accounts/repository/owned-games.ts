@@ -4,7 +4,7 @@
  */
 import { and, asc, eq, inArray, isNull, max, ne, sql, type SQL } from "drizzle-orm";
 import { getDb } from "@/kernel/db/client";
-import { IMPORT_PROVIDERS, type ExternalOwnedGame, type OwnedGameMatch, type OwnedGamesSummary } from "../domain/entities/owned-game";
+import { IMPORT_PROVIDERS, type ExternalOwnedGame, type OwnedGameMatch, type OwnedGameStatus, type OwnedGamesSummary } from "../domain/entities/owned-game";
 import { connectedAccounts, ownedGames } from "../schema";
 
 const externalAccountCondition = (): SQL => ne(connectedAccounts.provider, "credential");
@@ -106,8 +106,30 @@ export interface OwnedGameRow {
   matchMethod: string;
 }
 
-/** 清單（標題排序）。多取一筆用來判斷還有沒有下一頁。 */
-export async function listOwnedGameRows(connectedAccountId: number, limit: number, offset: number): Promise<{ rows: OwnedGameRow[]; hasMore: boolean }> {
+/** 狀態篩選的 SQL 條件（與 ownedGameStatus 的判定一致）。 */
+function statusCondition(status: OwnedGameStatus): SQL {
+  const noGame = sql`${ownedGames.matchedGameId} IS NULL`;
+  switch (status) {
+    case "queued":
+      return sql`${ownedGames.matchConfidencePct} IS NULL`;
+    case "matched":
+      return sql`${ownedGames.matchedGameId} IS NOT NULL`;
+    case "needs_review":
+      return sql`${noGame} AND ${ownedGames.matchConfidencePct} > 0`;
+    case "not_found":
+      return sql`${noGame} AND ${ownedGames.matchConfidencePct} = 0 AND ${ownedGames.matchMethod} <> 'manual'`;
+    case "dismissed":
+      return sql`${noGame} AND ${ownedGames.matchConfidencePct} = 0 AND ${ownedGames.matchMethod} = 'manual'`;
+  }
+}
+
+/** 清單（標題排序；status 省略＝全部）。多取一筆用來判斷還有沒有下一頁。 */
+export async function listOwnedGameRows(
+  connectedAccountId: number,
+  limit: number,
+  offset: number,
+  status?: OwnedGameStatus,
+): Promise<{ rows: OwnedGameRow[]; hasMore: boolean }> {
   const rows = await getDb()
     .select({
       id: ownedGames.id,
@@ -118,7 +140,7 @@ export async function listOwnedGameRows(connectedAccountId: number, limit: numbe
       matchMethod: ownedGames.matchMethod,
     })
     .from(ownedGames)
-    .where(eq(ownedGames.connectedAccountId, connectedAccountId))
+    .where(status ? and(eq(ownedGames.connectedAccountId, connectedAccountId), statusCondition(status)) : eq(ownedGames.connectedAccountId, connectedAccountId))
     .orderBy(asc(sql`lower(${ownedGames.externalTitle})`), asc(ownedGames.id))
     .limit(limit + 1)
     .offset(offset);

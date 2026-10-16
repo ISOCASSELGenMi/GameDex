@@ -10,7 +10,10 @@
     "errorSummary": "無法送出，請檢查下方的問題：",
     "network": "無法連線到伺服器，請稍後再試。",
     "generic": "發生錯誤，請稍後再試。",
-    "rateLimited": "嘗試次數過多，請稍後再試。"
+    "rateLimited": "嘗試次數過多，請稍後再試。",
+    "cancel": "取消",
+    "close": "關閉",
+    "confirmDelete": "確定刪除"
   },
   "header": {
     "signIn": "登入",
@@ -95,7 +98,13 @@
       "unlinkLast": "這是你唯一的登入方式，不能解除綁定。",
       "notFresh": "為了安全，請重新登入後再操作。"
     },
-    "linkSteam": "綁定 Steam"
+    "linkSteam": "綁定 Steam",
+    "mine": {
+      "title": "我的收藏與紀錄",
+      "hint": "清單與遊玩紀錄是你自己的整理，不會加入行事曆，也不會發出提醒。",
+      "lists": "我的清單",
+      "plays": "遊玩紀錄"
+    }
   },
   "providers": {
     "credential": "信箱與密碼",
@@ -125,7 +134,8 @@
       "matched": "已比對",
       "needs_review": "待確認",
       "not_found": "找不到",
-      "queued": "比對中"
+      "queued": "比對中",
+      "dismissed": "已否決"
     },
     "error": {
       "load": "無法載入遊戲庫，請稍後再試。",
@@ -135,6 +145,231 @@
       "unavailable": "目前站台無法使用 Steam 匯入。",
       "upstream": "Steam 暫時沒有回應，請稍後再試。",
       "notLinked": "尚未綁定 Steam。"
+    },
+    "summaryDismissed": "另有 {dismissed} 款標記為「不是任何遊戲」。",
+    "filter": {
+      "label": "顯示",
+      "all": "全部（{count}）",
+      "needs_review": "待確認（{count}）",
+      "not_found": "找不到（{count}）",
+      "dismissed": "已否決（{count}）",
+      "matched": "已比對（{count}）"
+    },
+    "emptyFiltered": "沒有符合的遊戲。",
+    "match": {
+      "title": "指定對應的遊戲",
+      "steamTitle": "Steam 上的名稱：",
+      "current": "目前對應：{name}",
+      "candidates": "可能的遊戲",
+      "candidatesNone": "沒有找到相近的候選，可以用下面的搜尋自己找。",
+      "candidatesFailed": "無法載入候選，可以用下面的搜尋自己找。",
+      "confidence": "相似度 {pct}%",
+      "search": "自己搜尋",
+      "searchLabel": "遊戲名稱",
+      "searchButton": "搜尋",
+      "searching": "搜尋中…",
+      "searchNone": "沒有找到符合的遊戲。",
+      "searchResults": "搜尋結果",
+      "searchFailed": "搜尋失敗，請稍後再試。",
+      "queryTooShort": "請至少輸入 2 個字。",
+      "choose": "選這款",
+      "dismiss": "這不是任何遊戲",
+      "reset": "交給自動比對",
+      "actionsHint": "「這不是任何遊戲」適合原聲帶、測試版之類資料庫沒有的項目，之後不會再自動比對；「交給自動比對」會清除你的選擇，由系統重新比對。",
+      "open": {
+        "matched": "更正",
+        "other": "指定遊戲"
+      },
+      "done": {
+        "assigned": "已將「{title}」對應到「{name}」。",
+        "dismissed": "已將「{title}」標記為不是任何遊戲。",
+        "reset": "已將「{title}」交給自動比對。"
+      }
     }
+  },
+  "game": {
+    "addToList": "加入清單",
+    "logPlay": "記錄遊玩",
+    "notTracking": "加入清單與記錄遊玩只是你自己的整理，不會出現在行事曆，也不會發提醒（那是「追蹤」，之後另外提供）。",
+    "inLists": "已在 {count} 個清單",
+    "playCount": "{count} 筆遊玩紀錄",
+    "loadError": "無法載入你的清單與紀錄，請重新整理後再試。"
+  },
+  "list": {
+    "pageTitle": "我的清單",
+    "detailTitle": "清單內容",
+    "pageHint": "清單用來整理遊戲。預設只有你看得到；公開的清單可以被別人和搜尋引擎看到，不公開的清單只有拿到分享網址的人看得到。",
+    "pickerHint": "勾選就會把這款遊戲放進該清單，取消勾選就移出。",
+    "pickerEmpty": "你還沒有任何清單，先在下面建立一個。",
+    "pickerLabel": "我的清單",
+    "newTitle": "新增清單",
+    "field": {
+      "name": "清單名稱",
+      "description": "說明（選填）",
+      "visibility": "可見度"
+    },
+    "visibility": {
+      "default": "依我的預設設定",
+      "public": "公開",
+      "unlisted": "不公開（有網址的人可看）",
+      "private": "私人（只有你）"
+    },
+    "visibilityHint": "公開的清單會顯示你的顯示名稱，並可被搜尋引擎收錄。",
+    "create": "建立清單",
+    "createAndAdd": "建立並加入這款遊戲",
+    "creating": "建立中…",
+    "added": "已加入「{name}」。",
+    "removed": "已從「{name}」移出。",
+    "created": "已建立清單「{name}」。",
+    "createdAndAdded": "已建立清單「{name}」並加入這款遊戲。",
+    "manage": "管理我的清單",
+    "error": {
+      "load": "無法載入清單，請稍後再試。"
+    },
+    "moved": "「{name}」已移到第 {position} 個。",
+    "deleted": "已刪除清單「{name}」。",
+    "saved": "已儲存「{name}」。",
+    "empty": "還沒有任何清單。",
+    "listLabel": "我的清單",
+    "gameCount": "{count} 款遊戲",
+    "edit": "編輯",
+    "moveUp": "上移",
+    "moveDown": "下移",
+    "delete": "刪除",
+    "confirmDelete": "確定要刪除「{name}」？清單內的項目也會一併刪除，無法復原。",
+    "saving": "儲存中…",
+    "save": "儲存",
+    "viewPublic": "查看公開頁面",
+    "shareUrl": "分享網址",
+    "shareHint": "拿到這個網址的人都能看到這份清單。重新產生後，舊網址會立即失效。",
+    "copy": "複製網址",
+    "copied": "已複製分享網址。",
+    "copyFailed": "無法自動複製，請手動選取上面的網址。",
+    "rotate": "重新產生網址",
+    "confirmRotate": "舊的分享網址會立即失效，確定嗎？",
+    "confirmRotateButton": "確定重新產生",
+    "rotated": "「{name}」的分享網址已更新。",
+    "notFound": "找不到這份清單。",
+    "backToLists": "回到我的清單",
+    "gameMoved": "「{name}」已移到第 {position} 個。",
+    "gameRemoved": "已將「{name}」移出清單。",
+    "emptyGames": "這份清單還沒有遊戲。到遊戲頁按「加入清單」就能加進來。",
+    "gamesLabel": "清單內的遊戲",
+    "noteSaved": "已儲存「{name}」的備註。",
+    "noteEdit": "編輯備註",
+    "noteAdd": "加上備註",
+    "gameRemove": "移出",
+    "confirmRemoveGame": "要把「{name}」移出這份清單？",
+    "showMore": "顯示更多",
+    "noteLabel": "「{name}」的備註",
+    "noteHint": "最多 {limit} 字。",
+    "public": {
+      "title": "{name}（{owner} 的清單）",
+      "by": "建立者：{owner}",
+      "unlistedNote": "這是不公開的清單，只有拿到網址的人看得到。",
+      "empty": "這份清單還沒有遊戲。",
+      "pager": "清單分頁",
+      "prev": "上一頁",
+      "next": "下一頁",
+      "ownerHint": "這是你的清單。",
+      "edit": "前往編輯"
+    }
+  },
+  "play": {
+    "pageTitle": "遊玩紀錄",
+    "status": {
+      "want_to_play": "想玩",
+      "playing": "正在玩",
+      "finished": "玩完",
+      "completed": "全破",
+      "paused": "暫停",
+      "abandoned": "放棄"
+    },
+    "field": {
+      "status": "狀態（必填）",
+      "platform": "平台",
+      "startedOn": "開始日期",
+      "finishedOn": "完成日期",
+      "time": "遊玩時間",
+      "hours": "小時",
+      "minutes": "分鐘",
+      "rating": "評分",
+      "review": "評論",
+      "spoilers": "評論含有劇透",
+      "reviewVisibility": "評論可見度",
+      "privateNote": "私人筆記"
+    },
+    "platformNone": "不指定",
+    "platformOther": "其他平台",
+    "ratingHint": "0.5 到 10 分，每 0.5 分一級。",
+    "ratingNone": "不評分",
+    "ratingValue": "{rating} 分",
+    "reviewHint": "最多 {limit} 字。",
+    "reviewVisibilityHint": "目前還沒有顯示評論的地方，只有你自己看得到；之後社群功能開放時會依這個設定顯示。",
+    "visibility": {
+      "default": "依我的預設設定",
+      "public": "公開",
+      "followers": "追蹤我的人",
+      "private": "只有我"
+    },
+    "privateNoteHint": "只有你看得到，永遠不會公開。最多 {limit} 字。",
+    "saving": "儲存中…",
+    "save": "儲存",
+    "spoilerTag": "（評論含劇透）",
+    "confirmDelete": "確定要刪除這筆紀錄？無法復原。",
+    "edit": "編輯",
+    "delete": "刪除",
+    "deleted": "已刪除這筆紀錄。",
+    "created": "已新增遊玩紀錄。",
+    "updated": "已更新遊玩紀錄。",
+    "listLabel": "這款遊戲的遊玩紀錄",
+    "addAnother": "新增一筆紀錄",
+    "viewAll": "查看全部遊玩紀錄",
+    "duration": {
+      "h": "{h} 小時",
+      "m": "{m} 分",
+      "hm": "{h} 小時 {m} 分"
+    },
+    "editTitle": "編輯遊玩紀錄",
+    "error": {
+      "load": "無法載入遊玩紀錄，請稍後再試。"
+    },
+    "stats": {
+      "title": "統計",
+      "finishedThisYear": "{year} 年完成（玩完或全破）",
+      "totalTime": "總遊玩時間",
+      "note": "依紀錄筆數計算；同一款遊戲有多筆紀錄會分開算。「完成」需要填寫完成日期。"
+    },
+    "recordsTitle": "全部紀錄",
+    "empty": "還沒有遊玩紀錄。到遊戲頁按「記錄遊玩」就能新增。",
+    "showMore": "顯示更多"
+  },
+  "error": {
+    "summary": "無法送出，請檢查下列欄位：",
+    "field": {
+      "required": "這個欄位必填。",
+      "invalid": "格式不正確。",
+      "too_long": "內容太長。",
+      "out_of_range": "數值超出範圍。",
+      "duplicate": "項目重複。",
+      "too_many": "項目太多。",
+      "empty": "沒有要更新的內容。",
+      "immutable": "這個欄位不能修改。",
+      "before_started_on": "完成日期不能早於開始日期。",
+      "not_in_game": "這款遊戲沒有這個平台。"
+    },
+    "playRecordLimit": "遊玩紀錄已達上限，請先刪除一些舊的紀錄。",
+    "listLimit": "清單數量已達上限，請先刪除不用的清單。",
+    "listGamesLimit": "這份清單已達遊戲數量上限。",
+    "gameNotFound": "找不到這款遊戲。",
+    "notFound": "找不到這個項目，可能已被刪除。請重新整理後再試。",
+    "unauthorized": "登入已過期，請重新登入。"
+  },
+  "playerRating": {
+    "title": "玩家平均",
+    "avg": "玩家平均 {avg}／{scale}（{count} 人）",
+    "notEnough": "評分的人還不夠多，暫時不顯示玩家平均。",
+    "avgTime": "玩家平均遊玩時間：{time}",
+    "note": "資料來自本站使用者的遊玩紀錄，每位使用者只算一票，約每小時更新一次。"
   }
 }
