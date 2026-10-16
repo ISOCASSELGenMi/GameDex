@@ -7,9 +7,10 @@ import type { Locale } from "@sok/i18n";
 import { getTranslator } from "../labels";
 import { localeHref } from "../links";
 import { ErrorStringsProvider, type ErrorStrings } from "./error-view";
+import { HeaderRightProvider } from "./header-right";
 import { PageShell, SiteFooter, SkipLink } from "./page-shell";
 
-export function LocaleBody({ locale, children }: { locale: Locale; children: ReactNode }): ReactElement {
+export function LocaleBody({ locale, headerRight, children }: { locale: Locale; headerRight?: ReactNode; children: ReactNode }): ReactElement {
   const t = getTranslator(locale);
   const errorStrings: ErrorStrings = {
     serverErrorTitle: t.t("errors.serverError.title"),
@@ -25,10 +26,12 @@ export function LocaleBody({ locale, children }: { locale: Locale; children: Rea
     <>
       <SkipLink locale={locale} />
       <ErrorStringsProvider value={errorStrings}>
-        <div className="flex min-h-screen flex-col">
-          {children}
-          <SiteFooter locale={locale} />
-        </div>
+        <HeaderRightProvider value={headerRight ?? null}>
+          <div className="flex min-h-screen flex-col">
+            {children}
+            <SiteFooter locale={locale} />
+          </div>
+        </HeaderRightProvider>
       </ErrorStringsProvider>
     </>
   );

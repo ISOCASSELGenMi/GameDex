@@ -101,10 +101,12 @@ jobs:
           docker run --rm --network host -e DATABASE_URL sok-web:ci npm run db:seed
       - name: 啟動 web
         run: |
-          # IGDB 憑證用假值（catalog 的 requiredEnv 檢查）；關閉排程以免對外連線
+          # IGDB 憑證與 accounts 的 AUTH_SECRET／TOKEN_ENCRYPTION_KEY 用假值（requiredEnv 檢查）；關閉排程以免對外連線
           docker run -d --name web --network host \
             -e DATABASE_URL -e NEXT_PUBLIC_SITE_URL="$SITE_URL" \
             -e IGDB_CLIENT_ID=ci -e IGDB_CLIENT_SECRET=ci -e SCHEDULER_ENABLED=false \
+            -e AUTH_SECRET=ci-auth-secret-0123456789abcdef0123456789 \
+            -e TOKEN_ENCRYPTION_KEY=MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY= \
             sok-web:ci
           for i in $(seq 1 60); do
             curl -fsS http://localhost:3000/readyz >/dev/null 2>&1 && break

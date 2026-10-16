@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { createTranslator } from "@sok/i18n";
 import { getLocaleConfig, isSupportedLocale } from "@/kernel/locale";
 import { LocaleBody } from "@/modules/catalog/ui";
+import { renderUiSlot } from "../_lib/slots";
 import "../globals.css";
 
 export async function generateStaticParams(): Promise<{ locale: string }[]> {
@@ -26,7 +27,7 @@ export default async function LocaleLayout({ children, params }: LayoutProps<"/[
   return (
     <html lang={locale} className="antialiased">
       <body>
-        <LocaleBody locale={locale}>{children}</LocaleBody>
+        <LocaleBody locale={locale} headerRight={renderUiSlot("header.right", { locale })}>{children}</LocaleBody>
       </body>
     </html>
   );

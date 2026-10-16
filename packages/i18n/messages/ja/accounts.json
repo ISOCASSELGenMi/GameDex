@@ -1,0 +1,104 @@
+{
+  "common": {
+    "required": "必須",
+    "loading": "読み込み中…",
+    "email": "メールアドレス",
+    "password": "パスワード",
+    "displayName": "表示名",
+    "orSocial": "ほかの方法でログイン",
+    "continueWith": "{provider} でログイン",
+    "errorSummary": "送信できませんでした。次の問題を確認してください:",
+    "network": "サーバーに接続できません。しばらくしてからもう一度お試しください。",
+    "generic": "エラーが発生しました。しばらくしてからもう一度お試しください。",
+    "rateLimited": "試行回数が多すぎます。しばらくしてからもう一度お試しください。"
+  },
+  "header": {
+    "signIn": "ログイン",
+    "menu": "{name} のアカウントメニュー",
+    "account": "マイアカウント",
+    "signOut": "ログアウト",
+    "signingOut": "ログアウト中…"
+  },
+  "login": {
+    "title": "ログイン",
+    "description": "ログインすると個人向けの機能が使えます。カレンダー、タイムライン、公開 iCal の購読にはログインは不要です。",
+    "submit": "ログイン",
+    "submitting": "ログイン中…",
+    "forgot": "パスワードをお忘れですか？",
+    "noAccount": "アカウントをお持ちでない方",
+    "signupLink": "アカウントを作成",
+    "error": {
+      "invalid": "メールアドレスまたはパスワードが正しくありません。",
+      "accountNotLinked": "このメールアドレスは別の方法で登録済みです。まず元の方法でログインし、アカウントページで新しい方法を連携してください。",
+      "emailNotFound": "そのサービスからメールアドレスが提供されなかったため、アカウントを作成できません。",
+      "signupDisabled": "現在、新規登録は受け付けていません。",
+      "oauthFailed": "外部サービスでのログインに失敗しました。もう一度お試しください。"
+    }
+  },
+  "signup": {
+    "title": "アカウントを作成",
+    "description": "必要なのはメールアドレスとパスワードだけです。パスワードは {min} 文字以上にしてください。",
+    "passwordHint": "{min} 文字以上。パスワードマネージャーの利用をおすすめします。",
+    "submit": "アカウントを作成",
+    "submitting": "作成中…",
+    "haveAccount": "すでにアカウントをお持ちの方",
+    "loginLink": "ログイン",
+    "error": {
+      "emailTaken": "このメールアドレスは登録済みです。",
+      "passwordTooShort": "パスワードは {min} 文字以上にしてください。",
+      "passwordTooLong": "パスワードは {max} 文字以下にしてください。",
+      "nameTooLong": "表示名が長すぎます。",
+      "emailInvalid": "有効なメールアドレスを入力してください。",
+      "closed": "現在、新規登録は受け付けていません。"
+    }
+  },
+  "forgot": {
+    "title": "パスワードをお忘れの方",
+    "description": "登録したメールアドレスを入力してください。アカウントがある場合は、再設定リンク（1 時間有効、1 回のみ使用可）をお送りします。",
+    "submit": "再設定リンクを送る",
+    "submitting": "送信中…",
+    "sent": "受け付けました。このメールアドレスが登録されている場合は、再設定リンクが届きます。",
+    "backToLogin": "ログインに戻る"
+  },
+  "reset": {
+    "title": "パスワードの再設定",
+    "newPassword": "新しいパスワード",
+    "submit": "新しいパスワードを設定",
+    "submitting": "設定中…",
+    "success": "パスワードを更新しました。新しいパスワードでログインしてください。",
+    "goLogin": "ログインへ",
+    "invalidToken": "この再設定リンクは無効か、期限が切れています。リンクは 1 回のみ、1 時間以内に使用できます。",
+    "requestNew": "新しいリンクを請求する"
+  },
+  "account": {
+    "title": "マイアカウント",
+    "signedOutTitle": "ログインしていません",
+    "signedOutBody": "アカウント設定を見るにはログインしてください。",
+    "signIn": "ログインへ",
+    "name": "表示名",
+    "email": "メールアドレス",
+    "emailNone": "メールアドレス未設定",
+    "emailUnverified": "（未確認）",
+    "linked": "連携済みのログイン方法",
+    "linkedNone": "ほかのログイン方法はまだ連携されていません。",
+    "linkedHint": "ログイン方法は少なくとも 1 つ残す必要があります。",
+    "unlink": "連携を解除",
+    "unlinkAria": "{provider} の連携を解除",
+    "unlinked": "{provider} の連携を解除しました。",
+    "signOut": "ログアウト",
+    "signingOut": "ログアウト中…",
+    "error": {
+      "unlinkLast": "これは唯一のログイン方法のため、連携を解除できません。",
+      "notFresh": "安全のため、もう一度ログインしてからやり直してください。"
+    }
+  },
+  "providers": {
+    "credential": "メールとパスワード",
+    "discord": "Discord",
+    "google": "Google",
+    "twitch": "Twitch",
+    "twitter": "X（Twitter）",
+    "microsoft": "Microsoft／Xbox",
+    "steam": "Steam"
+  }
+}

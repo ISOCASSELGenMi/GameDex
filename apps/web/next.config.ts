@@ -28,7 +28,8 @@ const nextConfig: NextConfig = {
   // Next 對動態頁預設送 `private, no-store`，Cloudflare 因此不會快取；這些頁面沒有使用者專屬內容（3a 起無登入），
   // 以路徑設 `s-maxage` 讓 CDN 能快取。快取鍵是完整網址（含 query），所以篩選變體各自獨立。
   // 詳情頁（games/[slug]、events/[slug]）不在這裡：它們是 ISR，由 Next 依 cacheLife 產生標頭。
-  // 之後若 accounts 讓頁面出現登入狀態（header.right），這裡必須移除對應路徑或改走 ESI／客戶端取得。
+  // accounts（Phase 7）的登入狀態由客戶端元件在掛載後向 /api/v1/auth/get-session 取得（header.right），頁面 HTML 與使用者無關、不送 Set-Cookie，
+  // 所以這些路徑維持共用快取。不要在這些頁面的伺服器端元件讀 session／cookies／headers（會變成動態並與使用者綁在一起）。
   async headers() {
     const short = [{ key: "Cache-Control", value: "public, s-maxage=60, stale-while-revalidate=300" }];
     const medium = [{ key: "Cache-Control", value: "public, s-maxage=300, stale-while-revalidate=3600" }];

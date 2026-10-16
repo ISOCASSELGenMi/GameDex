@@ -1,0 +1,104 @@
+{
+  "common": {
+    "required": "必填",
+    "loading": "載入中…",
+    "email": "電子信箱",
+    "password": "密碼",
+    "displayName": "顯示名稱",
+    "orSocial": "或使用其他方式登入",
+    "continueWith": "使用 {provider} 登入",
+    "errorSummary": "無法送出，請檢查下方的問題：",
+    "network": "無法連線到伺服器，請稍後再試。",
+    "generic": "發生錯誤，請稍後再試。",
+    "rateLimited": "嘗試次數過多，請稍後再試。"
+  },
+  "header": {
+    "signIn": "登入",
+    "menu": "{name} 的帳號選單",
+    "account": "我的帳號",
+    "signOut": "登出",
+    "signingOut": "登出中…"
+  },
+  "login": {
+    "title": "登入",
+    "description": "登入後可以使用個人化功能。月曆、時間軸與公開的 iCal 訂閱不需要登入。",
+    "submit": "登入",
+    "submitting": "登入中…",
+    "forgot": "忘記密碼？",
+    "noAccount": "還沒有帳號？",
+    "signupLink": "建立帳號",
+    "error": {
+      "invalid": "信箱或密碼不正確。",
+      "accountNotLinked": "這個信箱已經用其他方式註冊過。請先用原本的方式登入，再到帳號頁綁定新的登入方式。",
+      "emailNotFound": "該服務沒有提供信箱，無法用它建立帳號。",
+      "signupDisabled": "目前不開放註冊新帳號。",
+      "oauthFailed": "第三方登入失敗，請再試一次。"
+    }
+  },
+  "signup": {
+    "title": "建立帳號",
+    "description": "只需要信箱與密碼。密碼至少 {min} 個字元。",
+    "passwordHint": "至少 {min} 個字元。建議使用密碼管理員產生。",
+    "submit": "建立帳號",
+    "submitting": "建立中…",
+    "haveAccount": "已經有帳號了？",
+    "loginLink": "登入",
+    "error": {
+      "emailTaken": "這個信箱已經註冊過了。",
+      "passwordTooShort": "密碼至少需要 {min} 個字元。",
+      "passwordTooLong": "密碼不可超過 {max} 個字元。",
+      "nameTooLong": "顯示名稱太長。",
+      "emailInvalid": "請輸入有效的電子信箱。",
+      "closed": "目前不開放註冊新帳號。"
+    }
+  },
+  "forgot": {
+    "title": "忘記密碼",
+    "description": "輸入註冊時使用的信箱。如果它對應到一個帳號，我們會寄出重設連結（一小時內有效，只能使用一次）。",
+    "submit": "寄送重設連結",
+    "submitting": "送出中…",
+    "sent": "已受理。如果這個信箱有註冊，重設連結會寄到該信箱。",
+    "backToLogin": "回到登入"
+  },
+  "reset": {
+    "title": "重設密碼",
+    "newPassword": "新密碼",
+    "submit": "設定新密碼",
+    "submitting": "設定中…",
+    "success": "密碼已更新。請用新密碼登入。",
+    "goLogin": "前往登入",
+    "invalidToken": "這個重設連結無效或已過期。重設連結只能使用一次，且一小時內有效。",
+    "requestNew": "重新申請重設連結"
+  },
+  "account": {
+    "title": "我的帳號",
+    "signedOutTitle": "尚未登入",
+    "signedOutBody": "請先登入才能查看帳號設定。",
+    "signIn": "前往登入",
+    "name": "顯示名稱",
+    "email": "電子信箱",
+    "emailNone": "尚未設定信箱",
+    "emailUnverified": "（未驗證）",
+    "linked": "已綁定的登入方式",
+    "linkedNone": "尚未綁定其他登入方式。",
+    "linkedHint": "你至少要保留一種登入方式。",
+    "unlink": "解除綁定",
+    "unlinkAria": "解除綁定 {provider}",
+    "unlinked": "已解除綁定 {provider}。",
+    "signOut": "登出",
+    "signingOut": "登出中…",
+    "error": {
+      "unlinkLast": "這是你唯一的登入方式，不能解除綁定。",
+      "notFresh": "為了安全，請重新登入後再操作。"
+    }
+  },
+  "providers": {
+    "credential": "信箱與密碼",
+    "discord": "Discord",
+    "google": "Google",
+    "twitch": "Twitch",
+    "twitter": "X（Twitter）",
+    "microsoft": "Microsoft／Xbox",
+    "steam": "Steam"
+  }
+}

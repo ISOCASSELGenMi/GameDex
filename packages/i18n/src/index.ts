@@ -17,6 +17,8 @@ export {
   LABEL_NAMESPACES,
   NAMESPACES,
   isNamespace,
+  MESSAGES,
+  flattenMessages,
   type Messages,
   type Namespace,
 } from "./messages";
