@@ -1,0 +1,104 @@
+{
+  "common": {
+    "required": "Required",
+    "loading": "Loading…",
+    "email": "Email",
+    "password": "Password",
+    "displayName": "Display name",
+    "orSocial": "Or sign in with",
+    "continueWith": "Continue with {provider}",
+    "errorSummary": "Could not submit. Please check the problems below:",
+    "network": "Could not reach the server. Please try again later.",
+    "generic": "Something went wrong. Please try again later.",
+    "rateLimited": "Too many attempts. Please try again later."
+  },
+  "header": {
+    "signIn": "Sign in",
+    "menu": "Account menu for {name}",
+    "account": "My account",
+    "signOut": "Sign out",
+    "signingOut": "Signing out…"
+  },
+  "login": {
+    "title": "Sign in",
+    "description": "Sign in to use personal features. The calendar, timeline and public iCal feeds do not need an account.",
+    "submit": "Sign in",
+    "submitting": "Signing in…",
+    "forgot": "Forgot your password?",
+    "noAccount": "No account yet?",
+    "signupLink": "Create an account",
+    "error": {
+      "invalid": "The email or password is incorrect.",
+      "accountNotLinked": "This email is already registered with a different sign-in method. Sign in the original way first, then link the new one on your account page.",
+      "emailNotFound": "That service did not share an email address, so it cannot be used to create an account.",
+      "signupDisabled": "New sign-ups are closed right now.",
+      "oauthFailed": "Sign-in with the other service failed. Please try again."
+    }
+  },
+  "signup": {
+    "title": "Create an account",
+    "description": "All you need is an email and a password. Passwords must be at least {min} characters.",
+    "passwordHint": "At least {min} characters. A password manager is a good idea.",
+    "submit": "Create account",
+    "submitting": "Creating…",
+    "haveAccount": "Already have an account?",
+    "loginLink": "Sign in",
+    "error": {
+      "emailTaken": "This email is already registered.",
+      "passwordTooShort": "The password must be at least {min} characters.",
+      "passwordTooLong": "The password must be at most {max} characters.",
+      "nameTooLong": "The display name is too long.",
+      "emailInvalid": "Enter a valid email address.",
+      "closed": "New sign-ups are closed right now."
+    }
+  },
+  "forgot": {
+    "title": "Forgot password",
+    "description": "Enter the email you signed up with. If it belongs to an account, we will send a reset link (valid for one hour, single use).",
+    "submit": "Send reset link",
+    "submitting": "Sending…",
+    "sent": "Request received. If this email is registered, a reset link will be sent to it.",
+    "backToLogin": "Back to sign in"
+  },
+  "reset": {
+    "title": "Reset password",
+    "newPassword": "New password",
+    "submit": "Set new password",
+    "submitting": "Saving…",
+    "success": "Your password has been updated. Sign in with the new password.",
+    "goLogin": "Go to sign in",
+    "invalidToken": "This reset link is invalid or has expired. A reset link works once and is valid for one hour.",
+    "requestNew": "Request a new link"
+  },
+  "account": {
+    "title": "My account",
+    "signedOutTitle": "Not signed in",
+    "signedOutBody": "Sign in to see your account settings.",
+    "signIn": "Go to sign in",
+    "name": "Display name",
+    "email": "Email",
+    "emailNone": "No email set",
+    "emailUnverified": "(not verified)",
+    "linked": "Linked sign-in methods",
+    "linkedNone": "No other sign-in methods are linked yet.",
+    "linkedHint": "You must keep at least one sign-in method.",
+    "unlink": "Unlink",
+    "unlinkAria": "Unlink {provider}",
+    "unlinked": "{provider} was unlinked.",
+    "signOut": "Sign out",
+    "signingOut": "Signing out…",
+    "error": {
+      "unlinkLast": "This is your only sign-in method, so it cannot be unlinked.",
+      "notFresh": "For your security, sign in again and retry."
+    }
+  },
+  "providers": {
+    "credential": "Email and password",
+    "discord": "Discord",
+    "google": "Google",
+    "twitch": "Twitch",
+    "twitter": "X (Twitter)",
+    "microsoft": "Microsoft / Xbox",
+    "steam": "Steam"
+  }
+}

@@ -66,6 +66,10 @@ docker compose exec web npm run db:seed
 8. 既有 TTS Bot 正常。
 9. `/healthz`、`/readyz` 正常；uptime 監測（含一個經過 Cloudflare 的公開頁）與告警通道通過測試；備份 cron 已安裝並通過「故意失敗」測試；最近還原演練日期與 RTO 已記錄。
 
+### 社群登入的 redirect URI（accounts）
+
+- 在各服務的開發者後台（Discord、Google、Twitch、X、Azure／Microsoft）登錄的 redirect URI 一律是 `https://<網域>/api/v1/auth/callback/<provider>`（`<provider>` ＝ `discord`、`google`、`twitch`、`twitter`、`microsoft`；Steam 是 OpenID，不需要）。`NEXT_PUBLIC_SITE_URL` 必須與對外網域一致，Better Auth 以它組出 redirect URI 與可信來源。`ACCOUNTS_SIGNUP_ENABLED` 預設 false：隱私權政策、刪除帳號、資料匯出完成前不要開。
+
 ### 來源 IP 與 Caddy
 
 - 回報功能的 IP 雜湊與限流取自 `CF-Connecting-IP`（`catalog/api/reports.ts`）。`Caddyfile` 只信任 Cloudflare 的來源位址宣告真實 IP；其餘來源（直連源站 IP 的人）帶的 `CF-Connecting-IP`／`X-Forwarded-For` 都會被 Caddy 覆寫成 TCP 對端位址，所以外部偽造不了。

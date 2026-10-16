@@ -2,6 +2,8 @@
 export { CalendarMonthPage, calendarTitle, redirectToCurrentMonth, type SearchParamsRecord } from "./calendar/calendar-page";
 export { GameDetailPage, loadGameDetail, type GameDetailSlots } from "./game/game-detail-page";
 export { LocaleBody, NotFoundView } from "./layout/locale-body";
+// 其他模組的頁面（accounts 的登入頁等）由薄路由包上同一個 header／main
+export { PageShell } from "./layout/page-shell";
 
 export { parseMonthParam } from "./month";
 

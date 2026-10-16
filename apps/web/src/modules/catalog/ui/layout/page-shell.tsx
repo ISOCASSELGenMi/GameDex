@@ -6,6 +6,7 @@ import type { ReactElement, ReactNode } from "react";
 import type { Locale } from "@sok/i18n";
 import { getTranslator } from "../labels";
 import { aboutHref, eventsHref, gamesBrowseHref, languageMenuLinks, localeHref, platformsHref, subscribeHref, type LocalPath } from "../links";
+import { HeaderRightOutlet } from "./header-right";
 import { LanguageMenu } from "./language-menu";
 
 export interface PageShellProps {
@@ -15,7 +16,7 @@ export interface PageShellProps {
   path: LocalPath;
   /** 語言選單保留的 query（不含 ?）。 */
   query?: string;
-  /** header 右側 slot（02：`header.right`，accounts 的登入按鈕）；3a 沒有提供者。 */
+  /** header 右側 slot（02：`header.right`，accounts 的登入按鈕）；由根版面經 HeaderRightProvider 提供時不必傳（預設 <HeaderRightOutlet />）。 */
   headerRight?: ReactNode;
   children: ReactNode;
 }
@@ -58,7 +59,7 @@ export function PageShell({ locale, supportedLocales, path, query = "", headerRi
             </ul>
           </nav>
           <LanguageMenu items={links} label={t.t("a11y.languageMenu")} />
-          {headerRight}
+          {headerRight ?? <HeaderRightOutlet />}
         </div>
       </header>
       <main id="main" tabIndex={-1} className="mx-auto w-full max-w-screen-2xl flex-1 px-4 py-4 outline-none">

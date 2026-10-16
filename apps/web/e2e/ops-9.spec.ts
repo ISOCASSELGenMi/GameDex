@@ -113,7 +113,8 @@ const DYNAMIC_PAGES = ["/en/games", "/en/timeline", "/en/trending", `/en/calenda
 
 /** 取出 cache-rules.md 裡 `// BEGIN error-shell-check` 到 `// END error-shell-check` 的判斷程式碼並載入。 */
 function loadDocumentedCheck(): (status: number, contentType: string, head: string) => boolean {
-  const md = readFileSync(path.join(WEB_DIR, "..", "..", "infra", "cloudflare", "cache-rules.md"), "utf8");
+  // Windows CRLF checkout 時統一成 LF 再找標記
+  const md = readFileSync(path.join(WEB_DIR, "..", "..", "infra", "cloudflare", "cache-rules.md"), "utf8").replace(/\r\n/g, "\n");
   const begin = "// BEGIN error-shell-check\n";
   const end = "// END error-shell-check";
   const from = md.indexOf(begin);

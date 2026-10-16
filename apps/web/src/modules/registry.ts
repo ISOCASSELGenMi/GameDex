@@ -1,10 +1,11 @@
 // 唯一會 import 可選模組的地方（02 §邊界規則 3）。新增模組：import 後加進 ALL。
 import type { EnvLike } from "@/kernel/config/env";
 import { isModuleEnabled } from "@/kernel/modules/enabled";
+import { accountsModule } from "./accounts";
 import { adminModule } from "./admin";
 import { catalogModule, type ModuleManifest } from "./catalog";
 
-const ALL: readonly ModuleManifest[] = [catalogModule, adminModule];
+const ALL: readonly ModuleManifest[] = [catalogModule, accountsModule, adminModule];
 
 export function allModules(): readonly ModuleManifest[] {
   return ALL;

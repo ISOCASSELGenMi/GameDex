@@ -23,8 +23,11 @@
     "test:a11y": "playwright test"
   },
   "dependencies": {
+    "@better-auth/drizzle-adapter": "1.7.9",
+    "@node-rs/argon2": "2.2.2",
     "@sok/api-contract": "0.1.0",
     "@sok/i18n": "0.1.0",
+    "better-auth": "1.7.9",
     "drizzle-orm": "^0.45.4",
     "ical-generator": "^11.1.2",
     "next": "16.4.0",

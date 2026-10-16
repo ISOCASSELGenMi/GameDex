@@ -20,6 +20,13 @@ export const E2E_ADMIN_PASS = "e2e-admin-pass";
 export const E2E_TURNSTILE_SITE_KEY = "1x00000000000000000000AA";
 export const E2E_TURNSTILE_SECRET_KEY = "1x0000000000000000000000000000000AA";
 
+/** accounts（Phase 7）：e2e 專用的金鑰與開關；只存在於 e2e 伺服器的環境變數（不寫 .env.local）。 */
+export const E2E_AUTH_SECRET = "e2e-auth-secret-0123456789abcdefghijklmnopqrstuv";
+export const E2E_TOKEN_ENCRYPTION_KEY = Buffer.alloc(32, 5).toString("base64");
+/** 第二個伺服器（註冊關閉）的埠：accounts-7.spec.ts 自己啟動，沿用同一份建置。 */
+export const E2E_CLOSED_PORT = E2E_PORT + 50;
+export const E2E_CLOSED_BASE_URL = `http://localhost:${E2E_CLOSED_PORT}`;
+
 /** apps/web 目錄（Playwright 與 tsx 都以它為 cwd 執行）。 */
 export const WEB_DIR = path.resolve(__dirname, "..", "..");
 
@@ -69,6 +76,11 @@ export function serverEnv(): NodeJS.ProcessEnv {
     TURNSTILE_SECRET_KEY: E2E_TURNSTILE_SECRET_KEY,
     REPORT_IP_HASH_SECRET: "e2e-report-ip-hash-secret-0123456789",
     REPORT_MAX_PER_IP_PER_DAY: "500",
+    // accounts（Phase 7）：註冊開啟；可信來源含 e2e 伺服器本身（NEXT_PUBLIC_SITE_URL 是假網域）
+    AUTH_SECRET: E2E_AUTH_SECRET,
+    TOKEN_ENCRYPTION_KEY: E2E_TOKEN_ENCRYPTION_KEY,
+    ACCOUNTS_SIGNUP_ENABLED: "true",
+    AUTH_TRUSTED_ORIGINS: `${E2E_BASE_URL},${E2E_CLOSED_BASE_URL}`,
     NEXT_DIST_DIR: E2E_DIST_DIR,
     NEXT_TELEMETRY_DISABLED: "1",
     PORT: String(E2E_PORT),
