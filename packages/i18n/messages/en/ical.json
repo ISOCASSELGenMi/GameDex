@@ -1,0 +1,39 @@
+{
+  "calendarName": {
+    "releases": "SoK Game Calendar: Upcoming releases",
+    "events": "SoK Game Calendar: Game events",
+    "platform": "SoK Game Calendar: {platform}",
+    "game": "{game}"
+  },
+  "calendarDescription": {
+    "releases": "Upcoming game releases. Delays, cancellations and date changes are reflected in this calendar automatically.",
+    "events": "Schedule of showcases, expos and award shows.",
+    "platform": "Upcoming game releases on {platform}.",
+    "game": "Release dates for {game}."
+  },
+  "mark": {
+    "provisional": "[TBC]",
+    "provisionalLabel": "[TBC {label}]",
+    "postponed": "[Delayed: date TBA]",
+    "cancelled": "[Cancelled]"
+  },
+  "summaryDetail": " ({text})",
+  "description": {
+    "platform": "Platform: {value}",
+    "region": "Region: {value}",
+    "stage": "Stage: {value}",
+    "status": "Status: {value}",
+    "kind": "Type: {value}",
+    "organizer": "Organizer: {value}",
+    "stream": "Stream: {value}",
+    "detail": "Details: {value}",
+    "attribution": "Data from IGDB.com",
+    "note": {
+      "month": "Only the release month is confirmed.",
+      "quarter": "Only the release quarter is confirmed; it is placed on the last day of that quarter.",
+      "year": "Only the release year is confirmed; it is placed on the last day of that year.",
+      "postponed": "The original date was delayed and no new date has been announced; the entry stays where it was.",
+      "cancelled": "This item has been cancelled."
+    }
+  }
+}

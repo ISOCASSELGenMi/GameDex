@@ -7,7 +7,8 @@
  * - seriesId／url／organizer 由人工標註，同步不碰。
  * - 參與遊戲只存原始 id（game_igdb_ids），由 resolve_relations 解析成 event_games。
  * - slug 撞到別的活動 → 加 `-{igdbId}`（與遊戲同慣例）。
- * - change_feed：新活動 `created`、開始時間改變 `date_changed`，與變更同一個 transaction。
+ * - change_feed：新活動 `created`、開始或結束時間改變 `date_changed`＋events.sequence + 1，與變更同一個 transaction。
+ * - 只有欄位實際變動才更新 updated_at。
  */
 import { and, eq, sql } from "drizzle-orm";
 import { getDb, type DbOrTx } from "@/kernel/db/client";
@@ -29,7 +30,7 @@ const sameTime = (a: Date | null, b: Date | null) => (a?.getTime() ?? null) === 
 export async function syncIgdbEvent(record: EventRecord, db: DbOrTx = getDb()): Promise<IgdbEventSyncResult> {
   return db.transaction(async (tx) => {
     const [existing] = await tx
-      .select({ id: events.id, source: events.source, startTime: events.startTime })
+      .select()
       .from(events)
       .where(eq(events.igdbEventId, record.igdbId))
       .for("update")
@@ -51,23 +52,13 @@ export async function syncIgdbEvent(record: EventRecord, db: DbOrTx = getDb()): 
       streamUrl: record.streamUrl,
       gameIgdbIds: record.gameIgdbIds,
     };
-    const [row] = await tx
-      .insert(events)
-      .values({ ...values, kind: record.kind, igdbEventId: record.igdbId, source: "igdb" })
-      .onConflictDoUpdate({
-        target: events.igdbEventId,
-        set: {
-          ...values,
-          // 只覆蓋仍是 other 的類型（管理員標註過的保留）
-          kind: sql`CASE WHEN "events"."kind" = 'other' THEN excluded."kind" ELSE "events"."kind" END`,
-          updatedAt: new Date(),
-        },
-        setWhere: sql`${events.source} <> 'manual'`,
-      })
-      .returning({ id: events.id });
-
     const iso = (d: Date | null) => d?.toISOString() ?? null;
+
     if (!existing) {
+      const [row] = await tx
+        .insert(events)
+        .values({ ...values, kind: record.kind, igdbEventId: record.igdbId, source: "igdb" })
+        .returning({ id: events.id });
       await appendChange(tx, {
         entityType: "event",
         entityId: row.id,
@@ -76,16 +67,50 @@ export async function syncIgdbEvent(record: EventRecord, db: DbOrTx = getDb()): 
       });
       return { eventId: row.id, inserted: true, skippedManual: false, startTimeChanged: false };
     }
+
+    // 只有欄位實際變動才更新 updated_at（否則每小時同步都會讓 iCal 的 ETag／LAST-MODIFIED 抖動）。
     const startTimeChanged = !sameTime(existing.startTime, record.startTime);
-    if (startTimeChanged) {
+    const endTimeChanged = !sameTime(existing.endTime, record.endTime);
+    // 只覆蓋仍是 other 的類型（管理員標註過的保留）
+    const nextKind = existing.kind === "other" ? record.kind : existing.kind;
+    const changed =
+      startTimeChanged ||
+      endTimeChanged ||
+      nextKind !== existing.kind ||
+      existing.name !== values.name ||
+      existing.slug !== values.slug ||
+      existing.description !== values.description ||
+      existing.timezone !== values.timezone ||
+      existing.logoUrl !== values.logoUrl ||
+      existing.streamUrl !== values.streamUrl ||
+      JSON.stringify(existing.gameIgdbIds ?? []) !== JSON.stringify(values.gameIgdbIds ?? []);
+    if (!changed) {
+      return { eventId: existing.id, inserted: false, skippedManual: false, startTimeChanged: false };
+    }
+
+    await tx
+      .update(events)
+      .set({
+        ...values,
+        kind: nextKind,
+        // 開始或結束時間變動＝訂閱者看得到的改期，SEQUENCE + 1（與 change_feed date_changed 筆數一致）
+        sequence: startTimeChanged || endTimeChanged ? sql`${events.sequence} + 1` : existing.sequence,
+        updatedAt: new Date(),
+      })
+      .where(eq(events.id, existing.id));
+
+    if (startTimeChanged || endTimeChanged) {
       await appendChange(tx, {
         entityType: "event",
-        entityId: row.id,
+        entityId: existing.id,
         changeType: "date_changed",
-        payload: { old: { startTime: iso(existing.startTime) }, new: { startTime: iso(record.startTime) } },
+        payload: {
+          old: { startTime: iso(existing.startTime), endTime: iso(existing.endTime) },
+          new: { startTime: iso(record.startTime), endTime: iso(record.endTime) },
+        },
       });
     }
-    return { eventId: row.id, inserted: false, skippedManual: false, startTimeChanged };
+    return { eventId: existing.id, inserted: false, skippedManual: false, startTimeChanged };
   });
 }
 

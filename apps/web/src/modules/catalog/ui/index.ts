@@ -26,3 +26,6 @@ export { sitemapIndexResponse, sitemapShardResponse, robotsResponse } from "./se
 
 // Phase 4：資料更正回報表單頁
 export { ReportPage, reportTitle } from "./report/report-page";
+
+// Phase 5：iCal 訂閱頁
+export { SubscribePage, subscribeTitle, type SubscribeSlots } from "./subscribe/subscribe-page";

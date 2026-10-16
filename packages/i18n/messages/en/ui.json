@@ -127,7 +127,8 @@
     "franchiseTitle": {
       "franchise": "In the {name} franchise",
       "collection": "In the {name} series"
-    }
+    },
+    "downloadIcs": "Download .ics"
   },
   "footer": {
     "dataAttribution": "Data from IGDB.com",
@@ -261,7 +262,8 @@
     "upcomingHint": "Games releasing on this platform, soonest first. Games with only a month are sorted by the 1st of that month (at the start of the month); games with only a quarter or year are listed at the end of that period.",
     "recentHint": "Games released on this platform in the last 90 days.",
     "emptyUpcoming": "No upcoming games on this platform",
-    "emptyRecent": "No recent releases on this platform"
+    "emptyRecent": "No recent releases on this platform",
+    "subscribeFeed": "Subscribe to this platform’s calendar"
   },
   "companies": {
     "worksTitle": "Games",
@@ -395,5 +397,70 @@
       "generic": "Submission failed. Please try again later."
     },
     "captchaLoading": "Loading human verification…"
+  },
+  "subscribe": {
+    "title": "Subscribe to the calendar",
+    "intro": "Put game release dates in your own calendar. Subscribe once and delays, cancellations and date changes show up in the same calendar automatically, with nothing to re-import.",
+    "footerLink": "Subscribe to calendar",
+    "delay": {
+      "title": "Updates take time",
+      "body": "Our data updates right away, but calendar apps only check for new content now and then. Google Calendar usually takes hours between refreshes (about 5 to 6 hours in our tests) and cannot be refreshed manually; Apple Calendar can refresh at once if you pull down on the calendar list; Outlook usually takes hours too. Treat this as a release-date reminder, not a live notification."
+    },
+    "changes": {
+      "title": "How changes look in your calendar",
+      "intro": "Once subscribed, changes to a game show up on the same calendar event, with no duplicates.",
+      "postponed": "Delayed with no new date: the event stays on its old date and its title gets a “[Delayed: date TBA]” prefix.",
+      "cancelled": "Cancelled: Google Calendar removes the event; Apple Calendar keeps it and shows it struck through.",
+      "rescheduled": "Date changed: the same event moves to the new date, with no duplicate."
+    },
+    "feeds": {
+      "title": "Public calendars",
+      "releases": {
+        "title": "Upcoming releases",
+        "description": "Release dates for the next 90 days, picking the most-watched games by popularity. One all-day entry per game and platform."
+      },
+      "events": {
+        "title": "Game events",
+        "description": "Showcases, expos and award shows."
+      },
+      "platform": {
+        "title": "One platform",
+        "description": "Only the release dates for a single platform, covering all its games in the next 90 days.",
+        "choose": "Choose a platform"
+      }
+    },
+    "feed": {
+      "url": "Subscription URL",
+      "open": "Open in calendar app",
+      "copy": "Copy URL",
+      "copied": "URL copied",
+      "copyFailed": "Could not copy automatically. Select the URL and copy it manually."
+    },
+    "clients": {
+      "title": "How to subscribe in each calendar",
+      "apple": {
+        "title": "Apple Calendar (iPhone, iPad, Mac)",
+        "s1": "Use “Open in calendar app” above. Or in Calendar on Mac choose File → New Calendar Subscription. On iPhone or iPad (iOS/iPadOS 26) go to Settings → Apps → Calendar → Calendar Accounts → Add Account → Other → Add Subscribed Calendar (on older versions: Settings → Calendar → Accounts → Add Account → Other → Add Subscribed Calendar).",
+        "s2": "Paste the subscription URL and choose Subscribe.",
+        "s3": "You can change the refresh rate in the subscription's settings; to refresh right away, pull down on the calendar list."
+      },
+      "google": {
+        "title": "Google Calendar",
+        "s1": "Open Google Calendar on the web from a computer.",
+        "s2": "Next to “Other calendars” on the left, click “+” and choose “From URL”.",
+        "s3": "Paste the subscription URL and click “Add calendar”.",
+        "note": "The mobile app cannot add a calendar from a URL; once you add it on the web, the app on your phone shows it too, on the same Google account. Google usually refreshes subscriptions only every few hours (about 5 to 6 hours in our tests), and there is no manual refresh."
+      },
+      "outlook": {
+        "title": "Outlook",
+        "s1": "On the web: open Calendar and choose Add calendar → Subscribe from web.",
+        "s2": "Paste the subscription URL, give it a name and import.",
+        "s3": "Outlook decides the refresh interval, usually a few hours."
+      }
+    },
+    "realtime": {
+      "title": "Want instant alerts?",
+      "body": "Calendar subscriptions are not instant. We plan to offer email and Discord direct-message alerts later, so you hear about a delay right away."
+    }
   }
 }

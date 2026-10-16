@@ -154,3 +154,23 @@ export function searchParamsToQuery(sp: Readonly<Record<string, string | string[
   }
   return usp.toString().replace(/%2C/gi, ",");
 }
+
+// ── Phase 5：iCal（08）──────────────────────────────────────────────────────
+
+/** 訂閱頁 `/[locale]/subscribe`。 */
+export function subscribeHref(locale: Locale): string {
+  return localeHref(locale, "/subscribe");
+}
+
+/**
+ * 公開 feed 的站內路徑（不含語系以外的前綴；不經 localeHref，因為 /ical 不是頁面路由、語系在 /ical 之後）：
+ * `/ical/{locale}/releases.ics`、`/ical/{locale}/events.ics`、`/ical/{locale}/platform/{slug}.ics`、`/ical/{locale}/game/{slug}.ics`。
+ * slug 會做 URL 編碼（`{slug}` 樣板字串原樣保留，給客戶端元件替換）。
+ */
+export function icalFeedPath(locale: Locale, kind: "releases" | "events"): string;
+export function icalFeedPath(locale: Locale, kind: "platform" | "game", slug: string): string;
+export function icalFeedPath(locale: Locale, kind: "releases" | "events" | "platform" | "game", slug?: string): string {
+  if (kind === "releases" || kind === "events") return `/ical/${locale}/${kind}.ics`;
+  const s = slug === "{slug}" ? slug : encodeURIComponent(slug ?? "");
+  return `/ical/${locale}/${kind}/${s}.ics`;
+}

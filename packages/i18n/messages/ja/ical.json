@@ -1,0 +1,39 @@
+{
+  "calendarName": {
+    "releases": "SoK ゲームカレンダー：発売予定",
+    "events": "SoK ゲームカレンダー：ゲームイベント",
+    "platform": "SoK ゲームカレンダー：{platform}",
+    "game": "{game}"
+  },
+  "calendarDescription": {
+    "releases": "近日発売のゲーム。延期・中止・日付の変更はこのカレンダーに自動で反映されます。",
+    "events": "発表会、展示会、授賞式のスケジュールです。",
+    "platform": "{platform} で近日発売のゲームです。",
+    "game": "{game} の発売日です。"
+  },
+  "mark": {
+    "provisional": "[仮]",
+    "provisionalLabel": "[仮 {label}]",
+    "postponed": "[延期・日付未定]",
+    "cancelled": "[中止]"
+  },
+  "summaryDetail": "（{text}）",
+  "description": {
+    "platform": "プラットフォーム：{value}",
+    "region": "地域：{value}",
+    "stage": "段階：{value}",
+    "status": "ステータス：{value}",
+    "kind": "種類：{value}",
+    "organizer": "主催：{value}",
+    "stream": "配信：{value}",
+    "detail": "詳細：{value}",
+    "attribution": "データ提供：IGDB.com",
+    "note": {
+      "month": "発売月のみ確定しています。",
+      "quarter": "発売四半期のみ確定しているため、その四半期の最終日に表示しています。",
+      "year": "発売年のみ確定しているため、その年の最終日に表示しています。",
+      "postponed": "予定日が延期され、新しい日付は未発表です。元の位置に残しています。",
+      "cancelled": "この項目は中止になりました。"
+    }
+  }
+}

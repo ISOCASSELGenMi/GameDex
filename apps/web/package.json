@@ -15,6 +15,7 @@
     "db:migrate": "tsx --import ./scripts/load-env.ts scripts/migrate.ts",
     "db:seed": "tsx --import ./scripts/load-env.ts src/modules/catalog/seed.ts",
     "job": "tsx --import ./scripts/load-env.ts scripts/run-job.ts",
+    "ical:proto": "tsx --import ./scripts/load-env.ts scripts/ical-proto.ts",
     "db:trgm-test": "tsx --import ./scripts/load-env.ts scripts/trgm-test.ts",
     "test:unit": "vitest run --project unit",
     "i18n:check": "tsx ../../packages/i18n/scripts/i18n-check.ts",

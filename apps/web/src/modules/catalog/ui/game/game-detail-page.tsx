@@ -16,7 +16,7 @@ import { HeatBadge, heatBadgeLabel } from "../heat-badge";
 import { EventIcon, ExternalIcon, StageIcon, StatusIcon, WarningIcon } from "../icons";
 import { eventKindLabel, genreLabel, getTranslator, regionLabel, stageLabel, statusLabel } from "../labels";
 import { PageShell } from "../layout/page-shell";
-import { companyHref, eventHref, franchiseHref, gameHref, platformHref } from "../links";
+import { companyHref, eventHref, franchiseHref, gameHref, icalFeedPath, platformHref } from "../links";
 import { CATALOG_TAG, STATIC_SHELL_SLUG } from "../seo/cache-tags";
 import { breadcrumbJsonLd, gameJsonLd } from "../seo/json-ld";
 import { JsonLdScript } from "../seo/json-ld-script";
@@ -299,6 +299,12 @@ export async function GameDetailPage({ locale, supportedLocales, slug, slots }: 
                 </a>
               </p>
             ) : null}
+            <p>
+              <a className="link inline-flex min-h-11 items-center" href={icalFeedPath(locale, "game", game.slug)} download data-action="download-ics">
+                {t.t("ui.game.downloadIcs")}
+                <span className="sr-only">{t.t("ui.common.parenthetical", { text: game.name })}</span>
+              </a>
+            </p>
             {slots?.actions ? <div className="flex flex-wrap gap-2">{slots.actions}</div> : null}
           </div>
         </div>

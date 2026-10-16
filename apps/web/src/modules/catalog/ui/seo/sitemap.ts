@@ -111,6 +111,7 @@ export function pageSpecs(input: {
     { path: "/games" },
     { path: "/platforms" },
     { path: "/events" },
+    { path: "/subscribe" },
     ...input.platforms.map(platformSitemapSpec),
     ...input.events.map(eventSitemapSpec),
   ];
