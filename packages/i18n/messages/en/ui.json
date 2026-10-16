@@ -404,7 +404,14 @@
     "footerLink": "Subscribe to calendar",
     "delay": {
       "title": "Updates take time",
-      "body": "Our data updates right away, but calendar apps only check for new content now and then: Google Calendar and Outlook can take hours up to a day to show a change, and Apple Calendar follows the refresh rate you choose. Treat this as a release-date reminder, not a live notification."
+      "body": "Our data updates right away, but calendar apps only check for new content now and then. Google Calendar usually takes hours between refreshes (about 5 to 6 hours in our tests) and cannot be refreshed manually; Apple Calendar can refresh at once if you pull down on the calendar list; Outlook usually takes hours too. Treat this as a release-date reminder, not a live notification."
+    },
+    "changes": {
+      "title": "How changes look in your calendar",
+      "intro": "Once subscribed, changes to a game show up on the same calendar event, with no duplicates.",
+      "postponed": "Delayed with no new date: the event stays on its old date and its title gets a “[Delayed: date TBA]” prefix.",
+      "cancelled": "Cancelled: Google Calendar removes the event; Apple Calendar keeps it and shows it struck through.",
+      "rescheduled": "Date changed: the same event moves to the new date, with no duplicate."
     },
     "feeds": {
       "title": "Public calendars",
@@ -433,16 +440,16 @@
       "title": "How to subscribe in each calendar",
       "apple": {
         "title": "Apple Calendar (iPhone, iPad, Mac)",
-        "s1": "Use “Open in calendar app” above. Or in Calendar on Mac choose File → New Calendar Subscription; on iPhone go to Settings → Calendar → Accounts → Add Account → Other → Add Subscribed Calendar.",
+        "s1": "Use “Open in calendar app” above. Or in Calendar on Mac choose File → New Calendar Subscription. On iPhone or iPad (iOS/iPadOS 26) go to Settings → Apps → Calendar → Calendar Accounts → Add Account → Other → Add Subscribed Calendar (on older versions: Settings → Calendar → Accounts → Add Account → Other → Add Subscribed Calendar).",
         "s2": "Paste the subscription URL and choose Subscribe.",
-        "s3": "You can change the refresh frequency in the subscription settings."
+        "s3": "You can change the refresh rate in the subscription's settings; to refresh right away, pull down on the calendar list."
       },
       "google": {
         "title": "Google Calendar",
         "s1": "Open Google Calendar on the web from a computer.",
         "s2": "Next to “Other calendars” on the left, click “+” and choose “From URL”.",
         "s3": "Paste the subscription URL and click “Add calendar”.",
-        "note": "The mobile app cannot add a calendar from a URL; once you add it on the web, the app on your phone shows it too, on the same Google account. Google refreshes subscriptions at irregular intervals, usually hours up to a day, and there is no manual refresh."
+        "note": "The mobile app cannot add a calendar from a URL; once you add it on the web, the app on your phone shows it too, on the same Google account. Google usually refreshes subscriptions only every few hours (about 5 to 6 hours in our tests), and there is no manual refresh."
       },
       "outlook": {
         "title": "Outlook",

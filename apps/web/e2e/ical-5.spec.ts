@@ -237,6 +237,9 @@ for (const locale of LOCALES) {
         await expect(section.locator("ol > li")).toHaveCount(3);
       }
       await expect(page.locator('[data-client="google"]')).toContainText(m("ui.subscribe.clients.google.note"));
+      for (const k of ["title", "intro", "postponed", "cancelled", "rescheduled"]) {
+        await expect(page.locator('[data-section="changes"]')).toContainText(m(`ui.subscribe.changes.${k}`));
+      }
       await expect(page.locator('[data-section="realtime"]')).toContainText(m("ui.subscribe.realtime.body"));
       // 私人 feed 屬 accounts：3a 沒有提供者，頁面上不該有私人 feed 的區塊
       await expect(page.locator('[data-slot="subscribe.private"]')).toHaveCount(0);

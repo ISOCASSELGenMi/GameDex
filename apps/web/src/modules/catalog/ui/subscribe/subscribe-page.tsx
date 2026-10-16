@@ -79,6 +79,18 @@ export async function SubscribePage({
           <p className="mt-1">{s("delay.body")}</p>
         </aside>
 
+        <section aria-labelledby="subscribe-changes-title" className="mt-6 max-w-3xl" data-section="changes">
+          <h2 id="subscribe-changes-title" className="text-xl font-bold">
+            {s("changes.title")}
+          </h2>
+          <p className="mt-1">{s("changes.intro")}</p>
+          <ul className="mt-2 list-disc space-y-1 pl-6">
+            {(["postponed", "cancelled", "rescheduled"] as const).map((k) => (
+              <li key={k}>{s(`changes.${k}`)}</li>
+            ))}
+          </ul>
+        </section>
+
         <section aria-labelledby="subscribe-feeds-title" className="mt-8">
           <h2 id="subscribe-feeds-title" className="text-xl font-bold">
             {s("feeds.title")}

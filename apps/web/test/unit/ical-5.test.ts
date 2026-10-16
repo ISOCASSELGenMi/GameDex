@@ -556,12 +556,14 @@ describe("字典與原始碼", () => {
     }
   });
 
-  it("訂閱頁字典：誠實延遲文案不寫死數字、Google 行動版限制有說明", () => {
+  it("訂閱頁字典：延遲文案依原型實測（Google 約 5～6 小時）、Google 行動版限制有說明", () => {
     for (const l of ["zh-Hant", "en", "ja"] as const) {
       const t = createTranslator(l);
-      expect(t.t("ui.subscribe.delay.body")).not.toMatch(/\b\d+\s*(分鐘|小時|hours?|minutes?|時間|分)\b/i);
+      for (const key of ["changes.title", "changes.intro", "changes.postponed", "changes.cancelled", "changes.rescheduled"]) {
+        expect(t.t(`ui.subscribe.${key}`).length, key).toBeGreaterThan(5);
+      }
       expect(t.t("ui.subscribe.clients.google.note").length).toBeGreaterThan(20);
     }
-    expect(createTranslator("zh-Hant").t("ui.subscribe.delay.body")).toContain("數小時到一天");
+    expect(createTranslator("zh-Hant").t("ui.subscribe.delay.body")).toContain("5～6 小時");
   });
 });
