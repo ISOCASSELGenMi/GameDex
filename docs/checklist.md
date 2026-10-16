@@ -168,6 +168,17 @@
   - 玩家平均未達門檻的說明要不要顯示門檻數字（API 需多回一欄）
   - 評論可見度 followers 的文案「追蹤我的人」與 D19 的「追蹤」用詞衝突，social 上線時定名
   - ja 用語請過目（クリア／全クリア／挫折 對應 玩完／全破／放棄）
+- [x] 第 6 波：追蹤、我的遊戲（mine）、熱度訊號、私人 iCal（分支 `feat/phase7-w6`，PR 疊在 #9 上，2026-10-17；待合併；migration 0010 未套開發 DB）
+- [ ] 第 6 波待使用者決定（已採可回退做法）：
+  - `mine` 篩選要不要接進月曆／時間軸／瀏覽頁（目前只有 `/account/games` 專頁；接進去會牽動頁面快取，R 報告有兩個方案）
+  - `followed` 只含直接追蹤的遊戲；要不要展開追蹤的平台／系列／公司旗下遊戲
+  - 月曆／時間軸卡片要不要有追蹤按鈕（需批次查詢狀態）
+  - 平台／系列／公司／活動頁要不要顯示追蹤人數（目前只有遊戲頁）
+  - 「上升中」樣本很少時第一名必定上榜，要不要加最低門檻
+  - 私人 iCal：`includeEvents=false` 時明確追蹤的活動仍輸出；`filterRegions` 只當地區偏好不是限制；要不要加地區與類型篩選 UI
+  - 孤兒清理：某類目標一次 ≥ 20 個全不存在時不刪（防誤刪的保險，spec 沒寫）
+  - ja 用語請過目
+- [ ] spec 待補：06 路由表（account/follows、games、calendar、lists、plays、/lists/*）、02 slot 清單（entity.actions、subscribe.private）、07（follows、me/games、calendar feeds、第 5 波 API）
 - [ ] Steam 真實連線實測（需使用者提供 `STEAM_WEB_API_KEY`）
 - [ ] 第 2 波：Discord／Google／Twitch／Microsoft 社群登入（需使用者申請 OAuth app，建議正式網域定了再申請）
 - [ ] 第 4 波 Xbox 匯入、第 5 波清單／遊玩紀錄／玩家平均＋手動指定比對 UI、第 6 波追蹤與私人 iCal、第 7 波匯出與刪帳號
