@@ -31,6 +31,8 @@ const accountsEnvSchema = z.object({
   ACCOUNTS_SIGNUP_ENABLED: z
     .preprocess(emptyToUndefined, z.enum(["true", "false"]).default("false"))
     .transform((v) => v === "true"),
+  /** 限流開關；未設＝跟著 production。只供測試關閉，正式環境不要設 false。 */
+  AUTH_RATE_LIMIT_ENABLED: z.preprocess(emptyToUndefined, z.enum(["true", "false"]).optional()),
   DISCORD_CLIENT_ID: optionalString,
   DISCORD_CLIENT_SECRET: optionalString,
   GOOGLE_CLIENT_ID: optionalString,
@@ -52,6 +54,8 @@ export interface AccountsEnv {
   siteUrl: string | undefined;
   trustedOrigins: string[];
   signupEnabled: boolean;
+  /** 登入／註冊端點限流；AUTH_RATE_LIMIT_ENABLED 未設時＝isProduction。 */
+  rateLimitEnabled: boolean;
   /** 兩個值都有才啟用。 */
   socialCredentials: Partial<Record<SocialProvider, { clientId: string; clientSecret: string }>>;
 }
@@ -85,6 +89,7 @@ export function parseAccountsEnv(env: AccountsEnvInput = process.env): AccountsE
     siteUrl,
     trustedOrigins: [...new Set([...(siteUrl ? [siteUrl] : []), ...extra])],
     signupEnabled: d.ACCOUNTS_SIGNUP_ENABLED,
+    rateLimitEnabled: d.AUTH_RATE_LIMIT_ENABLED === undefined ? d.NODE_ENV === "production" : d.AUTH_RATE_LIMIT_ENABLED === "true",
     socialCredentials: credentials,
   };
 }

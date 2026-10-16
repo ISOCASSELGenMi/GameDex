@@ -200,6 +200,11 @@ describe("Better Auth 設定組裝", () => {
     expect(build().rateLimit?.enabled).toBe(false);
     expect(build({ NODE_ENV: "production" }).rateLimit?.enabled).toBe(true);
     expect(build({}, true).rateLimit?.enabled).toBe(true);
+    // AUTH_RATE_LIMIT_ENABLED：明確設定優先於 NODE_ENV；rateLimitEnabled 參數優先於 env
+    expect(build({ NODE_ENV: "production", AUTH_RATE_LIMIT_ENABLED: "false" }).rateLimit?.enabled).toBe(false);
+    expect(build({ AUTH_RATE_LIMIT_ENABLED: "true" }).rateLimit?.enabled).toBe(true);
+    expect(build({ NODE_ENV: "production", AUTH_RATE_LIMIT_ENABLED: "" }).rateLimit?.enabled).toBe(true);
+    expect(build({ NODE_ENV: "production", AUTH_RATE_LIMIT_ENABLED: "false" }, true).rateLimit?.enabled).toBe(true);
     expect(build().rateLimit?.customRules).toMatchObject({ "/sign-in/email": { max: expect.any(Number) } });
   });
   it("重設密碼 token 一小時；密碼最短 10；Email 驗證不強制（09）", () => {

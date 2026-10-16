@@ -80,6 +80,8 @@ export function serverEnv(): NodeJS.ProcessEnv {
     AUTH_SECRET: E2E_AUTH_SECRET,
     TOKEN_ENCRYPTION_KEY: E2E_TOKEN_ENCRYPTION_KEY,
     ACCOUNTS_SIGNUP_ENABLED: "true",
+    // next start 是 production，限流預設啟用；CI 所有請求同一 IP 會被擋（429），e2e 關閉（限流本身由整合測試驗證）
+    AUTH_RATE_LIMIT_ENABLED: "false",
     AUTH_TRUSTED_ORIGINS: `${E2E_BASE_URL},${E2E_CLOSED_BASE_URL}`,
     NEXT_DIST_DIR: E2E_DIST_DIR,
     NEXT_TELEMETRY_DISABLED: "1",

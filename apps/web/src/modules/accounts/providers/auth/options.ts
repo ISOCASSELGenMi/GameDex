@@ -29,7 +29,7 @@ export interface BuildAuthOptionsInput {
   env: AccountsEnv;
   database: NonNullable<BetterAuthOptions["database"]>;
   mailer: AccountMailer;
-  /** 測試用：覆寫限流開關（預設只在 production 啟用）。 */
+  /** 測試用：覆寫限流開關（優先於 env.rateLimitEnabled；後者預設只在 production 啟用）。 */
   rateLimitEnabled?: boolean;
 }
 
@@ -128,7 +128,7 @@ export function buildAuthOptions(input: BuildAuthOptionsInput): BetterAuthOption
     },
     socialProviders: socialProviders(env),
     rateLimit: {
-      enabled: input.rateLimitEnabled ?? env.isProduction,
+      enabled: input.rateLimitEnabled ?? env.rateLimitEnabled,
       customRules: { ...AUTH_RATE_LIMIT_RULES },
     },
     databaseHooks: {
