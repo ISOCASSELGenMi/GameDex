@@ -22,5 +22,9 @@
   "externalLink": "(external site, opens in a new window)",
   "stageIcon": "Release stage",
   "statusIcon": "Status",
-  "dayCellWithEvents": "{date}, {count} games, {events} events"
+  "dayCellWithEvents": "{date}, {count} games, {events} events",
+  "calendarPrevGame": "Previous game, {index} of {total}",
+  "calendarNextGame": "Next game, {index} of {total}",
+  "calendarCurrentGame": "{name}, {index} of {total}",
+  "menu": "Menu"
 }

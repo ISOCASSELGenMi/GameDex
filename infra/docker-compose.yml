@@ -32,6 +32,8 @@ services:
       args:
         NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-}
         MODULES: ${MODULES:-}
+        ORG_HOME_URL: ${ORG_HOME_URL:-}
+        ORG_NAME: ${ORG_NAME:-}
     restart: unless-stopped
     init: true                                 # 轉送 SIGTERM、回收殭屍行程
     env_file: .env

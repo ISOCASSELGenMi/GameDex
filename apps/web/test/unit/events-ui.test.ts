@@ -1,6 +1,6 @@
 // 活動列表／詳情 UI 的純函式。
 import { describe, expect, it } from "vitest";
-import { createTranslator } from "@sok/i18n";
+import { createTranslator, formatEventTimeText } from "@sok/i18n";
 import {
   EVENTS_PAGE_MAX,
   eventStatusLabel,
@@ -69,5 +69,34 @@ describe("活動狀態與連結", () => {
     expect(eventStatusLabel(tEn, "ongoing")).toBe("Happening now");
     expect(eventStatusLabel(tZh, "past")).toBe("已結束");
     expect(eventStatusLabel(tZh, "undated")).toBeNull();
+  });
+});
+
+describe("活動時間依時區（formatEventTimeText）", () => {
+  const start = "2026-06-05T17:00:00.000Z";
+  it("三語：主行依指定時區，UTC 與其他時區結果不同", () => {
+    for (const locale of ["zh-Hant", "en", "ja"] as const) {
+      const taipei = formatEventTimeText(start, null, locale, "Asia/Taipei").start;
+      const utc = formatEventTimeText(start, null, locale, "UTC").start;
+      expect(taipei, locale).not.toBe(utc);
+      expect(utc, locale).toContain("UTC");
+    }
+    expect(formatEventTimeText(start, null, "en", "Asia/Taipei").start).toMatch(/Jun 6, 2026.*1:00\s?AM/);
+    expect(formatEventTimeText(start, null, "en", "America/Los_Angeles").start).toMatch(/Jun 5, 2026.*10:00\s?AM/);
+  });
+  it("跨日：UTC 同一天的區間，在東八區變成跨日 → 結束要帶日期；反之亦然", () => {
+    const end = "2026-06-05T18:30:00.000Z"; // UTC 同一天
+    const utc = formatEventTimeText(start, end, "en", "UTC");
+    expect(utc.end).not.toMatch(/Jun/);
+    const lateStart = "2026-06-05T15:30:00.000Z";
+    const lateEnd = "2026-06-05T16:30:00.000Z"; // Taipei 23:30 → 00:30 隔天
+    const taipei = formatEventTimeText(lateStart, lateEnd, "en", "Asia/Taipei");
+    expect(taipei.end).toMatch(/Jun 6/);
+  });
+  it("結束等於開始或沒有結束 → end 為 null；不合法時區退回 UTC；不合法時間原樣", () => {
+    expect(formatEventTimeText(start, start, "en", "UTC").end).toBeNull();
+    expect(formatEventTimeText(start, null, "en", "UTC").end).toBeNull();
+    expect(formatEventTimeText(start, null, "en", "Not/AZone").start).toContain("UTC");
+    expect(formatEventTimeText("bad", null, "en", "UTC").start).toBe("bad");
   });
 });

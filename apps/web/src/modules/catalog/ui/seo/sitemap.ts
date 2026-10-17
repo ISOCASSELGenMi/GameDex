@@ -105,6 +105,7 @@ export function pageSpecs(input: {
   events: readonly SitemapEntry[];
 }): SitemapUrlSpec[] {
   return [
+    { path: "/" },
     ...calendarMonthRange(input.now).map((ym): SitemapUrlSpec => ({ path: `/calendar/${formatMonthParam(ym)}` })),
     { path: "/timeline" },
     { path: "/trending" },

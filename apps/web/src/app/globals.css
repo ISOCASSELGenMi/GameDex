@@ -1,46 +1,113 @@
 @import "tailwindcss";
 
 /*
- * 色彩 token（06 §無障礙：對比 ≥ 4.5:1、支援深色模式）。
- * 淺色：前景 #111827／背景 #fff ≈ 17:1；次要文字 #4b5563 ≈ 7.6:1；連結 #1d4ed8 ≈ 6.7:1。
- * 深色：前景 #e5e7eb／背景 #0b0f14 ≈ 15:1；次要文字 #9ca3af ≈ 7.9:1；連結 #93c5fd ≈ 10:1。
+ * ── 設計 token（GameDex 視覺語言；docs/design/ui-direction.md）──────────────────────────────
+ * 方向：Spatial UI（景深、半透明玻璃、陰影層級）＋ Micro-interactions ＋ Motion-Driven ＋ Feature-Rich Showcase。
+ * 不用：米色／奶油色背景、標題斜體強調、編號段落標籤、等寬小標籤、膠囊形按鈕（按鈕圓角一律 --radius-md）。
+ *
+ * 表面層級（由後到前）：--background（頁面）→ --surface／--surface-strong（凹陷、分組底）→ --panel（浮起的卡片、面板）
+ * → --glass（半透明玻璃：header、側邊預覽卡、浮動控制）。陰影 --shadow-1/2/3 對應「靜止／懸停／浮層」。
+ *
+ * 對比（WCAG AA，axe 會驗）：
+ *  淺色：前景 #0f172a／背景 #eef1f7 ≈ 15:1；次要文字 #475569 在背景 ≈ 6.5:1、在 --surface-strong ≈ 5.6:1；連結 #1d4ed8 在背景 ≈ 5.9:1。
+ *  深色：前景 #e8ecf5／背景 #0a0f1c ≈ 16:1；次要文字 #a3aec4 在背景 ≈ 8.5:1、在 --surface-strong ≈ 6.6:1；連結 #8fb4ff 在背景 ≈ 9:1。
+ * 蓋在封面圖上的文字一律放在深色漸層遮罩（--scrim）上、用白字，不依賴主題色。
  */
 :root {
   color-scheme: light dark;
-  --background: #ffffff;
-  --foreground: #111827;
-  --muted: #4b5563;
-  --border: #d1d5db;
-  --surface: #f3f4f6;
-  --surface-strong: #e5e7eb;
+
+  /* 色彩 */
+  --background: #eef1f7;
+  --foreground: #0f172a;
+  --muted: #475569;
+  --border: #c5cee0;
+  --surface: #e6eaf3;
+  --surface-strong: #d9dfec;
+  --panel: #ffffff;
   --link: #1d4ed8;
   --on-link: #ffffff;
+  --accent-2: #7c3aed;
   --warn: #92400e;
   --danger: #b91c1c;
-  --today: #dbeafe;
+  --today: #dbe6ff;
   --focus: #1d4ed8;
+
+  /* 玻璃（半透明＋模糊；不支援 backdrop-filter 時退回不透明的 --panel）。
+ * 注意：backdrop-filter 只寫無前綴的版本，建置（Lightning CSS）會依目標瀏覽器補前綴；
+ * 手寫 -webkit-backdrop-filter 排在無前綴版本後面會把無前綴版本吃掉（Chrome 只認無前綴）。 */
+  --glass: rgb(255 255 255 / 0.72);
+  --glass-border: rgb(255 255 255 / 0.7);
+  --glass-blur: blur(16px) saturate(1.5);
+  --scrim: rgb(5 8 20 / 0.92);
+  --veil: rgb(10 15 28 / 0.6);
+
+  /* 頁面背景的環境光（固定在視窗，裝飾用） */
+  --glow-a: rgb(99 102 241 / 0.16);
+  --glow-b: rgb(14 165 233 / 0.12);
+
+  /* 陰影層級 */
+  --shadow-1: 0 1px 2px rgb(15 23 42 / 0.07), 0 1px 1px rgb(15 23 42 / 0.04);
+  --shadow-2: 0 8px 20px -6px rgb(15 23 42 / 0.16), 0 2px 5px rgb(15 23 42 / 0.07);
+  --shadow-3: 0 22px 44px -12px rgb(15 23 42 / 0.32), 0 8px 14px -8px rgb(15 23 42 / 0.16);
+
+  /* 圓角（按鈕不用膠囊） */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+
+  /* 動畫：時長與緩動 */
+  --dur-1: 120ms;
+  --dur-2: 220ms;
+  --dur-3: 380ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0b0f14;
-    --foreground: #e5e7eb;
-    --muted: #9ca3af;
-    --border: #374151;
-    --surface: #111827;
-    --surface-strong: #1f2937;
-    --link: #93c5fd;
-    --on-link: #0b0f14;
+    --background: #0a0f1c;
+    --foreground: #e8ecf5;
+    --muted: #a3aec4;
+    --border: #2a3857;
+    --surface: #131d33;
+    --surface-strong: #1d2a47;
+    --panel: #111a2e;
+    --link: #8fb4ff;
+    --on-link: #0a0f1c;
+    --accent-2: #c4b5fd;
     --warn: #fcd34d;
     --danger: #fca5a5;
     --today: #1e3a8a;
-    --focus: #93c5fd;
+    --focus: #8fb4ff;
+
+    --glass: rgb(17 26 46 / 0.72);
+    --glass-border: rgb(143 180 255 / 0.18);
+    --scrim: rgb(2 4 12 / 0.94);
+    --veil: rgb(2 4 12 / 0.62);
+
+    --glow-a: rgb(99 102 241 / 0.22);
+    --glow-b: rgb(14 165 233 / 0.14);
+
+    --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4), 0 1px 1px rgb(0 0 0 / 0.3);
+    --shadow-2: 0 10px 24px -8px rgb(0 0 0 / 0.6), 0 2px 6px rgb(0 0 0 / 0.4);
+    --shadow-3: 0 26px 50px -14px rgb(0 0 0 / 0.75), 0 10px 16px -8px rgb(0 0 0 / 0.5);
   }
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+}
+
+html {
+  /* 固定在上方的 header（寬螢幕）不遮住錨點與焦點 */
+  scroll-padding-top: 0;
+}
+@media (min-width: 768px) {
+  html {
+    scroll-padding-top: 5rem;
+  }
 }
 
 body {
@@ -50,16 +117,30 @@ body {
   font-family: system-ui, -apple-system, "Segoe UI", "Noto Sans TC", "Microsoft JhengHei", "Hiragino Sans", sans-serif;
 }
 
+/* 環境光：固定在視窗後方的兩團柔光，給玻璃面板一點可以模糊的景深（不影響文字對比：body 底色仍是純色） */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(60rem 36rem at 8% -8%, var(--glow-a), transparent 70%),
+    radial-gradient(48rem 32rem at 100% 4%, var(--glow-b), transparent 70%);
+}
+
 /* 日文頁面：漢字要用日文字形，所以日文字型排在中文字型之前 */
 body:lang(ja) {
   font-family: system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Yu Gothic UI", "Yu Gothic", "Meiryo", "Noto Sans JP", sans-serif;
 }
 
+/* 焦點：粗外框＋與背景分離的內圈（亮暗色都清楚） */
 :focus-visible {
   outline: 3px solid var(--focus);
   outline-offset: 2px;
 }
 
+/* 安全網：偏好減少動態時，所有轉場／動畫縮到幾乎不可見（真正的動態都包在 no-preference 裡，這裡只防漏網） */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -71,6 +152,51 @@ body:lang(ja) {
   }
 }
 
+/* ── 共用：玻璃與浮起 ───────────────────────────────────── */
+.glass {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: var(--glass-blur);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass,
+  .site-header {
+    background: var(--panel);
+  }
+}
+.raised {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-1);
+}
+
+/* ── 站台 header（玻璃、固定在上方） ──────────────────────── */
+/* 窄螢幕的 header 會折成好幾列（導覽、語言、登入），固定在上方會吃掉大半個畫面，所以只在 768px 以上固定 */
+.site-header {
+  position: relative;
+  z-index: 30;
+  background: var(--glass);
+  border-bottom: 1px solid var(--glass-border);
+  box-shadow: 0 1px 0 var(--border), var(--shadow-1);
+  backdrop-filter: var(--glass-blur);
+}
+@media (min-width: 768px) {
+  .site-header {
+    position: sticky;
+    top: 0;
+  }
+}
+.site-header .link-quiet {
+  transition: background-color var(--dur-1) ease;
+}
+.site-header .link-quiet:hover {
+  background: var(--surface);
+}
+.site-header [data-site-brand] {
+  letter-spacing: 0.01em;
+}
+
 /* ── 共用 ─────────────────────────────────────────────── */
 .skip-link {
   position: absolute;
@@ -80,7 +206,7 @@ body:lang(ja) {
   padding: 0.75rem 1rem;
   background: var(--link);
   color: var(--on-link);
-  border-radius: 0.375rem;
+  border-radius: var(--radius-md);
 }
 .skip-link:focus {
   top: 0.5rem;
@@ -99,30 +225,48 @@ body:lang(ja) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 0.4rem;
   min-height: 44px;
   padding: 0 1rem;
-  border-radius: 0.375rem;
+  border-radius: var(--radius-md);
   font-weight: 600;
   cursor: pointer;
+  transition:
+    background-color var(--dur-1) ease,
+    border-color var(--dur-1) ease,
+    box-shadow var(--dur-2) var(--ease-out);
 }
 .btn-primary {
   background: var(--link);
   color: var(--on-link);
+  box-shadow: var(--shadow-1), inset 0 1px 0 rgb(255 255 255 / 0.18);
 }
 .btn-secondary {
   border: 1px solid var(--border);
-  background: var(--background);
+  background: var(--panel);
   color: var(--foreground);
+  box-shadow: var(--shadow-1);
 }
 .btn-secondary:hover {
   background: var(--surface);
+  border-color: var(--link);
+}
+.btn-primary:hover,
+.btn-secondary:hover {
+  box-shadow: var(--shadow-2);
+}
+.btn-primary:disabled,
+.btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
+/* 小標籤（平台縮寫等）：方角小標籤，不用膠囊 */
 .chip {
   display: inline-block;
-  padding: 0 0.3rem;
+  padding: 0 0.35rem;
   border: 1px solid var(--border);
-  border-radius: 0.25rem;
+  border-radius: var(--radius-sm);
   background: var(--surface-strong);
   font-size: 0.75rem;
   line-height: 1.25rem;
@@ -131,7 +275,9 @@ body:lang(ja) {
 
 .notice {
   border-left: 4px solid var(--warn);
-  background: var(--surface);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  background: var(--panel);
+  box-shadow: var(--shadow-1);
   padding: 0.5rem 0.75rem;
   margin-block: 0.5rem;
 }
@@ -155,69 +301,570 @@ body:lang(ja) {
   margin-block: 1rem;
 }
 
-.cal-desktop {
+.cal-wrap {
+  margin-top: 1rem;
+}
+/* 週標頭只在寬螢幕（7 欄）出現；窄螢幕是逐日清單，每格自己帶星期 */
+.cal-weekdays {
   display: none;
 }
-.cal-mobile {
-  display: block;
+.cal-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
-@media (min-width: 768px) {
-  .cal-desktop {
+.cal-pad {
+  display: none;
+}
+/* 窄螢幕：沒有內容的日期不佔位（今天除外），只列有遊戲或活動的日子 */
+.cal-day[data-empty="true"]:not(:has(.is-today)) {
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .cal-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 0.5rem;
+    padding-bottom: 0.5rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-align: center;
+  }
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    align-items: start;
+    gap: 0.5rem;
+  }
+  .cal-pad {
     display: block;
   }
-  .cal-mobile {
-    display: none;
+  .cal-day[data-empty="true"]:not(:has(.is-today)) {
+    display: block;
+  }
+}
+@media (min-width: 1024px) {
+  .cal-weekdays,
+  .cal-grid {
+    gap: 0.75rem;
   }
 }
 
-.cal-grid {
-  width: 100%;
-  table-layout: fixed;
-  border-collapse: collapse;
+/* 一格：封面滿版的「盒子」＋盒子下方的活動清單 */
+.cal-cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  border-radius: var(--radius-lg);
+  /* 款數 > 1 的格可由 Tab 聚焦：以焦點外框標出整格 */
+  --cal-fg: #ffffff;
+  --cal-chip-bg: rgb(255 255 255 / 0.2);
+  --cal-chip-fg: #ffffff;
+  --cal-chip-bd: rgb(255 255 255 / 0.3);
 }
-.cal-grid th {
-  padding: 0.25rem;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--muted);
-  text-align: left;
+.cal-cell:focus-visible {
+  outline-offset: 3px;
 }
-.cal-grid td {
-  border: 1px solid var(--border);
-  vertical-align: top;
-  padding: 0.25rem;
-  height: 8rem;
+.cal-cell:hover,
+.cal-cell:focus-within {
+  z-index: 2;
 }
-.cal-out {
-  background: var(--surface);
+.cal-box {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  isolation: isolate;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--surface) 60%, transparent);
 }
-.day-num {
+.cal-cell.has-card .cal-box {
+  border: 1px solid var(--glass-border);
+  background: var(--surface-strong);
+  box-shadow: var(--shadow-2);
+}
+.cal-viewport {
+  position: absolute;
+  inset: 0;
+  touch-action: pan-y;
+}
+.cal-viewport[data-loading="true"] {
+  opacity: 0.7;
+  cursor: progress;
+}
+.cal-blank {
+  display: block;
+  height: 100%;
+}
+
+/* 今天：外框＋光暈＋「今天」小標 */
+.cal-cell.is-today .cal-box {
+  border: 1px solid transparent;
+  outline: 3px solid var(--link);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 7px color-mix(in srgb, var(--link) 22%, transparent), var(--shadow-3);
+}
+
+.cal-daynum {
+  position: absolute;
+  top: 0.4rem;
+  left: 0.4rem;
+  z-index: 3;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  min-width: 1.75rem;
-  height: 1.75rem;
+  gap: 0.3rem;
+  min-height: 1.75rem;
+  padding: 0 0.5rem;
+  border-radius: var(--radius-md);
+  background: var(--veil);
+  color: #ffffff;
   font-weight: 700;
-  border-radius: 9999px;
+  font-variant-numeric: tabular-nums;
+  backdrop-filter: blur(8px);
+  pointer-events: none;
 }
-.is-today .day-num,
-.agenda-day.is-today .agenda-date {
-  outline: 2px solid var(--link);
-  background: var(--today);
+.cal-daynum-wd {
+  display: none;
+  font-weight: 500;
+  opacity: 0.9;
 }
+/* 沒有封面的格：日期用一般文字色，不用玻璃底 */
+.cal-cell:not(.has-card) .cal-daynum {
+  background: transparent;
+  color: var(--muted);
+  backdrop-filter: none;
+}
+.cal-today-tag {
+  padding: 0 0.35rem;
+  border-radius: var(--radius-sm);
+  background: var(--link);
+  color: var(--on-link);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  line-height: 1.1rem;
+}
+
+/* 封面連結：整個盒子 */
+.cal-link {
+  position: absolute;
+  inset: 0;
+  display: block;
+  overflow: hidden;
+  color: #ffffff;
+  text-decoration: none;
+}
+.cal-cover {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  color: transparent;
+}
+.cal-cover-empty {
+  background: linear-gradient(150deg, #243b6b, #1b1f3a);
+}
+.cal-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, var(--scrim) 0%, rgb(5 8 20 / 0.62) 38%, rgb(5 8 20 / 0) 66%);
+}
+.cal-info {
+  position: absolute;
+  inset: auto 0 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.6rem 0.6rem 1.9rem;
+  color: var(--cal-fg);
+}
+.cal-name {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-shadow: 0 1px 3px rgb(0 0 0 / 0.55);
+}
+.cal-chips,
+.cal-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3px;
+}
+.cal-chip {
+  padding: 0 0.35rem;
+  border: 1px solid var(--cal-chip-bd);
+  border-radius: var(--radius-sm);
+  background: var(--cal-chip-bg);
+  color: var(--cal-chip-fg);
+  font-size: 0.6875rem;
+  line-height: 1.1rem;
+  white-space: nowrap;
+}
+.cal-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0 0.35rem;
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.1rem;
+}
+.cal-tag-stage {
+  background: #bfdbfe;
+  color: #1e3a8a;
+}
+.cal-tag-status {
+  background: #fecaca;
+  color: #7f1d1d;
+}
+.cal-tag-type {
+  background: #e9d5ff;
+  color: #4c1d95;
+}
+.cal-tag-warn {
+  background: #fde68a;
+  color: #78350f;
+}
+/* 熱度：火焰圖示用 CSS mask（整月 30 格不各帶一份 SVG 標記）＋等級數字；可及名稱在 role=img 的 aria-label */
+.cal-heat {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  color: #fbbf24;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.cal-heat::before {
+  content: "";
+  width: 1em;
+  height: 1em;
+  background: currentColor;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8.6 1c.4 2.1-.4 3.3-1.3 4.4C6.4 6.5 5.5 7.5 5.8 9.3c-.9-.4-1.4-1.2-1.5-2.2C3.5 8 3 9.2 3 10.5 3 13 5.2 15 8 15s5-2 5-4.6c0-2.3-1.2-3.6-2.3-4.8C9.7 4.5 8.8 3.4 8.6 1Zm-.4 7.6c.2 1.1.9 1.6 1.4 2.2.4.4.7.9.7 1.5 0 1-.9 1.7-2.1 1.7S6.1 13.3 6.1 12.3c0-.9.5-1.4 1-1.9.5-.5 1-1 1.1-1.8Z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+/* 切換按鈕：玻璃小方鈕（不是膠囊） */
+.cal-nav {
+  position: absolute;
+  top: 50%;
+  z-index: 4;
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  margin-top: -1.125rem;
+  border: 1px solid rgb(255 255 255 / 0.35);
+  border-radius: var(--radius-md);
+  background: var(--veil);
+  color: #ffffff;
+  font-size: 1rem;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition:
+    opacity var(--dur-2) ease,
+    background-color var(--dur-1) ease;
+}
+.cal-nav:hover {
+  background: rgb(10 15 28 / 0.85);
+}
+.cal-nav:disabled {
+  cursor: progress;
+}
+.cal-nav-prev {
+  left: 0.35rem;
+}
+.cal-nav-next {
+  right: 0.35rem;
+}
+@media (hover: hover) {
+  /* 有滑鼠的裝置：箭頭在懸停、焦點在格內、已 Tab 進格時才浮現（觸控裝置永遠可見） */
+  .cal-nav {
+    opacity: 0;
+  }
+  .cal-cell:hover .cal-nav,
+  .cal-cell:focus-within .cal-nav,
+  .cal-cell[data-engaged="true"] .cal-nav {
+    opacity: 1;
+  }
+}
+@media (pointer: coarse) {
+  .cal-nav {
+    width: 2.75rem;
+    height: 2.75rem;
+    margin-top: -1.375rem;
+  }
+}
+
+/* 第幾款：點點（款數少）或「3 / 24」 */
+.cal-pos {
+  position: absolute;
+  inset: auto 0 0.45rem 0;
+  z-index: 3;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+.cal-dots {
+  display: inline-flex;
+  gap: 5px;
+  padding: 0.25rem 0.45rem;
+  border-radius: var(--radius-md);
+  background: var(--veil);
+}
+.cal-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.5);
+}
+.cal-dot[data-on="true"] {
+  background: #ffffff;
+}
+.cal-count {
+  padding: 0.1rem 0.5rem;
+  border-radius: var(--radius-md);
+  background: var(--veil);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.cal-error {
+  position: absolute;
+  inset: auto 0.4rem 0.4rem 0.4rem;
+  z-index: 5;
+  margin: 0;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--danger);
+  border-radius: var(--radius-md);
+  background: var(--panel);
+  color: var(--danger);
+  font-size: 0.75rem;
+}
+.cal-retry {
+  min-height: 24px;
+  color: var(--link);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* 格下的活動 */
+.cal-events {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.cal-events .ev {
+  padding: 0.25rem 0.4rem;
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+  box-shadow: var(--shadow-1);
+}
+
+/* 窄螢幕（< 640px）：逐日清單。封面在左、資訊在右（用面板底色，不靠遮罩），箭頭永遠可見 */
+@media (max-width: 639px) {
+  .cal-cell {
+    --cal-fg: var(--foreground);
+    --cal-chip-bg: var(--surface-strong);
+    --cal-chip-fg: var(--foreground);
+    --cal-chip-bd: var(--border);
+  }
+  .cal-box {
+    aspect-ratio: auto;
+    height: 10.5rem;
+  }
+  .cal-link {
+    background: var(--panel);
+  }
+  .cal-cover {
+    width: 6.25rem;
+    right: auto;
+  }
+  .cal-scrim {
+    display: none;
+  }
+  .cal-info {
+    inset: 0 0 0 6.25rem;
+    justify-content: center;
+    padding: 2.1rem 0.75rem 3.2rem;
+  }
+  .cal-cell:not([data-count="0"]):not([data-count="1"]) .cal-info {
+    padding-right: 3.4rem;
+  }
+  .cal-name {
+    text-shadow: none;
+  }
+  .cal-heat {
+    color: var(--warn);
+  }
+  .cal-pos {
+    left: 6.25rem;
+    justify-content: flex-start;
+    padding-left: 0.75rem;
+    bottom: 0.9rem;
+  }
+  /* 追蹤按鈕（accounts）：窄螢幕 44px 觸控目標，放在右下角 */
+  .cal-box > .card-action {
+    top: auto;
+    bottom: 0.4rem;
+    right: 0.4rem;
+  }
+  .cal-cell .cal-box > .card-action .card-follow {
+    min-height: 44px;
+    padding: 0 0.75rem;
+    font-size: 0.8125rem;
+  }
+  .cal-daynum {
+    top: 0.5rem;
+    left: 6.75rem;
+    background: transparent;
+    color: var(--foreground);
+    backdrop-filter: none;
+    padding: 0;
+  }
+  .cal-cell:not(.has-card) .cal-daynum {
+    left: 0.5rem;
+  }
+  .cal-daynum-wd {
+    display: inline;
+    font-weight: 500;
+    color: var(--muted);
+  }
+  .cal-dots,
+  .cal-count {
+    background: var(--surface-strong);
+    color: var(--foreground);
+  }
+  .cal-dot {
+    background: var(--border);
+  }
+  .cal-dot[data-on="true"] {
+    background: var(--link);
+  }
+  .cal-nav-prev {
+    left: 0.25rem;
+  }
+  /* 箭頭在封面與資訊之間的兩側；窄螢幕資訊區右側已預留位置 */
+  .cal-box {
+    border-radius: var(--radius-lg);
+  }
+}
+
+/* 動態（只在沒有「減少動態」偏好時存在；有偏好時格內直接換，沒有位移與縮放） */
+@media (prefers-reduced-motion: no-preference) {
+  .cal-box {
+    transition:
+      transform var(--dur-2) var(--ease-out),
+      box-shadow var(--dur-2) var(--ease-out);
+  }
+  .cal-cover {
+    transition: transform var(--dur-3) var(--ease-out);
+  }
+  .cal-dot {
+    transition:
+      transform var(--dur-2) var(--ease-spring),
+      background-color var(--dur-1) ease;
+  }
+  .cal-dot[data-on="true"] {
+    transform: scale(1.4);
+  }
+  .cal-nav {
+    transition:
+      opacity var(--dur-2) ease,
+      transform var(--dur-1) var(--ease-out),
+      background-color var(--dur-1) ease;
+  }
+  .cal-nav:active {
+    transform: scale(0.92);
+  }
+  .cal-viewport {
+    transition: opacity var(--dur-1) ease;
+  }
+  @media (hover: hover) {
+    .cal-cell.has-card:hover .cal-box,
+    .cal-cell.has-card:focus-within .cal-box {
+      transform: translateY(-4px) scale(1.015);
+      box-shadow: var(--shadow-3);
+    }
+    .cal-cell.has-card:hover .cal-cover {
+      transform: scale(1.06);
+    }
+  }
+  /* 切換：新的一款從切換方向滑入 */
+  .cal-link[data-dir="next"] {
+    animation: cal-in-next var(--dur-2) var(--ease-out) both;
+  }
+  .cal-link[data-dir="prev"] {
+    animation: cal-in-prev var(--dur-2) var(--ease-out) both;
+  }
+  @keyframes cal-in-next {
+    from {
+      transform: translateX(28%);
+      opacity: 0;
+    }
+  }
+  @keyframes cal-in-prev {
+    from {
+      transform: translateX(-28%);
+      opacity: 0;
+    }
+  }
+
+  /* 換月（跨文件 View Transition，Chromium／Safari；其他瀏覽器直接換頁）：整頁短淡入，月曆本體淡出再由下往上浮入 */
+  @view-transition {
+    navigation: auto;
+  }
+  .cal-wrap {
+    view-transition-name: cal-grid;
+  }
+  ::view-transition-group(root) {
+    animation-duration: var(--dur-2);
+  }
+  ::view-transition-old(cal-grid) {
+    animation: vt-out 160ms ease both;
+  }
+  ::view-transition-new(cal-grid) {
+    animation: vt-in var(--dur-3) var(--ease-out) both;
+  }
+  @keyframes vt-out {
+    to {
+      opacity: 0;
+      transform: scale(0.985);
+    }
+  }
+  @keyframes vt-in {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+  }
+}
+
+/* 月曆以外仍在使用的卡片（時間軸、本月未定日） */
 .cell-list,
 .fold-list,
-.agenda-list,
 .undated-tiles {
   list-style: none;
   margin: 0;
   padding: 0;
-}
-.cell-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  margin-top: 0.25rem;
 }
 
 .card {
@@ -225,10 +872,11 @@ body:lang(ja) {
   gap: 0.375rem;
   min-height: 24px;
   padding: 0.25rem;
-  border-radius: 0.375rem;
+  border-radius: var(--radius-md);
   font-size: 0.8125rem;
   line-height: 1.2;
   color: var(--foreground);
+  transition: background-color var(--dur-1) ease;
 }
 .card:hover {
   background: var(--surface);
@@ -241,19 +889,30 @@ body:lang(ja) {
   display: block;
   padding: 0 0.25rem 0.25rem;
 }
-/* 卡片上的追蹤按鈕：月曆格內很窄所以小（24px 以上）；議程、未定日、時間軸卡片維持 44px */
+/* 卡片上的追蹤按鈕：小（28px）；時間軸、本月未定日維持 44px */
 .card-follow {
   min-height: 28px;
   padding: 0 0.5rem;
   gap: 0.25rem;
   font-size: 0.75rem;
 }
-.agenda-list .card-follow,
 .undated-tiles .card-follow,
-.tl-card .card-follow {
+.tw-card .card-follow {
   min-height: 44px;
   padding: 0 0.75rem;
   font-size: 0.8125rem;
+}
+/* 月曆格內的追蹤按鈕：浮在封面右上角（玻璃底，24px 以上的觸控目標） */
+.cal-box > .card-action {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  z-index: 4;
+  padding: 0;
+}
+.cal-box > .card-action .card-follow {
+  min-height: 28px;
+  box-shadow: var(--shadow-2);
 }
 .filter-links {
   margin: 0;
@@ -263,16 +922,11 @@ body:lang(ja) {
   height: 40px;
   flex: none;
   object-fit: cover;
-  border-radius: 0.25rem;
+  border-radius: var(--radius-sm);
 }
 .card-thumb-empty {
   display: inline-block;
   background: var(--surface-strong);
-}
-@media (max-width: 1023px) {
-  .cal-grid .card-thumb {
-    display: none;
-  }
 }
 .card-body {
   display: flex;
@@ -305,27 +959,6 @@ body:lang(ja) {
   color: var(--warn);
 }
 
-.cell-more,
-.agenda-more {
-  margin-top: 0.25rem;
-  font-size: 0.8125rem;
-}
-.cell-more > summary,
-.agenda-more > summary {
-  display: inline-flex;
-  align-items: center;
-  min-height: 24px;
-  padding: 0 0.25rem;
-  color: var(--link);
-  text-decoration: underline;
-  cursor: pointer;
-}
-.agenda-more > summary {
-  min-height: 44px;
-}
-.fold-list > li {
-  padding-block: 1px;
-}
 .fc {
   display: block;
   min-height: 24px;
@@ -340,6 +973,9 @@ body:lang(ja) {
 .fc-p {
   color: var(--muted);
   font-size: 0.75rem;
+}
+.fold-list > li {
+  padding-block: 1px;
 }
 .fold-columns {
   columns: 1;
@@ -361,6 +997,14 @@ body:lang(ja) {
   border-left: 3px solid var(--link);
   font-size: 0.8125rem;
 }
+/* 活動圖示（星形）用 CSS mask：月曆每個活動不各帶一份 SVG 標記 */
+.ev-ico {
+  width: 1em;
+  height: 1em;
+  flex: none;
+  background: currentColor;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='m8 1 2.1 4.3 4.7.7-3.4 3.3.8 4.7L8 11.8 3.8 14l.8-4.7L1.2 6l4.7-.7L8 1Z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
 .ev-tag {
   display: inline-flex;
   align-items: center;
@@ -372,35 +1016,15 @@ body:lang(ja) {
   font-weight: 600;
 }
 
-.agenda {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-.agenda-date {
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.375rem;
-  background: var(--surface);
-  font-weight: 700;
-}
-.agenda-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  margin-top: 0.25rem;
-}
-.agenda-list .card {
-  font-size: 0.9375rem;
-  min-height: 44px;
-}
-
 .undated {
   margin-top: 2rem;
 }
 .undated-group {
   margin-top: 0.75rem;
   border: 1px solid var(--border);
-  border-radius: 0.5rem;
+  border-radius: var(--radius-lg);
+  background: var(--panel);
+  box-shadow: var(--shadow-1);
   padding: 0 0.75rem;
 }
 .undated-group > summary {
@@ -426,7 +1050,9 @@ body:lang(ja) {
 
 .empty-result {
   border: 1px solid var(--border);
-  border-radius: 0.5rem;
+  border-radius: var(--radius-lg);
+  background: var(--panel);
+  box-shadow: var(--shadow-1);
   padding: 1rem;
   margin-block: 1rem;
 }
@@ -443,21 +1069,40 @@ body:lang(ja) {
   min-height: 36px;
   padding: 0 0.75rem;
   border: 1px solid var(--border);
-  border-radius: 9999px;
-  background: var(--surface);
+  border-radius: var(--radius-md);
+  background: var(--panel);
+  box-shadow: var(--shadow-1);
+  transition:
+    border-color var(--dur-1) ease,
+    box-shadow var(--dur-2) var(--ease-out);
 }
 .filter-chip:hover {
   text-decoration: underline;
+  border-color: var(--link);
+  box-shadow: var(--shadow-2);
 }
 .filter-panel > summary {
   display: inline-flex;
   align-items: center;
+  gap: 0.4rem;
   min-height: 44px;
   padding: 0 1rem;
   border: 1px solid var(--border);
-  border-radius: 0.375rem;
+  border-radius: var(--radius-md);
+  background: var(--panel);
+  box-shadow: var(--shadow-1);
   font-weight: 600;
   cursor: pointer;
+  transition:
+    border-color var(--dur-1) ease,
+    box-shadow var(--dur-2) var(--ease-out);
+}
+.filter-panel > summary:hover {
+  border-color: var(--link);
+  box-shadow: var(--shadow-2);
+}
+.filter-panel[open] > summary {
+  border-color: var(--link);
 }
 .filter-form {
   display: flex;
@@ -465,8 +1110,16 @@ body:lang(ja) {
   gap: 1rem;
   margin-top: 0.75rem;
   padding: 1rem;
-  border: 1px solid var(--border);
-  border-radius: 0.5rem;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  background: var(--glass);
+  box-shadow: var(--shadow-2);
+  backdrop-filter: var(--glass-blur);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .filter-form {
+    background: var(--panel);
+  }
 }
 .filter-form fieldset {
   border: 0;
@@ -499,15 +1152,60 @@ body:lang(ja) {
   align-items: center;
   gap: 0.5rem;
   min-height: 36px;
+  padding-inline: 0.25rem;
+  border-radius: var(--radius-sm);
   cursor: pointer;
+  transition: background-color var(--dur-1) ease;
+}
+.check:hover {
+  background: var(--surface);
 }
 .check input {
   width: 1.125rem;
   height: 1.125rem;
   flex: none;
+  accent-color: var(--link);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .filter-panel[open] > .filter-form {
+    animation: rise-in var(--dur-2) var(--ease-out) both;
+  }
+  .check input {
+    transition: transform var(--dur-1) var(--ease-spring);
+  }
+  .check input:active {
+    transform: scale(0.82);
+  }
+  .btn-primary,
+  .btn-secondary {
+    transition:
+      background-color var(--dur-1) ease,
+      border-color var(--dur-1) ease,
+      box-shadow var(--dur-2) var(--ease-out),
+      transform var(--dur-1) var(--ease-out);
+  }
+  @media (hover: hover) {
+    .btn-primary:hover:not(:disabled),
+    .btn-secondary:hover:not(:disabled) {
+      transform: translateY(-1px);
+    }
+    .filter-chip:hover {
+      transform: translateY(-1px);
+    }
+  }
+  .btn-primary:active:not(:disabled),
+  .btn-secondary:active:not(:disabled) {
+    transform: translateY(0) scale(0.98);
+  }
+  @keyframes rise-in {
+    from {
+      opacity: 0;
+      transform: translateY(-6px);
+    }
+  }
 }
 
-/* ── 預覽卡（側邊 <dialog>） ───────────────────────────── */
+/* ── 預覽卡（側邊 <dialog>）：玻璃浮層 ──────────────────── */
 .side-sheet {
   position: fixed;
   inset: 0 0 0 auto;
@@ -518,15 +1216,20 @@ body:lang(ja) {
   max-height: 100dvh;
   padding: 0;
   border: 0;
-  border-left: 1px solid var(--border);
-  background: var(--background);
+  border-left: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+  background: var(--panel);
   color: var(--foreground);
-}
-.side-sheet[open] {
-  animation: sheet-in 160ms ease-out;
+  box-shadow: var(--shadow-3);
 }
 .side-sheet::backdrop {
   background: rgb(0 0 0 / 0.45);
+  backdrop-filter: blur(3px);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .side-sheet[open] {
+    animation: sheet-in 200ms var(--ease-out);
+  }
 }
 @keyframes sheet-in {
   from {
@@ -539,12 +1242,19 @@ body:lang(ja) {
   overflow-y: auto;
   padding: 1rem;
 }
+.sheet-cover {
+  width: 10rem;
+  height: auto;
+  margin-top: 0.75rem;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-2);
+}
 .sheet-entry {
   display: block;
   width: 100%;
   min-height: 44px;
   padding: 0.5rem;
-  border-radius: 0.375rem;
+  border-radius: var(--radius-md);
   text-align: left;
   cursor: pointer;
 }
@@ -571,7 +1281,8 @@ button.sheet-entry:hover {
 .detail-cover {
   width: 11rem;
   height: auto;
-  border-radius: 0.5rem;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-3);
 }
 @media (min-width: 768px) {
   .detail-cover {
@@ -612,17 +1323,23 @@ button.sheet-entry:hover {
   min-height: 44px;
   padding: 0.5rem;
   border: 1px solid var(--border);
-  border-radius: 0.5rem;
+  border-radius: var(--radius-lg);
+  background: var(--panel);
+  box-shadow: var(--shadow-1);
+  transition:
+    box-shadow var(--dur-2) var(--ease-out),
+    border-color var(--dur-1) ease;
 }
 .summary-card:hover {
-  background: var(--surface);
+  border-color: var(--link);
+  box-shadow: var(--shadow-2);
 }
 .summary-thumb {
   width: 45px;
   height: 64px;
   flex: none;
   object-fit: cover;
-  border-radius: 0.25rem;
+  border-radius: var(--radius-sm);
 }
 .ext-link {
   display: inline-flex;
@@ -631,97 +1348,816 @@ button.sheet-entry:hover {
   min-height: 44px;
   padding: 0 0.75rem;
   border: 1px solid var(--border);
-  border-radius: 0.375rem;
+  border-radius: var(--radius-md);
+  background: var(--panel);
+  box-shadow: var(--shadow-1);
   color: var(--link);
+  transition: box-shadow var(--dur-2) var(--ease-out);
 }
 .ext-link:hover {
   text-decoration: underline;
+  box-shadow: var(--shadow-2);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .summary-card,
+  .ext-link {
+    transition:
+      box-shadow var(--dur-2) var(--ease-out),
+      border-color var(--dur-1) ease,
+      transform var(--dur-1) var(--ease-out);
+  }
+  @media (hover: hover) {
+    .summary-card:hover,
+    .ext-link:hover {
+      transform: translateY(-2px);
+    }
+  }
 }
 
-/* 時間軸（I：ui/timeline）。前綴 tl-。 */
-.tl-month {
-  margin-top: 1.5rem;
-}
-.tl-month > h2 {
-  padding-bottom: 0.25rem;
-  border-bottom: 2px solid var(--border);
-  font-size: 1.25rem;
-  font-weight: 700;
-}
-.tl-group {
+/* ── 時間軸（週）：垂直中軸，封面卡片左右交錯（窄螢幕：中軸靠左、卡片都在右側）。前綴 tw- ───────── */
+.tw {
   margin-top: 1rem;
 }
-.tl-group > h3 {
-  font-size: 1rem;
-  font-weight: 600;
+.tw-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  background: var(--glass);
+  box-shadow: var(--shadow-2);
+  backdrop-filter: var(--glass-blur);
 }
-.tl-cards {
-  display: grid;
-  grid-template-columns: 1fr;
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .tw-nav {
+    background: var(--panel);
+  }
+}
+@media (min-width: 1024px) {
+  /* 週切換列固定在 header 下方：捲動時仍能切週 */
+  .tw-nav {
+    position: sticky;
+    top: 4.25rem;
+    z-index: 20;
+  }
+}
+.tw-nav .btn-secondary {
+  min-height: 44px;
+}
+.tw-range {
+  margin: 0;
+  min-width: 11rem;
+  text-align: center;
+  font-size: 1.125rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.tw-jump {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin-top: 0.75rem;
+}
+.tw-date {
+  min-height: 44px;
+  padding: 0 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--panel);
+  color: var(--foreground);
+  box-shadow: var(--shadow-1);
+}
+.tw-hint {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+.tw-kinds ul {
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
-  margin: 0.5rem 0 0;
+  margin: 0;
   padding: 0;
   list-style: none;
 }
-@media (min-width: 768px) {
-  .tl-cards {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+.tw-kind {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--panel);
+  box-shadow: var(--shadow-1);
+  font-weight: 600;
+  transition:
+    background-color var(--dur-1) ease,
+    border-color var(--dur-1) ease,
+    box-shadow var(--dur-2) var(--ease-out);
 }
-@media (min-width: 1280px) {
-  .tl-cards {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
+.tw-kind:hover {
+  border-color: var(--link);
+  box-shadow: var(--shadow-2);
 }
-.tl-card {
+.tw-kind[aria-current="true"] {
+  border-color: var(--link);
+  background: var(--link);
+  color: var(--on-link);
+}
+
+/* 中軸 */
+.tw-stage {
+  margin-top: 1.25rem;
+}
+.tw-axis {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  border: 1px solid var(--border);
-  border-radius: 0.5rem;
-  padding: 0.25rem;
+  gap: 1.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
-.tl-card .card {
-  min-height: 44px;
-  font-size: 0.875rem;
+.tw-axis::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 calc(2.25rem - 1.5px);
+  width: 3px;
+  border-radius: 2px;
+  background: linear-gradient(to bottom, var(--link), var(--accent-2));
+  opacity: 0.55;
 }
-.tl-card .card-thumb {
-  width: 45px;
-  height: 64px;
+.tw-day {
+  position: relative;
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 1fr);
+  column-gap: 1rem;
+  align-items: start;
 }
-.tl-today {
+/* 日期節點：坐在中軸上的小方塊（日＋星期） */
+.tw-node {
+  grid-column: 1;
+  grid-row: 1;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-self: center;
+  width: 3.5rem;
+  margin: 0.25rem 0 0;
+  padding: 0.35rem 0.25rem;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  background: var(--panel);
+  box-shadow: var(--shadow-2), 0 0 0 4px color-mix(in srgb, var(--link) 18%, transparent);
+  font-weight: 700;
+  line-height: 1.1;
+}
+.tw-node-n {
+  font-size: 1.25rem;
+  font-variant-numeric: tabular-nums;
+}
+.tw-node-wd {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* 今天線 */
+.tw-today {
+  position: relative;
+  z-index: 2;
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  margin: 1rem 0;
   color: var(--link);
   font-weight: 700;
-  scroll-margin-top: 1rem;
 }
-.tl-today::before,
-.tl-today::after {
+.tw-today::before,
+.tw-today::after {
   content: "";
   flex: 1;
   border-top: 2px solid var(--link);
 }
-.tl-history {
-  margin: 0 0 0 1.25rem;
-  padding: 0;
-  font-size: 0.8125rem;
-  color: var(--muted);
+.tw-today > span {
+  padding: 0.15rem 0.6rem;
+  border-radius: var(--radius-md);
+  background: var(--background);
 }
-.tl-toggle {
-  align-self: flex-start;
-  min-height: 44px;
-  padding: 0 0.5rem;
-  color: var(--link);
+
+/* 封面卡片 */
+.tw-card {
+  --cal-chip-bg: var(--surface-strong);
+  --cal-chip-fg: var(--foreground);
+  --cal-chip-bd: var(--border);
+  position: relative;
+  grid-column: 2;
+  grid-row: 1;
+  width: 100%;
+  max-width: 30rem;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  background: var(--panel);
+  box-shadow: var(--shadow-2);
+}
+.tw-card:focus-visible {
+  outline-offset: 3px;
+}
+/* 橫線：卡片連到日期節點 */
+.tw-card::before {
+  content: "";
+  position: absolute;
+  top: 1.75rem;
+  right: 100%;
+  width: 1.625rem;
+  border-top: 2px solid color-mix(in srgb, var(--link) 60%, transparent);
+}
+.tw-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0.25rem 0.5rem 0.25rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--link) 16%, var(--panel)), var(--panel));
+  font-weight: 700;
+}
+.tw-count {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+.tw-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.tw-step {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--panel);
+  color: var(--foreground);
+  cursor: pointer;
+  transition:
+    background-color var(--dur-1) ease,
+    border-color var(--dur-1) ease;
+}
+.tw-step:hover:not(:disabled) {
+  border-color: var(--link);
+  background: var(--surface);
+}
+.tw-step:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}
+@media (pointer: coarse) {
+  .tw-step {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+}
+.tw-dots {
+  display: inline-flex;
+  gap: 5px;
+  padding: 0 0.25rem;
+}
+.tw-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--border);
+}
+.tw-dot[data-on="true"] {
+  background: var(--link);
+}
+.tw-poscount {
+  padding: 0 0.25rem;
+  color: var(--muted);
   font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+.tw-viewport {
+  position: relative;
+  overflow: hidden;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  touch-action: pan-y;
+}
+.tw-viewport[aria-busy="true"] {
+  opacity: 0.7;
+  cursor: progress;
+}
+.tw-link {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  color: var(--foreground);
+  text-decoration: none;
+}
+.tw-cover {
+  flex: none;
+  width: 6.5rem;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  background: var(--surface-strong);
+  box-shadow: var(--shadow-2);
+  color: transparent;
+}
+.tw-cover-empty {
+  background: linear-gradient(150deg, #243b6b, #1b1f3a);
+}
+.tw-info {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+.tw-name {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+.tw-link:hover .tw-name {
   text-decoration: underline;
 }
-.tl-more {
+.tw-chips,
+.tw-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3px;
+}
+.tw-card .cal-heat {
+  color: var(--warn);
+}
+.tw-card .cal-tag {
+  border: 1px solid color-mix(in srgb, #0f172a 18%, transparent);
+}
+.tw-error {
+  margin: 0;
+  padding: 0.4rem 0.75rem;
+  border-top: 1px solid var(--danger);
+  color: var(--danger);
+  font-size: 0.8125rem;
+}
+/* 卡片動作（追蹤按鈕）：放在封面卡片的右下角 */
+.tw-viewport > .card-action:not(:empty) {
+  position: absolute;
+  right: 0.5rem;
+  bottom: 0.5rem;
+  z-index: 3;
+  padding: 0;
+}
+.tw-viewport > .card-action .card-follow {
+  box-shadow: var(--shadow-2);
+}
+
+/* 寬螢幕：卡片左右交錯，中軸置中 */
+@media (min-width: 640px) {
+  .tw-axis::before {
+    inset: 0 auto 0 calc(50% - 1.5px);
+  }
+  .tw-day {
+    grid-template-columns: minmax(0, 1fr) 5rem minmax(0, 1fr);
+    column-gap: 0;
+  }
+  .tw-node {
+    grid-column: 2;
+  }
+  .tw-day[data-side="left"] .tw-card {
+    grid-column: 1;
+    justify-self: end;
+    margin-right: 1.25rem;
+  }
+  .tw-day[data-side="left"] .tw-card::before {
+    right: auto;
+    left: 100%;
+    width: 2rem;
+  }
+  .tw-day[data-side="right"] .tw-card {
+    grid-column: 3;
+    justify-self: start;
+    margin-left: 1.25rem;
+  }
+  .tw-day[data-side="right"] .tw-card::before {
+    right: 100%;
+    left: auto;
+    width: 2rem;
+  }
+}
+@media (max-width: 639px) {
+  .tw-cover {
+    width: 5.5rem;
+  }
+  .tw-range {
+    flex: 1 1 100%;
+    order: -1;
+    min-width: 0;
+  }
+}
+
+/* 動態：切週時整段由上／下滑入（依方向），日期由上到下錯開進場；卡片懸停浮起 */
+@media (prefers-reduced-motion: no-preference) {
+  .tw-stage[data-dir] {
+    animation: tw-stage-down var(--dur-2) var(--ease-out) both;
+  }
+  .tw-stage[data-dir="prev"] {
+    animation-name: tw-stage-up;
+  }
+  .tw-stage[data-dir] .tw-day,
+  .tw-stage[data-dir] .tw-today {
+    animation: tw-day-in var(--dur-2) var(--ease-out) both;
+  }
+  .tw-stage[data-dir] > .tw-axis > :nth-child(2) {
+    animation-delay: 15ms;
+  }
+  .tw-stage[data-dir] > .tw-axis > :nth-child(3) {
+    animation-delay: 30ms;
+  }
+  .tw-stage[data-dir] > .tw-axis > :nth-child(4) {
+    animation-delay: 45ms;
+  }
+  .tw-stage[data-dir] > .tw-axis > :nth-child(5) {
+    animation-delay: 60ms;
+  }
+  .tw-stage[data-dir] > .tw-axis > :nth-child(n + 6) {
+    animation-delay: 75ms;
+  }
+  .tw[data-busy="true"] .tw-stage {
+    opacity: 0.5;
+    transition: opacity var(--dur-2) ease;
+  }
+  .tw-card {
+    transition:
+      transform var(--dur-2) var(--ease-out),
+      box-shadow var(--dur-2) var(--ease-out);
+  }
+  .tw-cover {
+    transition: transform var(--dur-3) var(--ease-out);
+  }
+  .tw-dot {
+    transition:
+      transform var(--dur-2) var(--ease-spring),
+      background-color var(--dur-1) ease;
+  }
+  .tw-dot[data-on="true"] {
+    transform: scale(1.4);
+  }
+  .tw-step:active:not(:disabled) {
+    transform: scale(0.92);
+  }
+  .tw-link[data-dir="next"] {
+    animation: cal-in-next var(--dur-2) var(--ease-out) both;
+  }
+  .tw-link[data-dir="prev"] {
+    animation: cal-in-prev var(--dur-2) var(--ease-out) both;
+  }
+  @media (hover: hover) {
+    .tw-card:hover,
+    .tw-card:focus-within {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-3);
+    }
+    .tw-link:hover .tw-cover {
+      transform: scale(1.04);
+    }
+  }
+  @keyframes tw-stage-down {
+    from {
+      transform: translateY(20px);
+    }
+  }
+  @keyframes tw-stage-up {
+    from {
+      transform: translateY(-20px);
+    }
+  }
+  @keyframes tw-day-in {
+    from {
+      opacity: 0;
+    }
+  }
+}
+
+/* ── header 收合式選單（< 768px）。沒有 JS 時面板一律展開；水合後 data-collapsible 才收合 ───────── */
+.hm-root {
+  display: contents;
+}
+.hm-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  margin-left: auto;
+  padding: 0 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--panel);
+  box-shadow: var(--shadow-1);
+  font-weight: 600;
+  cursor: pointer;
+}
+.hm-toggle[hidden] {
+  display: none;
+}
+.hm-toggle[aria-expanded="true"] {
+  border-color: var(--link);
+}
+/* 三條線：展開時變成叉（CSS 畫，不另帶 SVG） */
+.hm-icon {
+  position: relative;
+  width: 1.125rem;
+  height: 2px;
+  background: currentColor;
+  border-radius: 1px;
+  transition: background-color var(--dur-1) ease;
+}
+.hm-icon::before,
+.hm-icon::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: currentColor;
+  border-radius: 1px;
+}
+.hm-icon::before {
+  top: -6px;
+}
+.hm-icon::after {
+  top: 6px;
+}
+.hm-icon[data-open="true"] {
+  background: transparent;
+}
+.hm-icon[data-open="true"]::before {
+  top: 0;
+  transform: rotate(45deg);
+}
+.hm-icon[data-open="true"]::after {
+  top: 0;
+  transform: rotate(-45deg);
+}
+.hm-panel {
+  display: grid;
+  grid-template-rows: 1fr;
+  flex-basis: 100%;
+}
+.hm-inner {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
   gap: 0.5rem;
-  margin-top: 1rem;
+  min-height: 0;
+  overflow: hidden;
+}
+/* 收合：高度 0、不可見（visibility 延遲到動畫結束，讓 Tab 與讀屏跳過） */
+.hm-panel[data-collapsible="true"]:not([data-open="true"]) {
+  grid-template-rows: 0fr;
+  visibility: hidden;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .hm-panel[data-collapsible="true"] {
+    transition:
+      grid-template-rows var(--dur-2) var(--ease-out),
+      visibility 0s linear var(--dur-2);
+  }
+  .hm-panel[data-collapsible="true"][data-open="true"] {
+    transition:
+      grid-template-rows var(--dur-2) var(--ease-out),
+      visibility 0s;
+  }
+  .hm-icon,
+  .hm-icon::before,
+  .hm-icon::after {
+    transition:
+      transform var(--dur-2) var(--ease-out),
+      top var(--dur-2) var(--ease-out),
+      background-color var(--dur-1) ease;
+  }
+}
+@media (max-width: 767px) {
+  /* 展開後導覽改為直向清單、語言與登入各占一列 */
+  .hm-inner nav > ul {
+    flex-direction: column;
+    gap: 0;
+  }
+  .hm-inner nav > ul a {
+    width: 100%;
+  }
+  .hm-inner {
+    align-items: stretch;
+    padding-block: 0.25rem;
+  }
+  .hm-inner > :not(nav) {
+    align-self: flex-start;
+  }
+}
+@media (min-width: 768px) {
+  .hm-toggle {
+    display: none;
+  }
+  .hm-panel,
+  .hm-inner {
+    display: contents;
+  }
+  .hm-panel[data-collapsible="true"]:not([data-open="true"]) {
+    visibility: visible;
+  }
+}
+
+/* ── 全站套用視覺與動態（只改樣式；動態全在 prefers-reduced-motion: no-preference） ────────────────── */
+/* 區塊標題：左側漸層色條 */
+[data-home-section] > div > h2::before,
+.detail-section > h2::before {
+  content: "";
+  display: inline-block;
+  width: 4px;
+  height: 1em;
+  margin-right: 0.55rem;
+  border-radius: 2px;
+  background: linear-gradient(to bottom, var(--link), var(--accent-2));
+  vertical-align: -0.14em;
+}
+
+/* 首頁：封面為主角 */
+[data-home-game] img,
+[data-home-game] .card-thumb-empty {
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-2);
+}
+[data-home-game] > a,
+[data-home-event] > a {
+  border-radius: var(--radius-lg);
+}
+[data-home-event] > a {
+  background: var(--panel);
+  border-color: var(--glass-border);
+  box-shadow: var(--shadow-1);
+}
+#home-search {
+  background: var(--panel);
+  box-shadow: var(--shadow-1);
+  border-radius: var(--radius-md);
+}
+
+/* 列表卡片（瀏覽、平台、公司、系列、活動頁）：浮起的面板 */
+a.card {
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--panel);
+  box-shadow: var(--shadow-1);
+}
+a.card:hover {
+  border-color: var(--link);
+  box-shadow: var(--shadow-2);
+}
+
+/* 遊戲詳情：區塊是浮起的面板，封面是主角 */
+.detail-section {
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--panel);
+  box-shadow: var(--shadow-1);
+}
+.detail-head {
+  padding: 1.25rem;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  background: var(--glass);
+  box-shadow: var(--shadow-2);
+  backdrop-filter: var(--glass-blur);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .detail-head {
+    background: var(--panel);
+  }
+}
+.release-table tbody tr:hover {
+  background: var(--surface);
+}
+
+/* 帳號：摘要是玻璃面板；分頁指示線在分頁之間滑動 */
+[data-account-summary] {
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  background: var(--glass);
+  box-shadow: var(--shadow-2);
+  backdrop-filter: var(--glass-blur);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  [data-account-summary] {
+    background: var(--panel);
+  }
+}
+.account-tab-ind {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  border-radius: 2px 2px 0 0;
+  background: var(--link);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* 頁面進場：內容由下往上淡入（短、只動透明度與位移，不造成版面位移） */
+  main > *,
+  [data-account-panel] {
+    animation: page-rise 220ms var(--ease-out) backwards;
+  }
+  [data-home-section] {
+    animation: page-rise 220ms var(--ease-out) backwards;
+  }
+  [data-home-section]:nth-of-type(2) {
+    animation-delay: 20ms;
+  }
+  [data-home-section]:nth-of-type(3) {
+    animation-delay: 40ms;
+  }
+  [data-home-section]:nth-of-type(n + 4) {
+    animation-delay: 60ms;
+  }
+  @keyframes page-rise {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+  }
+
+  /* 卡片懸停浮起、封面放大 */
+  [data-home-game] > a,
+  [data-home-event] > a,
+  a.card,
+  .detail-cover {
+    transition:
+      transform var(--dur-2) var(--ease-out),
+      box-shadow var(--dur-2) var(--ease-out),
+      border-color var(--dur-1) ease;
+  }
+  [data-home-game] img {
+    transition:
+      transform var(--dur-3) var(--ease-out),
+      box-shadow var(--dur-2) var(--ease-out);
+  }
+  @media (hover: hover) {
+    [data-home-game] > a:hover,
+    [data-home-event] > a:hover,
+    a.card:hover {
+      transform: translateY(-4px);
+    }
+    [data-home-game] > a:hover img {
+      transform: scale(1.03);
+      box-shadow: var(--shadow-3);
+    }
+    [data-home-event] > a:hover {
+      box-shadow: var(--shadow-2);
+    }
+    .detail-cover:hover {
+      transform: scale(1.02);
+    }
+  }
+
+  /* 追蹤／加入清單切換：開啟時圖示彈一下 */
+  [data-follow-button="on"] svg,
+  .card-follow[aria-pressed="true"] svg {
+    animation: pop-in var(--dur-3) var(--ease-spring);
+  }
+  @keyframes pop-in {
+    from {
+      transform: scale(0.4);
+      opacity: 0.4;
+    }
+  }
+
+  /* 帳號分頁指示線滑動 */
+  .account-tab-ind {
+    transition:
+      transform var(--dur-3) var(--ease-out),
+      width var(--dur-3) var(--ease-out);
+  }
+  /* 篩選面板的 chip 與平台種類 */
+  .tw-kind:active,
+  .filter-chip:active {
+    transform: scale(0.97);
+  }
 }

@@ -22,5 +22,9 @@
   "externalLink": "（外部網站，另開新視窗）",
   "stageIcon": "上市階段",
   "statusIcon": "狀態",
-  "dayCellWithEvents": "{date}，{count} 款遊戲、{events} 場活動"
+  "dayCellWithEvents": "{date}，{count} 款遊戲、{events} 場活動",
+  "calendarPrevGame": "上一款，第 {index}／{total} 款",
+  "calendarNextGame": "下一款，第 {index}／{total} 款",
+  "calendarCurrentGame": "{name}，第 {index}／{total} 款",
+  "menu": "選單"
 }

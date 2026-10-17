@@ -1,7 +1,10 @@
 {
   "site": {
-    "name": "SoK 遊戲月曆",
+    "name": "遊戲圖鑑 GameDex",
     "tagline": "遊戲上市月曆與資料庫"
+  },
+  "org": {
+    "backTo": "回到 {name}"
   },
   "nav": {
     "calendar": "月曆",
@@ -62,10 +65,12 @@
     "dayListTitle": "{date} 的上市與活動",
     "backToList": "回到當天清單",
     "timeTbd": "時間未定",
-    "timesInUtc": "活動時間以 UTC 顯示",
+    "timesInUtc": "活動時間依你的時區顯示，下方小字為 UTC",
     "monthNavigation": "切換月份",
     "noItemsThisMonth": "這個月沒有上市或活動資料",
-    "undatedGroupTitle": "{group}：{label}"
+    "undatedGroupTitle": "{group}：{label}",
+    "dayLoadError": "無法載入當天的其他遊戲，請稍後再試。",
+    "dayRetry": "重試"
   },
   "game": {
     "sections": {
@@ -121,7 +126,7 @@
     "historyChange": "{from} → {to}",
     "historyChangedAt": "{date} 更新",
     "noReleaseDates": "尚無上市日資料",
-    "timesInUtc": "時間以 UTC 顯示",
+    "timesInUtc": "活動時間依你的時區顯示，下方小字為 UTC",
     "ageRating": "年齡分級：{label}",
     "historyEntry": "{change}（{date}）",
     "franchiseTitle": {
@@ -177,12 +182,19 @@
     "tbdSection": "日期未定",
     "jumpTo": "跳到日期",
     "jumpGo": "前往",
-    "jumpHint": "從選擇的日期開始往後列出；未選擇時從今天開始",
-    "empty": "這段期間沒有符合條件的上市資料",
+    "jumpHint": "跳到選擇日期所在的那一週；未選擇時回到本週",
+    "empty": "這一週沒有符合條件的上市遊戲",
     "backToToday": "回到今天",
     "startsFrom": "從 {date} 開始",
-    "description": "依上市日期由近到遠列出。日期未確定的遊戲放在所屬期間的頂端，完全未定的在最後。",
-    "timesInUtc": "日期以 UTC 計算"
+    "description": "以週為單位，每個發售日一張封面卡片。上下切換週，或跳到指定日期；日期只確定到月份、季度或年份的遊戲請到月曆查看。",
+    "timesInUtc": "日期以 UTC 計算",
+    "prevWeek": "上一週",
+    "nextWeek": "下一週",
+    "weekNavigation": "切換週",
+    "weekRange": "{from}～{to}",
+    "weekNavAria": "{label}：{range}",
+    "weekLoaded": "已載入 {range}，共 {count} 款上市",
+    "releasesCount": "{count} 款上市"
   },
   "trending": {
     "title": "熱門榜",
@@ -293,7 +305,7 @@
   },
   "events": {
     "title": "活動",
-    "timesInUtc": "活動時間以 UTC 顯示",
+    "timesInUtc": "活動時間依你的時區顯示，下方小字為 UTC",
     "scopeLabel": "時間範圍",
     "kindLabel": "活動類型",
     "scope": {
@@ -467,6 +479,35 @@
     "realtime": {
       "title": "想要即時通知？",
       "body": "行事曆訂閱不是即時的。之後我們會提供 Email 與 Discord 私訊通知，延期時第一時間告訴你。"
+    }
+  },
+  "home": {
+    "metaTitle": "遊戲圖鑑 GameDex：新作上市、活動與熱門遊戲一覽",
+    "metaDescription": "遊戲圖鑑 GameDex 整理即將上市與最新上市的遊戲、近期遊戲活動與熱門遊戲，並提供月曆、時間軸與資料庫。",
+    "searchLabel": "搜尋遊戲",
+    "searchPlaceholder": "輸入遊戲名稱",
+    "searchButton": "搜尋",
+    "more": "查看更多",
+    "moreAria": "查看更多：{section}",
+    "platformMore": "+{count}",
+    "upcoming": {
+      "title": "即將上市",
+      "hint": "今天起 {days} 天內上市，依日期由近到遠",
+      "empty": "目前沒有即將上市的遊戲。"
+    },
+    "recent": {
+      "title": "最新上市",
+      "hint": "過去 {days} 天內上市，由新到舊",
+      "empty": "最近沒有已上市的遊戲。"
+    },
+    "events": {
+      "title": "近期活動",
+      "hint": "即將舉行與進行中的活動",
+      "empty": "目前沒有即將舉行的活動。"
+    },
+    "trending": {
+      "title": "近期熱門",
+      "empty": "目前沒有熱門遊戲。"
     }
   }
 }

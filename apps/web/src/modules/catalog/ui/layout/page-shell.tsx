@@ -6,8 +6,11 @@ import type { ReactElement, ReactNode } from "react";
 import type { Locale } from "@sok/i18n";
 import { getTranslator } from "../labels";
 import { aboutHref, eventsHref, gamesBrowseHref, languageMenuLinks, localeHref, platformsHref, subscribeHref, type LocalPath } from "../links";
+import { HeaderMenu } from "./header-menu";
 import { HeaderRightOutlet } from "./header-right";
+import { FollowingLanguageMenu } from "./following-language-menu";
 import { LanguageMenu } from "./language-menu";
+import { orgLink } from "./org-link";
 
 export interface PageShellProps {
   locale: Locale;
@@ -16,14 +19,17 @@ export interface PageShellProps {
   path: LocalPath;
   /** 語言選單保留的 query（不含 ?）。 */
   query?: string;
+  /** true＝語言選單的連結跟著目前網址走（客戶端導覽切換子頁的版面用，例如帳號頁殼）。 */
+  followPathname?: boolean;
   /** header 右側 slot（02：`header.right`，accounts 的登入按鈕）；由根版面經 HeaderRightProvider 提供時不必傳（預設 <HeaderRightOutlet />）。 */
   headerRight?: ReactNode;
   children: ReactNode;
 }
 
-export function PageShell({ locale, supportedLocales, path, query = "", headerRight, children }: PageShellProps): ReactElement {
+export function PageShell({ locale, supportedLocales, path, query = "", followPathname = false, headerRight, children }: PageShellProps): ReactElement {
   const t = getTranslator(locale);
   const links = languageMenuLinks(locale, supportedLocales, path, query);
+  const org = orgLink();
   // 主要導覽（月曆、時間軸、熱門榜、遊戲、平台、活動）。aria-current 依路徑判斷：
   // /games 只在瀏覽頁本身為 current（遊戲詳情 /games/{slug} 不標），其餘依路徑前綴。
   const navItems = [
@@ -38,11 +44,17 @@ export function PageShell({ locale, supportedLocales, path, query = "", headerRi
     path === item.path || (!item.exact && path.startsWith(`${item.path}/`));
   return (
     <>
-      <header className="border-b border-[var(--border)]">
+      <header className="site-header">
         <div className="mx-auto flex max-w-screen-2xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-2">
-          <a href={localeHref(locale, "/calendar")} className="inline-flex min-h-11 items-center text-lg font-bold">
+          {org ? (
+            <a href={org.href} data-org-link="header" className="link-quiet inline-flex min-h-11 items-center text-sm text-[var(--muted)]">
+              {t.t("ui.org.backTo", { name: org.name })}
+            </a>
+          ) : null}
+          <a href={localeHref(locale, "/")} className="inline-flex min-h-11 items-center text-lg font-bold" data-site-brand="">
             {t.t("ui.site.name")}
           </a>
+          <HeaderMenu label={t.t("a11y.menu")}>
           <nav aria-label={t.t("a11y.mainNavigation")} className="flex-1">
             <ul className="flex flex-wrap gap-2">
               {navItems.map((item) => (
@@ -58,8 +70,9 @@ export function PageShell({ locale, supportedLocales, path, query = "", headerRi
               ))}
             </ul>
           </nav>
-          <LanguageMenu items={links} label={t.t("a11y.languageMenu")} />
+          {followPathname ? <FollowingLanguageMenu items={links} label={t.t("a11y.languageMenu")} /> : <LanguageMenu items={links} label={t.t("a11y.languageMenu")} />}
           {headerRight ?? <HeaderRightOutlet />}
+          </HeaderMenu>
         </div>
       </header>
       <main id="main" tabIndex={-1} className="mx-auto w-full max-w-screen-2xl flex-1 px-4 py-4 outline-none">
@@ -71,6 +84,7 @@ export function PageShell({ locale, supportedLocales, path, query = "", headerRi
 
 export function SiteFooter({ locale }: { locale: Locale }): ReactElement {
   const t = getTranslator(locale);
+  const org = orgLink();
   return (
     <footer className="border-t border-[var(--border)] px-4 py-4 text-sm text-[var(--muted)]">
       <div className="mx-auto flex max-w-screen-2xl flex-wrap items-center gap-x-6 gap-y-1">
@@ -84,6 +98,13 @@ export function SiteFooter({ locale }: { locale: Locale }): ReactElement {
             {t.t("ui.subscribe.footerLink")}
           </a>
         </p>
+        {org ? (
+          <p>
+            <a href={org.href} data-org-link="footer" className="inline-flex min-h-11 items-center underline">
+              {t.t("ui.org.backTo", { name: org.name })}
+            </a>
+          </p>
+        ) : null}
         <nav aria-label={t.t("about.nav.label")}>
           <ul className="flex flex-wrap gap-x-6">
             {(["data-sources", "privacy", "terms", "contact"] as const).map((page) => (

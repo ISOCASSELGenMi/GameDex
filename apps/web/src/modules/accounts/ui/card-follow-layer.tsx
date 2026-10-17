@@ -5,7 +5,7 @@
  * - 掛載後取 session：已登入才一次批次查詢畫面上所有遊戲的追蹤狀態（`me/follows/state`，每批最多 FOLLOW_STATE_TARGETS_MAX 個，
  *   重複的遊戲只查一次；時間軸載入更多時只查新出現的），不是每張卡片各打一次 API。未登入也顯示按鈕，按下導到登入頁。
  * - 按鈕用 portal 放進掛載點；同一款遊戲出現在多處（月曆格＋議程）共用同一個狀態。
- * - 月曆格（ARIA grid）內的按鈕與格內連結一樣不進 Tab 順序（roving tabindex）；鍵盤使用者從日期格 Enter 的清單進詳情頁追蹤。
+ * - 月曆格（role=group，款數 > 1 時是 Tab 停駐點）內的按鈕：Tab 進格之前不進 Tab 順序（格上 data-engaged="false"），Tab 進格後才進（DayCell 同步維護）。
  */
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from "react";
 import { createPortal } from "react-dom";
@@ -25,8 +25,6 @@ interface Host {
   key: number;
   gameId: number;
   name: string;
-  /** 月曆格內：不進 Tab 順序。 */
-  inGrid: boolean;
 }
 
 const hostKeys = new WeakMap<HTMLElement, number>();
@@ -42,7 +40,7 @@ function readHosts(): Host[] {
       key = hostKeySeq++;
       hostKeys.set(el, key);
     }
-    out.push({ el, key, gameId, name: el.getAttribute("data-card-action-name") ?? "", inGrid: el.closest("td[data-date]") !== null });
+    out.push({ el, key, gameId, name: el.getAttribute("data-card-action-name") ?? "" });
   }
   return out;
 }
@@ -121,7 +119,7 @@ export function CardFollowLayer({ strings, locale }: { strings: AccountStrings; 
   useEffect(() => {
     for (const h of hosts) {
       const b = h.el.querySelector("button");
-      if (b) b.tabIndex = h.inGrid ? -1 : 0;
+      if (b) b.tabIndex = h.el.closest('[data-cal-cell][data-engaged="false"]') ? -1 : 0; // 進格狀態會變，所以現場判斷
     }
   });
 

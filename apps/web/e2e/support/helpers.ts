@@ -7,7 +7,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test as base, type Page } from "@playwright/test";
 import { WEB_DIR } from "./env";
 
-export { FIXTURE, FIXTURE_3B, FIXTURE_4 } from "./fixture-data";
+export { FIXTURE, FIXTURE_3B, FIXTURE_4, FIXTURE_HOME } from "./fixture-data";
 
 export type TestLocale = "zh-Hant" | "en" | "ja";
 export const LOCALES: readonly TestLocale[] = ["zh-Hant", "en", "ja"];
@@ -82,7 +82,7 @@ export function msg(locale: TestLocale, key: string, values: Record<string, stri
 export const calendarUrl = (locale: TestLocale, month: string, query = "") => `/${locale}/calendar/${month}${query ? `?${query}` : ""}`;
 export const gameUrl = (locale: TestLocale, slug: string) => `/${locale}/games/${slug}`;
 
-/** 等客戶端元件接手（roving tabindex 設好）後再操作鍵盤。 */
+/** 等客戶端元件接手（月曆格水合完成、切換鈕出現）後再操作。 */
 export async function waitForCalendarReady(page: Page): Promise<void> {
-  await expect(page.locator('.cal-desktop td[role="gridcell"][data-date][tabindex="0"]').first()).toBeAttached();
+  await expect(page.locator('.cal-cell[data-hydrated="true"]').first()).toBeAttached();
 }

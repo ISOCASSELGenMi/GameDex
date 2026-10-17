@@ -22,3 +22,9 @@ export { getSitemapCounts, listSitemapEntries, listSitemapSmall, type ListSitema
 export { getRatingDisplayConfig, validateRatingDisplayEnv } from "./rating-config";
 // Phase 7 第 6 波：我的遊戲
 export { getMyGames, pickNextRelease, type GetMyGamesInput } from "./get-my-games";
+// GameDex 第 2 段：首頁儀表板
+export { getHomeDashboard, type GetHomeDashboardInput } from "./get-home-dashboard";
+// GameDex 第 3 段（X1）：月曆單日（格內切換按需載入）
+export { getCalendarDay, type GetCalendarDayInput, type CalendarDay } from "./get-calendar-day";
+// GameDex 第 3 段（X2）：時間軸一週
+export { getTimelineWeek, type GetTimelineWeekInput, type TimelineWeek, type TimelineWeekDay } from "./get-timeline-week";

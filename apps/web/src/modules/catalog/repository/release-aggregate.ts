@@ -22,6 +22,7 @@
  * 3b：`buildAggregateCardsQuery` 回傳未排序的卡片 SELECT，時間軸（repository/timeline.ts）包一層做 keyset 分頁與
  * 每組前 N 筆；月曆與通用清單用 `buildAggregateQuery`（＝卡片＋固定排序＋LIMIT）。聚合本身仍只有這一份。
  */
+import { expandPlatformKindFilter } from "../domain/platform-groups";
 import { sql, type SQL } from "drizzle-orm";
 import { utcToday } from "../domain/utc-date";
 import {
@@ -293,7 +294,7 @@ function buildAggregateCtes(input: Omit<AggregateReleasesInput, "resolveImage" |
   ];
   if (!f.includeRumored) keyConds.push(sql`g.game_status IS DISTINCT FROM 'rumored'`);
   if (f.platformIds) keyConds.push(sql`r.platform_id = ANY(${pgArray(f.platformIds)}::int[])`);
-  if (f.platformKinds) keyConds.push(sql`pl.kind = ANY(${pgArray(f.platformKinds)}::platform_kind[])`);
+  if (f.platformKinds) keyConds.push(sql`pl.kind = ANY(${pgArray(expandPlatformKindFilter(f.platformKinds))}::platform_kind[])`);
   if (f.genreIds) {
     keyConds.push(
       sql`EXISTS (SELECT 1 FROM game_genres gg WHERE gg.game_id = r.game_id AND gg.genre_id = ANY(${pgArray(f.genreIds)}::int[]))`,

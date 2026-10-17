@@ -57,6 +57,8 @@ export const TIMELINE_FILTER_FIELDS: readonly FilterField[] = [
   "minHeat",
   "rumored",
 ];
+/** 時間軸（週）：沒有日期範圍（一週的範圍由 week／at 決定）。 */
+export const WEEK_TIMELINE_FILTER_FIELDS: readonly FilterField[] = TIMELINE_FILTER_FIELDS.filter((f) => f !== "dateRange");
 export const TRENDING_FILTER_FIELDS: readonly FilterField[] = ["platform", "platformKind", "genre"];
 
 export function AppliedFilterChips({

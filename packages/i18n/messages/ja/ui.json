@@ -1,7 +1,10 @@
 {
   "site": {
-    "name": "SoK ゲームカレンダー",
+    "name": "ゲーム図鑑 GameDex",
     "tagline": "ゲーム発売カレンダー＆データベース"
+  },
+  "org": {
+    "backTo": "{name} に戻る"
   },
   "nav": {
     "calendar": "カレンダー",
@@ -62,10 +65,12 @@
     "dayListTitle": "{date}の発売とイベント",
     "backToList": "その日のリストに戻る",
     "timeTbd": "時刻未定",
-    "timesInUtc": "イベント時刻はUTCで表示しています",
+    "timesInUtc": "イベント時刻はお使いのタイムゾーンで表示し、下に小さくUTCを添えています",
     "monthNavigation": "月を切り替え",
     "noItemsThisMonth": "今月は発売・イベントのデータがありません",
-    "undatedGroupTitle": "{group}：{label}"
+    "undatedGroupTitle": "{group}：{label}",
+    "dayLoadError": "この日のほかのゲームを読み込めませんでした。しばらくしてからもう一度お試しください。",
+    "dayRetry": "再試行"
   },
   "game": {
     "sections": {
@@ -121,7 +126,7 @@
     "historyChange": "{from} → {to}",
     "historyChangedAt": "{date}に更新",
     "noReleaseDates": "発売日のデータはまだありません",
-    "timesInUtc": "時刻はUTCで表示しています",
+    "timesInUtc": "イベント時刻はお使いのタイムゾーンで表示し、下に小さくUTCを添えています",
     "ageRating": "年齢区分：{label}",
     "historyEntry": "{change}（{date}）",
     "franchiseTitle": {
@@ -177,12 +182,19 @@
     "tbdSection": "発売日未定",
     "jumpTo": "日付へ移動",
     "jumpGo": "移動",
-    "jumpHint": "選んだ日付以降を表示します。未選択の場合は今日から表示します",
-    "empty": "この期間には条件に一致する発売データがありません",
+    "jumpHint": "選んだ日付を含む週に移動します。未選択の場合は今週に移動します",
+    "empty": "この週には条件に一致する発売ゲームがありません",
     "backToToday": "今日に戻る",
     "startsFrom": "{date}から",
-    "description": "発売日の近い順に表示します。日付が確定していないゲームは各期間の先頭に、完全に未定のものは最後に置きます。",
-    "timesInUtc": "日付はUTCで計算しています"
+    "description": "週ごとに、発売日ごとのカバーカードを表示します。週を上下に切り替えたり、日付を指定して移動できます。月・四半期・年までしか決まっていないゲームはカレンダーで確認できます。",
+    "timesInUtc": "日付はUTCで計算しています",
+    "prevWeek": "前の週",
+    "nextWeek": "次の週",
+    "weekNavigation": "週の切り替え",
+    "weekRange": "{from}～{to}",
+    "weekNavAria": "{label}：{range}",
+    "weekLoaded": "{range} を表示しました。発売 {count} 本",
+    "releasesCount": "発売 {count} 本"
   },
   "trending": {
     "title": "注目ランキング",
@@ -293,7 +305,7 @@
   },
   "events": {
     "title": "イベント",
-    "timesInUtc": "イベント時刻はUTCで表示しています",
+    "timesInUtc": "イベント時刻はお使いのタイムゾーンで表示し、下に小さくUTCを添えています",
     "scopeLabel": "期間",
     "kindLabel": "イベントの種類",
     "scope": {
@@ -467,6 +479,35 @@
     "realtime": {
       "title": "すぐに通知してほしい場合は",
       "body": "カレンダーの購読はリアルタイムではありません。今後、延期をすぐにお知らせするメールと Discord のダイレクトメッセージ通知を提供する予定です。"
+    }
+  },
+  "home": {
+    "metaTitle": "ゲーム図鑑 GameDex：新作リリース・イベント・注目ゲーム",
+    "metaDescription": "ゲーム図鑑 GameDex は、発売予定と最近発売されたゲーム、近日開催のゲームイベント、注目のゲームをまとめ、カレンダー・タイムライン・データベースを提供します。",
+    "searchLabel": "ゲームを検索",
+    "searchPlaceholder": "ゲームのタイトルを入力",
+    "searchButton": "検索",
+    "more": "もっと見る",
+    "moreAria": "もっと見る：{section}",
+    "platformMore": "+{count}",
+    "upcoming": {
+      "title": "発売予定",
+      "hint": "今日から {days} 日以内に発売、日付の近い順",
+      "empty": "発売予定のゲームはありません。"
+    },
+    "recent": {
+      "title": "最近発売",
+      "hint": "過去 {days} 日以内に発売、新しい順",
+      "empty": "最近発売されたゲームはありません。"
+    },
+    "events": {
+      "title": "近日のイベント",
+      "hint": "開催予定と開催中のイベント",
+      "empty": "開催予定のイベントはありません。"
+    },
+    "trending": {
+      "title": "注目ゲーム",
+      "empty": "注目のゲームはありません。"
     }
   }
 }

@@ -14,7 +14,7 @@ import {
 } from "../domain/entities/account-self";
 import { exportCsvPart } from "../domain/entities/account-export-csv";
 import { authenticate, code, invalid, json, methodNotAllowed, readBody } from "./account-data-request";
-import { buildAccountExport, deleteAccount, getPreferences, parsePreferencesPatch, patchPreferences } from "./account-self";
+import { buildAccountExport, deleteAccount, getAccountSummary, getPreferences, parsePreferencesPatch, patchPreferences } from "./account-self";
 import { getAuth } from "./auth-instance";
 import { consumeRate } from "./rate-limit";
 
@@ -62,6 +62,16 @@ async function handleAccountStatus(request: Request): Promise<Response> {
   const a = await authenticate(request, false);
   if ("response" in a) return a.response;
   return json({ suspended: a.user.suspended }, 200);
+}
+
+// ── GET /api/v1/account/summary ──────────────────────────────────────────
+
+/** 帳號頁摘要 `{ lists, playRecords, follows }`（本人；停權帳號回 403，同其他資料端點）。no-store。 */
+export async function handleAccountSummary(request: Request): Promise<Response> {
+  if (request.method !== "GET") return methodNotAllowed("GET");
+  const a = await authenticate(request, false);
+  if ("response" in a) return a.response;
+  return json(await getAccountSummary(a.user.id), 200);
 }
 
 // ── DELETE /api/v1/account ───────────────────────────────────────────────

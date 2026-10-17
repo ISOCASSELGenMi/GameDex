@@ -18,7 +18,7 @@ import { handleAuthRequest, resetAuthForTests } from "@/modules/accounts/use-cas
 import { handleLists, handlePlayRecords, handleSharedList, handleList, handleListGame } from "@/modules/accounts/use-cases/account-data-request";
 import { handleFollowTarget } from "@/modules/accounts/use-cases/follow-request";
 import { handleFeeds, handlePrivateIcs } from "@/modules/accounts/use-cases/feed-request";
-import { handleAccountDelete, handleAccountExport, handleAccountPreferences } from "@/modules/accounts/use-cases/account-self-request";
+import { handleAccountDelete, handleAccountExport, handleAccountPreferences, handleAccountSummary } from "@/modules/accounts/use-cases/account-self-request";
 import { adminSetSuspended, setAuditLogForTests } from "@/modules/accounts/use-cases/account-self";
 import { handleAdminUserAction } from "@/modules/accounts/use-cases/admin-users-request";
 import { resetRateLimitsForTests } from "@/modules/accounts/use-cases/rate-limit";
@@ -250,6 +250,29 @@ describe.skipIf(!enabled)("accounts 第 7 波：偏好、刪除帳號、匯出�
     resetAuthForTests();
     resetCoreEnvCache();
     await closeDb();
+  });
+
+  // ── 帳號頁摘要（GameDex 第 2 段）─────────────────────────────────────────
+  describe("摘要 GET /account/summary", () => {
+    it("未登入 401、非 GET 405；本人回清單數、遊玩紀錄數、追蹤數（no-store）", async () => {
+      expect((await handleAccountSummary(request("GET", "/api/v1/account/summary"))).status).toBe(401);
+      const A = await signUp("t7-summary@example.com", "Summary Name");
+      expect((await handleAccountSummary(request("POST", "/api/v1/account/summary", { cookie: A.cookie }))).status).toBe(405);
+      const empty = await handleAccountSummary(request("GET", "/api/v1/account/summary", { cookie: A.cookie }));
+      expect(empty.status).toBe(200);
+      expect(empty.headers.get("cache-control")).toBe("no-store");
+      expect(await json(empty)).toEqual({ lists: 0, playRecords: 0, follows: 0 });
+      await createListApi(A, { name: "S1" });
+      await createListApi(A, { name: "S2" });
+      await createPlayApi(A, { gameId: gid.a, status: "finished", finishedOn: "2026-09-01" });
+      expect((await followApi(A, "game", gid.b!)).status).toBe(201);
+      expect((await followApi(A, "game", gid.c!)).status).toBe(201);
+      expect((await followApi(A, "platform", platformId)).status).toBe(201);
+      const res = await handleAccountSummary(request("GET", "/api/v1/account/summary", { cookie: A.cookie }));
+      expect(await json(res)).toEqual({ lists: 2, playRecords: 1, follows: 3 });
+      // 其他測試看的是遊戲追蹤訊號與玩家平均：這個帳號用完就刪（FK cascade 一併帶走追蹤與紀錄）
+      await getDb().delete(users).where(eq(users.email, "t7-summary@example.com"));
+    });
   });
 
   // ── 偏好 ─────────────────────────────────────────────────────────────────

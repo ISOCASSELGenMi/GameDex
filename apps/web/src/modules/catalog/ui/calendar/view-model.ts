@@ -1,14 +1,20 @@
 /**
  * CalendarMonth（catalog 讀取模型）→ 月曆畫面用的資料。純函式（只依賴字典與 Intl）。
+ *
+ * 效能（GameDex 第 3 段）：整月上千筆卡片全送會讓 HTML 達 1.7 MB，所以每天只放「第一款」的完整資料與「當日總數」，
+ * 其餘款數在使用者切換到該格時才由 day API 載入。「本月未定日」（月／季／年精度）數量有限，照舊整批送。
  */
-import { formatDateTime, formatReleaseLabel, type Locale, type Translator } from "@sok/i18n";
+import { formatDateTime, type Locale, type Translator } from "@sok/i18n";
 import type { CalendarEventItem, CalendarMonth, ReleaseCard } from "../../domain/entities";
-import { heatBadgeLabel } from "../heat-badge";
-import { eventKindLabel, getTranslator, stageLabel, statusLabel } from "../labels";
-import { gameHref } from "../links";
+import { eventKindLabel } from "../labels";
 import { isoDate } from "../month";
-import type { PreviewCardData } from "./types";
+import { UNDATED_OPEN_MAX } from "../month";
+import { buildPreview, joinList, platformChipText, toDayCard, toFoldRow } from "./day-card";
+import type { DayCardData, FoldRow, PreviewCardData } from "./types";
 
+export { joinList, platformChipText };
+
+/** 未定日清單裡的卡片（key 對應 previews）。 */
 export interface CardItem {
   type: "card";
   key: string;
@@ -23,29 +29,34 @@ export interface EventItem {
   timeLabel: string;
 }
 
-export type DayItem = CardItem | EventItem;
-
+/**
+ * 本月未定日的一組（月／季／年精度）。數量少（≤ UNDATED_OPEN_MAX）：完整卡片 items（可開側邊預覽卡）；
+ * 數量多：精簡列 rows（RSC payload 小，點了直接進詳情頁）。兩者只有一個有內容。
+ */
 export interface UndatedGroup {
   precision: "month" | "quarter" | "year";
+  /** 組內遊戲數 */
+  count: number;
+  /** 組內第一款的代表日期（標題的「2026年10月」文字用） */
+  firstDate: string | null;
   items: CardItem[];
+  rows: FoldRow[];
+}
+
+/** 月曆一天：當日上市總數、第一款（沒有則 null）、活動（開始日在當天）。 */
+export interface DayView {
+  total: number;
+  first: DayCardData | null;
+  events: EventItem[];
 }
 
 export interface CalendarViewModel {
-  days: Record<string, DayItem[]>;
+  days: Record<string, DayView>;
   undated: UndatedGroup[];
+  /** 只有未定日卡片（key → 預覽資料）；格內的卡片資料自帶預覽欄位。 */
   previews: Record<string, PreviewCardData>;
   releaseCount: number;
   eventCount: number;
-}
-
-/** 列舉（平台、類型…）：分隔符號來自字典（zh-Hant「、」、en「, 」；Intl.ListFormat 的中文 unit 格式沒有分隔符號）。 */
-export function joinList(locale: Locale, values: readonly string[]): string {
-  return values.join(getTranslator(locale).t("ui.common.listSeparator"));
-}
-
-/** 卡片上的平台 chip 文字（有縮寫用縮寫）。 */
-export function platformChipText(p: { abbreviation: string | null; name: string }): string {
-  return p.abbreviation?.trim() || p.name;
 }
 
 /** 活動在月曆中的日期：開始日（UTC）；開始於上個月的多日活動放本月 1 日。 */
@@ -57,51 +68,16 @@ export function eventDayInMonth(event: CalendarEventItem, year: number, month: n
 }
 
 export function buildCalendarViewModel(data: CalendarMonth, locale: Locale, t: Translator): CalendarViewModel {
-  let seq = 0;
-  const previews: Record<string, PreviewCardData> = {};
-  const toItem = (card: ReleaseCard): CardItem => {
-    const key = (seq++).toString(36);
-    const preview: PreviewCardData = {
-      h: gameHref(locale, card.slug),
-      n: card.name,
-      d: formatReleaseLabel(card.date, card.precision, locale),
-      p: joinList(locale, card.platforms.map((p) => p.name)),
-      sk: card.stage,
-      s: stageLabel(t, card.stage),
-    };
-    if (card.originalName && card.originalName !== card.name) preview.o = card.originalName;
-    if (card.cover) preview.c = card.cover.medium;
-    if (card.status !== "scheduled") {
-      preview.tk = card.status;
-      preview.t = statusLabel(t, card.status);
-    }
-    if (card.sourceStatus === "removed") preview.r = 1;
-    const heat = heatBadgeLabel(t, card.heatLevel);
-    if (heat) {
-      preview.hv = card.heatLevel;
-      preview.hl = heat;
-    }
-    const abbr = card.platforms.map(platformChipText).join(" · ");
-    if (abbr) preview.a = abbr;
-    const notes: string[] = [];
-    if (card.stage !== "full") notes.push(preview.s);
-    if (card.status === "delayed" || card.status === "cancelled") notes.push(statusLabel(t, card.status));
-    if (card.sourceStatus === "removed") notes.push(t.t("ui.release.sourceUnconfirmed"));
-    if (notes.length > 0) preview.x = t.t("ui.common.parenthetical", { text: joinList(locale, notes) });
-    previews[key] = preview;
-    return { type: "card", key, card };
-  };
-
-  const days: Record<string, DayItem[]> = {};
+  const days: Record<string, DayView> = {};
   let releaseCount = 0;
   for (const iso of Object.keys(data.days).sort()) {
     const cards = data.days[iso] ?? [];
-    days[iso] = cards.map(toItem);
+    if (cards.length === 0) continue;
+    days[iso] = { total: cards.length, first: toDayCard(cards[0]!, locale, t), events: [] };
     releaseCount += cards.length;
   }
 
   let eventCount = 0;
-  const eventCountByDay: Record<string, number> = {};
   for (const event of data.events) {
     const day = eventDayInMonth(event, data.year, data.month);
     if (!day) continue;
@@ -112,22 +88,37 @@ export function buildCalendarViewModel(data: CalendarMonth, locale: Locale, t: T
       kindLabel: eventKindLabel(t, event.kind),
       timeLabel: event.startTime ? formatDateTime(event.startTime, locale, "UTC") : t.t("ui.calendar.timeTbd"),
     };
-    // 活動數量少且是重點，排在當天的上市卡片之前（不會被折疊進「＋N」）
-    (days[day] ??= []).splice(eventCountByDay[day] ?? 0, 0, item);
-    eventCountByDay[day] = (eventCountByDay[day] ?? 0) + 1;
+    (days[day] ??= { total: 0, first: null, events: [] }).events.push(item);
     eventCount += 1;
   }
 
-  const groups: Record<UndatedGroup["precision"], CardItem[]> = { month: [], quarter: [], year: [] };
+  let seq = 0;
+  const previews: Record<string, PreviewCardData> = {};
+  const toItem = (card: ReleaseCard): CardItem => {
+    const key = (seq++).toString(36);
+    previews[key] = buildPreview(card, locale, t);
+    return { type: "card", key, card };
+  };
+  const groups: Record<UndatedGroup["precision"], ReleaseCard[]> = { month: [], quarter: [], year: [] };
   for (const card of data.undated) {
     if (card.precision === "month" || card.precision === "quarter" || card.precision === "year") {
-      groups[card.precision].push(toItem(card));
+      groups[card.precision].push(card);
       releaseCount += 1;
     }
   }
   const undated: UndatedGroup[] = (["month", "quarter", "year"] as const)
     .filter((p) => groups[p].length > 0)
-    .map((precision) => ({ precision, items: groups[precision] }));
+    .map((precision) => {
+      const cards = groups[precision];
+      const small = cards.length <= UNDATED_OPEN_MAX;
+      return {
+        precision,
+        count: cards.length,
+        firstDate: cards[0]?.date ?? null,
+        items: small ? cards.map(toItem) : [],
+        rows: small ? [] : cards.map((c) => toFoldRow(c, locale, t)),
+      };
+    });
 
   return { days, undated, previews, releaseCount, eventCount };
 }

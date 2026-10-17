@@ -24,7 +24,8 @@ import { CATALOG_TAG, STATIC_SHELL_SLUG } from "../seo/cache-tags";
 import { breadcrumbJsonLd, eventJsonLd } from "../seo/json-ld";
 import { JsonLdScript } from "../seo/json-ld-script";
 import { siteOrigin } from "../seo/site-url";
-import { EVENTS_PAGE_SIZE, eventStatusLabel, eventTimeText, parseEventKind, parseEventScope, parseEventsPage } from "./view-model";
+import { EventTime } from "@/kernel/ui/event-time";
+import { EVENTS_PAGE_SIZE, eventStatusLabel, parseEventKind, parseEventScope, parseEventsPage } from "./view-model";
 
 type SearchParamsRecord = Readonly<Record<string, RawParam>>;
 
@@ -74,7 +75,7 @@ function EventRow({ item, locale, t }: { item: EventListItem; locale: Locale; t:
               <EventIcon />
               <span>{eventKindLabel(t, item.kind)}</span>
             </span>
-            <span>{eventTimeText(item, locale, t)}</span>
+            <span>{item.startTime ? <EventTime startIso={item.startTime} endIso={item.endTime} locale={locale} /> : t.t("ui.events.timeTbd")}</span>
             {status ? <span className="chip">{status}</span> : null}
             {item.gameCount > 0 ? <span>{t.t("ui.events.gameCount", { count: formatNumber(item.gameCount, locale) })}</span> : null}
           </span>
@@ -256,7 +257,7 @@ export async function EventDetailPage({
         <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm" data-event-info="">
           <dt className="font-semibold">{t.t("ui.events.time")}</dt>
           <dd>
-            {eventTimeText(ev, locale, t)}
+            {ev.startTime ? <EventTime startIso={ev.startTime} endIso={ev.endTime} locale={locale} /> : t.t("ui.events.timeTbd")}
             {ev.startTime ? null : <span className="block text-[var(--muted)]">{t.t("ui.events.undatedHint")}</span>}
           </dd>
           {ev.organizer ? (

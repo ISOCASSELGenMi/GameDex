@@ -99,18 +99,30 @@
       "notFresh": "為了安全，請重新登入後再操作。"
     },
     "linkSteam": "綁定 Steam",
-    "mine": {
-      "title": "我的收藏與紀錄",
-      "hint": "清單與遊玩紀錄是你自己的整理，不會加入行事曆，也不會發出提醒。",
-      "lists": "我的清單",
-      "plays": "遊玩紀錄"
-    },
     "track": {
-      "title": "追蹤與行事曆",
-      "hint": "追蹤的遊戲與活動會放進你的私人行事曆；追蹤清單只有你看得到。",
+      "follows": "我的追蹤"
+    },
+    "summary": {
+      "label": "個人摘要"
+    },
+    "tabs": {
+      "label": "帳號分頁"
+    },
+    "stat": {
+      "lists": "清單",
+      "playRecords": "遊玩紀錄",
+      "follows": "追蹤"
+    },
+    "tab": {
+      "overview": "總覽",
+      "lists": "我的清單",
+      "plays": "遊玩紀錄",
       "follows": "我的追蹤",
       "games": "我的遊戲",
-      "calendar": "私人行事曆"
+      "calendar": "行事曆",
+      "steam": "Steam 遊戲庫",
+      "settings": "設定",
+      "privacy": "隱私與資料"
     }
   },
   "providers": {
@@ -192,7 +204,8 @@
         "dismissed": "已將「{title}」標記為不是任何遊戲。",
         "reset": "已將「{title}」交給自動比對。"
       }
-    }
+    },
+    "notLinked": "還沒有綁定 Steam 帳號。綁定後就能匯入你的 Steam 遊戲庫，並比對到本站的遊戲。"
   },
   "game": {
     "addToList": "加入清單",
@@ -416,7 +429,6 @@
     "removed": "已不存在的項目",
     "loadMore": "顯示更多",
     "listLabel": "{type}的追蹤清單",
-    "eventTime": "{time} UTC",
     "loadError": "無法載入追蹤清單，請稍後再試。",
     "collection": "合集"
   },
@@ -503,7 +515,6 @@
     },
     "kind": {
       "console": "主機",
-      "hybrid": "掌機兼主機",
       "handheld": "掌機",
       "pc": "PC",
       "arcade": "街機",
@@ -558,13 +569,7 @@
     "saved": "已儲存設定。",
     "unchanged": "沒有變更。",
     "toPrivacy": "隱私與資料（匯出、刪除帳號）",
-    "toAccount": "回到我的帳號",
-    "nav": {
-      "title": "設定與隱私",
-      "hint": "調整偏好、匯出你的資料，或刪除帳號。",
-      "settings": "帳號設定",
-      "privacy": "隱私與資料"
-    }
+    "toAccount": "回到我的帳號"
   },
   "privacy": {
     "title": "隱私與資料",

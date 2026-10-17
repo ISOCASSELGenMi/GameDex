@@ -34,6 +34,8 @@ const nextConfig: NextConfig = {
     const short = [{ key: "Cache-Control", value: "public, s-maxage=60, stale-while-revalidate=300" }];
     const medium = [{ key: "Cache-Control", value: "public, s-maxage=300, stale-while-revalidate=3600" }];
     return [
+      // 首頁儀表板（GameDex 第 2 段）：與使用者無關，60 秒。語系段限制成 2~3 個小寫字母（可接地區碼），避免蓋到 /healthz 之類的單段路由
+      { source: "/:locale([a-z]{2,3}|[a-z]{2,3}-[A-Za-z]{2,8})", headers: short },
       // 篩選驅動的頁面（組合多、變動快）：60 秒
       { source: "/:locale/calendar/:month", headers: short },
       { source: "/:locale/timeline", headers: short },

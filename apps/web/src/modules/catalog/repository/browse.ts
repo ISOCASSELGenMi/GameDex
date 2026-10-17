@@ -9,6 +9,7 @@
  *   只有 1 個字元時退回 ILIKE（06：只輸入 1 個中文字時）。
  * - 排序：popularity（熱度高到低）｜release_date（首發日期早到晚，未定在最後）｜name（原文 games.name）。
  */
+import { expandPlatformKindFilter } from "../domain/platform-groups";
 import { sql, type SQL } from "drizzle-orm";
 import type {
   BrowseGameCard,
@@ -63,7 +64,7 @@ export function buildBrowseQuery(q: Omit<BrowseGamesQuery, "resolveImage">): SQL
   if (f.platformIds || f.platformKinds) {
     const pc: SQL[] = [sql`gp.game_id = g.id`, sql`pl.kind <> 'mobile'`];
     if (f.platformIds) pc.push(sql`gp.platform_id = ANY(${pgArray(f.platformIds)}::int[])`);
-    if (f.platformKinds) pc.push(sql`pl.kind = ANY(${pgArray(f.platformKinds)}::platform_kind[])`);
+    if (f.platformKinds) pc.push(sql`pl.kind = ANY(${pgArray(expandPlatformKindFilter(f.platformKinds))}::platform_kind[])`);
     conds.push(sql`EXISTS (SELECT 1 FROM game_platforms gp JOIN platforms pl ON pl.id = gp.platform_id WHERE ${sql.join(pc, sql` AND `)})`);
   }
   const rel = (table: string, col: string, ids: readonly number[] | undefined) => {

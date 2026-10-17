@@ -7,7 +7,9 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type ReactElement } from "react";
 import { FOLLOW_TARGETS, type FollowTarget } from "../domain/entities/follows";
 import { listFollows, unfollowTarget, type FollowListItem } from "./follow-api";
-import { followTargetHref, formatEventTime } from "./follow-format";
+import { EventTime } from "@/kernel/ui/event-time";
+import type { Locale } from "@sok/i18n";
+import { followTargetHref } from "./follow-format";
 import { GameLine } from "./game-thumb";
 import { apiErrorText } from "./play-record-form";
 import { RequireUser } from "./require-user";
@@ -173,7 +175,7 @@ function FollowRow({ strings, locale, item }: { strings: AccountStrings; locale:
   }
   const meta =
     item.targetType === "event" && t.startTime
-      ? str(strings, "follows.eventTime", { time: formatEventTime(t.startTime, locale) })
+      ? <EventTime startIso={t.startTime} locale={locale as Locale} />
       : item.targetType === "platform"
         ? t.abbreviation
         : item.targetType === "franchise" && t.kind === "collection"

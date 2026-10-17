@@ -99,18 +99,30 @@
       "notFresh": "For your security, sign in again and retry."
     },
     "linkSteam": "Link Steam",
-    "mine": {
-      "title": "My collection and records",
-      "hint": "Lists and play records are your own notes. They are not added to the calendar and do not send reminders.",
-      "lists": "My lists",
-      "plays": "Play records"
-    },
     "track": {
-      "title": "Following and calendar",
-      "hint": "Games and events you follow go into your private calendar; your follow list is visible only to you.",
+      "follows": "My follows"
+    },
+    "summary": {
+      "label": "Profile summary"
+    },
+    "tabs": {
+      "label": "Account sections"
+    },
+    "stat": {
+      "lists": "Lists",
+      "playRecords": "Play records",
+      "follows": "Follows"
+    },
+    "tab": {
+      "overview": "Overview",
+      "lists": "My lists",
+      "plays": "Play records",
       "follows": "My follows",
       "games": "My games",
-      "calendar": "Private calendar"
+      "calendar": "Calendar",
+      "steam": "Steam library",
+      "settings": "Settings",
+      "privacy": "Privacy and data"
     }
   },
   "providers": {
@@ -192,7 +204,8 @@
         "dismissed": "Marked \"{title}\" as not any game.",
         "reset": "Handed \"{title}\" back to automatic matching."
       }
-    }
+    },
+    "notLinked": "No Steam account is linked yet. Link one to import your Steam library and match it to games on this site."
   },
   "game": {
     "addToList": "Add to list",
@@ -416,7 +429,6 @@
     "removed": "Item that no longer exists",
     "loadMore": "Show more",
     "listLabel": "Follow list: {type}",
-    "eventTime": "{time} UTC",
     "loadError": "Could not load your follow list. Please try again later.",
     "collection": "Collection"
   },
@@ -503,7 +515,6 @@
     },
     "kind": {
       "console": "Consoles",
-      "hybrid": "Hybrid consoles",
       "handheld": "Handhelds",
       "pc": "PC",
       "arcade": "Arcade",
@@ -558,13 +569,7 @@
     "saved": "Settings saved.",
     "unchanged": "No changes.",
     "toPrivacy": "Privacy and data (export, delete account)",
-    "toAccount": "Back to my account",
-    "nav": {
-      "title": "Settings and privacy",
-      "hint": "Adjust preferences, export your data, or delete your account.",
-      "settings": "Account settings",
-      "privacy": "Privacy and data"
-    }
+    "toAccount": "Back to my account"
   },
   "privacy": {
     "title": "Privacy and data",

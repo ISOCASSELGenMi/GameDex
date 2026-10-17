@@ -40,7 +40,7 @@ import {
   releaseEvents,
 } from "@/modules/catalog/schema";
 import resetTestDatabase from "../../test/integration/global-setup";
-import { FIXTURE, FIXTURE_3B, FIXTURE_4 } from "./fixture-data";
+import { FIXTURE, FIXTURE_3B, FIXTURE_4, FIXTURE_HOME } from "./fixture-data";
 
 
 type Precision = "day" | "month" | "quarter" | "year" | "tbd";
@@ -92,6 +92,8 @@ export async function seedE2eDatabase(): Promise<void> {
         genres?: string[];
         firstReleaseDate?: string;
         summary?: string;
+        popularityScore?: number;
+        heatLevel?: number;
         events?: Ev[];
       },
     ): Promise<number> {
@@ -109,6 +111,8 @@ export async function seedE2eDatabase(): Promise<void> {
           firstReleaseDate: opts.firstReleaseDate ?? null,
           firstReleasePrecision: opts.firstReleaseDate ? "day" : null,
           summary: opts.summary ?? null,
+          ...(opts.popularityScore !== undefined ? { popularityScore: opts.popularityScore } : {}),
+          ...(opts.heatLevel !== undefined ? { heatLevel: opts.heatLevel } : {}),
           // 封面走 IGDB 網址格式；測試在瀏覽器端攔截 images.igdb.com 與 /_next/image，不連外
           coverUrl: `https://images.igdb.com/igdb/image/upload/t_cover_big/e2e${igdbId}.jpg`,
         })
@@ -280,6 +284,18 @@ export async function seedE2eDatabase(): Promise<void> {
       { name: FIXTURE_3B.events.past.name, slug: FIXTURE_3B.events.past.slug, kind: "awards", startTime: new Date("2020-12-10T01:00:00Z"), endTime: new Date("2020-12-10T04:00:00Z") },
       { name: FIXTURE_3B.events.undated.name, slug: FIXTURE_3B.events.undated.slug, kind: "expo", startTime: null, endTime: null },
     ]);
+
+    // ── GameDex 第 2 段：首頁儀表板（日期相對於「現在」，seed 時算好；首頁用 UTC 今天）──
+    const dayFromToday = (offset: number): string => {
+      const d = new Date();
+      d.setUTCDate(d.getUTCDate() + offset);
+      return d.toISOString().slice(0, 10);
+    };
+    const H = FIXTURE_HOME;
+    await addGame(445001, { slug: H.upcoming[0].slug, name: H.upcoming[0].name, popularityScore: 900, heatLevel: 4, firstReleaseDate: dayFromToday(H.upcoming[0].offset), events: [{ platform: "e2e-ps5", date: dayFromToday(H.upcoming[0].offset) }, { platform: "e2e-pc", date: dayFromToday(H.upcoming[0].offset) }] });
+    await addGame(445002, { slug: H.upcoming[1].slug, name: H.upcoming[1].name, popularityScore: 700, heatLevel: 3, firstReleaseDate: dayFromToday(H.upcoming[1].offset), events: [{ platform: "e2e-pc", date: dayFromToday(H.upcoming[1].offset) }] });
+    await addGame(445003, { slug: H.recent[0].slug, name: H.recent[0].name, popularityScore: 800, heatLevel: 4, firstReleaseDate: dayFromToday(H.recent[0].offset), events: [{ platform: "e2e-ps5", date: dayFromToday(H.recent[0].offset), status: "released" }] });
+    await addGame(445004, { slug: H.recent[1].slug, name: H.recent[1].name, popularityScore: 300, heatLevel: 2, firstReleaseDate: dayFromToday(H.recent[1].offset), events: [{ platform: "e2e-pc", date: dayFromToday(H.recent[1].offset), status: "released" }] });
   } finally {
     await closeDb();
   }

@@ -1,7 +1,10 @@
 {
   "site": {
-    "name": "SoK Game Calendar",
+    "name": "GameDex",
     "tagline": "Game release calendar and database"
+  },
+  "org": {
+    "backTo": "Back to {name}"
   },
   "nav": {
     "calendar": "Calendar",
@@ -62,10 +65,12 @@
     "dayListTitle": "Releases and events on {date}",
     "backToList": "Back to the day list",
     "timeTbd": "Time TBA",
-    "timesInUtc": "Event times are shown in UTC",
+    "timesInUtc": "Event times follow your time zone, with UTC underneath",
     "monthNavigation": "Change month",
     "noItemsThisMonth": "No releases or events this month",
-    "undatedGroupTitle": "{group}: {label}"
+    "undatedGroupTitle": "{group}: {label}",
+    "dayLoadError": "Could not load the other games for this day. Please try again later.",
+    "dayRetry": "Retry"
   },
   "game": {
     "sections": {
@@ -121,7 +126,7 @@
     "historyChange": "{from} → {to}",
     "historyChangedAt": "Updated {date}",
     "noReleaseDates": "No release dates yet",
-    "timesInUtc": "Times are shown in UTC",
+    "timesInUtc": "Event times follow your time zone, with UTC underneath",
     "ageRating": "Age rating: {label}",
     "historyEntry": "{change} ({date})",
     "franchiseTitle": {
@@ -177,12 +182,19 @@
     "tbdSection": "Date TBA",
     "jumpTo": "Jump to date",
     "jumpGo": "Go",
-    "jumpHint": "Lists releases from the chosen date onward; starts from today when empty",
-    "empty": "No releases match your filters in this period",
+    "jumpHint": "Jumps to the week containing the chosen date; goes to this week when empty",
+    "empty": "No releases match your filters this week",
     "backToToday": "Back to today",
     "startsFrom": "Starting {date}",
-    "description": "Releases from nearest to furthest. Games with only a month, quarter or year are listed at the top of that period; fully undated games come last.",
-    "timesInUtc": "Dates are in UTC"
+    "description": "One cover card per release day, a week at a time. Move up or down by week or jump to a date; games with only a month, quarter or year are listed in the calendar.",
+    "timesInUtc": "Dates are in UTC",
+    "prevWeek": "Previous week",
+    "nextWeek": "Next week",
+    "weekNavigation": "Change week",
+    "weekRange": "{from} – {to}",
+    "weekNavAria": "{label}: {range}",
+    "weekLoaded": "Showing {range}: {count} releases",
+    "releasesCount": "{count} releases"
   },
   "trending": {
     "title": "Trending",
@@ -293,7 +305,7 @@
   },
   "events": {
     "title": "Events",
-    "timesInUtc": "Event times are shown in UTC",
+    "timesInUtc": "Event times follow your time zone, with UTC underneath",
     "scopeLabel": "Time range",
     "kindLabel": "Event type",
     "scope": {
@@ -467,6 +479,35 @@
     "realtime": {
       "title": "Want instant alerts?",
       "body": "Calendar subscriptions are not instant. We plan to offer email and Discord direct-message alerts later, so you hear about a delay right away."
+    }
+  },
+  "home": {
+    "metaTitle": "GameDex: upcoming releases, events and trending games",
+    "metaDescription": "GameDex tracks upcoming and recently released games, upcoming gaming events and trending titles, with a calendar, a timeline and a game database.",
+    "searchLabel": "Search games",
+    "searchPlaceholder": "Enter a game title",
+    "searchButton": "Search",
+    "more": "See more",
+    "moreAria": "See more: {section}",
+    "platformMore": "+{count}",
+    "upcoming": {
+      "title": "Upcoming releases",
+      "hint": "Releasing in the next {days} days, nearest first",
+      "empty": "No upcoming releases right now."
+    },
+    "recent": {
+      "title": "Recently released",
+      "hint": "Released in the past {days} days, newest first",
+      "empty": "No recent releases."
+    },
+    "events": {
+      "title": "Upcoming events",
+      "hint": "Events coming up and in progress",
+      "empty": "No upcoming events right now."
+    },
+    "trending": {
+      "title": "Trending now",
+      "empty": "No trending games right now."
     }
   }
 }

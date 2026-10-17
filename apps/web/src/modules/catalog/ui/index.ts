@@ -1,6 +1,8 @@
 // catalog 的頁面內容（06：app/ 只放薄路由，內容在 modules/<name>/ui/）。只給 src/app 的薄路由 import。
 export { CalendarMonthPage, calendarTitle, redirectToCurrentMonth, type SearchParamsRecord } from "./calendar/calendar-page";
 export { GameDetailPage, loadGameDetail, type GameDetailSlots } from "./game/game-detail-page";
+// GameDex 第 2 段：首頁儀表板
+export { HomePage, homeTitle, homeDescription } from "./home/home-page";
 export { LocaleBody, NotFoundView } from "./layout/locale-body";
 // 其他模組的頁面（accounts 的登入頁等）由薄路由包上同一個 header／main
 export { PageShell } from "./layout/page-shell";
@@ -12,6 +14,8 @@ export { listGenreChoices, type GenreChoice } from "./genre-choices";
 // Phase 3b（I）：時間軸、熱門榜（薄路由與 route handler 用）
 export { TimelineViewPage, timelineTitle } from "./timeline/timeline-page";
 export { timelineChunkResponse, timelineGroupResponse, timelineHistoryResponse } from "./timeline/api";
+export { timelineWeekResponse, TIMELINE_WEEK_CACHE_CONTROL } from "./timeline/week-api";
+export { calendarDayResponse, CALENDAR_DAY_CACHE_CONTROL } from "./calendar/day-api";
 export { TrendingViewPage, trendingTitle } from "./trending/trending-page";
 
 // Phase 3b（J1）：遊戲瀏覽／搜尋

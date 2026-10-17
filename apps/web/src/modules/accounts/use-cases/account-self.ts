@@ -42,6 +42,9 @@ import {
   updatePreferences,
   type AdminUserRow,
 } from "../repository/account-self";
+import { countFollowsOfUser } from "../repository/follows";
+import { countUserLists } from "../repository/lists";
+import { countPlayRecords } from "../repository/play-records";
 import { getAuth } from "./auth-instance";
 
 /** 稽核 log：只有 userId 與時間，沒有任何個資。 */
@@ -51,6 +54,20 @@ let audit: AuditLog = defaultAudit;
 /** 測試用：攔截稽核 log。傳 undefined 還原。 */
 export function setAuditLogForTests(fn: AuditLog | undefined): void {
   audit = fn ?? defaultAudit;
+}
+
+// ── 帳號頁摘要 ──────────────────────────────────────────────────────────────
+
+export interface AccountSummary {
+  lists: number;
+  playRecords: number;
+  follows: number;
+}
+
+/** 帳號頁上方的統計摘要（清單數、遊玩紀錄數、追蹤數）。三個 COUNT，各自走 user_id 索引。 */
+export async function getAccountSummary(userId: number): Promise<AccountSummary> {
+  const [lists, playRecords, follows] = await Promise.all([countUserLists(userId), countPlayRecords(userId), countFollowsOfUser(userId)]);
+  return { lists, playRecords, follows };
 }
 
 // ── 偏好 ──────────────────────────────────────────────────────────────────

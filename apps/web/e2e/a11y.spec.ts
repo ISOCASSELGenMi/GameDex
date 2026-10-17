@@ -1,5 +1,5 @@
 /**
- * axe（WCAG 2.0／2.1／2.2 A＋AA）：月曆（桌機／手機）、詳情、篩選後、空結果、預覽卡、深色模式。違規 0 才通過。
+ * axe（WCAG 2.0／2.1／2.2 A＋AA）：月曆（桌機／手機）、詳情、篩選後、空結果、預覽卡、格內切換後、深色模式。違規 0 才通過。
  */
 import { FIXTURE, LOCALES, calendarUrl, expect, expectNoA11yViolations, gameUrl, test, waitForCalendarReady } from "./support/helpers";
 
@@ -23,7 +23,8 @@ for (const locale of LOCALES) {
     test("月曆：手機寬度", async ({ page }) => {
       await page.setViewportSize(MOBILE);
       await page.goto(calendarUrl(locale, FIXTURE.month));
-      await expect(page.locator(".cal-mobile section.agenda")).toBeVisible();
+      await waitForCalendarReady(page);
+      await expect(page.locator(".cal-grid")).toBeVisible();
       await expectNoA11yViolations(page, `${locale} 月曆手機`);
       await openAllDetails(page);
       await expectNoA11yViolations(page, `${locale} 月曆手機（全部展開）`);
@@ -50,20 +51,22 @@ for (const locale of LOCALES) {
       await expectNoA11yViolations(page, `${locale} 空結果`);
     });
 
-    test("預覽卡與當天清單開啟", async ({ page }) => {
+    test("預覽卡與格內切換後", async ({ page }) => {
       await page.goto(calendarUrl(locale, FIXTURE.month));
       await waitForCalendarReady(page);
-      const cell = page.locator(`.cal-desktop td[data-date="${FIXTURE.multiPlatformDay}"]`);
-      await cell.locator("a.card").first().click();
+      const cell = page.locator(`.cal-cell[data-date="${FIXTURE.multiPlatformDay}"]`);
+      await cell.locator("a.cal-link").click();
       const dialog = page.locator("dialog.side-sheet");
       await expect(dialog).toBeVisible();
       await expect(dialog.locator("a.btn-primary")).toBeVisible();
       await expectNoA11yViolations(page, `${locale} 預覽卡`);
 
       await page.keyboard.press("Escape");
-      await page.locator(`.cal-desktop td[data-date="${FIXTURE.busyDay}"] summary[data-day-more]`).click();
-      await expect(dialog.locator("button.sheet-entry")).toHaveCount(FIXTURE.busyCount);
-      await expectNoA11yViolations(page, `${locale} 當天清單`);
+      await expect(dialog).toBeHidden();
+      const busy = page.locator(`.cal-cell[data-date="${FIXTURE.busyDay}"]`);
+      await busy.locator("[data-cal-nav=next]").click();
+      await expect(busy).toHaveAttribute("data-index", "1");
+      await expectNoA11yViolations(page, `${locale} 格內切換後`);
     });
   });
 }
@@ -78,7 +81,7 @@ test.describe("axe：深色模式對比", () => {
       expect(await page.evaluate(() => matchMedia("(prefers-color-scheme: dark)").matches)).toBe(true);
       await openAllDetails(page);
       await expectNoA11yViolations(page, `${locale} 深色月曆`);
-      await page.locator(`.cal-desktop td[data-date="${FIXTURE.busyDay}"] a.card`).first().click();
+      await page.locator(`.cal-cell[data-date="${FIXTURE.busyDay}"] a.cal-link`).click();
       await expect(page.locator("dialog.side-sheet a.btn-primary")).toBeVisible();
       await expectNoA11yViolations(page, `${locale} 深色預覽卡`);
     });
@@ -86,7 +89,8 @@ test.describe("axe：深色模式對比", () => {
     test(`月曆手機＋詳情（${locale}）`, async ({ page }) => {
       await page.setViewportSize(MOBILE);
       await page.goto(calendarUrl(locale, FIXTURE.month));
-      await expect(page.locator(".cal-mobile section.agenda")).toBeVisible();
+      await waitForCalendarReady(page);
+      await expect(page.locator(".cal-grid")).toBeVisible();
       await expectNoA11yViolations(page, `${locale} 深色月曆手機`);
       await page.goto(gameUrl(locale, FIXTURE.hero.slug));
       await expect(page.locator("article.detail h1")).toBeVisible();
@@ -119,7 +123,7 @@ test.describe("prefers-reduced-motion", () => {
   test("預覽卡的進場動畫被關閉", async ({ page }) => {
     await page.goto(calendarUrl("en", FIXTURE.month));
     await waitForCalendarReady(page);
-    await page.locator(`.cal-desktop td[data-date="${FIXTURE.multiPlatformDay}"] a.card`).first().click();
+    await page.locator(`.cal-cell[data-date="${FIXTURE.multiPlatformDay}"] a.cal-link`).click();
     const dialog = page.locator("dialog.side-sheet");
     await expect(dialog).toBeVisible();
     const ms = await dialog.evaluate((el) => parseFloat(getComputedStyle(el).animationDuration) * 1000);

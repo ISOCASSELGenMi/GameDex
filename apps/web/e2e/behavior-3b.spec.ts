@@ -1,5 +1,5 @@
 /**
- * 行為（06 §時間軸、§搜尋與瀏覽、§語言支援、§導覽；15 Phase 3b）：導覽列、時間軸「展開」與「載入更多／較早」、
+ * 行為（06 §時間軸、§搜尋與瀏覽、§語言支援、§導覽；15 Phase 3b）：導覽列、
  * 瀏覽頁分頁與搜尋、系列／合集切換、活動篩選與詳情、語言支援三態。固定網址進入（fixture 在 2036–2037），不依賴「今天」。
  * 不靠固定 sleep：一律等元素／文字／水合標記。
  */
@@ -7,32 +7,7 @@ import type { Locator, Page } from "@playwright/test";
 import { FIXTURE, FIXTURE_3B, LOCALES, expect, msg, test, type TestLocale } from "./support/helpers";
 
 const MOBILE = { width: 375, height: 812 };
-const TL = FIXTURE_3B.timeline;
-const TL_SPARSE = FIXTURE_3B.sparse;
 const mainNav = (page: Page, locale: TestLocale) => page.getByRole("navigation", { name: msg(locale, "a11y.mainNavigation") });
-
-/** 時間軸清單水合完成（React 在根元素掛上 fiber）。按鈕／連結的點擊在此之前會變成整頁導覽。 */
-async function waitTimelineHydrated(page: Page): Promise<void> {
-  await page.waitForFunction(() => {
-    const el = document.querySelector("[data-timeline-root]");
-    return !!el && Object.keys(el).some((k) => k.startsWith("__reactFiber"));
-  });
-}
-
-const cardIds = (page: Page) =>
-  page
-    .locator("[data-timeline-card]")
-    .evaluateAll((els) => els.map((e) => `${e.closest("[data-group]")?.getAttribute("data-group")}/${e.getAttribute("data-timeline-card")}`));
-
-async function expectFocusOnNewCard(page: Page, before: readonly string[]): Promise<void> {
-  const id = await page.evaluate(() => {
-    const a = document.activeElement as HTMLElement | null;
-    const li = a?.closest("[data-timeline-card]");
-    return li ? `${li.closest("[data-group]")?.getAttribute("data-group")}/${li.getAttribute("data-timeline-card")}` : null;
-  });
-  expect(id, "焦點應落在新載入的卡片上").not.toBeNull();
-  expect(before, "焦點的卡片應是新載入的").not.toContain(id);
-}
 
 // ── 導覽列 ─────────────────────────────────────────────────────────────
 
@@ -88,8 +63,14 @@ test.describe("導覽列", () => {
   test("手機 375 寬：六個入口都完整在視窗內、觸控目標 >= 44px、頁面不水平捲動", async ({ page }) => {
     await page.setViewportSize(MOBILE);
     await page.goto("/en/games");
+    // < 768px 時導覽收在選單裡：等水合（按鈕出現）後打開，再檢查六個入口
+    const toggle = page.locator("[data-menu-toggle]");
+    await expect(toggle).toBeVisible();
+    await toggle.click();
+    await expect(toggle).toHaveAttribute("aria-expanded", "true");
     const links = mainNav(page, "en").getByRole("link");
     await expect(links).toHaveCount(6);
+    await expect(links.first()).toBeVisible();
     for (const link of await links.all()) {
       const box = await link.boundingBox();
       expect(box, "導覽連結要有版面").not.toBeNull();
@@ -98,168 +79,6 @@ test.describe("導覽列", () => {
       expect(box!.height).toBeGreaterThanOrEqual(44);
     }
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
-  });
-});
-
-// ── 時間軸 ─────────────────────────────────────────────────────────────
-
-test.describe("時間軸：展開單日", () => {
-  const key = `day:${TL.bigDay}`;
-  const remaining = TL.bigDayCount - TL.bigDayPreview;
-
-  test("單日超過 10 款：先顯示 10 張，按鈕寫剩 M 款；點下去補齊、按鈕消失、公告筆數、焦點移到新卡", async ({ page }) => {
-    await page.goto(`/en/timeline?at=${TL.anchor}`);
-    await waitTimelineHydrated(page);
-    const group = page.locator(`[data-group="${key}"]`);
-    await expect(group.locator("a.card")).toHaveCount(TL.bigDayPreview);
-    const button = group.locator("button[data-expand]");
-    await expect(button).toHaveText(msg("en", "ui.timeline.expand", { count: remaining }));
-    await expect(button).toHaveAccessibleName(new RegExp(String(remaining)));
-
-    const before = await cardIds(page);
-    await button.click();
-    await expect(group.locator("a.card")).toHaveCount(TL.bigDayCount);
-    await expect(group.locator("button[data-expand]")).toHaveCount(0);
-    await expect(page.locator("[data-timeline-status]")).toHaveText(msg("en", "ui.timeline.loadedCount", { count: remaining }));
-    await expectFocusOnNewCard(page, before);
-    const names = await group.locator(".card-name").allTextContents();
-    expect(new Set(names).size).toBe(names.length);
-    expect(names).toContain("Big Day Game 13");
-  });
-
-  test("純鍵盤：聚焦展開按鈕按 Enter 即可展開", async ({ page }) => {
-    await page.goto(`/zh-Hant/timeline?at=${TL.anchor}`);
-    await waitTimelineHydrated(page);
-    const group = page.locator(`[data-group="${key}"]`);
-    const button = group.locator("button[data-expand]");
-    await button.focus();
-    await expect(button).toBeFocused();
-    await page.keyboard.press("Enter");
-    await expect(group.locator("a.card")).toHaveCount(TL.bigDayCount);
-    await expect(page.locator("[data-timeline-status]")).toHaveText(msg("zh-Hant", "ui.timeline.loadedCount", { count: remaining }));
-  });
-
-  test("沒有 JS：沒有展開按鈕（只看預覽 10 張），卡片仍是詳情連結", async ({ browser }) => {
-    const ctx = await browser.newContext({ javaScriptEnabled: false, baseURL: test.info().project.use.baseURL });
-    const page = await ctx.newPage();
-    await page.goto(`/en/timeline?at=${TL.anchor}`);
-    const group = page.locator(`[data-group="${key}"]`);
-    await expect(group.locator("a.card")).toHaveCount(TL.bigDayPreview);
-    await expect(group.locator("button[data-expand]")).toHaveCount(0);
-    await expect(group.locator("a.card").first()).toHaveAttribute("href", /\/en\/games\/e2e-big-/);
-    await ctx.close();
-  });
-});
-
-test.describe("時間軸：載入更多／較早", () => {
-  test("有下一頁：點載入更多 → 卡片變多、不重複、公告筆數、焦點在新卡、網址不變", async ({ page }) => {
-    await page.goto(`/en/timeline?at=${TL.anchor}`);
-    await waitTimelineHydrated(page);
-    const next = page.locator("a[data-load=next]");
-    await expect(next).toHaveText(msg("en", "ui.timeline.loadMore"));
-    await expect(next).toHaveAttribute("href", /cursor=/);
-    const before = await cardIds(page);
-    expect(before.length).toBeGreaterThan(0);
-
-    await next.click();
-    await expect.poll(async () => (await cardIds(page)).length).toBeGreaterThan(before.length);
-    const after = await cardIds(page);
-    expect(new Set(after).size, "合併後不可有重複的卡").toBe(after.length);
-    const groups = await page.locator("[data-group]").evaluateAll((els) => els.map((e) => e.getAttribute("data-group")));
-    expect(new Set(groups).size, "同一組（同日）合併成一個").toBe(groups.length);
-    await expect(page.locator("[data-timeline-status]")).toHaveText(msg("en", "ui.timeline.loadedCount", { count: after.length - before.length }));
-    await expectFocusOnNewCard(page, before);
-    expect(new URL(page.url()).search).toBe(`?at=${TL.anchor}`);
-  });
-
-  test("純鍵盤：焦點在載入更多按 Enter 即載入", async ({ page }) => {
-    await page.goto(`/en/timeline?at=${TL.anchor}`);
-    await waitTimelineHydrated(page);
-    const before = await cardIds(page);
-    await page.locator("a[data-load=next]").focus();
-    await page.keyboard.press("Enter");
-    await expect.poll(async () => (await cardIds(page)).length).toBeGreaterThan(before.length);
-    await expectFocusOnNewCard(page, before);
-  });
-
-  test("連續載入到底：出現沒有更多、不再有載入更多連結，總數等於 fixture", async ({ page }) => {
-    await page.goto(`/en/timeline?at=${TL.anchor}`);
-    await waitTimelineHydrated(page);
-    for (let i = 0; i < 6; i++) {
-      const next = page.locator("a[data-load=next]");
-      if ((await next.count()) === 0) break;
-      const n = (await cardIds(page)).length;
-      await next.click();
-      await expect.poll(async () => (await cardIds(page)).length).toBeGreaterThan(n);
-    }
-    await expect(page.locator("a[data-load=next]")).toHaveCount(0);
-    await expect(page.getByText(msg("en", "ui.timeline.noLater"))).toBeVisible();
-    expect((await cardIds(page)).length).toBe(TL.bigDayPreview + TL.fillerCount);
-  });
-
-  test("往前：點載入較早 → 更早的組插在前面", async ({ page }) => {
-    await page.goto("/en/timeline?at=2037-03-20");
-    await waitTimelineHydrated(page);
-    const prev = page.locator("a[data-load=prev]");
-    await expect(prev).toHaveText(msg("en", "ui.timeline.loadEarlier"));
-    const before = await cardIds(page);
-    const firstBefore = await page.locator("[data-group]").first().getAttribute("data-group");
-    await prev.click();
-    await expect.poll(async () => (await cardIds(page)).length).toBeGreaterThan(before.length);
-    const firstAfter = await page.locator("[data-group]").first().getAttribute("data-group");
-    expect(firstAfter!.localeCompare(firstBefore!), "新的第一組要比原本更早").toBeLessThan(0);
-    const after = await cardIds(page);
-    expect(new Set(after).size).toBe(after.length);
-  });
-
-  test("沒有 JS：載入更多是帶 cursor 的連結，整頁導覽後仍有內容", async ({ browser }) => {
-    const ctx = await browser.newContext({ javaScriptEnabled: false, baseURL: test.info().project.use.baseURL });
-    const page = await ctx.newPage();
-    await page.goto(`/en/timeline?at=${TL.anchor}`);
-    await page.locator("a[data-load=next]").click();
-    await expect(page).toHaveURL(/cursor=/);
-    await expect(page.locator("[data-timeline-card]").first()).toBeVisible();
-    await expect(page.locator("a[data-load=prev]")).toBeVisible();
-    await ctx.close();
-  });
-
-  test("稀疏條件：status=delayed 往前找 → 部分結果與「繼續往前找」，再點才找到更遠的，最後才是「沒有更早的資料」", async ({ page }) => {
-    await page.goto(`/en/timeline?status=delayed&at=${TL_SPARSE.at}`);
-    await waitTimelineHydrated(page);
-    const prev = page.locator("a[data-load=prev]");
-    await expect(prev).toHaveText(msg("en", "ui.timeline.loadEarlier")); // 還沒掃過：一般文案
-    await prev.click();
-    // 第一次：找到 hero（2036-05-15），掃描量用完 → 部分結果
-    await expect(page.locator("[data-timeline-card]")).toHaveCount(1);
-    await expect(prev).toHaveText(msg("en", "ui.timeline.searchEarlier"));
-    await expect(page.locator("[data-partial=prev]")).toHaveText(msg("en", "ui.timeline.partialEarlier"));
-    await expect(page.getByText(msg("en", "ui.timeline.noEarlier"))).toHaveCount(0);
-    // 第二次：2032-06 的遠端資料；之後確定到盡頭
-    await prev.click();
-    await expect(page.locator("[data-timeline-card]")).toHaveCount(2);
-    await expect(page.locator(`[data-group="day:${TL_SPARSE.date}"]`)).toHaveCount(1);
-    await expect(page.getByText(msg("en", "ui.timeline.noEarlier"))).toBeVisible();
-    await expect(page.locator("a[data-load=prev]")).toHaveCount(0);
-    await expect(page.locator("[data-partial=prev]")).toHaveCount(0);
-  });
-
-  test("沒有 JS：部分結果的「繼續往前找」是帶 cursor 的連結", async ({ browser }) => {
-    const ctx = await browser.newContext({ javaScriptEnabled: false, baseURL: test.info().project.use.baseURL });
-    const page = await ctx.newPage();
-    await page.goto(`/en/timeline?status=delayed&at=${TL_SPARSE.at}`);
-    await page.locator("a[data-load=prev]").click();
-    await expect(page).toHaveURL(/cursor=/);
-    await expect(page.locator("a[data-load=prev]")).toHaveText(msg("en", "ui.timeline.searchEarlier"));
-    await expect(page.locator("[data-partial=prev]")).toBeVisible();
-    await ctx.close();
-  });
-
-  test("跳日期表單：輸入日期按 Enter → 從該日起算", async ({ page }) => {
-    await page.goto("/en/timeline");
-    await page.locator("#tl-at").fill("2037-03-10");
-    await page.locator("#tl-at").press("Enter");
-    await expect(page).toHaveURL(/at=2037-03-10/);
-    await expect(page.locator("[data-group]").first()).toHaveAttribute("data-group", "day:2037-03-10");
   });
 });
 

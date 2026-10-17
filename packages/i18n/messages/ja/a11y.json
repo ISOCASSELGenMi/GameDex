@@ -22,5 +22,9 @@
   "externalLink": "（外部サイト、新しいウィンドウで開きます）",
   "stageIcon": "発売段階",
   "statusIcon": "ステータス",
-  "dayCellWithEvents": "{date}、{count}本のゲーム、{events}件のイベント"
+  "dayCellWithEvents": "{date}、{count}本のゲーム、{events}件のイベント",
+  "calendarPrevGame": "前のゲーム、{index}／{total}本目",
+  "calendarNextGame": "次のゲーム、{index}／{total}本目",
+  "calendarCurrentGame": "{name}、{index}／{total}本目",
+  "menu": "メニュー"
 }

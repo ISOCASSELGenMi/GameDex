@@ -5,7 +5,7 @@
  * 狀態碼在頁面程式執行前就以 200 送出，頁面內的 notFound()／redirect() 只會變成「軟 404」與客戶端導向
  * （Next 16.4 實測，見 C-report）。所以能不查 DB 就判斷的 404 與導向放在 proxy，回真正的狀態碼。
  */
-import { filterRedirectSearch } from "@sok/api-contract";
+import { filterRedirectSearch, isFilterParam } from "@sok/api-contract";
 import { createTranslator, type Locale } from "@sok/i18n";
 import { calendarMonthPath, localeHref } from "./links";
 import { monthOfDate, parseMonthParam } from "./month";
@@ -15,16 +15,24 @@ export type LocalizedRouteDecision =
   | { type: "redirect"; location: string }
   | { type: "notFound"; locale: Locale };
 
+/** query 字串（含或不含 `?`）裡有沒有任何篩選參數（FILTER_PARAMS）。 */
+function hasFilterParam(search: string): boolean {
+  const params = new URLSearchParams(search.startsWith("?") ? search.slice(1) : search);
+  for (const key of params.keys()) if (isFilterParam(key)) return true;
+  return false;
+}
+
 /**
  * pathname 的第一段必須已確認是支援語系。
- * - `/{locale}`、`/{locale}/calendar` → 導到今天（UTC）所在月份（保留 query）
+ * - `/{locale}`：首頁（儀表板），不導向。舊書籤 `/{locale}?platform=…`（帶月曆篩選參數）導到今天（UTC）所在月份的月曆（保留 query）
+ * - `/{locale}/calendar` → 導到今天（UTC）所在月份（保留 query）
  * - `/{locale}/calendar/{不合法月份}`、`/{locale}/calendar/{月份}/{多餘}` → 404
  */
 export function decideLocalizedRoute(pathname: string, locale: Locale, search: string, now: Date): LocalizedRouteDecision {
   const segs = pathname.split("/").filter((s, i) => i === 0 || s !== "");
   // segs[0] === ""、segs[1] === locale
   const rest = segs.slice(2);
-  if (rest.length === 0 || (rest.length === 1 && rest[0] === "calendar")) {
+  if ((rest.length === 0 && hasFilterParam(search)) || (rest.length === 1 && rest[0] === "calendar")) {
     return { type: "redirect", location: localeHref(locale, calendarMonthPath(monthOfDate(now)), search) };
   }
   if (rest[0] === "calendar") {

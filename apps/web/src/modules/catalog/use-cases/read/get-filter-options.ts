@@ -1,4 +1,5 @@
-import { BROWSE_SORTS, GAME_TYPES, PLATFORM_KINDS, RELEASE_STAGES, RELEASE_STATE_FILTERS, type FilterOptions } from "../../domain/entities";
+import { BROWSE_SORTS, GAME_TYPES, RELEASE_STAGES, RELEASE_STATE_FILTERS, type FilterOptions } from "../../domain/entities";
+import { PLATFORM_GROUP_KINDS } from "../../domain/platform-groups";
 import { normalizeReleaseFilter } from "../../domain/release-filter";
 import { listGenreOptions, listPlatformOptions, listRegionCodes, listThemeOptions } from "../../repository/filter-options";
 import { releaseFilterDefaults } from "./resolve-filter";
@@ -23,7 +24,7 @@ export async function getFilterOptions(input: GetFilterOptionsInput): Promise<Fi
   ]);
   return {
     platforms,
-    platformKinds: PLATFORM_KINDS.filter((k) => k !== "mobile"),
+    platformKinds: [...PLATFORM_GROUP_KINDS],
     genres,
     stages: [...RELEASE_STAGES],
     defaultStages: defaults.stages,

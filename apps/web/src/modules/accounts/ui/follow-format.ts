@@ -72,13 +72,6 @@ export function checkDateRange(from: string, to: string): "invalid" | "before_fr
   return null;
 }
 
-/** 活動開始時間（ISO 8601）→ UTC 的短日期時間（追蹤清單用）。 */
-export function formatEventTime(iso: string, locale: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" }).format(d);
-}
-
 /** 一行顯示用的簡短日期時間（上次讀取時間；依瀏覽器時區）。 */
 export function formatLocalDateTime(iso: string, locale: string): string {
   const d = new Date(iso);

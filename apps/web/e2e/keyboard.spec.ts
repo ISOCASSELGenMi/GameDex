@@ -1,6 +1,7 @@
 /**
- * 純鍵盤（15 Phase 3a 完成標準：純鍵盤可走完月曆 → 詳情）：
- * 跳到主要內容 → 月曆 grid → 方向鍵 → Enter 開當天清單 → Esc 回原格 → 預覽卡 → 詳情頁。全程不用滑鼠。
+ * 純鍵盤（15 Phase 3a 完成標準：純鍵盤可走完月曆 → 詳情；GameDex 第 3 段改版後）：
+ * 跳到主要內容 → Tab 進月曆格（整格一個停駐點）→ 左右鍵切換同日其他款 → Tab 到封面連結 → Enter 開預覽卡 → 「查看遊戲詳情」→ 詳情頁。
+ * 全程不用滑鼠。
  */
 import type { Page } from "@playwright/test";
 import { FIXTURE, calendarUrl, expect, gameUrl, msg, test, waitForCalendarReady, type TestLocale } from "./support/helpers";
@@ -17,7 +18,7 @@ async function tabUntil(page: Page, predicate: string, max = 80): Promise<number
 }
 
 for (const locale of ["zh-Hant", "en", "ja"] as const satisfies readonly TestLocale[]) {
-  test(`純鍵盤：月曆 → 預覽卡 → 詳情（${locale}）`, async ({ page }) => {
+  test(`純鍵盤：月曆 → 切換 → 預覽卡 → 詳情（${locale}）`, async ({ page }) => {
     await page.goto(calendarUrl(locale, FIXTURE.month));
     await waitForCalendarReady(page);
 
@@ -30,9 +31,10 @@ for (const locale of ["zh-Hant", "en", "ja"] as const satisfies readonly TestLoc
     await page.keyboard.press("Enter");
     await expect(page.locator("main#main")).toBeFocused();
 
-    // 從 main 繼續 Tab 進入月曆 grid：整個 grid 只有一個 Tab 停駐點（roving tabindex），本月沒有今天 → 1 日
-    await tabUntil(page, 'td[role="gridcell"][data-date]');
-    expect(await focusedDate(page)).toBe(`${FIXTURE.month}-01`);
+    // 從 main 繼續 Tab：款數 > 1 的格是一個停駐點（role=group），單款的格直接停在封面連結。
+    // 本月第一個可聚焦的格是 5/8（5/1 以前沒有遊戲；月精度的遊戲在「本月未定日」）
+    await tabUntil(page, ".cal-cell[data-count]");
+    expect(await focusedDate(page)).toBe(FIXTURE.busyDay);
     // 焦點可見（:focus-visible 有外框）
     const outline = await page.evaluate(() => {
       const s = getComputedStyle(document.activeElement!);
@@ -40,31 +42,35 @@ for (const locale of ["zh-Hant", "en", "ja"] as const satisfies readonly TestLoc
     });
     expect(outline.style).not.toBe("none");
     expect(outline.width).toBeGreaterThan(0);
+    const busy = page.locator(`.cal-cell[data-date="${FIXTURE.busyDay}"]`);
 
-    // 方向鍵
+    // 左右鍵切換同日的其他款（焦點留在格上）；live region 宣告目前那款
+    const name = (n: number) => `Busy Day Game ${String(n).padStart(2, "0")}`;
     await page.keyboard.press("ArrowRight");
-    expect(await focusedDate(page)).toBe(`${FIXTURE.month}-02`);
-    await page.keyboard.press("ArrowDown");
-    expect(await focusedDate(page)).toBe(`${FIXTURE.month}-09`);
+    await expect(busy.locator(".cal-name")).toHaveText(name(2));
+    await expect(busy.locator("[data-cal-live]")).toHaveText(msg(locale, "a11y.calendarCurrentGame", { name: name(2), index: 2, total: FIXTURE.busyCount }));
     await page.keyboard.press("ArrowLeft");
-    expect(await focusedDate(page)).toBe(FIXTURE.busyDay);
-    await page.keyboard.press("ArrowUp");
-    expect(await focusedDate(page)).toBe(`${FIXTURE.month}-01`);
-    await page.keyboard.press("ArrowDown");
-    expect(await focusedDate(page)).toBe(FIXTURE.busyDay);
-    // 只有目前格子是 tabindex=0
-    await expect(page.locator('.cal-desktop td[data-date][tabindex="0"]')).toHaveCount(1);
+    await expect(busy.locator(".cal-name")).toHaveText(name(1));
+    await expect(busy).toBeFocused();
 
-    // Enter：當天完整清單（8 款全部列出），焦點在對話框標題
+    // Tab 進格後依序：封面連結 → 上一款 → 下一款；Shift+Tab 回到封面連結，Enter 開預覽卡，焦點移到標題
+    // （accounts 啟用時，連結與切換鈕之間還有追蹤按鈕）
+    await page.keyboard.press("Tab");
+    await expect(busy.locator("a.cal-link")).toBeFocused();
+    await tabUntil(page, '[data-cal-nav="prev"]', 4);
+    await page.keyboard.press("Tab");
+    await expect(busy.locator('[data-cal-nav="next"]')).toBeFocused();
+    for (let i = 0; i < 4 && !(await busy.locator("a.cal-link").evaluate((el) => el === document.activeElement)); i++) await page.keyboard.press("Shift+Tab");
+    await expect(busy.locator("a.cal-link")).toBeFocused();
     await page.keyboard.press("Enter");
     const dialog = page.locator("dialog.side-sheet");
     await expect(dialog).toBeVisible();
     await expect(page.locator("#sheet-title")).toBeFocused();
-    await expect(dialog.locator("button.sheet-entry")).toHaveCount(FIXTURE.busyCount);
+    await expect(page.locator("#sheet-title")).toHaveText(name(1));
 
     // modal：Tab 不會跑到對話框外的頁面元素（原生 showModal 讓背景 inert；
     // 循環到最後時瀏覽器會把焦點交給網址列等瀏覽器 UI，此時 activeElement 是 body，屬原生行為）
-    for (let i = 0; i < FIXTURE.busyCount + 4; i++) {
+    for (let i = 0; i < 6; i++) {
       await page.keyboard.press("Tab");
       const where = await page.evaluate(() => {
         const el = document.activeElement;
@@ -74,24 +80,17 @@ for (const locale of ["zh-Hant", "en", "ja"] as const satisfies readonly TestLoc
       expect(where).not.toMatch(/^outside/);
     }
 
-    // Esc 關閉，焦點回到原本的格子
+    // Esc 關閉，焦點回到原本的封面連結
     await page.keyboard.press("Escape");
     await expect(dialog).toBeHidden();
-    expect(await focusedDate(page)).toBe(FIXTURE.busyDay);
+    await expect(busy.locator("a.cal-link")).toBeFocused();
 
-    // 往下一週到三平台同日的那天 → Enter → Tab 到第一個項目 → Enter 開預覽卡
-    await page.keyboard.press("ArrowDown");
-    expect(await focusedDate(page)).toBe(FIXTURE.multiPlatformDay);
-    await page.keyboard.press("Enter");
-    await expect(page.locator("#sheet-title")).toBeFocused();
-    await page.keyboard.press("Tab");
-    await expect(dialog.locator("button.sheet-entry").first()).toBeFocused();
+    // 單款的格（5/15 主角）：Tab 直接停在封面連結（沒有群組停駐點）→ Enter 開預覽卡 → Tab 到「查看遊戲詳情」→ Enter 進詳情頁
+    await page.locator(`.cal-cell[data-date="${FIXTURE.multiPlatformDay}"] a.cal-link`).focus();
     await page.keyboard.press("Enter");
     const heroName = locale === "zh-Hant" ? FIXTURE.hero.zhName : FIXTURE.hero.name;
     await expect(page.locator("#sheet-title")).toHaveText(heroName);
     await expect(page.locator("#sheet-title")).toBeFocused();
-
-    // 預覽卡內 Tab 到「查看遊戲詳情」→ Enter 進詳情頁
     await page.keyboard.press("Tab");
     const viewGame = dialog.locator("a.btn-primary");
     await expect(viewGame).toBeFocused();
@@ -105,27 +104,3 @@ for (const locale of ["zh-Hant", "en", "ja"] as const satisfies readonly TestLoc
     await expect(page.locator("a.skip-link")).toBeFocused();
   });
 }
-
-test("當天清單 → 預覽卡 →「回到當天清單」焦點回到原項目；Esc 後焦點回到原格子", async ({ page }) => {
-  await page.goto(calendarUrl("zh-Hant", FIXTURE.month));
-  await waitForCalendarReady(page);
-  const cell = page.locator(`.cal-desktop td[data-date="${FIXTURE.busyDay}"]`);
-  await cell.focus();
-  await page.keyboard.press("Enter");
-  const dialog = page.locator("dialog.side-sheet");
-  await page.keyboard.press("Tab");
-  await page.keyboard.press("Tab");
-  const second = dialog.locator('button.sheet-entry').nth(1);
-  await expect(second).toBeFocused();
-  const key = await second.getAttribute("data-entry");
-  await page.keyboard.press("Enter");
-  // 預覽卡上方：「回到當天清單」
-  await page.keyboard.press("Shift+Tab");
-  await page.keyboard.press("Shift+Tab");
-  await expect(dialog.getByRole("button", { name: msg("zh-Hant", "ui.calendar.backToList") })).toBeFocused();
-  await page.keyboard.press("Enter");
-  await expect(dialog.locator(`button.sheet-entry[data-entry="${key}"]`)).toBeFocused();
-  await page.keyboard.press("Escape");
-  await expect(dialog).toBeHidden();
-  await expect(cell).toBeFocused();
-});

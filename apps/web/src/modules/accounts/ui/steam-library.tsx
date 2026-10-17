@@ -36,7 +36,9 @@ function filterCount(summary: OwnedGamesSummary, f: Filter): number {
   }
 }
 
-export function SteamLibrary({ strings, locale }: { strings: AccountStrings; locale: string }): ReactElement {
+/** `pageHeading`＝這個區塊就是分頁本身（Steam 遊戲庫分頁）：標題用 h1；否則是頁面裡的 h2 區塊。 */
+export function SteamLibrary({ strings, locale, pageHeading = false }: { strings: AccountStrings; locale: string; pageHeading?: boolean }): ReactElement {
+  const Heading = pageHeading ? "h1" : "h2";
   const [data, setData] = useState<SteamLibraryResponse | null>(null);
   const [items, setItems] = useState<OwnedGameView[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -156,9 +158,9 @@ export function SteamLibrary({ strings, locale }: { strings: AccountStrings; loc
 
   return (
     <section aria-labelledby="steam-library-heading" className="flex min-w-0 flex-col gap-3">
-      <h2 id="steam-library-heading" className="text-xl font-bold">
+      <Heading id="steam-library-heading" className={pageHeading ? "text-2xl font-bold" : "text-xl font-bold"}>
         {str(strings, "steam.title")}
-      </h2>
+      </Heading>
       <div className="notice flex flex-col gap-1">
         <p>{str(strings, "steam.privacyNote")}</p>
         <p className="text-sm text-[var(--muted)]">{str(strings, "steam.privacyHow")}</p>

@@ -71,7 +71,7 @@ test.describe("停權者（D83）", () => {
     await expect(notice).toContainText(m(locale, "suspended.body"));
     await expect(notice.getByRole("link", { name: m(locale, "suspended.toPrivacy") })).toHaveAttribute("href", `/${locale}/account/privacy`);
     await expect(page.getByRole("button", { name: m(locale, "account.signOut"), exact: true })).toBeVisible();
-    for (const key of ["account.mine.lists", "account.track.follows", "settings.nav.settings"]) {
+    for (const key of ["account.tab.lists", "account.tab.follows", "account.tab.settings"]) {
       await expect(page.getByRole("link", { name: m(locale, key), exact: true }), key).toHaveCount(0);
     }
     await expect(page.getByRole("heading", { name: m(locale, "account.linked") })).toHaveCount(0);
@@ -174,15 +174,19 @@ test.describe("月曆卡片的追蹤按鈕（D83）", () => {
     const reqs = trackStateRequests(page);
     await page.goto(calendarUrl(locale, FIXTURE.month));
     await expect.poll(() => reqs.length, "只有一次批次查詢").toBe(1);
-    expect(reqs[0]!.length).toBeGreaterThan(5);
+    // 畫面上有幾個追蹤掛載點就查幾款：每個有遊戲的日期只顯示第一款，加上「本月未定日」的卡片（其餘款數切換時才出現，狀態由切換後的掃描補查）
+    expect(reqs[0]!.length).toBe(await page.locator("[data-card-action-game]").count());
+    expect(reqs[0]!.length).toBeGreaterThanOrEqual(3);
     expect(reqs[0]!.every((t) => /^game:\d+$/.test(t))).toBe(true);
     expect(new Set(reqs[0]).size, "不重複查同一款遊戲").toBe(reqs[0]!.length);
 
     const label = m(locale, "follow.cardAria", { name: FIXTURE.hero.name });
-    const desktop = page.locator(".cal-desktop").getByRole("button", { name: label });
+    const desktop = page.locator(".cal-grid").getByRole("button", { name: label });
     await expect(desktop).toBeVisible();
     await expect(desktop).toHaveAttribute("aria-pressed", "false");
-    await expect(desktop).toHaveAttribute("tabindex", "-1"); // 月曆格內的按鈕與格內連結一樣不進 Tab 順序
+    await expect(desktop).toHaveAttribute("tabindex", "0"); // 單款的格沒有群組停駐點：按鈕與連結直接在 Tab 順序
+    // 款數 > 1 的格：Tab 進格之前，格內按鈕不進 Tab 順序（整格一個停駐點）
+    await expect(page.locator(`.cal-cell[data-date="${FIXTURE.busyDay}"]`).getByRole("button", { name: m(locale, "follow.cardAria", { name: "Busy Day Game 01" }) })).toHaveAttribute("tabindex", "-1");
     await desktop.click();
     await expect(desktop).toHaveAttribute("aria-pressed", "true");
     await expect(page.locator("[data-card-follow-status]")).toHaveText(m(locale, "follow.cardOn", { name: FIXTURE.hero.name }));
@@ -190,17 +194,17 @@ test.describe("月曆卡片的追蹤按鈕（D83）", () => {
     const state = await api<{ items: { following: boolean }[] }>(page, "GET", `/api/v1/me/follows/state?targets=game:${gameId}`);
     expect(state.json.items[0]!.following).toBe(true);
     expect(reqs.length, "按下去不再打批次查詢").toBe(1);
-    // 同一款遊戲的所有按鈕（格子＋議程）狀態一致
+    // 同一款遊戲的所有按鈕狀態一致
     const all = await page.locator(`button[aria-label="${label}"]`).evaluateAll((els) => els.map((e) => e.getAttribute("aria-pressed")));
-    expect(all.length).toBeGreaterThanOrEqual(2);
+    expect(all.length).toBeGreaterThanOrEqual(1);
     expect(new Set(all)).toEqual(new Set(["true"]));
     await expectNoA11yViolations(page, "月曆 卡片追蹤按鈕");
 
     await page.reload();
     await expect.poll(() => reqs.length).toBe(2);
-    await expect(page.locator(".cal-desktop").getByRole("button", { name: label })).toHaveAttribute("aria-pressed", "true");
-    await page.locator(".cal-desktop").getByRole("button", { name: label }).click();
-    await expect(page.locator(".cal-desktop").getByRole("button", { name: label })).toHaveAttribute("aria-pressed", "false");
+    await expect(page.locator(".cal-grid").getByRole("button", { name: label })).toHaveAttribute("aria-pressed", "true");
+    await page.locator(".cal-grid").getByRole("button", { name: label }).click();
+    await expect(page.locator(".cal-grid").getByRole("button", { name: label })).toHaveAttribute("aria-pressed", "false");
     await expect(page.locator("[data-card-follow-status]")).toHaveText(m(locale, "follow.cardOff", { name: FIXTURE.hero.name }));
 
     // 伺服器 HTML：只有空的掛載點，沒有按鈕、沒有使用者資訊、沒有 Set-Cookie
@@ -216,7 +220,7 @@ test.describe("月曆卡片的追蹤按鈕（D83）", () => {
     const locale: TestLocale = "en";
     const reqs = trackStateRequests(page);
     await page.goto(calendarUrl(locale, FIXTURE.month));
-    const btn = page.locator(".cal-desktop").getByRole("button", { name: m(locale, "follow.cardAria", { name: FIXTURE.hero.name }) });
+    const btn = page.locator(".cal-grid").getByRole("button", { name: m(locale, "follow.cardAria", { name: FIXTURE.hero.name }) });
     await expect(btn).toBeVisible();
     await expect(btn).toHaveAttribute("data-card-follow", "anonymous");
     await btn.click();
@@ -225,12 +229,35 @@ test.describe("月曆卡片的追蹤按鈕（D83）", () => {
     expect(reqs).toHaveLength(0);
   });
 
-  test("手機寬度：議程卡片的按鈕 44px 以上、不水平溢出；axe", async ({ page }) => {
+  test("格內切換：新出現的遊戲補查追蹤狀態（只查新的那款）並可追蹤", async ({ page }) => {
+    const locale: TestLocale = "en";
+    await signedInUser(page, "card-cal-switch");
+    const reqs = trackStateRequests(page);
+    await page.goto(calendarUrl(locale, FIXTURE.month));
+    await expect.poll(() => reqs.length).toBe(1);
+    const busy = page.locator(`.cal-cell[data-date="${FIXTURE.busyDay}"]`);
+    await busy.locator('[data-cal-nav="next"]').click();
+    await expect(busy.locator(".cal-name")).toHaveText("Busy Day Game 02");
+    const btn = busy.locator("[data-card-follow]");
+    await expect(btn).toHaveAttribute("data-card-follow", /^(on|off)$/);
+    await expect.poll(() => reqs.length).toBe(2);
+    expect(reqs[1], "只補查新出現的那一款").toHaveLength(1);
+    await btn.click();
+    await expect(btn).toHaveAttribute("aria-pressed", "true");
+    await expect(page.locator("[data-card-follow-status]")).toHaveText(m(locale, "follow.cardOn", { name: "Busy Day Game 02" }));
+    // 切回第一款再切回來：不再查（已有狀態），按鈕仍是已追蹤
+    await busy.locator('[data-cal-nav="prev"]').click();
+    await busy.locator('[data-cal-nav="next"]').click();
+    await expect(busy.locator("[data-card-follow]")).toHaveAttribute("aria-pressed", "true");
+    expect(reqs).toHaveLength(2);
+  });
+
+  test("手機寬度：月曆格的按鈕 44px 以上、不水平溢出；axe", async ({ page }) => {
     const locale: TestLocale = "zh-Hant";
     await page.setViewportSize({ width: 320, height: 800 });
     await signedInUser(page, "card-cal-mobile");
     await page.goto(calendarUrl(locale, FIXTURE.month));
-    const first = page.locator(".cal-mobile [data-card-follow]").first();
+    const first = page.locator(".cal-grid [data-card-follow]").first();
     await expect(first).toBeVisible();
     await expect(first).toHaveAttribute("data-card-follow", /^(on|off)$/);
     const box = await first.boundingBox();
@@ -241,17 +268,17 @@ test.describe("月曆卡片的追蹤按鈕（D83）", () => {
 });
 
 test.describe("時間軸卡片的追蹤按鈕（D83）", () => {
-  test("登入後一次批次查詢；載入更多只查新出現的遊戲", async ({ page }) => {
+  test("登入後一次批次查詢；切到下一週只查新出現的遊戲", async ({ page }) => {
     const locale: TestLocale = "en";
     await signedInUser(page, "card-tl");
     const reqs = trackStateRequests(page);
-    await page.goto(`/${locale}/timeline?at=${FIXTURE_3B.timeline.anchor}`);
+    await page.goto(`/${locale}/timeline?at=${FIXTURE_3B.timeline.bigDay}`);
     await expect.poll(() => reqs.length).toBe(1);
-    const cards = page.locator(".tl-card");
+    const cards = page.locator(".tw-card");
     await expect(cards.first()).toBeVisible();
-    await expect.poll(async () => page.locator(".tl-card [data-card-follow]").count()).toBe(await cards.count());
+    await expect.poll(async () => page.locator(".tw-card [data-card-follow]").count()).toBe(await cards.count());
     const first = reqs[0]!;
-    expect(first.length).toBeGreaterThan(10);
+    expect(first.length).toBeGreaterThanOrEqual(1);
 
     const btn = cards.first().locator("[data-card-follow]");
     await expect(btn).toHaveAttribute("aria-pressed", "false");
@@ -261,15 +288,15 @@ test.describe("時間軸卡片的追蹤按鈕（D83）", () => {
     expect(await btn.evaluate((e) => (e as HTMLElement).getBoundingClientRect().height)).toBeGreaterThanOrEqual(44);
     await expectNoA11yViolations(page, "時間軸 卡片追蹤按鈕");
 
-    const before = await cards.count();
-    await page.locator("a[data-load=next]").click();
-    await expect.poll(async () => cards.count()).toBeGreaterThan(before);
-    await expect.poll(() => reqs.length, "載入更多：再一次批次查詢").toBe(2);
+    await page.locator("a[data-week-nav=next]").click();
+    await expect(page.locator("[data-week-range]")).not.toHaveAttribute("data-week", /^2037-W10$/);
+    await expect.poll(() => reqs.length, "切週：再一次批次查詢").toBe(2);
     expect(reqs[1]!.filter((t) => first.includes(t)), "只查新出現的遊戲").toEqual([]);
-    await expect.poll(async () => page.locator(".tl-card [data-card-follow]").count()).toBe(await cards.count());
-    // 先前按下的狀態還在
+    await expect.poll(async () => page.locator(".tw-card [data-card-follow]").count()).toBe(await cards.count());
+    // 回到前一週：先前按下的狀態還在
+    await page.locator("a[data-week-nav=prev]").click();
+    await expect(page.locator("[data-week-range]")).toHaveAttribute("data-week", "2037-W10");
     await expect(cards.first().locator("[data-card-follow]")).toHaveAttribute("aria-pressed", "true");
-    expect(reqs.length).toBe(2);
   });
 });
 
