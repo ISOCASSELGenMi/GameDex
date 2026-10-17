@@ -146,4 +146,17 @@
 - [x] 原型驗證：Google（網頁版）與 Apple（iPadOS 26.6.1）7 步全部通過，結論寫回 spec 08（2026-10-16）
 - [x] F：訂閱頁文案依實測更新（2026-10-16）
 - [x] 驗收：全部檢查＋spec 15 Phase 5 完成標準；交接 `docs/handoff/2026-10-16-phase5-done.md`（2026-10-16）
-- [ ] PR `feat/phase5` → main
+- [x] PR `feat/phase5` → main（#4，2026-10-16 合併）
+
+### Phase 9 本機準備（分支 `feat/phase9-prep`）
+- [x] Dockerfile、compose、Caddy、備份、心跳告警（migration 0006）、錯誤 scrub、法務頁草稿；PR #5 2026-10-16 合併
+
+### Phase 7：帳號（Better Auth，D76～D82）
+- [x] 第 1 波：accounts 骨架、Email＋密碼、帳號頁、migration 0007（PR #6，2026-10-16 合併；0006／0007 已套開發 DB）
+- [x] 第 3 波：Steam 登入／綁定、owned_games（migration 0008，已套開發 DB）、GetOwnedGames 匯入與比對（PR #7，2026-10-17 合併）
+- [x] 待決定案（2026-10-17，D82）：找不到的列每次匯入重比、Steam 消失的遊戲保留、手動指定比對 UI 排第 5 波；spec 03／07／09／16／90 寫回
+- [ ] 第 3 波補：匯入時重比找不到的列（分支 `feat/phase7-w3b`，2026-10-17）
+- [ ] Steam 真實連線實測（需使用者提供 `STEAM_WEB_API_KEY`）
+- [ ] 第 2 波：Discord／Google／Twitch／Microsoft 社群登入（需使用者申請 OAuth app，建議正式網域定了再申請）
+- [ ] 第 4 波 Xbox 匯入、第 5 波清單／遊玩紀錄／玩家平均＋手動指定比對 UI、第 6 波追蹤與私人 iCal、第 7 波匯出與刪帳號
+- [ ] Phase 7.5 寄信服務（正式開放註冊前必須完成）

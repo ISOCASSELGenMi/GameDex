@@ -29,7 +29,7 @@ export interface ExternalOwnedGame {
  * - queued：尚未比對（matchConfidencePct IS NULL）
  * - matched：已對到遊戲
  * - needs_review：比對過但信心不足（寫入信心、matchedGameId 為 NULL；不自動採用）
- * - not_found：比對過但沒有候選（信心 0）
+ * - not_found：比對過但沒有候選（信心 0）；每次匯入會被重設回 queued 重新比對（catalog 之後可能新增對應遊戲）。needs_review、matched 不重設
  */
 export const OWNED_GAME_STATUSES = ["queued", "matched", "needs_review", "not_found"] as const;
 export type OwnedGameStatus = (typeof OWNED_GAME_STATUSES)[number];
