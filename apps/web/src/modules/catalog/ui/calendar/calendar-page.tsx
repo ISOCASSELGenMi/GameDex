@@ -23,8 +23,8 @@ import { addMonths, isoDate, monthOfDate, parseMonthParam, weekStartFor, type Ye
 import { rethrowForPage } from "../page-errors";
 import { CalendarInteractive } from "./calendar-interactive";
 import { loadFilterOptions } from "./filter-options";
-import { AgendaView, MonthGridView, UndatedView } from "./month-views";
-import type { CalendarClientLabels } from "./types";
+import { MonthGridView, UndatedView } from "./month-views";
+import type { CalendarClientLabels, DayCellLabels } from "./types";
 import { buildCalendarViewModel, type CardItem } from "./view-model";
 
 export type SearchParamsRecord = Readonly<Record<string, string | string[] | undefined>>;
@@ -100,10 +100,8 @@ export async function CalendarMonthPage({ locale, supportedLocales, month, searc
 
   const labels: CalendarClientLabels = {
     close: t.t("ui.common.close"),
-    backToList: t.t("ui.calendar.backToList"),
     viewGame: t.t("ui.calendar.viewGame"),
     previewTitle: t.t("a11y.previewDialog"),
-    dayDialogTitle: t.t("ui.calendar.dayListTitle"),
     platforms: t.t("ui.release.platforms"),
     date: t.t("ui.release.date"),
     stage: t.t("ui.release.stage"),
@@ -113,6 +111,16 @@ export async function CalendarMonthPage({ locale, supportedLocales, month, searc
     event: t.t("ui.calendar.event"),
     release: t.t("ui.calendar.release"),
   };
+  const cellLabels: DayCellLabels = {
+    prev: t.t("a11y.calendarPrevGame"),
+    next: t.t("a11y.calendarNextGame"),
+    current: t.t("a11y.calendarCurrentGame"),
+    today: t.t("a11y.today"),
+    loadError: t.t("ui.calendar.dayLoadError"),
+    retry: t.t("ui.calendar.dayRetry"),
+  };
+  // 格內切換按需載入同一天其餘款數的 API（與本頁同一組篩選；日期由客戶端附加）
+  const dayApiBase = `/api/v1/calendar/day?locale=${locale}${query ? `&${query}` : ""}`;
 
   return (
     <PageShell locale={locale} supportedLocales={supportedLocales} path={path} query={query}>
@@ -174,13 +182,8 @@ export async function CalendarMonthPage({ locale, supportedLocales, month, searc
 
       {empty ? <EmptyFilterResult chips={isEmptyFilter(spec) ? [] : chips} t={t} clearHref={basePath} emptyText={t.t("ui.calendar.noReleases")} /> : null}
 
-      <CalendarInteractive key={`${path}?${query}`} previews={vm.previews} labels={labels}>
-        <div className="cal-desktop">
-          <MonthGridView ym={ym} locale={locale} t={t} vm={vm} hrefOf={hrefOf} weekStart={weekStartFor(locale)} titleId="cal-title" />
-        </div>
-        <div className="cal-mobile">
-          <AgendaView ym={ym} locale={locale} t={t} vm={vm} hrefOf={hrefOf} />
-        </div>
+      <CalendarInteractive key={`${path}?${query}`} previews={vm.previews} labels={labels} cell={{ apiBase: dayApiBase, labels: cellLabels }}>
+        <MonthGridView ym={ym} locale={locale} t={t} vm={vm} weekStart={weekStartFor(locale)} titleId="cal-title" />
         <UndatedView locale={locale} t={t} groups={vm.undated} hrefOf={hrefOf} />
       </CalendarInteractive>
       {slots?.cardActions}

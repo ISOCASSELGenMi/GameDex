@@ -68,7 +68,9 @@
     "timesInUtc": "イベント時刻はお使いのタイムゾーンで表示し、下に小さくUTCを添えています",
     "monthNavigation": "月を切り替え",
     "noItemsThisMonth": "今月は発売・イベントのデータがありません",
-    "undatedGroupTitle": "{group}：{label}"
+    "undatedGroupTitle": "{group}：{label}",
+    "dayLoadError": "この日のほかのゲームを読み込めませんでした。しばらくしてからもう一度お試しください。",
+    "dayRetry": "再試行"
   },
   "game": {
     "sections": {

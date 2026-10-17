@@ -68,7 +68,9 @@
     "timesInUtc": "Event times follow your time zone, with UTC underneath",
     "monthNavigation": "Change month",
     "noItemsThisMonth": "No releases or events this month",
-    "undatedGroupTitle": "{group}: {label}"
+    "undatedGroupTitle": "{group}: {label}",
+    "dayLoadError": "Could not load the other games for this day. Please try again later.",
+    "dayRetry": "Retry"
   },
   "game": {
     "sections": {

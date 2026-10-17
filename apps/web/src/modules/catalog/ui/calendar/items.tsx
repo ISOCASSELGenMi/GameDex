@@ -8,10 +8,10 @@ import type { Translator } from "@sok/i18n";
 import { EventTime } from "@/kernel/ui/event-time";
 import { CardActionHost } from "../card-action-host";
 import { HeatBadge, heatBadgeLabel } from "../heat-badge";
-import { EventIcon, StageIcon, StatusIcon, WarningIcon } from "../icons";
+import { StageIcon, StatusIcon, WarningIcon } from "../icons";
 import { stageLabel, statusLabel } from "../labels";
 import { gameNameLang } from "../name-lang";
-import type { CardItem, DayItem, EventItem } from "./view-model";
+import type { CardItem, EventItem } from "./view-model";
 import { platformChipText } from "./view-model";
 
 const MAX_CHIPS = 3;
@@ -86,7 +86,7 @@ export function EventEntry({ item, t }: { item: EventItem; t: Translator }): Rea
   return (
     <span className="ev" data-event={item.key}>
       <span className="ev-tag">
-        <EventIcon />
+        <span className="ev-ico" aria-hidden="true" />
         <span>{t.t("ui.calendar.event")}</span>
       </span>{" "}
       <span className="ev-name" lang="en">
@@ -98,9 +98,4 @@ export function EventEntry({ item, t }: { item: EventItem; t: Translator }): Rea
       </span>
     </span>
   );
-}
-
-export function DayItemView({ item, hrefOf, t }: { item: DayItem; hrefOf: (item: CardItem) => string; t: Translator }): ReactElement {
-  if (item.type === "event") return <EventEntry item={item} t={t} />;
-  return <FullCard item={item} href={hrefOf(item)} t={t} />;
 }

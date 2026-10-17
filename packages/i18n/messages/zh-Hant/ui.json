@@ -68,7 +68,9 @@
     "timesInUtc": "活動時間依你的時區顯示，下方小字為 UTC",
     "monthNavigation": "切換月份",
     "noItemsThisMonth": "這個月沒有上市或活動資料",
-    "undatedGroupTitle": "{group}：{label}"
+    "undatedGroupTitle": "{group}：{label}",
+    "dayLoadError": "無法載入當天的其他遊戲，請稍後再試。",
+    "dayRetry": "重試"
   },
   "game": {
     "sections": {

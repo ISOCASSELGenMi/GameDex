@@ -5,50 +5,45 @@
 import { FIXTURE, calendarUrl, expect, gameUrl, msg, test, waitForCalendarReady } from "./support/helpers";
 
 const MOBILE = { width: 375, height: 812 };
-const desktop = ".cal-desktop";
-const cellOf = (iso: string) => `${desktop} td[data-date="${iso}"]`;
+const grid = ".cal-grid";
+const cellOf = (iso: string) => `.cal-cell[data-date="${iso}"]`;
 
 test.describe("月曆", () => {
-  test("一款多平台遊戲在月曆只出現一次（桌機格子與手機議程）", async ({ page }) => {
+  test("一款多平台遊戲在月曆只出現一次（桌機與手機）", async ({ page }) => {
     await page.goto(calendarUrl("en", FIXTURE.month));
-    const cards = page.locator(`${desktop} a.card`, { hasText: FIXTURE.hero.name });
+    const cards = page.locator(`${grid} a.cal-link`, { hasText: FIXTURE.hero.name });
     await expect(cards).toHaveCount(1);
-    await expect(page.locator(`${cellOf(FIXTURE.multiPlatformDay)} a.card`, { hasText: FIXTURE.hero.name })).toHaveCount(1);
+    await expect(page.locator(`${cellOf(FIXTURE.multiPlatformDay)} a.cal-link`, { hasText: FIXTURE.hero.name })).toHaveCount(1);
     // 三個平台都在同一張卡上
-    await expect(cards.first().locator(".chip")).toHaveCount(3);
+    await expect(cards.first().locator(".cal-chip")).toHaveCount(3);
 
     await page.setViewportSize(MOBILE);
-    await expect(page.locator(`.cal-mobile [data-agenda-day="${FIXTURE.multiPlatformDay}"] a.card`, { hasText: FIXTURE.hero.name })).toHaveCount(1);
+    await expect(page.locator(`${grid} a.cal-link`, { hasText: FIXTURE.hero.name })).toHaveCount(1);
   });
 
-  test("超過上限的那天出現「＋N」，點開能看到全部", async ({ page }) => {
+  test("同日多款：格內一次一款，群組名稱報出總數，用切換鈕可逐款看完全部", async ({ page }) => {
     await page.goto(calendarUrl("en", FIXTURE.month));
     await waitForCalendarReady(page);
     const cell = page.locator(cellOf(FIXTURE.busyDay));
-    await expect(cell.locator(".cell-list a.card")).toHaveCount(3);
-    const more = cell.locator("summary[data-day-more]");
-    await expect(more).toHaveText(msg("en", "ui.calendar.moreItems", { count: FIXTURE.busyCount - 3 }));
+    await expect(cell.locator("a.cal-link")).toHaveCount(1);
     // 格子的 aria-label 報出當天總數
     await expect(cell).toHaveAttribute("aria-label", new RegExp(String(FIXTURE.busyCount)));
-
-    await more.click();
-    const dialog = page.locator("dialog.side-sheet");
-    await expect(dialog).toBeVisible();
-    const entries = dialog.locator("button.sheet-entry");
-    await expect(entries).toHaveCount(FIXTURE.busyCount);
+    const seen: string[] = [];
     for (let i = 1; i <= FIXTURE.busyCount; i++) {
-      await expect(dialog.getByText(`Busy Day Game ${String(i).padStart(2, "0")}`, { exact: true })).toBeVisible();
+      seen.push((await cell.locator(".cal-name").innerText()).trim());
+      if (i < FIXTURE.busyCount) {
+        await cell.locator('[data-cal-nav="next"]').click();
+        await expect(cell.locator(".cal-name")).not.toHaveText(seen[seen.length - 1]!);
+      }
     }
+    expect(seen).toEqual(Array.from({ length: FIXTURE.busyCount }, (_, i) => `Busy Day Game ${String(i + 1).padStart(2, "0")}`));
   });
 
-  test("沒有 JS 時「＋N」原地展開、卡片是詳情連結", async ({ browser }) => {
+  test("沒有 JS 時卡片是詳情連結", async ({ browser }) => {
     const ctx = await browser.newContext({ javaScriptEnabled: false, baseURL: test.info().project.use.baseURL });
     const page = await ctx.newPage();
     await page.goto(calendarUrl("en", FIXTURE.month));
-    const cell = page.locator(cellOf(FIXTURE.busyDay));
-    await cell.locator("summary[data-day-more]").click();
-    await expect(cell.locator("details.cell-more a[href]")).toHaveCount(FIXTURE.busyCount - 3);
-    await expect(page.locator(`${desktop} a.card`, { hasText: FIXTURE.hero.name })).toHaveAttribute("href", gameUrl("en", FIXTURE.hero.slug));
+    await expect(page.locator(`${grid} a.cal-link`, { hasText: FIXTURE.hero.name })).toHaveAttribute("href", gameUrl("en", FIXTURE.hero.slug));
     await ctx.close();
   });
 
@@ -57,42 +52,45 @@ test.describe("月曆", () => {
     const undated = page.locator("section.undated");
     await expect(undated.locator("h2")).toHaveText(msg("zh-Hant", "ui.calendar.undatedThisMonth"));
     await expect(undated.getByText(FIXTURE.monthPrecision.name)).toBeVisible();
-    await expect(page.locator(desktop).getByText(FIXTURE.monthPrecision.name)).toHaveCount(0);
+    await expect(page.locator(grid).getByText(FIXTURE.monthPrecision.name)).toHaveCount(0);
   });
 
-  test("手機寬度顯示議程式清單、沒有水平捲動", async ({ page }) => {
+  test("手機寬度是逐日清單、沒有水平捲動", async ({ page }) => {
     await page.setViewportSize(MOBILE);
     await page.goto(calendarUrl("zh-Hant", FIXTURE.month));
-    await expect(page.locator(desktop)).toBeHidden();
-    const agenda = page.locator(".cal-mobile section.agenda");
-    await expect(agenda).toBeVisible();
-    await expect(agenda.locator("section.agenda-day h3").first()).toBeVisible();
-    // 熱門的一天：議程顯示 5 張，其餘收在「＋N」
-    const busy = agenda.locator(`[data-agenda-day="${FIXTURE.busyDay}"]`);
-    await expect(busy.locator("ul.agenda-list > li")).toHaveCount(5);
-    await expect(busy.locator("details.agenda-more > summary")).toHaveText(msg("zh-Hant", "ui.calendar.moreItems", { count: FIXTURE.busyCount - 5 }));
+    await expect(page.locator(".cal-weekdays")).toBeHidden();
+    await expect(page.locator(`.cal-day[data-date="${FIXTURE.busyDay}"]`)).toBeVisible();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(0);
   });
 
   test("階段、延期、來源待確認以圖示＋文字顯示（不只靠顏色）；活動有圖示＋文字", async ({ page }) => {
     await page.goto(calendarUrl("zh-Hant", FIXTURE.month));
-    const meta = page.locator(`${cellOf(FIXTURE.multiPlatformDay)} a.card .card-meta`).first();
-    await expect(meta.locator("svg[aria-hidden='true']")).toHaveCount(1);
-    await expect(meta).toHaveText(msg("zh-Hant", "enums.releaseStage.full"));
+    await waitForCalendarReady(page);
+    // 搶先體驗（Busy Day Game 03，第三款）
+    const busy = page.locator(cellOf(FIXTURE.busyDay));
+    await busy.locator('[data-cal-nav="next"]').click();
+    await busy.locator('[data-cal-nav="next"]').click();
+    await expect(busy.locator(".cal-name")).toHaveText("Busy Day Game 03");
+    const stage = busy.locator('[data-tag="stage"]');
+    await expect(stage).toHaveText(msg("zh-Hant", "enums.releaseStage.early_access"));
+    await expect(stage.locator("svg[aria-hidden='true']")).toHaveCount(1);
 
     const day22 = page.locator(cellOf("2036-05-22"));
-    const delayed = day22.locator("a.card", { hasText: "Delayed Dragon" });
-    await expect(delayed.locator(".card-meta")).toContainText(msg("zh-Hant", "enums.releaseStatus.delayed"));
-    await expect(delayed.locator(".card-meta svg")).toHaveCount(2);
-    const removed = day22.locator("a.card", { hasText: "Removed Rocket" });
-    await expect(removed.locator(".card-warn")).toHaveText(msg("zh-Hant", "ui.release.sourceUnconfirmed"));
-    await expect(removed.locator(".card-warn svg")).toHaveCount(1);
+    const delayed = day22.locator('[data-tag="status"]');
+    await expect(day22.locator(".cal-name")).toHaveText("Delayed Dragon");
+    await expect(delayed).toHaveText(msg("zh-Hant", "enums.releaseStatus.delayed"));
+    await expect(delayed.locator("svg")).toHaveCount(1);
+    await day22.locator('[data-cal-nav="next"]').click();
+    await expect(day22.locator(".cal-name")).toHaveText("Removed Rocket");
+    const removed = day22.locator('[data-tag="warn"]');
+    await expect(removed).toHaveText(msg("zh-Hant", "ui.release.sourceUnconfirmed"));
+    await expect(removed.locator("svg")).toHaveCount(1);
 
     const ev = page.locator(`${cellOf(FIXTURE.eventDay)} [data-event]`);
     await expect(ev).toContainText(FIXTURE.event.name);
     await expect(ev.locator(".ev-tag")).toHaveText(msg("zh-Hant", "ui.calendar.event"));
-    await expect(ev.locator(".ev-tag svg")).toHaveCount(1);
+    await expect(ev.locator(".ev-tag .ev-ico")).toHaveCount(1);
   });
 });
 

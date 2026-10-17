@@ -24,3 +24,5 @@ export { getRatingDisplayConfig, validateRatingDisplayEnv } from "./rating-confi
 export { getMyGames, pickNextRelease, type GetMyGamesInput } from "./get-my-games";
 // GameDex 第 2 段：首頁儀表板
 export { getHomeDashboard, type GetHomeDashboardInput } from "./get-home-dashboard";
+// GameDex 第 3 段（X1）：月曆單日（格內切換按需載入）
+export { getCalendarDay, type GetCalendarDayInput, type CalendarDay } from "./get-calendar-day";

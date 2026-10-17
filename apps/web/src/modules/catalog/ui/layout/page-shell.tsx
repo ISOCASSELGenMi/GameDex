@@ -43,7 +43,7 @@ export function PageShell({ locale, supportedLocales, path, query = "", followPa
     path === item.path || (!item.exact && path.startsWith(`${item.path}/`));
   return (
     <>
-      <header className="border-b border-[var(--border)]">
+      <header className="site-header">
         <div className="mx-auto flex max-w-screen-2xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-2">
           {org ? (
             <a href={org.href} data-org-link="header" className="link-quiet inline-flex min-h-11 items-center text-sm text-[var(--muted)]">

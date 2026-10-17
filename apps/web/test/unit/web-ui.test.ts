@@ -21,6 +21,7 @@ import {
   weekStartFor,
 } from "@/modules/catalog/ui/month";
 import { decideLocalizedRoute, renderNotFoundHtml } from "@/modules/catalog/ui/request-routing";
+import { toDayCard, toFoldRow } from "@/modules/catalog/ui/calendar/day-card";
 import { buildCalendarViewModel, eventDayInMonth, joinList } from "@/modules/catalog/ui/calendar/view-model";
 
 describe("月份參數", () => {
@@ -233,7 +234,7 @@ function card(over: Partial<ReleaseCard>): ReleaseCard {
 describe("月曆 view model", () => {
   const t = createTranslator("zh-Hant");
 
-  it("活動排在當天卡片之前；開始於上月的活動放本月 1 日；未定日依精度分組", () => {
+  it("每天只帶第一款與總數；活動分到當天；開始於上月的活動放本月 1 日；未定日依精度分組", () => {
     const data: CalendarMonth = {
       year: 2026,
       month: 10,
@@ -251,15 +252,23 @@ describe("月曆 view model", () => {
     const vm = buildCalendarViewModel(data, "zh-Hant", t);
     expect(vm.releaseCount).toBe(4);
     expect(vm.eventCount).toBe(2);
-    expect(vm.days["2026-10-05"]!.map((i) => i.type)).toEqual(["event", "card", "card"]);
-    expect(vm.days["2026-10-01"]!.map((i) => i.key)).toEqual(["e9"]);
+    const d5 = vm.days["2026-10-05"]!;
+    expect(d5.total).toBe(2);
+    expect(d5.events.map((e) => e.key)).toEqual(["e10"]);
+    expect(d5.first).toMatchObject({ id: 1, n: "A", pc: ["PS5", "Switch"], tg: [] });
+    expect(d5.first!.pn).toBeUndefined();
+    expect(vm.days["2026-10-01"]).toMatchObject({ total: 0, first: null });
+    expect(vm.days["2026-10-01"]!.events.map((e) => e.key)).toEqual(["e9"]);
     expect(vm.undated.map((g) => g.precision)).toEqual(["month", "quarter"]);
-    const keys = vm.days["2026-10-05"]!.filter((i) => i.type === "card").map((i) => i.key);
-    const a = vm.previews[keys[0]!]!;
-    expect(a).toMatchObject({ h: "/zh-Hant/games/a", n: "A", d: "2026年10月5日", p: "PlayStation 5、Nintendo Switch", a: "PS5 · Switch" });
-    expect(a.x).toBeUndefined();
-    const b = vm.previews[keys[1]!]!;
-    expect(b).toMatchObject({ tk: "delayed", t: "已延期", r: 1, x: "（搶先體驗、已延期、資料來源待確認）" });
+    // 格內卡片資料自帶預覽欄位；vm.previews 只放未定日卡片
+    expect(d5.first).toMatchObject({ h: "/zh-Hant/games/a", n: "A", d: "2026年10月5日", p: "PlayStation 5、Nintendo Switch" });
+    expect(d5.first!.x).toBeUndefined();
+    expect(Object.keys(vm.previews)).toHaveLength(2);
+    // 第二款不在 view model（由 day API 載入），用同一個建構函式建立時的欄位
+    const second = toDayCard(data.days["2026-10-05"]![1]!, "zh-Hant", t);
+    expect(second).toMatchObject({ id: 2, tk: "delayed", t: "已延期", r: 1 });
+    expect(toFoldRow(data.days["2026-10-05"]![1]!, "zh-Hant", t)[3]).toBe("（搶先體驗、已延期、資料來源待確認）");
+    expect(second.tg.map((x) => x.k)).toEqual(["stage", "status", "warn"]);
   });
 
   it("活動日期與列舉分隔符號", () => {
