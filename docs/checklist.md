@@ -168,7 +168,7 @@
 - [ ] 使用者：過目 ja 用語（クリア／全クリア／挫折 等）；隱私權政策帳號段落請律師審閱
 - [x] 第 6 波：追蹤、我的遊戲（mine）、熱度訊號、私人 iCal（分支 `feat/phase7-w6`，PR 疊在 #9 上，2026-10-17；待合併；migration 0010 未套開發 DB）
 - [x] 第 7 波：資料匯出、刪除帳號、停權、偏好設定頁（分支 `feat/phase7-w7`，PR 疊在 #10 上，2026-10-17；待合併；無 migration）
-- [ ] spec 待補：06 路由表（account/follows、games、calendar、lists、plays、/lists/*）、02 slot 清單（entity.actions、subscribe.private）、07（follows、me/games、calendar feeds、第 5 波 API）
+- [x] spec 待補：06 路由表（account/follows、games、calendar、lists、plays、/lists/*）、02 slot 清單（entity.actions、subscribe.private）、07（follows、me/games、calendar feeds、第 5 波 API）（2026-10-17 寫回，分支 `docs/spec-phase7-w5-7`）
 - [ ] Steam 真實連線實測（需使用者提供 `STEAM_WEB_API_KEY`）
 - [ ] 第 2 波：Discord／Google／Twitch／Microsoft 社群登入（需使用者申請 OAuth app，建議正式網域定了再申請）
 - [ ] 第 4 波 Xbox 匯入（依賴第 2 波 Microsoft 登入）

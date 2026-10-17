@@ -12,6 +12,7 @@
 - 90：新增 D74、D75。
 - 03、07、09、16、90（Phase 7 Better Auth，2026-10-16）：users／connected_accounts 改為 Better Auth 對應（email NOT NULL＋placeholder、email_verified boolean、provider varchar、密碼併入 connected_accounts、刪 password_credentials、新增 sessions／auth_verifications、auth_tokens 縮小）；07 認證端點改為 BA 原生路徑；16 新增 ACCOUNTS_SIGNUP_ENABLED、MICROSOFT_*；90 新增 D77～D81。
 - 08、90（Phase 5 原型實測，2026-10-16）：Google 抓取間隔、Apple 手動重新抓取、聚合 UID 換地區不重複（D26 成立）、兩個客戶端都不依賴 SEQUENCE、TENTATIVE 無視覺差異、取消在 Google 移除／Apple 刪除線。
+- 02、06、07（Phase 7 第 5～7 波與 D83，2026-10-17）：02 slot 清單加 `entity.actions`、`subscribe.private`；06 路由表改為實際的 `/account/*`（lists、plays、follows、games、calendar、settings、privacy、deleted）與公開清單 `/lists/[id]`、`/lists/s/[token]`；07 補 lists、play-records（含 platform、stats）、me/games、player-ratings、follows（state、count）、calendar feeds、account（刪除重新驗證、匯出、偏好）、imports 手動指定與 games/search，connections 改由 Better Auth 端點提供，停權者寫入 403。
 - 03、07、09、16、90（Phase 7 第 3 波 Steam，2026-10-17）：`owned_games` 的 `matched_game_id` FK 為 ON DELETE SET NULL（手寫於 migration）、`imported_at` NOT NULL、新增兩個索引、比對狀態語意；07 Steam plugin 發起改 POST 回 `{url}` 與錯誤碼、`POST|GET /api/v1/imports/{provider}` 的狀態碼與回應；09 比對流程（`after()`＋`match_owned_games`）、冷卻、匯入時重比找不到的列、消失的遊戲保留；16 `STEAM_WEB_API_KEY` 改選填；90 新增 D82。
 - 03／08（Phase 5）：`events` 新增 `sequence` 欄位；活動同步只在欄位實際變動時更新 `updated_at`，iCal 活動 SEQUENCE 改讀該欄位（不再數 change_feed）。
 

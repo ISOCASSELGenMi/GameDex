@@ -60,7 +60,7 @@ npm run lint
 npm run lint:arch   # 0 violations
 npm test            # 單元＋整合（整合測試用 TEST_DATABASE_URL，資料庫名必須以 _test 結尾，每次重建）
 npm run i18n:check
-npm -w apps/web run test:a11y   # Playwright＋axe；本機 PW_CHANNEL=msedge；與 npm test 共用測試 DB，不可同時跑
+npm -w apps/web run test:a11y   # Playwright＋axe；本機一律 PW_CHANNEL=chromium（自帶無頭 chromium，需先 npx playwright install chromium；msedge 會在 Alt+Tab 留空白視窗）；與 npm test 共用測試 DB，不可同時跑
 ```
 
 ## 慣例與地雷
