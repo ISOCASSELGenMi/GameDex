@@ -1,10 +1,10 @@
 {
   "calendarName": {
-    "releases": "SoK Game Calendar: Upcoming releases",
-    "events": "SoK Game Calendar: Game events",
-    "platform": "SoK Game Calendar: {platform}",
+    "releases": "GameDex: Upcoming releases",
+    "events": "GameDex: Game events",
+    "platform": "GameDex: {platform}",
     "game": "{game}",
-    "following": "SoK Game Calendar: My follows"
+    "following": "GameDex: My follows"
   },
   "calendarDescription": {
     "releases": "Upcoming game releases. Delays, cancellations and date changes are reflected in this calendar automatically.",

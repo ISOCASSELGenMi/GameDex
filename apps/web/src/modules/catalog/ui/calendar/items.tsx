@@ -5,6 +5,7 @@
 import Image from "next/image";
 import type { ReactElement } from "react";
 import type { Translator } from "@sok/i18n";
+import { EventTime } from "@/kernel/ui/event-time";
 import { CardActionHost } from "../card-action-host";
 import { HeatBadge, heatBadgeLabel } from "../heat-badge";
 import { EventIcon, StageIcon, StatusIcon, WarningIcon } from "../icons";
@@ -92,7 +93,8 @@ export function EventEntry({ item, t }: { item: EventItem; t: Translator }): Rea
         {item.event.name}
       </span>{" "}
       <span className="fc-p">
-        {item.kindLabel} · {item.timeLabel}
+        {item.kindLabel} ·{" "}
+        {item.event.startTime ? <EventTime startIso={item.event.startTime} endIso={item.event.endTime} locale={t.locale} /> : item.timeLabel}
       </span>
     </span>
   );

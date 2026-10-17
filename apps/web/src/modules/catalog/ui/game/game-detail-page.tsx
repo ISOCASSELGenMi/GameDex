@@ -6,7 +6,8 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { cacheLife, cacheTag } from "next/cache";
 import { cache, type ReactElement, type ReactNode } from "react";
-import { formatDateTime, formatReleaseLabel, type Locale, type Translator } from "@sok/i18n";
+import { EventTime } from "@/kernel/ui/event-time";
+import { formatReleaseLabel, type Locale, type Translator } from "@sok/i18n";
 import type { CalendarEventItem, GameDetail, GameFranchiseGroup, GameReleaseRow, GameSummary, PlatformChip } from "../../domain/entities";
 import { getGameDetail, getRatingDisplayConfig } from "../../use-cases/read";
 import { joinList } from "../calendar/view-model";
@@ -208,7 +209,7 @@ function EventList({ events, locale, t }: { events: readonly CalendarEventItem[]
               {e.name}
             </a>
             <span className="text-sm text-[var(--muted)]">
-              {e.startTime ? formatDateTime(e.startTime, locale, "UTC") : t.t("ui.calendar.timeTbd")}
+              {e.startTime ? <EventTime startIso={e.startTime} endIso={e.endTime} locale={locale} /> : t.t("ui.calendar.timeTbd")}
             </span>
           </li>
         ))}

@@ -14,7 +14,7 @@
   "related": "Related pages",
   "dataSources": {
     "title": "Data sources and credits",
-    "intro": "SoK Game Calendar is a release calendar and database for video games. This page lists where the information comes from and who owns the material shown on the site.",
+    "intro": "GameDex is a release calendar and database for video games. This page lists where the information comes from and who owns the material shown on the site.",
     "sections": {
       "igdb": {
         "title": "IGDB",
@@ -98,7 +98,7 @@
     "sections": {
       "scope": {
         "title": "What the site is",
-        "body": "SoK Game Calendar provides information about video game release dates and related events. It is free to use and offered for personal, non-commercial information."
+        "body": "GameDex provides information about video game release dates and related events. It is free to use and offered for personal, non-commercial information."
       },
       "accuracy": {
         "title": "No guarantee of accuracy",

@@ -24,13 +24,14 @@ import type {
   PlatformStatus,
   ReleaseStage,
 } from "../domain/entities";
+import { PLATFORM_GROUP_KINDS, platformGroupsFor } from "../domain/platform-groups";
 import { isCommonPlatform } from "./filter-options";
 import { summaryColumns, toSummary, type SummaryRow } from "./game-detail";
 import { withReadTimeout, type ReadOptions } from "./read-tx";
 import { buildAggregateCardsQuery, periodEndSql } from "./release-aggregate";
 
-/** 總覽的分組順序（mobile 不列；other 放最後，UI 可預設收合）。 */
-export const PLATFORM_OVERVIEW_KIND_ORDER: readonly PlatformKind[] = ["console", "hybrid", "handheld", "pc", "arcade", "other"];
+/** 總覽的分組順序（mobile 不列；other 放最後，UI 可預設收合；hybrid 不獨立成組，見 domain/platform-groups.ts）。 */
+export const PLATFORM_OVERVIEW_KIND_ORDER: readonly PlatformKind[] = PLATFORM_GROUP_KINDS;
 
 interface PlatformRow extends Record<string, unknown> {
   id: number;
@@ -77,7 +78,7 @@ export function groupPlatformsByKind(items: readonly PlatformListItem[]): Platfo
   return PLATFORM_OVERVIEW_KIND_ORDER.map((kind) => ({
     kind,
     platforms: items
-      .filter((p) => p.kind === kind)
+      .filter((p) => platformGroupsFor(p.kind).includes(kind))
       .sort(
         (a, b) =>
           Number(b.isCommon) - Number(a.isCommon) ||

@@ -1,7 +1,10 @@
 {
   "site": {
-    "name": "SoK 遊戲月曆",
+    "name": "遊戲圖鑑 GameDex",
     "tagline": "遊戲上市月曆與資料庫"
+  },
+  "org": {
+    "backTo": "回到 {name}"
   },
   "nav": {
     "calendar": "月曆",
@@ -62,7 +65,7 @@
     "dayListTitle": "{date} 的上市與活動",
     "backToList": "回到當天清單",
     "timeTbd": "時間未定",
-    "timesInUtc": "活動時間以 UTC 顯示",
+    "timesInUtc": "活動時間依你的時區顯示，下方小字為 UTC",
     "monthNavigation": "切換月份",
     "noItemsThisMonth": "這個月沒有上市或活動資料",
     "undatedGroupTitle": "{group}：{label}"
@@ -121,7 +124,7 @@
     "historyChange": "{from} → {to}",
     "historyChangedAt": "{date} 更新",
     "noReleaseDates": "尚無上市日資料",
-    "timesInUtc": "時間以 UTC 顯示",
+    "timesInUtc": "活動時間依你的時區顯示，下方小字為 UTC",
     "ageRating": "年齡分級：{label}",
     "historyEntry": "{change}（{date}）",
     "franchiseTitle": {
@@ -293,7 +296,7 @@
   },
   "events": {
     "title": "活動",
-    "timesInUtc": "活動時間以 UTC 顯示",
+    "timesInUtc": "活動時間依你的時區顯示，下方小字為 UTC",
     "scopeLabel": "時間範圍",
     "kindLabel": "活動類型",
     "scope": {

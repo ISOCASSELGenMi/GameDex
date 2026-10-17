@@ -667,7 +667,7 @@ describe.skipIf(!enabled)("accounts 第 6 波：追蹤、熱度訊號、我的�
         feedType: "following", locale: "zh-Hant", filterPlatforms: [], filterRegions: [], filterGenres: [], filterStages: [],
         includeReleases: true, includeEvents: true, settingsVersion: 0, lastAccessedAt: null,
       });
-      expect(f1.feed.name).toBe("SoK 遊戲日曆：我的追蹤");
+      expect(f1.feed.name).toBe("遊戲圖鑑 GameDex：我的追蹤");
       const second = await json(await handleFeeds(request("GET", "/api/v1/calendar/feeds", { cookie: D.cookie })));
       expect(second.created).toBe(false);
       expect(second.feed.id).toBe(f1.feed.id);
@@ -724,7 +724,7 @@ describe.skipIf(!enabled)("accounts 第 6 波：追蹤、熱度訊號、我的�
       const text = await res.text();
       expect(gameIdsInIcs(text)).toEqual(sorted(gid.a!, gid.b!, gid.c!));
       const parsed = parseIcs(text);
-      expect(parsed.calendar.find((p) => p.name === "X-WR-CALNAME")?.value).toBe("SoK 遊戲日曆：我的追蹤");
+      expect(parsed.calendar.find((p) => p.name === "X-WR-CALNAME")?.value).toBe("遊戲圖鑑 GameDex：我的追蹤");
       const eventUids = parsed.events.map((e) => e.get("UID") ?? "").filter((u) => u.startsWith("event-"));
       // 追蹤的活動 a＋與追蹤的遊戲 a 相關的活動 b；c 只關聯沒追蹤的遊戲 f → 不含
       expect(eventUids.sort()).toEqual([`event-${eventIds.a}@localhost:3000`, `event-${eventIds.b}@localhost:3000`].sort());
@@ -874,7 +874,7 @@ describe.skipIf(!enabled)("accounts 第 6 波：追蹤、熱度訊號、我的�
       const H = await signUp("fl6-h@example.com");
       const hf = await getFeed(H);
       const switched = await json(await handleFeed(request("PATCH", `/api/v1/calendar/feeds/${hf.id}`, { cookie: H.cookie, body: { locale: "en" } }), String(hf.id)));
-      expect(switched.feed.name).toBe("SoK Game Calendar: My follows");
+      expect(switched.feed.name).toBe("GameDex: My follows");
     });
 
     it("PATCH 驗證：401／403／404（別人的、不存在、非數字）／400（語系、陣列、型別、空 body）", async () => {

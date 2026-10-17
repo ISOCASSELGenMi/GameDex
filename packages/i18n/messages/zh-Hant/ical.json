@@ -1,10 +1,10 @@
 {
   "calendarName": {
-    "releases": "SoK 遊戲月曆：即將上市",
-    "events": "SoK 遊戲月曆：遊戲活動",
-    "platform": "SoK 遊戲月曆：{platform}",
+    "releases": "遊戲圖鑑 GameDex：即將上市",
+    "events": "遊戲圖鑑 GameDex：遊戲活動",
+    "platform": "遊戲圖鑑 GameDex：{platform}",
     "game": "{game}",
-    "following": "SoK 遊戲日曆：我的追蹤"
+    "following": "遊戲圖鑑 GameDex：我的追蹤"
   },
   "calendarDescription": {
     "releases": "近期即將上市的遊戲，延期、取消與日期更新會自動反映在這個行事曆。",

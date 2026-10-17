@@ -32,6 +32,8 @@ export {
 export {
   RELEASE_DATE_PRECISIONS,
   formatDateTime,
+  formatEventTimeText,
+  type EventTimeText,
   formatIsoDate,
   formatNumber,
   formatReleaseLabel,

@@ -1,7 +1,10 @@
 {
   "site": {
-    "name": "SoK Game Calendar",
+    "name": "GameDex",
     "tagline": "Game release calendar and database"
+  },
+  "org": {
+    "backTo": "Back to {name}"
   },
   "nav": {
     "calendar": "Calendar",
@@ -62,7 +65,7 @@
     "dayListTitle": "Releases and events on {date}",
     "backToList": "Back to the day list",
     "timeTbd": "Time TBA",
-    "timesInUtc": "Event times are shown in UTC",
+    "timesInUtc": "Event times follow your time zone, with UTC underneath",
     "monthNavigation": "Change month",
     "noItemsThisMonth": "No releases or events this month",
     "undatedGroupTitle": "{group}: {label}"
@@ -121,7 +124,7 @@
     "historyChange": "{from} → {to}",
     "historyChangedAt": "Updated {date}",
     "noReleaseDates": "No release dates yet",
-    "timesInUtc": "Times are shown in UTC",
+    "timesInUtc": "Event times follow your time zone, with UTC underneath",
     "ageRating": "Age rating: {label}",
     "historyEntry": "{change} ({date})",
     "franchiseTitle": {
@@ -293,7 +296,7 @@
   },
   "events": {
     "title": "Events",
-    "timesInUtc": "Event times are shown in UTC",
+    "timesInUtc": "Event times follow your time zone, with UTC underneath",
     "scopeLabel": "Time range",
     "kindLabel": "Event type",
     "scope": {

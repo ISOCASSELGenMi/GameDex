@@ -7,6 +7,7 @@
  * （只在 mobile 上市的遊戲不上榜，與月曆、篩選選項一致）。heatLevel 0（完全無訊號）與 cancelled 的遊戲不上榜。
  * 排序：[site_follows_7d DESC,] popularity_score DESC, id ASC（07 §分頁 `popularity` 的鍵）。
  */
+import { expandPlatformKindFilter } from "../domain/platform-groups";
 import { sql, type SQL } from "drizzle-orm";
 import type {
   DatePrecision,
@@ -80,7 +81,7 @@ export function buildTrendingQuery(input: Omit<ListTrendingInput, "resolveImage"
   const f = input.filter;
   const platformConds: SQL[] = [sql`pl.kind <> 'mobile'`];
   if (f.platformIds) platformConds.push(sql`gp.platform_id = ANY(${pgArray(f.platformIds)}::int[])`);
-  if (f.platformKinds) platformConds.push(sql`pl.kind = ANY(${pgArray(f.platformKinds)}::platform_kind[])`);
+  if (f.platformKinds) platformConds.push(sql`pl.kind = ANY(${pgArray(expandPlatformKindFilter(f.platformKinds))}::platform_kind[])`);
 
   const conds: SQL[] = [
     popularityGroupCondition("g", input.group, input.todayUtc),

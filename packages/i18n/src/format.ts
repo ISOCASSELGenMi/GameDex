@@ -125,3 +125,35 @@ export function formatDateTime(
   if (Number.isNaN(d.getTime())) return isoInstant;
   return new Intl.DateTimeFormat(intlLocale(locale), { ...options, timeZone }).format(d);
 }
+
+export interface EventTimeText {
+  start: string;
+  /** 沒有結束、或與開始相同時為 null；與開始同一天（在該時區）時只含時間。 */
+  end: string | null;
+}
+
+const TIME_ONLY: Intl.DateTimeFormatOptions = { hour: "numeric", minute: "2-digit", timeZoneName: "short" };
+
+function dayKeyInZone(d: Date, timeZone: string): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
+}
+
+/**
+ * 活動時間（開始，選填結束）依 `timeZone` 格式化——活動時間顯示的唯一實作。
+ * 結束與開始在**該時區**同一天 → 結束只顯示時間（所以同一場活動換時區後，是否跨日可能不同）。
+ * 時區不合法（Intl 丟 RangeError）→ 退回 UTC。不合法的時間字串原樣回傳。
+ */
+export function formatEventTimeText(startIso: string, endIso: string | null, locale: Locale, timeZone: string): EventTimeText {
+  let zone = timeZone;
+  try {
+    new Intl.DateTimeFormat("en", { timeZone: zone });
+  } catch {
+    zone = "UTC";
+  }
+  const start = formatDateTime(startIso, locale, zone);
+  const s = new Date(startIso);
+  const e = endIso ? new Date(endIso) : null;
+  if (!e || Number.isNaN(e.getTime()) || Number.isNaN(s.getTime()) || e.getTime() === s.getTime()) return { start, end: null };
+  const sameDay = dayKeyInZone(s, zone) === dayKeyInZone(e, zone);
+  return { start, end: formatDateTime(endIso as string, locale, zone, sameDay ? TIME_ONLY : undefined) };
+}

@@ -117,7 +117,27 @@ describe("groupPlatformsByKind", () => {
       p("ps1", "console", { generation: 5 }),
       p("switch", "hybrid", { isCommon: true, recentReleaseCount: 3000 }),
     ]);
-    expect(groups.map((g) => g.kind)).toEqual(["console", "hybrid", "pc", "other"]);
-    expect(groups[0].platforms.map((x) => x.slug)).toEqual(["xsx", "ps5", "ps4", "ps1"]);
+    expect(groups.map((g) => g.kind)).toEqual(["console", "handheld", "pc", "other"]);
+    // hybrid（Switch）同時在主機與掌機兩組：主機組內常用在前
+    expect(groups[0].platforms.map((x) => x.slug)).toEqual(["switch", "xsx", "ps5", "ps4", "ps1"]);
+    expect(groups[1].platforms.map((x) => x.slug)).toEqual(["switch"]);
+  });
+});
+
+import { expandPlatformKindFilter, platformGroupsFor, PLATFORM_GROUP_KINDS } from "@/modules/catalog/domain/platform-groups";
+
+describe("平台分組（hybrid 雙掛）", () => {
+  it("platformGroupsFor：hybrid 同時屬於主機與掌機，其餘各屬自己", () => {
+    expect(platformGroupsFor("hybrid")).toEqual(["console", "handheld"]);
+    expect(platformGroupsFor("console")).toEqual(["console"]);
+    expect(platformGroupsFor("pc")).toEqual(["pc"]);
+    expect(PLATFORM_GROUP_KINDS).not.toContain("hybrid");
+  });
+  it("expandPlatformKindFilter：選主機或掌機時含 hybrid；單選 hybrid 與其他維持原樣", () => {
+    expect(expandPlatformKindFilter(["console"]).sort()).toEqual(["console", "hybrid"]);
+    expect(expandPlatformKindFilter(["handheld"]).sort()).toEqual(["handheld", "hybrid"]);
+    expect(expandPlatformKindFilter(["pc"])).toEqual(["pc"]);
+    expect(expandPlatformKindFilter(["hybrid"])).toEqual(["hybrid"]);
+    expect(expandPlatformKindFilter(["console", "handheld"]).sort()).toEqual(["console", "handheld", "hybrid"]);
   });
 });

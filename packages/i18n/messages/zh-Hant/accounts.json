@@ -416,7 +416,6 @@
     "removed": "已不存在的項目",
     "loadMore": "顯示更多",
     "listLabel": "{type}的追蹤清單",
-    "eventTime": "{time} UTC",
     "loadError": "無法載入追蹤清單，請稍後再試。",
     "collection": "合集"
   },
@@ -503,7 +502,6 @@
     },
     "kind": {
       "console": "主機",
-      "hybrid": "掌機兼主機",
       "handheld": "掌機",
       "pc": "PC",
       "arcade": "街機",

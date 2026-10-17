@@ -4,7 +4,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { MESSAGES, createTranslator, flattenMessages, formatReleaseLabel, type Locale } from "@sok/i18n";
 import { FOLLOW_TARGETS } from "@/modules/accounts/domain/entities/follows";
-import { checkDateRange, followTargetHref, formatEventTime, formatMyGameDate, maskFeedUrl, mineValue, type ReleasePrecision } from "@/modules/accounts/ui/follow-format";
+import { checkDateRange, followTargetHref, formatMyGameDate, maskFeedUrl, mineValue, type ReleasePrecision } from "@/modules/accounts/ui/follow-format";
 import { accountFollowsHref, accountGamesHref, accountPrivateCalendarHref } from "@/modules/accounts/ui/links";
 import { accountStrings } from "@/modules/accounts/ui/strings";
 import { followerCountLabel } from "@/modules/catalog/ui/heat-badge";
@@ -68,17 +68,13 @@ describe("mineValue／checkDateRange", () => {
   });
 });
 
-describe("maskFeedUrl／formatEventTime", () => {
+describe("maskFeedUrl", () => {
   it("遮罩後不含 token，只留來源與路徑前綴", () => {
     const token = "A".repeat(43);
     const masked = maskFeedUrl(`https://sok.example/ical/u/${token}.ics`);
     expect(masked).toBe(`https://sok.example/ical/u/${"•".repeat(12)}`);
     expect(masked).not.toContain(token);
     expect(maskFeedUrl("not a url")).not.toContain("not");
-  });
-  it("活動時間固定用 UTC", () => {
-    expect(formatEventTime("2027-06-08T23:30:00Z", "en")).toContain("Jun 8, 2027");
-    expect(formatEventTime("bad", "en")).toBe("bad");
   });
 });
 
@@ -112,7 +108,7 @@ describe("UI 原始碼引用的字典 key 三語都存在", () => {
   for (const t of FOLLOW_TARGETS) used.add(`follows.type.${t}`);
   for (const s of ["delayed", "released", "cancelled"]) used.add(`mygames.status.${s}`);
   for (const s of ["unspecified", "full", "early_access", "beta", "alpha", "demo", "other"]) used.add(`feedcal.stage.${s}`);
-  for (const k of ["console", "hybrid", "handheld", "pc", "arcade", "other"]) used.add(`feedcal.kind.${k}`);
+  for (const k of ["console", "handheld", "pc", "arcade", "other"]) used.add(`feedcal.kind.${k}`);
   for (const l of LOCALES) used.add(`feedcal.locale.${l}`);
   for (const k of ["event", "group"]) used.add(`follow.hint.${k}`);
   for (const k of ["quarter", "year", "tbd"]) used.add(`mygames.date.${k}`);

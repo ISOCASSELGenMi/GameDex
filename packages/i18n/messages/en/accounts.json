@@ -416,7 +416,6 @@
     "removed": "Item that no longer exists",
     "loadMore": "Show more",
     "listLabel": "Follow list: {type}",
-    "eventTime": "{time} UTC",
     "loadError": "Could not load your follow list. Please try again later.",
     "collection": "Collection"
   },
@@ -503,7 +502,6 @@
     },
     "kind": {
       "console": "Consoles",
-      "hybrid": "Hybrid consoles",
       "handheld": "Handhelds",
       "pc": "PC",
       "arcade": "Arcade",

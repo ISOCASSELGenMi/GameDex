@@ -1,10 +1,10 @@
 {
   "calendarName": {
-    "releases": "SoK ゲームカレンダー：発売予定",
-    "events": "SoK ゲームカレンダー：ゲームイベント",
-    "platform": "SoK ゲームカレンダー：{platform}",
+    "releases": "ゲーム図鑑 GameDex：発売予定",
+    "events": "ゲーム図鑑 GameDex：ゲームイベント",
+    "platform": "ゲーム図鑑 GameDex：{platform}",
     "game": "{game}",
-    "following": "SoK ゲームカレンダー：フォロー中"
+    "following": "ゲーム図鑑 GameDex：フォロー中"
   },
   "calendarDescription": {
     "releases": "近日発売のゲーム。延期・中止・日付の変更はこのカレンダーに自動で反映されます。",

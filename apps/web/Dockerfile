@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-# SoK Game Calendar — web（網站＋API＋iCal＋內建排程）。16 §docker-compose。
+# GameDex（原 SoK Game Calendar）— web（網站＋API＋iCal＋內建排程）。16 §docker-compose。
 # build context ＝ repo 根目錄（workspaces 的 packages/ 要進來）：
 #   docker build -f apps/web/Dockerfile -t sok-web .
 #
@@ -25,8 +25,13 @@ WORKDIR /app
 # 所以 build 時帶同一個值，避免 image 內殘留 localhost 之類的預設。留白＝與不設相同。
 ARG NEXT_PUBLIC_SITE_URL=
 ARG MODULES=
+# 組織首頁連結（選填）：header／footer 的 HTML 可能在預渲染時產生，build 時帶同一個值
+ARG ORG_HOME_URL=
+ARG ORG_NAME=
 ENV NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL} \
     MODULES=${MODULES} \
+    ORG_HOME_URL=${ORG_HOME_URL} \
+    ORG_NAME=${ORG_NAME} \
     NEXT_TELEMETRY_DISABLED=1
 COPY apps/web apps/web
 COPY packages packages

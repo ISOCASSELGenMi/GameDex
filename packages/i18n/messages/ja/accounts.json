@@ -416,7 +416,6 @@
     "removed": "すでに存在しない項目",
     "loadMore": "さらに表示",
     "listLabel": "フォローリスト：{type}",
-    "eventTime": "{time} UTC",
     "loadError": "フォローリストを読み込めませんでした。しばらくしてからもう一度お試しください。",
     "collection": "コレクション"
   },
@@ -503,7 +502,6 @@
     },
     "kind": {
       "console": "据置機",
-      "hybrid": "ハイブリッド機",
       "handheld": "携帯機",
       "pc": "PC",
       "arcade": "アーケード",
