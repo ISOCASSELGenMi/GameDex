@@ -20,6 +20,9 @@ GET  /api/v1/events?kind=&from=&to=
 GET  /api/v1/events/{slug}
 GET  /api/v1/platforms | /platforms/{slug} | /companies/{slug} | /franchises/{slug}
 GET  /api/v1/search?q=                    全站搜尋（遊戲、平台、公司、系列、活動）
+GET  /api/v1/calendar/day?date=YYYY-MM-DD&locale=&<篩選>   月曆／時間軸同日其他款（按需載入；同一套篩選與聚合）；
+                                          Cache-Control: public, max-age=60, s-maxage=300, stale-while-revalidate=300
+GET  /api/v1/timeline/week?locale=&week=YYYY-Www&at=&<篩選>   週時間軸資料；400 invalid_locale、503 timeout；快取同上
 POST /api/v1/reports                      資料更正回報（允許匿名，rate limit＋人機驗證，12）
 ```
 
@@ -42,6 +45,7 @@ GET    /api/v1/account/export?format=json|csv[&part=profile|lists|list_games|pla
                                          JSON 單檔；CSV 每段一檔（UTF-8 BOM、CRLF、防公式注入）。不含密碼雜湊、任何 token、feed token、
                                          shareToken；含 role、handle、emailVerified（placeholder 信箱標 emailIsPlaceholder）。
                                          attachment、no-store；每人每小時 12 次
+GET    /api/v1/account/summary           帳號頁摘要 { lists, playRecords, follows }（本人；401；停權 403；no-store）
 GET|PATCH /api/v1/account/preferences     displayName、locale、timezone（IANA）、preferredRegion、scoreProviders、preferredPlatformIds、
                                          defaultListVisibility、defaultReviewVisibility；PATCH 回 { preferences, changed }；每人每小時 120 次
 （綁定／解除／列出登入方式不另設 /account/connections：由 Better Auth 的 list-accounts、unlink-account、link-social 與
