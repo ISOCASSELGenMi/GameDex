@@ -5,7 +5,7 @@
  * 沒有 hooks、不讀字典：伺服器與客戶端元件都可用（文字由呼叫端以 heatBadgeLabel 取得後傳入）。
  */
 import type { ReactElement } from "react";
-import type { Translator } from "@sok/i18n";
+import { formatNumber, type Locale, type Translator } from "@sok/i18n";
 
 /** 熱度等級上限（heatLevel 0~5）。 */
 export const HEAT_LEVEL_MAX = 5;
@@ -67,6 +67,34 @@ export function HeatBadge({ level, label, compact = false, className }: HeatBadg
         .join(" ")}
     >
       <FlameIcon />
+      <span>{label}</span>
+    </span>
+  );
+}
+
+/**
+ * 站內追蹤人數（Phase 7 第 6 波，06 §熱度顯示）：「1.2K 人追蹤」。只在 followerCount 為正整數時有文字（null／0／非法＝不顯示）。
+ * 數字用 compact 格式（唯一實作在這裡；伺服器與測試共用）。
+ */
+export function followerCountLabel(t: Translator, locale: Locale, count: number | null | undefined): string | null {
+  if (typeof count !== "number" || !Number.isFinite(count) || count < 1) return null;
+  return t.t("ui.heat.followers", { count: formatNumber(Math.floor(count), locale, { notation: "compact" }) });
+}
+
+function TrendUpIcon(): ReactElement {
+  return (
+    <svg aria-hidden="true" focusable="false" viewBox="0 0 16 16" width="1em" height="1em" className="inline-block shrink-0 align-[-0.125em]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 11.5 6 7.5l2.5 2.5L14 4.5" />
+      <path d="M10 4.5h4v4" />
+    </svg>
+  );
+}
+
+/** 「上升中」標記（不是膠囊；圖示＋文字，不只靠顏色）。 */
+export function RisingMark({ label }: { label: string }): ReactElement {
+  return (
+    <span data-rising="" className="inline-flex items-center gap-1 text-sm font-semibold text-[var(--link)]">
+      <TrendUpIcon />
       <span>{label}</span>
     </span>
   );

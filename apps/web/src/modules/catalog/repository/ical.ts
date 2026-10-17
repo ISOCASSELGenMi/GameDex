@@ -27,12 +27,29 @@ import {
   type IsoDate,
   type ResolvedReleaseFilter,
 } from "../domain/entities";
-import { buildAggregatePicksQuery, type AggregatePickRow } from "./release-aggregate";
+import { buildAggregatePicksQuery, periodEndSql, type AggregatePickRow } from "./release-aggregate";
+import { pgArray } from "./read-tx";
 import { withReadTimeout, type ReadOptions } from "./read-tx";
 
 export type IcalReleaseScope =
   | { type: "public"; today: IsoDate; limit: number }
-  | { type: "game"; gameId: number; today: IsoDate };
+  | { type: "game"; gameId: number; today: IsoDate }
+  /**
+   * 私人追蹤 feed（Phase 7 第 6 波；08 §私人 feed）：
+   * - gameIds＝追蹤的遊戲：不受 90 天視窗限制，過去的上市保留近 30 天（`followedWindowSql`）。
+   * - platformIds／franchiseIds／companyIds＝追蹤的平台／系列／公司：旗下遊戲的上市事件（平台＝該平台上的上市列），
+   *   用公開 feed 的 90 天視窗，且這三類合計最多 limit 筆（ICAL_PUBLIC_MAX_EVENTS，依熱度取前 N）。
+   * 使用者的篩選（平台、類型、階段…）在 IcalReleaseQuery.filter；同一個 (遊戲, 平台, 階段) 只輸出一次（追蹤的遊戲優先）。
+   */
+  | {
+      type: "following";
+      today: IsoDate;
+      limit: number;
+      gameIds: readonly number[];
+      platformIds: readonly number[];
+      franchiseIds: readonly number[];
+      companyIds: readonly number[];
+    };
 
 export interface IcalReleaseQuery {
   scope: IcalReleaseScope;
@@ -56,8 +73,21 @@ function keyHistory(alias: string, extra: SQL): SQL {
 /** 公開 feed 視窗（見檔頭）。alias r＝候選列（列層級的寬鬆條件，只負責縮小候選鍵），p＝挑出的列（精確條件）。 */
 export function publicWindowSql(today: IsoDate): (alias: "r" | "p") => SQL {
   const horizon = sql`(${today}::date + ${ICAL_WINDOW_DAYS}::int)`;
-  const inWindow = (a: SQL) =>
-    sql`(COALESCE(${a}.period_start, ${a}.release_date) <= ${horizon} AND ${a}.release_date >= ${today}::date)`;
+  return windowSql(today, (a) =>
+    sql`(COALESCE(${a}.period_start, ${a}.release_date) <= ${horizon} AND ${a}.release_date >= ${today}::date)`,
+  );
+}
+
+/**
+ * 私人 feed「追蹤的遊戲」視窗：沒有 90 天上限，代表期間的最後一天 ≥ 今天 − 30 天（過去的上市保留近 30 天）；
+ * 取消／延期成 tbd 的過渡期規則與公開 feed 相同（共用 windowSql）。
+ */
+export function followedWindowSql(today: IsoDate): (alias: "r" | "p") => SQL {
+  return windowSql(today, (a) => sql`(${periodEndSql(sql`${a}.precision`, sql`${a}.release_date`)} >= (${today}::date - ${ICAL_RETAIN_DAYS}::int))`);
+}
+
+/** 視窗的共同骨架：只有「一般項目在不在視窗內」(inWindow) 因 feed 而異；取消、tbd 過渡期的規則共用。 */
+function windowSql(today: IsoDate, inWindow: (a: SQL) => SQL): (alias: "r" | "p") => SQL {
   return (alias) => {
     const a = sql.raw(alias);
     if (alias === "r") {
@@ -90,6 +120,62 @@ function gameWindowSql(alias: "r" | "p"): SQL {
   return sql`(p.release_date IS NOT NULL OR ${keyHistory("p", sql`h.old_date IS NOT NULL`)})`;
 }
 
+/** 兩個 id 清單取交集；第一個未給（undefined）＝不限制，直接用第二個。 */
+function intersectIds(userIds: readonly number[] | undefined, followed: readonly number[]): number[] {
+  if (!userIds) return [...followed];
+  const set = new Set(userIds);
+  return followed.filter((id) => set.has(id));
+}
+
+/**
+ * 私人追蹤 feed 的挑選：追蹤的遊戲（followedWindow、不限筆數）＋平台／系列／公司旗下（公開視窗、合計取前 limit 筆）。
+ * 每一段都是同一個 buildAggregatePicksQuery（聚合規則只有一份）；這裡只決定各段的篩選與視窗，再依
+ * (遊戲, 平台, 階段) 去重（追蹤的遊戲優先）並對「旗下」那一段套上限。
+ */
+function followingPicksQuery(q: IcalReleaseQuery, s: Extract<IcalReleaseScope, { type: "following" }>): SQL {
+  const base = { regionPref: q.regionPref, locale: q.locale, today: s.today, preferLiveStatus: true };
+  const parts: SQL[] = [];
+  if (s.gameIds.length > 0) {
+    const query = buildAggregatePicksQuery({ ...base, filter: q.filter, gameIds: s.gameIds, windowSql: followedWindowSql(s.today) });
+    parts.push(sql`SELECT 0 AS prio, a.* FROM (${query}) a`);
+  }
+  const fanOut = (filter: ResolvedReleaseFilter) =>
+    parts.push(sql`SELECT 1 AS prio, b.* FROM (${buildAggregatePicksQuery({ ...base, filter, windowSql: publicWindowSql(s.today) })}) b`);
+  if (s.platformIds.length > 0) {
+    const ids = intersectIds(q.filter.platformIds, s.platformIds);
+    if (ids.length > 0) fanOut({ ...q.filter, platformIds: ids });
+  }
+  if (s.franchiseIds.length > 0) {
+    const ids = intersectIds(q.filter.franchiseIds, s.franchiseIds);
+    if (ids.length > 0) fanOut({ ...q.filter, franchiseIds: ids });
+  }
+  if (s.companyIds.length > 0) {
+    const ids = intersectIds(q.filter.companyIds, s.companyIds);
+    if (ids.length > 0) fanOut({ ...q.filter, companyIds: ids });
+  }
+  if (parts.length === 0) {
+    // 沒有任何有效範圍（例如篩選的平台與追蹤的平台沒有交集）：同樣的欄位、零列（遊戲 id 0 不存在）
+    const none = buildAggregatePicksQuery({ ...base, filter: q.filter, gameIds: [0], windowSql: followedWindowSql(s.today) });
+    parts.push(sql`SELECT 0 AS prio, a.* FROM (${none}) a`);
+  }
+  const cap = Math.max(0, Math.floor(s.limit));
+  return sql`
+    SELECT r.* FROM (
+      SELECT m.*,
+        CASE WHEN m.prio = 0 THEN 0 ELSE row_number() OVER (
+          PARTITION BY m.prio
+          ORDER BY m.popularity_score DESC, m.release_date ASC NULLS LAST, m.game_id ASC, m.platform_id ASC, m.release_stage ASC
+        ) END AS fan_rank
+      FROM (
+        SELECT DISTINCT ON (u.game_id, u.platform_id, u.release_stage) u.*
+        FROM (${sql.join(parts, sql` UNION ALL `)}) u
+        ORDER BY u.game_id, u.platform_id, u.release_stage, u.prio
+      ) m
+    ) r
+    WHERE r.prio = 0 OR r.fan_rank <= ${cap}
+  `;
+}
+
 function picksQuery(q: IcalReleaseQuery): SQL {
   const base = {
     filter: q.filter,
@@ -101,6 +187,7 @@ function picksQuery(q: IcalReleaseQuery): SQL {
   if (q.scope.type === "game") {
     return buildAggregatePicksQuery({ ...base, gameIds: [q.scope.gameId], windowSql: gameWindowSql });
   }
+  if (q.scope.type === "following") return followingPicksQuery(q, q.scope);
   return buildAggregatePicksQuery({ ...base, windowSql: publicWindowSql(q.scope.today) });
 }
 
@@ -214,7 +301,11 @@ export async function listIcalEvents(
       `),
     opts,
   );
-  return res.rows.map((r) => ({
+  return res.rows.map(rowToEvent);
+}
+
+function rowToEvent(r: IcalEventRow): IcalEventItem {
+  return {
     id: r.id,
     slug: r.slug,
     name: r.name,
@@ -227,7 +318,7 @@ export async function listIcalEvents(
     organizer: r.organizer,
     sequence: r.sequence,
     updatedAt: toDate(r.updated_at),
-  }));
+  };
 }
 
 export async function getIcalEventMeta(
@@ -242,6 +333,65 @@ export async function getIcalEventMeta(
           SELECT e.updated_at FROM events e WHERE ${eventWhere(input.today)}
           ORDER BY e.start_time ASC, e.id ASC LIMIT ${Math.max(0, Math.floor(input.limit))}
         ) t
+      `),
+    opts,
+  );
+  const row = res.rows[0];
+  return { count: row?.n ?? 0, maxUpdatedAt: row?.max_updated ? toDate(row.max_updated) : null };
+}
+
+// ── 私人追蹤 feed 的活動 ─────────────────────────────────────────────────
+
+export interface IcalFollowingEventScope {
+  today: IsoDate;
+  /** 明確追蹤的活動：不受上限。 */
+  eventIds: readonly number[];
+  /** 與這些遊戲相關的活動（event_games）；空＝不含相關活動。 */
+  relatedGameIds: readonly number[];
+  /** 相關活動的筆數上限（依開始時間取前 N）。 */
+  relatedLimit: number;
+}
+
+/** 追蹤 feed 的活動 SELECT（含 explicit／rn 欄位）；沒有任何範圍時呼叫端不該呼叫。 */
+function followingEventsSql(s: IcalFollowingEventScope, columns: SQL): SQL {
+  const explicit = s.eventIds.length > 0 ? sql`e.id = ANY(${pgArray(s.eventIds)}::int[])` : sql`FALSE`;
+  const related =
+    s.relatedGameIds.length > 0
+      ? sql`EXISTS (SELECT 1 FROM event_games eg WHERE eg.event_id = e.id AND eg.game_id = ANY(${pgArray(s.relatedGameIds)}::int[]))`
+      : sql`FALSE`;
+  return sql`
+    SELECT ${columns} FROM (
+      SELECT e.*, (${explicit}) AS is_explicit,
+        row_number() OVER (PARTITION BY (${explicit}) ORDER BY e.start_time ASC, e.id ASC) AS rn
+      FROM events e
+      WHERE ${eventWhere(s.today)} AND ((${explicit}) OR (${related}))
+    ) e
+    WHERE e.is_explicit OR e.rn <= ${Math.max(0, Math.floor(s.relatedLimit))}
+  `;
+}
+
+const hasFollowingEventScope = (s: IcalFollowingEventScope) => s.eventIds.length > 0 || s.relatedGameIds.length > 0;
+
+/** 追蹤 feed 的活動：追蹤的活動（全部）＋相關活動（前 relatedLimit 筆）；結束時間在近 30 天內或之後。 */
+export async function listIcalFollowingEvents(s: IcalFollowingEventScope, opts: ReadOptions = {}): Promise<IcalEventItem[]> {
+  if (!hasFollowingEventScope(s)) return [];
+  const res = await withReadTimeout(
+    (tx) =>
+      tx.execute<IcalEventRow>(sql`
+        SELECT x.* FROM (${followingEventsSql(s, sql`e.id, e.slug, e.name, e.kind, e.description, e.start_time, e.end_time, e.url, e.stream_url, e.organizer, e.updated_at, e.sequence`)}) x
+        ORDER BY x.start_time ASC, x.id ASC
+      `),
+    opts,
+  );
+  return res.rows.map(rowToEvent);
+}
+
+export async function getIcalFollowingEventMeta(s: IcalFollowingEventScope, opts: ReadOptions = {}): Promise<IcalFeedMeta> {
+  if (!hasFollowingEventScope(s)) return { count: 0, maxUpdatedAt: null };
+  const res = await withReadTimeout(
+    (tx) =>
+      tx.execute<{ n: number; max_updated: Date | string | null }>(sql`
+        SELECT count(*)::int AS n, max(x.updated_at) AS max_updated FROM (${followingEventsSql(s, sql`e.id, e.updated_at`)}) x
       `),
     opts,
   );

@@ -3,13 +3,15 @@
     "releases": "SoK 遊戲月曆：即將上市",
     "events": "SoK 遊戲月曆：遊戲活動",
     "platform": "SoK 遊戲月曆：{platform}",
-    "game": "{game}"
+    "game": "{game}",
+    "following": "SoK 遊戲日曆：我的追蹤"
   },
   "calendarDescription": {
     "releases": "近期即將上市的遊戲，延期、取消與日期更新會自動反映在這個行事曆。",
     "events": "發表會、展會與頒獎典禮的時間表。",
     "platform": "{platform} 近期即將上市的遊戲。",
-    "game": "{game} 的上市日期。"
+    "game": "{game} 的上市日期。",
+    "following": "你追蹤的遊戲與活動。延期、取消與日期變更會自動反映在這個日曆。"
   },
   "mark": {
     "provisional": "[暫定]",

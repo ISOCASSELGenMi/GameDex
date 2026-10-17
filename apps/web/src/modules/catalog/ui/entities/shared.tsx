@@ -13,6 +13,16 @@ import { gameNameLang } from "../name-lang";
 import { PageNav } from "../page-nav";
 import { buildPager, gameDateText, gameStatusBadge } from "./view-model";
 
+/** slot entity.actions（accounts 的追蹤按鈕）：各頁在知道目標 id 之後呼叫；沒有提供者時回 null。伺服器 HTML 與使用者無關。 */
+export type EntityActionsTarget = { targetType: "platform" | "event" | "franchise" | "company"; targetId: number; slug: string };
+export type EntityActionsRenderer = (target: EntityActionsTarget) => ReactNode;
+
+/** 實體頁標題下方的動作列（有內容才輸出外殼）。 */
+export function EntityActions({ render, target }: { render: EntityActionsRenderer | undefined; target: EntityActionsTarget }): ReactElement | null {
+  const node = render?.(target);
+  return node ? <div className="mt-2 flex flex-wrap gap-2" data-slot="entity.actions">{node}</div> : null;
+}
+
 export function EntityLogo({ logo, name, small }: { logo: ImageRef | null; name: string; small?: boolean }): ReactElement | null {
   if (!logo) return null;
   const max = small ? { w: 64, h: 36 } : { w: 160, h: 90 };

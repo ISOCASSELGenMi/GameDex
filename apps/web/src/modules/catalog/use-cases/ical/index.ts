@@ -18,6 +18,7 @@ export {
   type PrepareIcalFeedInput,
   type PreparedIcalFeed,
 } from "./feeds";
+export { prepareFollowingIcalFeed, followingFeedKey, type FollowingFeedInput, type FollowingFeedFollows } from "./following";
 export {
   PROTO_FEEDS,
   PROTO_STEPS,

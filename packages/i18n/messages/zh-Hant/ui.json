@@ -146,7 +146,9 @@
     "title": "遊戲預覽"
   },
   "heat": {
-    "label": "熱度 {level}/{max}"
+    "label": "熱度 {level}/{max}",
+    "followers": "{count} 人追蹤",
+    "rising": "上升中"
   },
   "timeline": {
     "title": "上市時間軸",
@@ -185,6 +187,10 @@
   "trending": {
     "title": "熱門榜",
     "note": "熱度每小時更新一次，不是即時排名。",
+    "rankedBy": {
+      "popularity": "依熱度分數排序（綜合 IGDB 與站內訊號）。",
+      "site_follows_7d": "依最近 7 天站內新增追蹤的人數排序，同數再依熱度分數。追蹤數每小時更新。"
+    },
     "groupLabel": "榜單",
     "upcoming": "即將上市",
     "released": "已上市",

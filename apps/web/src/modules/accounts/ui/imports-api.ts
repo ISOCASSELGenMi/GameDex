@@ -1,6 +1,8 @@
 /** 客戶端呼叫 `/api/v1/imports/steam`（遊戲庫匯入；非 Better Auth 端點）。 */
+import type { GameMiniCard } from "@/modules/catalog";
 import type { ApiResult } from "./auth-api";
-import type { OwnedGamesPage } from "../domain/entities/owned-game";
+import { apiCall, jsonBody } from "./api-call";
+import type { OwnedGamesPage, OwnedGamesSummary, OwnedGameStatus, OwnedGameView } from "../domain/entities/owned-game";
 
 const BASE = "/api/v1/imports/steam";
 
@@ -10,23 +12,21 @@ export interface SteamLibraryResponse extends OwnedGamesPage {
   cooldownSec: number;
 }
 
-async function call<T>(url: string, init?: RequestInit): Promise<ApiResult<T>> {
-  try {
-    const res = await fetch(url, { credentials: "same-origin", cache: "no-store", ...init });
-    const text = await res.text();
-    let json: unknown = null;
-    try {
-      json = text ? JSON.parse(text) : null;
-    } catch {
-      json = null;
-    }
-    const code = json && typeof json === "object" && "code" in json && typeof (json as { code: unknown }).code === "string" ? (json as { code: string }).code : undefined;
-    if (!res.ok) return { ok: false, status: res.status, code };
-    return { ok: true, status: res.status, data: json as T };
-  } catch {
-    return { ok: false, status: 0, network: true };
-  }
-}
+export const getSteamLibrary = (offset = 0, limit = 50, status?: OwnedGameStatus): Promise<ApiResult<SteamLibraryResponse>> =>
+  apiCall<SteamLibraryResponse>(`${BASE}?limit=${limit}&offset=${offset}${status ? `&status=${status}` : ""}`);
+export const startSteamImport = () => apiCall<{ imported: number; total: number }>(BASE, { method: "POST" });
 
-export const getSteamLibrary = (offset = 0, limit = 50) => call<SteamLibraryResponse>(`${BASE}?limit=${limit}&offset=${offset}`);
-export const startSteamImport = () => call<{ imported: number; total: number }>(BASE, { method: "POST" });
+/** 手動指定的三種變更（對應 PATCH body）。 */
+export type ManualMatchBody = { gameId: number } | { gameId: null } | { reset: true };
+export const patchOwnedGame = (ownedGameId: number, body: ManualMatchBody) =>
+  apiCall<{ item: OwnedGameView; summary: OwnedGamesSummary }>(`${BASE}/games/${ownedGameId}`, jsonBody("PATCH", body));
+
+export interface MatchCandidate {
+  game: GameMiniCard;
+  confidencePct: number;
+}
+export const getMatchCandidates = (ownedGameId: number, locale: string) =>
+  apiCall<{ items: MatchCandidate[] }>(`${BASE}/games/${ownedGameId}/candidates?locale=${encodeURIComponent(locale)}`);
+
+export const searchGames = (q: string, locale: string, limit = 10) =>
+  apiCall<{ items: GameMiniCard[] }>(`/api/v1/games/search?q=${encodeURIComponent(q)}&limit=${limit}&locale=${encodeURIComponent(locale)}`);

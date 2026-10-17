@@ -57,6 +57,7 @@ const platformSelect = (today: IsoDate) => sql`
 
 function toListItem(r: PlatformRow, resolveImage: ImageResolver): PlatformListItem {
   return {
+    id: r.id,
     slug: r.slug,
     name: r.name,
     abbreviation: r.abbreviation,

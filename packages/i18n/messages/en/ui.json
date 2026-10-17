@@ -146,7 +146,9 @@
     "title": "Game preview"
   },
   "heat": {
-    "label": "Heat {level}/{max}"
+    "label": "Heat {level}/{max}",
+    "followers": "{count} following",
+    "rising": "Rising"
   },
   "timeline": {
     "title": "Release timeline",
@@ -185,6 +187,10 @@
   "trending": {
     "title": "Trending",
     "note": "Heat is updated hourly; this is not a live ranking.",
+    "rankedBy": {
+      "popularity": "Ranked by heat score.",
+      "site_follows_7d": "Ranked by new follows on this site in the last 7 days, then by heat score. Follow counts update hourly."
+    },
     "groupLabel": "Ranking",
     "upcoming": "Upcoming",
     "released": "Released",

@@ -13,11 +13,10 @@
 import { connection } from "next/server";
 import { getLocaleConfig, isSupportedLocale } from "@/kernel/locale";
 import { isCatalogQueryTimeoutError } from "../domain/entities/read-errors";
-import { siteOrigin } from "../ui/seo/site-url";
-import { gameHref, localeHref } from "../ui/links";
-import { ifNoneMatchHits, prepareIcalFeed, type IcalFeedSpec, type IcalLinkBuilder } from "../use-cases/ical";
+import { icalLinks, requestOrigin } from "./ical-links";
+import { ifNoneMatchHits, prepareIcalFeed, type IcalFeedSpec } from "../use-cases/ical";
+import { ICAL_CONTENT_TYPE } from "./ical-links";
 
-export const ICAL_CONTENT_TYPE = "text/calendar; charset=utf-8";
 export const ICAL_CACHE_CONTROL = "public, max-age=300";
 
 const NOT_FOUND_HEADERS = { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=60" } as const;
@@ -36,22 +35,8 @@ function failure(err: unknown): Response {
   throw err;
 }
 
-/** 請求的 origin（有反向代理時看 X-Forwarded-*）；NEXT_PUBLIC_SITE_URL 沒設時才用。 */
-export function requestOrigin(request: Request): string {
-  const url = new URL(request.url);
-  const host = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim() || url.host;
-  const proto = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() || url.protocol.replace(":", "");
-  return `${proto}://${host}`;
-}
-
-/** ics 內的絕對連結：NEXT_PUBLIC_SITE_URL 優先，沒設就用請求的 origin。 */
-export function icalLinks(locale: Parameters<typeof localeHref>[0], request: Request): IcalLinkBuilder {
-  const origin = siteOrigin() ?? requestOrigin(request);
-  return {
-    game: (slug) => `${origin}${gameHref(locale, slug)}`,
-    event: (slug) => `${origin}${localeHref(locale, `/events/${encodeURIComponent(slug)}`)}`,
-  };
-}
+// 連結建構與 origin 取得在 ical-links.ts（私人 feed 共用）；這裡再匯出給既有的 import 路徑。
+export { icalLinks, requestOrigin, ICAL_CONTENT_TYPE };
 
 /** `ps5.ics` → `ps5`；不是 `.ics` 結尾或沒有檔名 → null。 */
 export function slugFromIcsFile(file: string): string | null {

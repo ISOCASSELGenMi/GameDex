@@ -16,6 +16,7 @@ export { TrendingViewPage, trendingTitle } from "./trending/trending-page";
 export { GamesBrowsePage, gamesTitle } from "./browse/browse-page";
 
 // Phase 3b（J2）：平台／公司／系列／活動頁
+export type { EntityActionsRenderer, EntityActionsTarget } from "./entities/shared";
 export { PlatformsOverviewPage, PlatformDetailPage, platformsTitle, platformPageTitle } from "./entities/platform-pages";
 export { CompanyDetailPage, companyPageTitle, FranchiseDetailPage, franchisePageTitle } from "./entities/company-franchise-pages";
 export { EventsListPage, EventDetailPage, eventsTitle, eventPageTitle, loadEventDetail } from "./events/events-pages";
@@ -31,6 +32,7 @@ export { ReportPage, reportTitle } from "./report/report-page";
 
 // Phase 5：iCal 訂閱頁
 export { SubscribePage, subscribeTitle, type SubscribeSlots } from "./subscribe/subscribe-page";
+export { SubscribeClientsSection } from "./subscribe/clients-section";
 
 // Phase 9 準備：法務與說明頁（資料來源、隱私權、服務條款、聯絡）
 export { ABOUT_PAGES, ABOUT_DRAFT_DATE, AboutPageView, aboutTitle, isAboutPage, type AboutPage } from "./about/about-pages";

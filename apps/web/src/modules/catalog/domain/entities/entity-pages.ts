@@ -34,6 +34,8 @@ export interface PlatformFamilyRef {
 }
 
 export interface PlatformListItem extends PlatformChip {
+  /** platforms.id（追蹤、私人 iCal 篩選用）。 */
+  id: number;
   generation: number | null;
   family: PlatformFamilyRef | null;
   status: PlatformStatus;
@@ -103,6 +105,8 @@ export interface PlatformPage {
 // ── 公司 ────────────────────────────────────────────────────────────────
 
 export interface CompanyInfo {
+  /** companies.id（追蹤用）。 */
+  id: number;
   slug: string;
   name: string;
   /** 公司 logo（已解析各尺寸，經 ImageResolver；kind＝logo）。UI 用這個。 */
@@ -132,6 +136,8 @@ export interface CompanyPage {
 // ── 系列 ────────────────────────────────────────────────────────────────
 
 export interface FranchiseInfo {
+  /** franchises.id（追蹤用；franchise 與 collection 同 slug 時各有自己的 id）。 */
+  id: number;
   slug: string;
   name: string;
   kind: FranchiseKind;

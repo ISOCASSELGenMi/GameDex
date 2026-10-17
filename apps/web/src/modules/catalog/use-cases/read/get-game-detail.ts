@@ -1,5 +1,9 @@
-import type { GameDetail } from "../../domain/entities";
+import { SITE_FOLLOWS_SIGNAL, type GameDetail } from "../../domain/entities";
+import { displayFollowerCount, resolveFollowCountMinDisplay } from "../../domain/follow-display";
+import { utcToday } from "../../domain/utc-date";
+import { hasPopularitySignal } from "../../extensions";
 import { getGameDetailBySlug } from "../../repository/game-detail";
+import { getGameFollowHeat } from "../../repository/game-follow-heat";
 import { resolveImageRef } from "../../providers/image-ref";
 import { releaseFilterDefaults, resolveRegionPref } from "./resolve-filter";
 
@@ -17,11 +21,20 @@ export interface GetGameDetailInput {
 export async function getGameDetail(input: GetGameDetailInput): Promise<GameDetail | null> {
   const slug = input.slug.trim().toLowerCase();
   if (!slug || slug.length > 255) return null;
-  return getGameDetailBySlug({
+  const detail = await getGameDetailBySlug({
     slug,
     locale: input.locale,
     regionPref: resolveRegionPref(input.regionPref),
     franchiseGameTypes: releaseFilterDefaults().gameTypes,
     resolveImage: resolveImageRef,
   });
+  if (!detail) return null;
+  // 站內追蹤熱度：accounts 停用（沒有 site_follows 提供者）時不顯示人數、也沒有「上升中」
+  if (!hasPopularitySignal(SITE_FOLLOWS_SIGNAL)) return { ...detail, followerCount: null, rising: false };
+  const heat = await getGameFollowHeat({ gameId: detail.gameId, firstReleaseDate: detail.firstReleaseDate, todayUtc: utcToday() });
+  return {
+    ...detail,
+    followerCount: displayFollowerCount(heat.followers, resolveFollowCountMinDisplay(process.env.FOLLOW_COUNT_MIN_DISPLAY)),
+    rising: heat.rising,
+  };
 }

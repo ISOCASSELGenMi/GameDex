@@ -10,7 +10,10 @@
     "errorSummary": "送信できませんでした。次の問題を確認してください:",
     "network": "サーバーに接続できません。しばらくしてからもう一度お試しください。",
     "generic": "エラーが発生しました。しばらくしてからもう一度お試しください。",
-    "rateLimited": "試行回数が多すぎます。しばらくしてからもう一度お試しください。"
+    "rateLimited": "試行回数が多すぎます。しばらくしてからもう一度お試しください。",
+    "cancel": "キャンセル",
+    "close": "閉じる",
+    "confirmDelete": "削除する"
   },
   "header": {
     "signIn": "ログイン",
@@ -95,7 +98,20 @@
       "unlinkLast": "これは唯一のログイン方法のため、連携を解除できません。",
       "notFresh": "安全のため、もう一度ログインしてからやり直してください。"
     },
-    "linkSteam": "Steam を連携"
+    "linkSteam": "Steam を連携",
+    "mine": {
+      "title": "マイコレクションと記録",
+      "hint": "リストやプレイ記録はあなた自身の整理用です。カレンダーには追加されず、通知も届きません。",
+      "lists": "マイリスト",
+      "plays": "プレイ記録"
+    },
+    "track": {
+      "title": "フォローとカレンダー",
+      "hint": "フォローしたゲームやイベントは非公開カレンダーに入ります。フォローリストはあなただけに表示されます。",
+      "follows": "マイフォロー",
+      "games": "マイゲーム",
+      "calendar": "非公開カレンダー"
+    }
   },
   "providers": {
     "credential": "メールとパスワード",
@@ -125,7 +141,8 @@
       "matched": "照合済み",
       "needs_review": "確認待ち",
       "not_found": "見つからず",
-      "queued": "照合中"
+      "queued": "照合中",
+      "dismissed": "除外"
     },
     "error": {
       "load": "ライブラリを読み込めませんでした。しばらくしてからお試しください。",
@@ -135,6 +152,364 @@
       "unavailable": "現在このサイトでは Steam インポートを利用できません。",
       "upstream": "Steam が応答していません。しばらくしてからお試しください。",
       "notLinked": "Steam が連携されていません。"
+    },
+    "summaryDismissed": "ほかに {dismissed} 本が「ゲームではない」として除外されています。",
+    "filter": {
+      "label": "表示",
+      "all": "すべて（{count}）",
+      "needs_review": "要確認（{count}）",
+      "not_found": "見つからない（{count}）",
+      "dismissed": "除外（{count}）",
+      "matched": "照合済み（{count}）"
+    },
+    "emptyFiltered": "該当するゲームはありません。",
+    "match": {
+      "title": "対応するゲームを選ぶ",
+      "steamTitle": "Steam での名前：",
+      "current": "現在の対応先：{name}",
+      "candidates": "候補のゲーム",
+      "candidatesNone": "近い候補が見つかりませんでした。下の検索でご自身で探してください。",
+      "candidatesFailed": "候補を読み込めませんでした。下の検索でご自身で探してください。",
+      "confidence": "類似度 {pct}%",
+      "search": "自分で検索",
+      "searchLabel": "ゲーム名",
+      "searchButton": "検索",
+      "searching": "検索中…",
+      "searchNone": "該当するゲームが見つかりませんでした。",
+      "searchResults": "検索結果",
+      "searchFailed": "検索に失敗しました。しばらくしてからもう一度お試しください。",
+      "queryTooShort": "2 文字以上入力してください。",
+      "choose": "これにする",
+      "dismiss": "ゲームではない",
+      "reset": "自動照合に任せる",
+      "actionsHint": "「ゲームではない」はサウンドトラックやベータ版など、データベースにない項目向けで、以後は自動照合されません。「自動照合に任せる」は選択を取り消し、システムが改めて照合します。",
+      "open": {
+        "matched": "訂正",
+        "other": "ゲームを指定"
+      },
+      "done": {
+        "assigned": "「{title}」を「{name}」に対応づけました。",
+        "dismissed": "「{title}」をゲームではないものとして記録しました。",
+        "reset": "「{title}」を自動照合に戻しました。"
+      }
+    }
+  },
+  "game": {
+    "addToList": "リストに追加",
+    "logPlay": "プレイを記録",
+    "notTracking": "フォローすると、発売やイベントの変更が非公開カレンダーに入ります。リストへの追加やプレイの記録は、あなた自身の整理用で、カレンダーには表示されません。",
+    "inLists": "{count} 件のリストに登録済み",
+    "playCount": "プレイ記録 {count} 件",
+    "loadError": "リストと記録を読み込めませんでした。ページを再読み込みしてもう一度お試しください。"
+  },
+  "list": {
+    "pageTitle": "マイリスト",
+    "detailTitle": "リストの内容",
+    "pageHint": "リストはゲームの整理に使います。初期設定では自分だけが見られます。公開リストは誰でも検索エンジンからも見られ、限定公開リストは共有リンクを知っている人だけが見られます。",
+    "pickerHint": "チェックするとこのゲームがそのリストに入り、外すとリストから外れます。",
+    "pickerEmpty": "まだリストがありません。下で作成してください。",
+    "pickerLabel": "マイリスト",
+    "newTitle": "新しいリスト",
+    "field": {
+      "name": "リスト名",
+      "description": "説明（任意）",
+      "visibility": "公開範囲"
+    },
+    "visibility": {
+      "default": "既定の設定に従う",
+      "public": "公開",
+      "unlisted": "限定公開（リンクを知っている人）",
+      "private": "非公開（自分だけ）"
+    },
+    "visibilityHint": "公開リストにはあなたの表示名が表示され、検索エンジンに登録されることがあります。",
+    "create": "リストを作成",
+    "createAndAdd": "作成してこのゲームを追加",
+    "creating": "作成中…",
+    "added": "「{name}」に追加しました。",
+    "removed": "「{name}」から外しました。",
+    "created": "リスト「{name}」を作成しました。",
+    "createdAndAdded": "リスト「{name}」を作成し、このゲームを追加しました。",
+    "manage": "マイリストを管理",
+    "error": {
+      "load": "リストを読み込めませんでした。しばらくしてからもう一度お試しください。"
+    },
+    "moved": "「{name}」を {position} 番目に移動しました。",
+    "deleted": "リスト「{name}」を削除しました。",
+    "saved": "「{name}」を保存しました。",
+    "empty": "まだリストがありません。",
+    "listLabel": "マイリスト",
+    "gameCount": "{count} 本のゲーム",
+    "edit": "編集",
+    "moveUp": "上へ",
+    "moveDown": "下へ",
+    "delete": "削除",
+    "confirmDelete": "「{name}」を削除しますか？ 中のゲームもすべて削除され、元に戻せません。",
+    "saving": "保存中…",
+    "save": "保存",
+    "viewPublic": "公開ページを見る",
+    "shareUrl": "共有リンク",
+    "shareHint": "このリンクを知っている人は誰でもこのリストを見られます。リンクを再生成すると、古いリンクはすぐに使えなくなります。",
+    "copy": "リンクをコピー",
+    "copied": "共有リンクをコピーしました。",
+    "copyFailed": "自動コピーできませんでした。上のリンクを選択してコピーしてください。",
+    "rotate": "リンクを再生成",
+    "confirmRotate": "古い共有リンクはすぐに使えなくなります。よろしいですか？",
+    "confirmRotateButton": "再生成する",
+    "rotated": "「{name}」の共有リンクを更新しました。",
+    "notFound": "このリストは見つかりませんでした。",
+    "backToLists": "マイリストに戻る",
+    "gameMoved": "「{name}」を {position} 番目に移動しました。",
+    "gameRemoved": "「{name}」をリストから外しました。",
+    "emptyGames": "このリストにはまだゲームがありません。ゲームのページで「リストに追加」を押すと追加できます。",
+    "gamesLabel": "リスト内のゲーム",
+    "noteSaved": "「{name}」のメモを保存しました。",
+    "noteEdit": "メモを編集",
+    "noteAdd": "メモを追加",
+    "gameRemove": "外す",
+    "confirmRemoveGame": "「{name}」をこのリストから外しますか？",
+    "showMore": "もっと見る",
+    "noteLabel": "「{name}」のメモ",
+    "noteHint": "最大 {limit} 文字。",
+    "public": {
+      "title": "{name}（{owner} さんのリスト）",
+      "by": "作成者：{owner}",
+      "unlistedNote": "これは限定公開のリストです。リンクを知っている人だけが見られます。",
+      "empty": "このリストにはまだゲームがありません。",
+      "pager": "リストのページ",
+      "prev": "前のページ",
+      "next": "次のページ",
+      "ownerHint": "これはあなたのリストです。",
+      "edit": "編集する"
+    }
+  },
+  "play": {
+    "pageTitle": "プレイ記録",
+    "status": {
+      "want_to_play": "遊びたい",
+      "playing": "プレイ中",
+      "finished": "クリア",
+      "completed": "全クリア",
+      "paused": "中断",
+      "abandoned": "挫折"
+    },
+    "field": {
+      "status": "状態（必須）",
+      "platform": "プラットフォーム",
+      "startedOn": "開始日",
+      "finishedOn": "完了日",
+      "time": "プレイ時間",
+      "hours": "時間",
+      "minutes": "分",
+      "rating": "評価",
+      "review": "レビュー",
+      "spoilers": "レビューにネタバレを含む",
+      "reviewVisibility": "レビューの公開範囲",
+      "privateNote": "非公開メモ"
+    },
+    "platformNone": "指定しない",
+    "platformOther": "その他のプラットフォーム",
+    "ratingHint": "0.5〜10 点、0.5 点刻みです。",
+    "ratingNone": "評価しない",
+    "ratingValue": "{rating} 点",
+    "reviewHint": "最大 {limit} 文字。",
+    "reviewVisibilityHint": "今はレビューを表示する場所がないため、自分だけが見られます。コミュニティ機能の公開後はこの設定に従って表示されます。",
+    "visibility": {
+      "default": "既定の設定に従う",
+      "public": "公開",
+      "followers": "フォロワーのみ",
+      "private": "自分だけ"
+    },
+    "privateNoteHint": "自分だけが見られ、公開されることはありません。最大 {limit} 文字。",
+    "saving": "保存中…",
+    "save": "保存",
+    "spoilerTag": "（ネタバレを含むレビュー）",
+    "confirmDelete": "この記録を削除しますか？ 元に戻せません。",
+    "edit": "編集",
+    "delete": "削除",
+    "deleted": "記録を削除しました。",
+    "created": "プレイ記録を追加しました。",
+    "updated": "プレイ記録を更新しました。",
+    "listLabel": "このゲームのプレイ記録",
+    "addAnother": "記録を追加",
+    "viewAll": "すべてのプレイ記録を見る",
+    "duration": {
+      "h": "{h} 時間",
+      "m": "{m} 分",
+      "hm": "{h} 時間 {m} 分"
+    },
+    "editTitle": "プレイ記録を編集",
+    "error": {
+      "load": "プレイ記録を読み込めませんでした。しばらくしてからもう一度お試しください。"
+    },
+    "stats": {
+      "title": "統計",
+      "finishedThisYear": "{year} 年のクリア数（クリアまたは全クリア）",
+      "totalTime": "合計プレイ時間",
+      "note": "記録の件数で数えます。同じゲームの記録が複数あれば別々に数えます。今年のクリアに数えるには完了日が必要です。"
+    },
+    "recordsTitle": "すべての記録",
+    "empty": "プレイ記録はまだありません。ゲームのページで「プレイを記録」を押すと追加できます。",
+    "showMore": "もっと見る"
+  },
+  "error": {
+    "summary": "送信できませんでした。次の項目を確認してください：",
+    "field": {
+      "required": "この項目は必須です。",
+      "invalid": "形式が正しくありません。",
+      "too_long": "長すぎます。",
+      "out_of_range": "値が範囲外です。",
+      "duplicate": "重複しています。",
+      "too_many": "項目が多すぎます。",
+      "empty": "更新する内容がありません。",
+      "immutable": "この項目は変更できません。",
+      "before_started_on": "完了日は開始日より前にできません。",
+      "not_in_game": "このゲームにはそのプラットフォームがありません。"
+    },
+    "playRecordLimit": "プレイ記録の上限に達しました。古い記録を削除してください。",
+    "listLimit": "リストの上限に達しました。不要なリストを削除してください。",
+    "listGamesLimit": "このリストのゲーム数が上限に達しました。",
+    "gameNotFound": "このゲームは見つかりませんでした。",
+    "notFound": "対象が見つかりません。削除された可能性があります。再読み込みしてもう一度お試しください。",
+    "unauthorized": "ログインの有効期限が切れました。もう一度ログインしてください。",
+    "followLimit": "フォローの回数が多すぎます（24時間あたりの上限があります）。しばらくしてからもう一度お試しください。",
+    "followNotFound": "フォローする対象が見つかりません。削除された可能性があります。"
+  },
+  "playerRating": {
+    "title": "プレイヤー平均",
+    "avg": "プレイヤー平均 {avg}／{scale}（{count} 人）",
+    "notEnough": "評価した人がまだ少ないため、プレイヤー平均は表示していません。",
+    "avgTime": "プレイヤーの平均プレイ時間：{time}",
+    "note": "このサイトの利用者のプレイ記録をもとにしています。1 人 1 票で、およそ 1 時間ごとに更新されます。"
+  },
+  "follow": {
+    "button": "フォロー",
+    "statusOn": "フォローしました。",
+    "statusOff": "フォローを解除しました。",
+    "hint": {
+      "event": "フォローすると、このイベントが非公開カレンダーに入ります。",
+      "group": "フォローすると、関連ゲームの発売日が非公開カレンダーに入ります。"
+    },
+    "private": {
+      "text": "フォローした内容だけを含む非公開カレンダーも購読できます。",
+      "link": "非公開カレンダーへ"
+    }
+  },
+  "follows": {
+    "title": "マイフォロー",
+    "note": "フォローリストはあなただけに表示され、ほかの人は見られません。",
+    "tabsLabel": "フォローの種類",
+    "type": {
+      "game": "ゲーム",
+      "event": "イベント",
+      "platform": "プラットフォーム",
+      "franchise": "シリーズ",
+      "company": "企業"
+    },
+    "empty": "このカテゴリではまだ何もフォローしていません。",
+    "unfollow": "フォロー解除",
+    "unfollowed": "「{name}」のフォローを解除しました。",
+    "removed": "すでに存在しない項目",
+    "loadMore": "さらに表示",
+    "listLabel": "フォローリスト：{type}",
+    "eventTime": "{time} UTC",
+    "loadError": "フォローリストを読み込めませんでした。しばらくしてからもう一度お試しください。",
+    "collection": "コレクション"
+  },
+  "mygames": {
+    "title": "マイゲーム",
+    "note": "フォロー中・所有・コレクションのゲームを、直近の発売日順に表示します。このページはあなただけに表示されます。",
+    "followedHint": "「フォロー中」には直接フォローしたゲームだけが含まれます。プラットフォーム・シリーズ・企業をフォローしても、ゲーム一覧には展開されません。",
+    "sourceLabel": "表示するゲーム",
+    "source": {
+      "followed": "フォロー中",
+      "owned": "所有（ゲームライブラリ）",
+      "collected": "コレクション（いずれかのリスト）",
+      "list": "リスト：{name}"
+    },
+    "rangeLabel": "発売日の範囲（任意）",
+    "from": "開始",
+    "to": "終了",
+    "clearRange": "範囲をクリア",
+    "count": "{count}本のゲーム",
+    "empty": "該当するゲームがありません。",
+    "noRelease": "発売情報なし",
+    "tbd": "発売日未定",
+    "past": "直近：{date}",
+    "loadMore": "さらに表示",
+    "loadError": "読み込めませんでした。しばらくしてからもう一度お試しください。",
+    "badRange": "終了日は開始日より前にできません。",
+    "listLabel": "ゲーム一覧",
+    "status": {
+      "delayed": "延期",
+      "released": "発売済み",
+      "cancelled": "中止"
+    },
+    "date": {
+      "quarter": "{year}年第{quarter}シーズン",
+      "year": "{year}年",
+      "tbd": "発売日未定"
+    }
+  },
+  "feedcal": {
+    "title": "非公開カレンダー",
+    "intro": "フォローしたゲームとイベントだけを含む iCal カレンダーです。Google・Apple・Outlook のカレンダーに追加できます。",
+    "secretWarning": "この URL はパスワードと同じです。知っている人は誰でもカレンダーの内容を見られます。共有したり、公開の場所に貼ったりしないでください。",
+    "delay": "カレンダーアプリはすぐには更新されません。Google カレンダーは通常、同期に数時間かかります。",
+    "urlLabel": "非公開の購読 URL",
+    "masked": "URL は非表示です",
+    "show": "URL を表示",
+    "hide": "URL を隠す",
+    "copy": "URL をコピー",
+    "copied": "URL をコピーしました。",
+    "copyFailed": "自動でコピーできませんでした。URL を表示したので、手動で選択してコピーしてください。",
+    "open": "カレンダーアプリで開く",
+    "urlUnavailable": "現在 URL を表示できません（サーバーの鍵が変更されました）。URL を再生成してください。",
+    "lastAccessed": "カレンダーアプリが最後に読み取った日時：{date}",
+    "neverAccessed": "この URL をカレンダーアプリが読み取ったことはまだありません。",
+    "loadError": "非公開カレンダーを読み込めませんでした。しばらくしてからもう一度お試しください。",
+    "settings": {
+      "title": "設定",
+      "name": "カレンダー名",
+      "locale": "カレンダーの言語",
+      "includeReleases": "ゲームの発売日を含める",
+      "includeEvents": "フォロー中のゲームに関連するイベントを含める",
+      "includeEventsHint": "直接フォローしたイベントは常にカレンダーに表示されます。",
+      "stages": "含める発売段階",
+      "stagesHint": "何も選ばない場合は既定（正式版・アーリーアクセス・未指定）です。",
+      "platforms": "含めるプラットフォーム",
+      "platformsHint": "何も選ばない場合はプラットフォームを限定しません（最大20個）。",
+      "save": "設定を保存",
+      "saved": "設定を保存しました。カレンダーアプリが次に更新されたときに反映されます。",
+      "unchanged": "変更はありません。",
+      "tooManyPlatforms": "プラットフォームは最大20個まで選べます。"
+    },
+    "stage": {
+      "unspecified": "未指定",
+      "full": "正式版",
+      "early_access": "アーリーアクセス",
+      "beta": "ベータ",
+      "alpha": "アルファ",
+      "demo": "体験版",
+      "other": "その他"
+    },
+    "kind": {
+      "console": "据置機",
+      "hybrid": "ハイブリッド機",
+      "handheld": "携帯機",
+      "pc": "PC",
+      "arcade": "アーケード",
+      "other": "その他"
+    },
+    "locale": {
+      "zh-Hant": "繁體中文",
+      "en": "English",
+      "ja": "日本語"
+    },
+    "rotate": {
+      "button": "URL を再生成",
+      "confirm": "再生成すると、古い URL は空のカレンダーを返し、30日後に無効になります。新しい URL で購読し直す必要があります。よろしいですか？",
+      "confirmButton": "再生成する",
+      "done": "新しい URL を生成しました。カレンダーアプリで新しい URL から購読し直してください。"
     }
   }
 }

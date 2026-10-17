@@ -162,6 +162,8 @@ function calendarTexts(t: Translator, feed: IcalGenerateInput["feed"]): { name: 
         description: t.t("ical.calendarDescription.platform", { platform }),
       };
     }
+    case "following":
+      return { name: t.t("ical.calendarName.following"), description: t.t("ical.calendarDescription.following") };
     case "game": {
       const game = feed.gameName ?? "";
       return { name: t.t("ical.calendarName.game", { game }), description: t.t("ical.calendarDescription.game", { game }) };

@@ -7,10 +7,12 @@
  * GET ：目前使用者的匯入摘要與清單（?limit=1..100，預設 50；?offset=）。
  * 回應一律 Cache-Control: no-store。
  */
-import { IMPORT_COOLDOWN_MS, isImportProvider, type ImportErrorCode } from "../domain/entities/owned-game";
+import { IMPORT_COOLDOWN_MS, OWNED_GAME_STATUSES, isImportProvider, type ImportErrorCode, type OwnedGameStatus } from "../domain/entities/owned-game";
 import { parseAccountsEnv } from "../providers/auth";
+import { getLocaleConfig, isSupportedLocale } from "@/kernel/locale";
+import { parseIdParam } from "../domain/entities/lists";
 import { getCurrentUser } from "./current-user";
-import { findOwnedGamesTarget, getOwnedGamesPage, importOwnedGames, matchOwnedGames } from "./owned-games";
+import { findOwnedGamesTarget, getMatchCandidates, getOwnedGamesPage, importOwnedGames, matchOwnedGames, setManualMatch, type ManualMatchChange } from "./owned-games";
 
 export interface ImportRequestDeps {
   /** 回應之後執行背景工作（Next 的 after）。 */
@@ -67,7 +69,10 @@ export async function handleImportRequest(request: Request, providerParam: strin
     const url = new URL(request.url);
     const limit = Math.min(100, Math.max(1, Number.parseInt(url.searchParams.get("limit") ?? "50", 10) || 50));
     const offset = Math.max(0, Number.parseInt(url.searchParams.get("offset") ?? "0", 10) || 0);
-    const page = await getOwnedGamesPage(target, limit, offset);
+    // ?status= 篩選（第 5 波畫面需要：清單分頁載入，不能只在前端過濾已載入的列）；不認得的值忽略＝全部
+    const statusParam = url.searchParams.get("status");
+    const status = (OWNED_GAME_STATUSES as readonly string[]).includes(statusParam ?? "") ? (statusParam as OwnedGameStatus) : undefined;
+    const page = await getOwnedGamesPage(target, limit, offset, status);
     const last = page.summary.lastImportedAt ? Date.parse(page.summary.lastImportedAt) : null;
     const now = (deps.now ?? new Date()).getTime();
     const cooldownSec = last !== null && last + IMPORT_COOLDOWN_MS > now ? Math.ceil((last + IMPORT_COOLDOWN_MS - now) / 1000) : 0;
@@ -90,4 +95,70 @@ export async function handleImportRequest(request: Request, providerParam: strin
     }
   });
   return json({ imported: outcome.imported, total: outcome.total }, 202);
+}
+
+/**
+ * PATCH /api/v1/imports/{provider}/games/{ownedGameId}（第 5 波：手動指定比對）。
+ * body：{ gameId: number } 指定｜{ gameId: null } 否決（這不是 catalog 的任何遊戲）｜{ reset: true } 回到自動（交給比對重跑）。
+ * 404 不支援的 provider／owned_game_not_found（含別人的列）／game_not_found → 403 Origin → 401 → 409 steam_not_linked → 400 validation_failed → 200 { item, summary }。
+ */
+export async function handleManualMatchRequest(request: Request, providerParam: string, ownedGameParam: string, deps: ImportRequestDeps): Promise<Response> {
+  if (!isImportProvider(providerParam)) return json({ code: "not_found" }, 404);
+  if (request.method !== "PATCH") return json({ code: "method_not_allowed" }, 405, { Allow: "PATCH" });
+  const env = parseAccountsEnv();
+  if (!isTrustedRequestOrigin(request, env.trustedOrigins)) return json({ code: "invalid_origin" }, 403);
+  const user = await getCurrentUser(request.headers);
+  if (!user) return json({ code: "unauthorized" }, 401);
+  const target = await findOwnedGamesTarget(user.id, providerParam);
+  if (!target) return json({ code: "steam_not_linked" }, STATUS.steam_not_linked);
+  const ownedGameId = parseIdParam(ownedGameParam);
+  if (ownedGameId === null) return json({ code: "owned_game_not_found" }, 404);
+
+  let body: unknown;
+  try {
+    body = JSON.parse(await request.text());
+  } catch {
+    return json({ code: "invalid_json" }, 400);
+  }
+  const rec = typeof body === "object" && body !== null && !Array.isArray(body) ? (body as Record<string, unknown>) : null;
+  let change: ManualMatchChange | null = null;
+  if (rec) {
+    const hasGame = "gameId" in rec;
+    const hasReset = "reset" in rec;
+    if (hasGame && !hasReset) {
+      const g = rec.gameId;
+      if (g === null) change = { kind: "dismiss" };
+      else if (typeof g === "number" && Number.isSafeInteger(g) && g > 0) change = { kind: "assign", gameId: g };
+    } else if (hasReset && !hasGame && rec.reset === true) change = { kind: "reset" };
+  }
+  if (!change) return json({ code: "validation_failed", fields: { body: "gameId_or_reset_required" } }, 400);
+
+  const res = await setManualMatch(target, ownedGameId, change);
+  if (!res.ok) return json({ code: res.code }, 404);
+  if (change.kind === "reset") {
+    deps.defer(async () => {
+      try {
+        await matchOwnedGames({ connectedAccountId: target.id, log: deps.log });
+      } catch (e) {
+        deps.log?.("match_owned_games_after_failed", { error: e instanceof Error ? e.message : String(e) });
+      }
+    });
+  }
+  return json({ item: res.item, summary: res.summary }, 200);
+}
+
+/** GET /api/v1/imports/{provider}/games/{ownedGameId}/candidates?locale=：{ items:[{ game: GameMiniCard, confidencePct }] }（信心高到低）。 */
+export async function handleMatchCandidatesRequest(request: Request, providerParam: string, ownedGameParam: string): Promise<Response> {
+  if (!isImportProvider(providerParam)) return json({ code: "not_found" }, 404);
+  if (request.method !== "GET") return json({ code: "method_not_allowed" }, 405, { Allow: "GET" });
+  const user = await getCurrentUser(request.headers);
+  if (!user) return json({ code: "unauthorized" }, 401);
+  const target = await findOwnedGamesTarget(user.id, providerParam);
+  if (!target) return json({ code: "steam_not_linked" }, STATUS.steam_not_linked);
+  const ownedGameId = parseIdParam(ownedGameParam);
+  if (ownedGameId === null) return json({ code: "owned_game_not_found" }, 404);
+  const rawLocale = new URL(request.url).searchParams.get("locale");
+  const locale = rawLocale && isSupportedLocale(rawLocale, getLocaleConfig()) ? rawLocale : null;
+  const items = await getMatchCandidates(target, ownedGameId, locale);
+  return items ? json({ items }, 200) : json({ code: "owned_game_not_found" }, 404);
 }

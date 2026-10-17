@@ -103,6 +103,7 @@ export async function TrendingViewPage({ locale, supportedLocales, searchParams 
   const clearHref = group === "upcoming" ? basePath : `${basePath}?${groupQuery}`;
   const chips = appliedChips(spec, basePath, makeFilterLabeler(t, options), groupQuery);
   const { items, offset, hasMore } = data.page;
+  const rankedBy = data.page.rankedBy ?? "popularity";
   const shellQuery = [query, groupQuery, pageNo > 1 ? `page=${pageNo}` : ""].filter(Boolean).join("&");
 
   const groups: { id: PopularityGroup; label: string; hint: string }[] = [
@@ -114,6 +115,9 @@ export async function TrendingViewPage({ locale, supportedLocales, searchParams 
     <PageShell locale={locale} supportedLocales={supportedLocales} path="/trending" query={shellQuery}>
       <h1 className="text-2xl font-bold">{t.t("ui.trending.title")}</h1>
       <p className="mt-2 text-sm text-[var(--muted)]">{t.t("ui.trending.note")}</p>
+      <p className="mt-1 text-sm text-[var(--muted)]" data-ranked-by={rankedBy}>
+        {t.t(`ui.trending.rankedBy.${rankedBy}`)}
+      </p>
 
       <nav aria-label={t.t("ui.trending.groupLabel")} className="mt-3">
         <ul className="flex flex-wrap gap-2">
