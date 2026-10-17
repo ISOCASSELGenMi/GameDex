@@ -249,15 +249,16 @@ describe.skipIf(!enabled)("accounts 第 5 波：清單、遊玩紀錄、玩家�
       expect((await api.handleSharedList(request("GET", `/api/v1/lists/shared/${privToken}`), { params: Promise.resolve({ token: privToken }) })).status).toBe(404);
     });
 
-    it("停權者：本人仍可讀寫；他人看不到其 public 與 unlisted（token）清單", async () => {
+    it("停權者（D83）：本人仍可讀、不能寫（403 account_suspended）；他人看不到其 public 與 unlisted（token）清單", async () => {
       await getDb().update(users).set({ suspendedAt: new Date() }).where(eq(users.id, A.id));
       try {
         expect((await api.handleList(request("GET", `/api/v1/lists/${pubId}`, { cookie: B.cookie }), idCtx(pubId))).status).toBe(404);
         expect((await api.handleList(request("GET", `/api/v1/lists/${pubId}`), idCtx(pubId))).status).toBe(404);
         expect((await api.handleSharedList(request("GET", `/api/v1/lists/shared/${token}`), { params: Promise.resolve({ token }) })).status).toBe(404);
         expect((await api.handleList(request("GET", `/api/v1/lists/${pubId}`, { cookie: A.cookie }), idCtx(pubId))).status).toBe(200);
-        const w = await api.handleLists(request("POST", "/api/v1/lists", { cookie: A.cookie, body: { name: "停權中仍可建立" } }));
-        expect(w.status).toBe(201);
+        const w = await api.handleLists(request("POST", "/api/v1/lists", { cookie: A.cookie, body: { name: "停權中不可建立" } }));
+        expect(w.status).toBe(403);
+        expect(await json(w)).toEqual({ code: "account_suspended" });
       } finally {
         await getDb().update(users).set({ suspendedAt: null }).where(eq(users.id, A.id));
       }
@@ -322,7 +323,7 @@ describe.skipIf(!enabled)("accounts 第 5 波：清單、遊玩紀錄、玩家�
 
     it("清單之間排序（PATCH /lists/order）與 GET /lists", async () => {
       const before = (await json(await api.handleLists(request("GET", "/api/v1/lists", { cookie: A.cookie })))).items.map((x: J) => x.id) as number[];
-      expect(before.length).toBeGreaterThanOrEqual(4);
+      expect(before.length).toBeGreaterThanOrEqual(3);
       const last = before[before.length - 1]!;
       const res = await api.handleListsOrder(request("PATCH", "/api/v1/lists/order", { cookie: A.cookie, body: { listIds: [last] } }));
       expect(res.status).toBe(200);
@@ -501,10 +502,10 @@ describe.skipIf(!enabled)("accounts 第 5 波：清單、遊玩紀錄、玩家�
       for (let i = 0; i < 6; i++) voters.push(await signUp(`lp5-v${i}@example.com`));
       const t = (n: number) => new Date(Date.UTC(2026, 0, n));
       // 每位投 1 票（半分級 16）；voter0 有舊紀錄 4 與較新的 20 → 只算 20；voter1 較新的紀錄沒有評分 → 仍算舊的 16
-      for (const v of voters) await getDb().insert(playRecords).values({ userId: v.id, gameId: game, status: "finished", ratingHalfSteps: 16, playMinutes: 600, updatedAt: t(5) });
-      await getDb().insert(playRecords).values({ userId: voters[0]!.id, gameId: game, status: "completed", ratingHalfSteps: 4, playMinutes: 100, updatedAt: t(1) }); // 較舊
+      for (const v of voters) await getDb().insert(playRecords).values({ userId: v.id, gameId: game, status: "finished", ratingHalfSteps: 16, playMinutes: 600, createdAt: t(5), updatedAt: t(5) });
+      await getDb().insert(playRecords).values({ userId: voters[0]!.id, gameId: game, status: "completed", ratingHalfSteps: 4, playMinutes: 100, createdAt: t(1), updatedAt: t(1) }); // 建立得較早
       await getDb().update(playRecords).set({ ratingHalfSteps: 20, playMinutes: 1000, updatedAt: t(9) }).where(and(eq(playRecords.userId, voters[0]!.id), eq(playRecords.ratingHalfSteps, 16)));
-      await getDb().insert(playRecords).values({ userId: voters[1]!.id, gameId: game, status: "playing", ratingHalfSteps: null, playMinutes: 9999, updatedAt: t(20) }); // 較新但沒評分、狀態非玩完
+      await getDb().insert(playRecords).values({ userId: voters[1]!.id, gameId: game, status: "playing", ratingHalfSteps: null, playMinutes: 9999, createdAt: t(20), updatedAt: t(20) }); // 較新但沒評分、狀態非玩完
 
       const r1 = await runRefreshPlayerRatings();
       expect(r1.upserted).toBeGreaterThanOrEqual(1);
@@ -528,6 +529,45 @@ describe.skipIf(!enabled)("accounts 第 5 波：清單、遊玩紀錄、玩家�
       expect((await json(await rating(game))).avg).toBeNull();
       delete process.env.PLAYER_RATING_MIN_COUNT;
       expect((await json(await rating(game))).avg).toBe(8.3);
+    });
+
+    it("D83：『最新一筆』以建立時間為準——編輯舊紀錄（updated_at 變新）不會換票", async () => {
+      const g = await insertGame(985012, "lp5-created", "Created Lp5");
+      const t = (n: number) => new Date(Date.UTC(2026, 1, n));
+      for (let i = 0; i < 5; i++) {
+        const u = voters[i]!;
+        await getDb().insert(playRecords).values({ userId: u.id, gameId: g, status: "finished", ratingHalfSteps: 4, createdAt: t(1), updatedAt: t(1) }); // 舊紀錄
+        await getDb().insert(playRecords).values({ userId: u.id, gameId: g, status: "finished", ratingHalfSteps: 16, createdAt: t(5), updatedAt: t(5) }); // 新紀錄
+      }
+      // 編輯五位的舊紀錄：updated_at 比新紀錄更新，但建立時間仍較早 → 仍以建立較晚的 16 為準
+      await getDb().update(playRecords).set({ ratingHalfSteps: 2, updatedAt: t(30) }).where(and(eq(playRecords.gameId, g), eq(playRecords.ratingHalfSteps, 4)));
+      await runRefreshPlayerRatings();
+      const v = await json(await rating(g));
+      expect(v.ratingCount).toBe(5);
+      expect(v.avg).toBe(8); // 16 半分 = 8 分；若誤用 updated_at 會是 1 分
+    });
+
+    it("D83：平均耗時也套人數門檻——回報耗時的人數 < 門檻時 avgPlayMinutes 為 null", async () => {
+      const g = await insertGame(985013, "lp5-time-min", "Time Min Lp5");
+      for (let i = 0; i < 4; i++) await getDb().insert(playRecords).values({ userId: voters[i]!.id, gameId: g, status: "finished", ratingHalfSteps: 14, playMinutes: 300 });
+      // 第 5 位有評分但沒有耗時：評分 5 人達標、耗時只有 4 人未達標
+      await getDb().insert(playRecords).values({ userId: voters[4]!.id, gameId: g, status: "finished", ratingHalfSteps: 14 });
+      await runRefreshPlayerRatings();
+      let v = await json(await rating(g));
+      expect(v.avg).toBe(7);
+      expect(v.avgPlayMinutes).toBeNull();
+      const [row] = await getDb().select().from(gamePlayerRatings).where(eq(gamePlayerRatings.gameId, g));
+      expect(row!.playMinutesCount).toBe(4); // 資料庫仍存平均與人數，門檻在讀取時套（門檻可由環境變數調整）
+      expect(row!.avgPlayMinutes).toBe(300);
+      // 第 5 位也回報耗時 → 達標
+      await getDb().update(playRecords).set({ playMinutes: 300 }).where(and(eq(playRecords.gameId, g), eq(playRecords.userId, voters[4]!.id)));
+      await runRefreshPlayerRatings();
+      v = await json(await rating(g));
+      expect(v.avgPlayMinutes).toBe(300);
+      // 門檻調低到 4 → 同樣可見；調高到 6 → 不可見
+      process.env.PLAYER_RATING_MIN_COUNT = "6";
+      expect((await json(await rating(g))).avgPlayMinutes).toBeNull();
+      delete process.env.PLAYER_RATING_MIN_COUNT;
     });
 
     it("沒有資料的遊戲回零值；不存在的遊戲 404；可快取的 header（s-maxage=300）且不送 Set-Cookie", async () => {

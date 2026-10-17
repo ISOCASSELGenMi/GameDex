@@ -80,7 +80,14 @@ function PlaysBody({ strings, locale }: { strings: AccountStrings; locale: strin
   }
 
   function onSaved(saved: PlayRecordView): void {
-    setItems((all) => all.map((x) => (x.id === saved.id ? { ...x, ...saved } : x)));
+    const options = editing?.platforms ?? [];
+    const platformOf = (prev: PlayRecordWithGame["platform"]): PlayRecordWithGame["platform"] => {
+      if (saved.platformId === null) return null;
+      if (prev && prev.id === saved.platformId) return prev;
+      const o = options.find((p) => p.id === saved.platformId);
+      return o ? { id: o.id, name: o.name, abbreviation: o.abbreviation } : null;
+    };
+    setItems((all) => all.map((x) => (x.id === saved.id ? { ...x, ...saved, platform: platformOf(x.platform) } : x)));
     setEditing(null);
     setNotice({ tone: "ok", text: str(strings, "play.updated") });
     void refreshStats();
@@ -137,6 +144,7 @@ function PlaysBody({ strings, locale }: { strings: AccountStrings; locale: strin
                   locale={locale}
                   record={r}
                   platforms={platformsByGame[r.gameId] ?? []}
+                  platformName={r.platform?.name ?? null}
                   onEdit={() => void openEditor(r)}
                   onDeleted={(id) => {
                     setItems((all) => all.filter((x) => x.id !== id));

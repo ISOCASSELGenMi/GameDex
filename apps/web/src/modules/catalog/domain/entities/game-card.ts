@@ -22,6 +22,13 @@ export interface GamePlatformOption {
   abbreviation: string | null;
 }
 
+/** 平台簡述（遊玩紀錄列表顯示平台名稱用；D83）。 */
+export interface PlatformBrief {
+  id: number;
+  name: string;
+  abbreviation: string | null;
+}
+
 /** 遊戲搜尋（選擇器用）的筆數上限與預設。 */
 export const GAME_SEARCH_LIMIT_MAX = 20;
 export const GAME_SEARCH_LIMIT_DEFAULT = 10;

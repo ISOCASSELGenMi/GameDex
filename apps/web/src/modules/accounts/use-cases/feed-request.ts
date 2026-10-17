@@ -18,7 +18,7 @@ const failure = (c: string): Response =>
 /** GET（沒有就建立）、POST（同 GET，新建時回 201）/api/v1/calendar/feeds → { feed, created }。 */
 export async function handleFeeds(request: Request): Promise<Response> {
   if (request.method !== "GET" && request.method !== "POST") return methodNotAllowed("GET, POST");
-  const a = await authenticate(request, request.method === "POST");
+  const a = await authenticate(request, request.method === "POST", { mutates: true }); // GET 也可能建立 feed
   if ("response" in a) return a.response;
   const res = await ensureFollowingFeed(a.user.id, requestOrigin(request));
   if (!res.ok) return failure(res.code);

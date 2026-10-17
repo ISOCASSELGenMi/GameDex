@@ -1,0 +1,1 @@
+ALTER TABLE "game_player_ratings" ADD COLUMN "play_minutes_count" integer DEFAULT 0 NOT NULL;

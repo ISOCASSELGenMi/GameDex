@@ -19,6 +19,7 @@ import { validatePlayRecordCreate, validatePlayRecordPatch } from "../domain/ent
 import { parseAccountsEnv } from "../providers/auth";
 import { getCurrentUser } from "./current-user";
 import { isTrustedRequestOrigin } from "./import-request";
+import { suspendedResponse } from "./suspension";
 import {
   addToList,
   createList,
@@ -65,11 +66,25 @@ const failure = (c: string): Response => code(c, FAILURE_STATUS[c] ?? 400);
 
 export type Authed = { user: CurrentUser } | { response: Response };
 
-/** 寫入：先檢查 Origin（403），再檢查登入（401）。讀取只檢查登入。 */
-export async function authenticate(request: Request, write: boolean): Promise<Authed> {
+export interface AuthenticateOptions {
+  /** 停權者也可以（只有刪除帳號用）。 */
+  allowSuspended?: boolean;
+  /** 方法是 GET 但會建立／修改資料（例如第一次取得私人行事曆網址）：不查 Origin，但停權者一樣擋。 */
+  mutates?: boolean;
+}
+
+/**
+ * 寫入：先檢查 Origin（403），再檢查登入（401），再檢查停權（403 account_suspended，D83）。讀取只檢查登入。
+ * 停權守門集中在這裡（suspension.ts），各路由不各寫一份。
+ */
+export async function authenticate(request: Request, write: boolean, options: AuthenticateOptions = {}): Promise<Authed> {
   if (write && !isTrustedRequestOrigin(request, parseAccountsEnv().trustedOrigins)) return { response: code("invalid_origin", 403) };
   const user = await getCurrentUser(request.headers);
   if (!user) return { response: code("unauthorized", 401) };
+  if ((write || options.mutates) && !options.allowSuspended) {
+    const blocked = suspendedResponse(user);
+    if (blocked) return { response: blocked };
+  }
   return { user };
 }
 

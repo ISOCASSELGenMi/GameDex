@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getLocaleConfig, isSupportedLocale } from "@/kernel/locale";
 import { TimelineViewPage, seoMetadata, timelineTitle } from "@/modules/catalog/ui";
+import { renderUiSlot } from "../../_lib/slots";
 
 // 整頁在回應前算完（不串流），同月曆
 export const instant = false;
@@ -19,5 +20,5 @@ export default async function Timeline({ params, searchParams }: PageProps<"/[lo
   const { locale } = await params;
   const config = getLocaleConfig();
   if (!isSupportedLocale(locale, config)) notFound();
-  return <TimelineViewPage locale={locale} supportedLocales={config.supported} searchParams={await searchParams} />;
+  return <TimelineViewPage locale={locale} supportedLocales={config.supported} searchParams={await searchParams} slots={{ filterLinks: renderUiSlot("filter.links", { locale }), cardActions: renderUiSlot("card.actions", { locale }) }} />;
 }

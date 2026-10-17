@@ -59,7 +59,7 @@ function group(over: Partial<TimelineGroupData> & { key: string }): TimelineGrou
   };
 }
 
-const card = (k: string): TimelineCardData => ({ k, h: `/g/${k}`, n: k, p: [], pn: "", sk: "full", s: "正式版" });
+const card = (k: string): TimelineCardData => ({ g: 1, k, h: `/g/${k}`, n: k, p: [], pn: "", sk: "full", s: "正式版" });
 
 describe("toTimelineCard", () => {
   it("基本欄位：連結、平台縮寫、階段文字；熱度 0 與無改期紀錄不帶欄位", () => {

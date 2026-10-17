@@ -12,6 +12,7 @@ import { parseAccountsEnv } from "../providers/auth";
 import { getLocaleConfig, isSupportedLocale } from "@/kernel/locale";
 import { parseIdParam } from "../domain/entities/lists";
 import { getCurrentUser } from "./current-user";
+import { suspendedResponse } from "./suspension";
 import { findOwnedGamesTarget, getMatchCandidates, getOwnedGamesPage, importOwnedGames, matchOwnedGames, setManualMatch, type ManualMatchChange } from "./owned-games";
 
 export interface ImportRequestDeps {
@@ -62,6 +63,10 @@ export async function handleImportRequest(request: Request, providerParam: strin
 
   const user = await getCurrentUser(request.headers);
   if (!user) return json({ code: "unauthorized" }, 401);
+  if (isPost) {
+    const blocked = suspendedResponse(user);
+    if (blocked) return blocked;
+  }
   const target = await findOwnedGamesTarget(user.id, provider);
   if (!target) return json({ code: "steam_not_linked" }, STATUS.steam_not_linked);
 
@@ -109,6 +114,8 @@ export async function handleManualMatchRequest(request: Request, providerParam: 
   if (!isTrustedRequestOrigin(request, env.trustedOrigins)) return json({ code: "invalid_origin" }, 403);
   const user = await getCurrentUser(request.headers);
   if (!user) return json({ code: "unauthorized" }, 401);
+  const blocked = suspendedResponse(user);
+  if (blocked) return blocked;
   const target = await findOwnedGamesTarget(user.id, providerParam);
   if (!target) return json({ code: "steam_not_linked" }, STATUS.steam_not_linked);
   const ownedGameId = parseIdParam(ownedGameParam);

@@ -64,9 +64,9 @@ export async function seedPlayerRating(slug: string, row: { ratingCount: number;
   const id = await gameIdBySlug(slug);
   await withDb((c) =>
     c.query(
-      `INSERT INTO game_player_ratings (game_id, avg_half_steps, rating_count, avg_play_minutes) VALUES ($1,$2,$3,$4)
-       ON CONFLICT (game_id) DO UPDATE SET avg_half_steps = EXCLUDED.avg_half_steps, rating_count = EXCLUDED.rating_count, avg_play_minutes = EXCLUDED.avg_play_minutes`,
-      [id, row.avgHalfSteps, row.ratingCount, row.avgPlayMinutes],
+      `INSERT INTO game_player_ratings (game_id, avg_half_steps, rating_count, avg_play_minutes, play_minutes_count) VALUES ($1,$2,$3,$4,$5)
+       ON CONFLICT (game_id) DO UPDATE SET avg_half_steps = EXCLUDED.avg_half_steps, rating_count = EXCLUDED.rating_count, avg_play_minutes = EXCLUDED.avg_play_minutes, play_minutes_count = EXCLUDED.play_minutes_count`,
+      [id, row.avgHalfSteps, row.ratingCount, row.avgPlayMinutes, row.avgPlayMinutes === null ? 0 : row.ratingCount],
     ),
   );
 }

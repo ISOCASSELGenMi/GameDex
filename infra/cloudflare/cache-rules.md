@@ -10,6 +10,7 @@ Phase 3.5 只在應用程式端送出正確的快取標頭；以下規則要到 
 | `/{locale}/games/{slug}`、`/{locale}/events/{slug}`（ISR） | Next 依 `cacheLife catalogDetail` 產生：`s-maxage=3600, stale-while-revalidate=…` | 詳情頁，1 小時重建、24 小時內可送舊版 |
 | `/{locale}/calendar/{month}`、`timeline`、`trending`、`games` | `public, s-maxage=60, stale-while-revalidate=300` | 篩選驅動、變動快 |
 | `/{locale}/platforms`、`platforms/{slug}`、`companies/{slug}`、`franchises/{slug}`、`events` | `public, s-maxage=300, stale-while-revalidate=3600` | 實體頁與列表 |
+| `/{locale}/lists/{id}`（public 清單頁） | `public, s-maxage=60` | HTML 與檢視者無關；不進 sitemap。unlisted 分享頁 `/{locale}/lists/s/{token}` 維持 `private, no-store` 並 noindex |
 | `/sitemap.xml`、`/sitemap/{name}` | `public, s-maxage=3600, stale-while-revalidate=86400` | 分片很大，不進伺服器記憶體快取，交給 CDN |
 | `/robots.txt` | 見路由 | |
 | `/_next/static/*` | `public, max-age=31536000, immutable`（Next 預設） | |

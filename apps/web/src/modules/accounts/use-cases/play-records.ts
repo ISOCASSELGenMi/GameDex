@@ -6,8 +6,10 @@ import {
   gameHasPlatform,
   getGameCardsByIds,
   getGamePlatformOptions,
+  getPlatformBriefsByIds,
   type GameMiniCard,
   type GamePlatformOption,
+  type PlatformBrief,
 } from "@/modules/catalog";
 import type { FieldErrors } from "../domain/entities/lists";
 import {
@@ -100,6 +102,8 @@ export const removePlayRecord = (userId: number, id: number): Promise<boolean> =
 
 export interface PlayRecordListItem extends PlayRecordView {
   game: GameMiniCard | null;
+  /** 遊玩平台（platformId 為 null 或平台已不存在時為 null）；D83：帳號頁列表顯示平台名稱。 */
+  platform: PlatformBrief | null;
 }
 
 export async function getMyPlayRecords(
@@ -109,8 +113,17 @@ export async function getMyPlayRecords(
   const limit = Math.min(PLAY_RECORDS_PAGE_MAX, Math.max(1, opts.limit ?? PLAY_RECORDS_PAGE_DEFAULT));
   const offset = Math.max(0, opts.offset ?? 0);
   const { rows, hasMore } = await listPlayRecords(userId, { gameId: opts.gameId, limit, offset });
-  const cards = await getGameCardsByIds(rows.map((r) => r.gameId), opts.locale);
-  return { items: rows.map((r) => ({ ...toPlayRecordView(r), game: cards.get(r.gameId) ?? null })), hasMore, limit, offset };
+  // 批次查：遊戲卡片與平台各一次查詢，不是每筆一次
+  const [cards, platformById] = await Promise.all([
+    getGameCardsByIds(rows.map((r) => r.gameId), opts.locale),
+    getPlatformBriefsByIds(rows.flatMap((r) => (r.platformId === null ? [] : [r.platformId]))),
+  ]);
+  return {
+    items: rows.map((r) => ({ ...toPlayRecordView(r), game: cards.get(r.gameId) ?? null, platform: r.platformId === null ? null : (platformById.get(r.platformId) ?? null) })),
+    hasMore,
+    limit,
+    offset,
+  };
 }
 
 export const getMyPlayStats = (userId: number, now: Date = new Date()): Promise<PlayStatsView> => playStatsForUser(userId, now.getUTCFullYear());
@@ -134,7 +147,7 @@ export async function getMyGameState(userId: number, gameId: number): Promise<My
   return { gameId, lists, playRecords: records.rows.map(toPlayRecordView), platforms };
 }
 
-/** 玩家平均（公開）。遊戲不存在回 null。人數不到 PLAYER_RATING_MIN_COUNT（預設 5）時 avg 為 null。 */
+/** 玩家平均（公開）。遊戲不存在回 null。人數不到 PLAYER_RATING_MIN_COUNT（預設 5）時 avg 為 null；回報耗時的人數不到門檻時 avgPlayMinutes 也是 null。 */
 export async function getPlayerRating(gameId: number, minCount: number = resolvePlayerRatingMinCount(process.env.PLAYER_RATING_MIN_COUNT)): Promise<PlayerRatingView | null> {
   if (!(await gameExists(gameId))) return null;
   const row = await findPlayerRating(gameId);
@@ -142,7 +155,8 @@ export async function getPlayerRating(gameId: number, minCount: number = resolve
   return {
     ratingCount: row.ratingCount,
     avg: row.avgHalfSteps !== null && row.ratingCount >= minCount ? averageHalfStepsToScore(row.avgHalfSteps) : null,
-    avgPlayMinutes: row.avgPlayMinutes,
+    // D83：平均耗時與評分共用人數門檻；未達門檻不給數字。
+    avgPlayMinutes: row.playMinutesCount >= minCount ? row.avgPlayMinutes : null,
   };
 }
 

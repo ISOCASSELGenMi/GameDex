@@ -1,5 +1,5 @@
 import { SITE_FOLLOWS_SIGNAL, type GameDetail } from "../../domain/entities";
-import { displayFollowerCount, resolveFollowCountMinDisplay } from "../../domain/follow-display";
+import { displayFollowerCount, isRising, resolveFollowCountMinDisplay, resolveFollowRisingMin7d } from "../../domain/follow-display";
 import { utcToday } from "../../domain/utc-date";
 import { hasPopularitySignal } from "../../extensions";
 import { getGameDetailBySlug } from "../../repository/game-detail";
@@ -35,6 +35,6 @@ export async function getGameDetail(input: GetGameDetailInput): Promise<GameDeta
   return {
     ...detail,
     followerCount: displayFollowerCount(heat.followers, resolveFollowCountMinDisplay(process.env.FOLLOW_COUNT_MIN_DISPLAY)),
-    rising: heat.rising,
+    rising: isRising(heat.followers7d, heat.percentRank, resolveFollowRisingMin7d(process.env.FOLLOW_RISING_MIN_7D)),
   };
 }

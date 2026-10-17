@@ -5,7 +5,7 @@
 import type { ReactElement, ReactNode } from "react";
 import type { Locale } from "@sok/i18n";
 import type { AccountsPublicConfig } from "../domain/entities/public-config";
-import { AccountCalendar, type PlatformGroup } from "./account-calendar";
+import { AccountCalendar, type GenreChoice, type PlatformGroup } from "./account-calendar";
 import { AccountFollows } from "./account-follows";
 import { AccountListDetail } from "./account-list-detail";
 import { AccountLists } from "./account-lists";
@@ -176,11 +176,21 @@ export function AccountMyGamesPageView({ locale }: { locale: Locale }): ReactEle
 }
 
 /** `children`＝各日曆 App 的訂閱步驟（catalog 的訂閱頁說明元件，由薄路由傳入，避免複製第二份文案）。 */
-export function AccountCalendarPageView({ locale, platformGroups, children }: { locale: Locale; platformGroups: PlatformGroup[]; children?: ReactNode }): ReactElement {
+export function AccountCalendarPageView({
+  locale,
+  platformGroups,
+  genreChoices,
+  children,
+}: {
+  locale: Locale;
+  platformGroups: PlatformGroup[];
+  genreChoices: GenreChoice[];
+  children?: ReactNode;
+}): ReactElement {
   const s = accountStrings(locale, SUB_STRING_PREFIXES);
   return (
     <WideFrame title={str(s, "feedcal.title")}>
-      <AccountCalendar strings={s} locale={locale} platformGroups={platformGroups} />
+      <AccountCalendar strings={s} locale={locale} platformGroups={platformGroups} genreChoices={genreChoices} />
       {children}
     </WideFrame>
   );

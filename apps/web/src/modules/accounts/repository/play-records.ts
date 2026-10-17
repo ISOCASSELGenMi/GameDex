@@ -117,18 +117,21 @@ export interface PlayerRatingRow {
   ratingCount: number;
   avgHalfSteps: number | null;
   avgPlayMinutes: number | null;
+  /** 回報耗時的人數（用來套與評分相同的顯示門檻）。 */
+  playMinutesCount: number;
 }
 
 export async function findPlayerRating(gameId: number): Promise<PlayerRatingRow | null> {
   const [row] = await getDb().select().from(gamePlayerRatings).where(eq(gamePlayerRatings.gameId, gameId)).limit(1);
   if (!row) return null;
-  return { ratingCount: row.ratingCount, avgHalfSteps: row.avgHalfSteps === null ? null : Number(row.avgHalfSteps), avgPlayMinutes: row.avgPlayMinutes };
+  return { ratingCount: row.ratingCount, avgHalfSteps: row.avgHalfSteps === null ? null : Number(row.avgHalfSteps), avgPlayMinutes: row.avgPlayMinutes, playMinutesCount: row.playMinutesCount };
 }
 
 /**
  * 全量重算玩家平均（D68）：
- * - 一人一票：每款遊戲、每位未停權用戶，取「最新一筆有評分」的紀錄（updated_at DESC, id DESC）。
- * - 平均耗時：每位用戶最新一筆「有耗時且狀態為 finished／completed」的紀錄，平均後四捨五入。
+ * - 一人一票：每款遊戲、每位未停權用戶，取「最新一筆有評分」的紀錄（created_at DESC, id DESC；D83：編輯舊紀錄不換票）。
+ * - 平均耗時：每位用戶最新一筆「有耗時且狀態為 finished／completed」的紀錄（同樣 created_at DESC, id DESC），平均後四捨五入；
+ *   同時記下回報人數 play_minutes_count，讀取時與評分套同一個人數門檻。
  * - 兩者都沒有資料的遊戲刪列；只有資料變動的列才寫入（updated_at 為資料最後變動時間）。
  * 單一 statement（data-modifying CTE），upsert 與刪除原子完成。
  */
@@ -139,28 +142,29 @@ export async function refreshPlayerRatings(): Promise<{ upserted: number; delete
       SELECT DISTINCT ON (pr.game_id, pr.user_id) pr.game_id, pr.user_id, pr.rating_half_steps
       FROM ${playRecords} pr JOIN ${users} u ON u.id = pr.user_id AND u.suspended_at IS NULL
       WHERE pr.rating_half_steps IS NOT NULL
-      ORDER BY pr.game_id, pr.user_id, pr.updated_at DESC, pr.id DESC
+      ORDER BY pr.game_id, pr.user_id, pr.created_at DESC, pr.id DESC
     ), ratings AS (
       SELECT game_id, avg(rating_half_steps)::numeric(4,2) AS avg_hs, count(*)::int AS cnt FROM latest_rated GROUP BY game_id
     ), latest_time AS (
       SELECT DISTINCT ON (pr.game_id, pr.user_id) pr.game_id, pr.user_id, pr.play_minutes
       FROM ${playRecords} pr JOIN ${users} u ON u.id = pr.user_id AND u.suspended_at IS NULL
       WHERE pr.play_minutes IS NOT NULL AND pr.status::text IN (${finished})
-      ORDER BY pr.game_id, pr.user_id, pr.updated_at DESC, pr.id DESC
+      ORDER BY pr.game_id, pr.user_id, pr.created_at DESC, pr.id DESC
     ), times AS (
-      SELECT game_id, round(avg(play_minutes))::int AS avg_min FROM latest_time GROUP BY game_id
+      SELECT game_id, round(avg(play_minutes))::int AS avg_min, count(*)::int AS min_cnt FROM latest_time GROUP BY game_id
     ), agg AS (
-      SELECT COALESCE(r.game_id, t.game_id) AS game_id, r.avg_hs, COALESCE(r.cnt, 0) AS cnt, t.avg_min
+      SELECT COALESCE(r.game_id, t.game_id) AS game_id, r.avg_hs, COALESCE(r.cnt, 0) AS cnt, t.avg_min, COALESCE(t.min_cnt, 0) AS min_cnt
       FROM ratings r FULL JOIN times t ON t.game_id = r.game_id
     ), up AS (
-      INSERT INTO ${gamePlayerRatings} (game_id, avg_half_steps, rating_count, avg_play_minutes, updated_at)
-      SELECT game_id, avg_hs, cnt, avg_min, now() FROM agg
+      INSERT INTO ${gamePlayerRatings} (game_id, avg_half_steps, rating_count, avg_play_minutes, play_minutes_count, updated_at)
+      SELECT game_id, avg_hs, cnt, avg_min, min_cnt, now() FROM agg
       ON CONFLICT (game_id) DO UPDATE
         SET avg_half_steps = EXCLUDED.avg_half_steps, rating_count = EXCLUDED.rating_count,
-            avg_play_minutes = EXCLUDED.avg_play_minutes, updated_at = now()
+            avg_play_minutes = EXCLUDED.avg_play_minutes, play_minutes_count = EXCLUDED.play_minutes_count, updated_at = now()
         WHERE ${gamePlayerRatings}.avg_half_steps IS DISTINCT FROM EXCLUDED.avg_half_steps
            OR ${gamePlayerRatings}.rating_count IS DISTINCT FROM EXCLUDED.rating_count
            OR ${gamePlayerRatings}.avg_play_minutes IS DISTINCT FROM EXCLUDED.avg_play_minutes
+           OR ${gamePlayerRatings}.play_minutes_count IS DISTINCT FROM EXCLUDED.play_minutes_count
       RETURNING 1
     ), del AS (
       DELETE FROM ${gamePlayerRatings} WHERE game_id NOT IN (SELECT game_id FROM agg) RETURNING 1

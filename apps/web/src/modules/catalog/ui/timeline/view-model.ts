@@ -13,6 +13,7 @@ import type { TimelineCardData, TimelineChunk, TimelineGroupData } from "./types
 /** 卡片 → 傳輸用資料。 */
 export function toTimelineCard(card: ReleaseCard, locale: Locale, t: Translator): TimelineCardData {
   const out: TimelineCardData = {
+    g: card.gameId,
     k: `${card.gameId}-${card.stage}`,
     h: gameHref(locale, card.slug),
     n: card.name,

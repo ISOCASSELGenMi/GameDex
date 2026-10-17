@@ -233,6 +233,31 @@ body:lang(ja) {
 .card:hover {
   background: var(--surface);
 }
+/* 卡片動作掛載點（D83）：accounts 啟用且掛載後才有內容（追蹤按鈕）；空的時候不佔空間 */
+.card-action:empty {
+  display: none;
+}
+.card-action:not(:empty) {
+  display: block;
+  padding: 0 0.25rem 0.25rem;
+}
+/* 卡片上的追蹤按鈕：月曆格內很窄所以小（24px 以上）；議程、未定日、時間軸卡片維持 44px */
+.card-follow {
+  min-height: 28px;
+  padding: 0 0.5rem;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+}
+.agenda-list .card-follow,
+.undated-tiles .card-follow,
+.tl-card .card-follow {
+  min-height: 44px;
+  padding: 0 0.75rem;
+  font-size: 0.8125rem;
+}
+.filter-links {
+  margin: 0;
+}
 .card-thumb {
   width: 28px;
   height: 40px;

@@ -6,6 +6,8 @@ export { LocaleBody, NotFoundView } from "./layout/locale-body";
 export { PageShell } from "./layout/page-shell";
 
 export { parseMonthParam } from "./month";
+export type { PageSlots } from "./page-slots";
+export { listGenreChoices, type GenreChoice } from "./genre-choices";
 
 // Phase 3b（I）：時間軸、熱門榜（薄路由與 route handler 用）
 export { TimelineViewPage, timelineTitle } from "./timeline/timeline-page";

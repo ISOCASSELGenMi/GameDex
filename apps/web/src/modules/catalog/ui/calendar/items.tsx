@@ -5,6 +5,7 @@
 import Image from "next/image";
 import type { ReactElement } from "react";
 import type { Translator } from "@sok/i18n";
+import { CardActionHost } from "../card-action-host";
 import { HeatBadge, heatBadgeLabel } from "../heat-badge";
 import { EventIcon, StageIcon, StatusIcon, WarningIcon } from "../icons";
 import { stageLabel, statusLabel } from "../labels";
@@ -35,6 +36,7 @@ function Chips({ item }: { item: CardItem }): ReactElement | null {
 export function FullCard({ item, href, t }: { item: CardItem; href: string; t: Translator }): ReactElement {
   const { card } = item;
   return (
+    <div className="card-wrap">
     <a className="card" href={href} data-card={item.key}>
       {card.cover ? (
         <Image
@@ -73,6 +75,8 @@ export function FullCard({ item, href, t }: { item: CardItem; href: string; t: T
         ) : null}
       </span>
     </a>
+    <CardActionHost gameId={card.gameId} name={card.name} />
+    </div>
   );
 }
 

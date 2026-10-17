@@ -3,7 +3,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getLocaleConfig, isSupportedLocale } from "@/kernel/locale";
 import { listPlatforms } from "@/modules/catalog";
-import { PageShell, SubscribeClientsSection } from "@/modules/catalog/ui";
+import { PageShell, SubscribeClientsSection, listGenreChoices, type GenreChoice } from "@/modules/catalog/ui";
+import type { Locale } from "@sok/i18n";
 import { AccountCalendarPageView, accountSubPageTitle, gateAccountsPage, type PlatformGroup } from "@/modules/accounts/ui";
 
 export const instant = false;
@@ -25,6 +26,15 @@ async function platformGroups(locale: string): Promise<PlatformGroup[]> {
   }
 }
 
+/** 類型篩選的選項（與月曆篩選面板同一份清單與翻譯；讀取失敗就不提供類型篩選）。 */
+async function genreChoices(locale: Locale): Promise<GenreChoice[]> {
+  try {
+    return await listGenreChoices(locale);
+  } catch {
+    return [];
+  }
+}
+
 export default async function AccountCalendar({ params }: PageProps<"/[locale]/account/calendar">) {
   const { locale } = await params;
   const config = getLocaleConfig();
@@ -32,7 +42,7 @@ export default async function AccountCalendar({ params }: PageProps<"/[locale]/a
   await gateAccountsPage();
   return (
     <PageShell locale={locale} supportedLocales={config.supported} path="/account/calendar">
-      <AccountCalendarPageView locale={locale} platformGroups={await platformGroups(locale)}>
+      <AccountCalendarPageView locale={locale} platformGroups={await platformGroups(locale)} genreChoices={await genreChoices(locale)}>
         <SubscribeClientsSection locale={locale} />
       </AccountCalendarPageView>
     </PageShell>

@@ -29,6 +29,7 @@ export async function findUserById(id: number): Promise<CurrentUser | null> {
     email: isPlaceholderEmail(row.email) ? null : row.email,
     emailVerified: row.emailVerified,
     avatarUrl: row.avatarUrl,
+    suspended: row.suspendedAt !== null,
   };
 }
 

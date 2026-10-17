@@ -28,7 +28,8 @@ export function resolveFollowMaxPerDay(raw: string | undefined): number {
 export const FOLLOW_LIST_LIMIT_DEFAULT = 50;
 export const FOLLOW_LIST_LIMIT_MAX = 100;
 /** GET /me/follows/state 一次最多查幾個目標。 */
-export const FOLLOW_STATE_TARGETS_MAX = 100;
+/** 一次最多查幾個目標的追蹤狀態（月曆一頁的卡片可能上百張，D83 由 100 調到 300）。 */
+export const FOLLOW_STATE_TARGETS_MAX = 300;
 
 export interface FollowTargetKey {
   targetType: FollowTarget;

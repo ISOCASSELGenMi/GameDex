@@ -50,6 +50,20 @@ async function clearedSessionCookies(headers: Headers): Promise<string[]> {
   }
 }
 
+/** /api/v1/account 的入口：GET＝帳號狀態、DELETE＝刪除帳號（handleAccountDelete 是同一個函式，沿用舊名稱）。 */
+export async function handleAccount(request: Request): Promise<Response> {
+  return handleAccountDelete(request);
+}
+
+// ── GET /api/v1/account ──────────────────────────────────────────────────
+
+/** 目前帳號狀態 `{ suspended }`（D83：帳號頁與各子頁依此顯示「帳號已停權」說明；本人可讀）。 */
+async function handleAccountStatus(request: Request): Promise<Response> {
+  const a = await authenticate(request, false);
+  if ("response" in a) return a.response;
+  return json({ suspended: a.user.suspended }, 200);
+}
+
 // ── DELETE /api/v1/account ───────────────────────────────────────────────
 
 /**
@@ -58,8 +72,9 @@ async function clearedSessionCookies(headers: Headers): Promise<string[]> {
  * 403 invalid_origin｜429 rate_limited。
  */
 export async function handleAccountDelete(request: Request): Promise<Response> {
-  if (request.method !== "DELETE") return methodNotAllowed("DELETE");
-  const a = await authenticate(request, true);
+  if (request.method === "GET") return handleAccountStatus(request);
+  if (request.method !== "DELETE") return methodNotAllowed("GET, DELETE");
+  const a = await authenticate(request, true, { allowSuspended: true }); // 停權者也能刪除自己的帳號（D83）
   if ("response" in a) return a.response;
   const limit = consumeRate("account-delete", a.user.id, ACCOUNT_DELETE_RATE_LIMIT);
   if (!limit.ok) return rateLimited(limit.retryAfterSeconds);

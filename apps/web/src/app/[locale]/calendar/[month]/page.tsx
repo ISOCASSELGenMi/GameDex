@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getLocaleConfig, isSupportedLocale } from "@/kernel/locale";
 import { CalendarMonthPage, calendarTitle, parseMonthParam, seoMetadata } from "@/modules/catalog/ui";
+import { renderUiSlot } from "../../../_lib/slots";
 
 // 整頁在回應前算完（不串流），讓錯誤月份回真正的 404（見 C-report）
 export const instant = false;
@@ -20,5 +21,5 @@ export default async function CalendarMonth({ params, searchParams }: PageProps<
   const { locale, month } = await params;
   const config = getLocaleConfig();
   if (!isSupportedLocale(locale, config)) notFound();
-  return <CalendarMonthPage locale={locale} supportedLocales={config.supported} month={month} searchParams={await searchParams} />;
+  return <CalendarMonthPage locale={locale} supportedLocales={config.supported} month={month} searchParams={await searchParams} slots={{ filterLinks: renderUiSlot("filter.links", { locale }), cardActions: renderUiSlot("card.actions", { locale }) }} />;
 }

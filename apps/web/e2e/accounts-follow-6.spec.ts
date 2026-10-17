@@ -422,7 +422,7 @@ test.describe("熱度顯示：追蹤人數、上升中、熱門榜依據", () =>
   test("詳情頁顯示「N 人追蹤」與「上升中」；沒有訊號的遊戲兩者都不出現", async ({ page }) => {
     const locale: TestLocale = "en";
     // 這款遊戲沒有其他測試造訪（詳情頁是 ISR 快取，先寫訊號再第一次請求）
-    await seedFollowSignals("e2e-fill-05", { siteFollows: 25, siteFollows7d: 9 });
+    await seedFollowSignals("e2e-fill-05", { siteFollows: 25, siteFollows7d: 12 });
     await page.goto(gameUrl(locale, "e2e-fill-05"));
     await expect(page.locator("[data-follower-count]")).toHaveText(msg(locale, "ui.heat.followers", { count: "25" }));
     await expect(page.locator("[data-rising]")).toHaveText(msg(locale, "ui.heat.rising"));

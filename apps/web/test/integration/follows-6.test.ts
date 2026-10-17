@@ -15,7 +15,7 @@ import {
   getCatalogExtensions,
   type ExternalHypeSource,
 } from "@/modules/catalog";
-import { companies, eventGames, events, franchises, gameCompanies, gameFranchises, gamePlatforms, games, regions, releaseEvents } from "@/modules/catalog/schema";
+import { companies, eventGames, events, franchises, gameCompanies, gameFranchises, gameGenres, gamePlatforms, games, genres, regions, releaseEvents } from "@/modules/catalog/schema";
 import { upsertPlatform } from "@/modules/catalog/repository/platforms";
 import { platforms } from "@/modules/catalog/schema";
 import { refreshPopularity } from "@/modules/catalog/use-cases/sync/refresh-popularity";
@@ -46,7 +46,7 @@ const KEY = Buffer.alloc(32, 7).toString("base64");
 const PASSWORD = "a long password 1";
 const ENV_KEYS = [
   "AUTH_SECRET", "TOKEN_ENCRYPTION_KEY", "ACCOUNTS_SIGNUP_ENABLED", "NEXT_PUBLIC_SITE_URL", "MODULES",
-  "FOLLOW_MAX_PER_DAY", "FOLLOW_COUNT_MIN_DISPLAY", "ICAL_PUBLIC_MAX_EVENTS",
+  "FOLLOW_MAX_PER_DAY", "FOLLOW_COUNT_MIN_DISPLAY", "FOLLOW_RISING_MIN_7D", "ICAL_PUBLIC_MAX_EVENTS",
 ] as const;
 const saved: Record<string, string | undefined> = {};
 
@@ -58,6 +58,7 @@ function setEnv(): void {
   delete process.env.MODULES;
   delete process.env.FOLLOW_MAX_PER_DAY;
   delete process.env.FOLLOW_COUNT_MIN_DISPLAY;
+  delete process.env.FOLLOW_RISING_MIN_7D;
   delete process.env.ICAL_PUBLIC_MAX_EVENTS;
   resetAuthForTests();
   resetCoreEnvCache();
@@ -221,6 +222,7 @@ describe.skipIf(!enabled)("accounts 第 6 波：追蹤、熱度訊號、我的�
     if (extraUserIds.length) await db.delete(users).where(inArray(users.id, extraUserIds));
     if (gameIds.length) await db.delete(games).where(inArray(games.id, gameIds));
     for (const id of Object.values(eventIds)) await db.delete(events).where(eq(events.id, id));
+    await db.delete(genres).where(like(genres.slug, "fl6-%"));
     await db.delete(franchises).where(eq(franchises.id, franchiseId));
     await db.delete(companies).where(eq(companies.id, companyId));
     if (platformIds.length) await db.delete(platforms).where(inArray(platforms.id, platformIds));
@@ -348,7 +350,7 @@ describe.skipIf(!enabled)("accounts 第 6 波：追蹤、熱度訊號、我的�
       ]);
       const wc = await json(await handleFollowState(request("GET", `/api/v1/me/follows/state?targets=game:${gid.a}&withCount=1`, { cookie: A.cookie })));
       expect(wc.items).toEqual([{ targetType: "game", targetId: gid.a, following: true, count: null }]);
-      for (const bad of ["", "game", "game:x", "nope:1", "game:1:2", Array.from({ length: 101 }, (_, i) => `game:${i + 1}`).join(",")]) {
+      for (const bad of ["", "game", "game:x", "nope:1", "game:1:2", Array.from({ length: 301 }, (_, i) => `game:${i + 1}`).join(",")]) { // 上限 300（D83 由 100 調高）
         const r = await handleFollowState(request("GET", `/api/v1/me/follows/state?targets=${encodeURIComponent(bad)}`, { cookie: A.cookie }));
         expect(r.status).toBe(400);
       }
@@ -399,7 +401,7 @@ describe.skipIf(!enabled)("accounts 第 6 波：追蹤、熱度訊號、我的�
         { userId: A.id, targetType: "franchise", targetId: 98_000_004 },
         { userId: A.id, targetType: "company", targetId: 98_000_005 },
       ]);
-      const res = await cleanupOrphanFollows();
+      const res = await cleanupOrphanFollows({ webhookUrl: undefined });
       expect(res).toEqual({ game: 2, event: 1, platform: 1, franchise: 1, company: 1 });
       const left = await db.select().from(follows).where(eq(follows.userId, A.id));
       expect(left.map((r) => r.targetId)).toEqual([gid.a]);
@@ -407,7 +409,7 @@ describe.skipIf(!enabled)("accounts 第 6 波：追蹤、熱度訊號、我的�
       // 安全閥：某種類 ≥ 20 個目標全部不存在 → 視為異常，不刪
       const many = Array.from({ length: ORPHAN_SANITY_MIN_TARGETS }, (_, i) => ({ userId: B.id, targetType: "company" as const, targetId: 98_100_000 + i }));
       await db.insert(follows).values(many);
-      expect((await cleanupOrphanFollows()).company).toBe(0);
+      expect((await cleanupOrphanFollows({ webhookUrl: undefined })).company).toBe(0);
       expect((await db.select().from(follows).where(and(eq(follows.userId, B.id), eq(follows.targetType, "company")))).length).toBe(ORPHAN_SANITY_MIN_TARGETS);
       await db.delete(follows).where(eq(follows.userId, B.id));
       await unfollow(A, "game", gid.a!);
@@ -485,7 +487,7 @@ describe.skipIf(!enabled)("accounts 第 6 波：追蹤、熱度訊號、我的�
       await getDb().execute(sql`
         INSERT INTO game_popularity_signals (game_id, signal_name, value) VALUES
           (${gid.a}, 'site_follows', 12), (${gid.a}, 'site_follows_7d', 5),
-          (${gid.e}, 'site_follows', 3), (${gid.e}, 'site_follows_7d', 9)`);
+          (${gid.e}, 'site_follows', 3), (${gid.e}, 'site_follows_7d', 12)`);
     }
     const mineSlugs = (items: Array<{ slug: string }>) => items.map((i) => i.slug).filter((s) => s.startsWith("fl6-"));
 
@@ -501,12 +503,26 @@ describe.skipIf(!enabled)("accounts 第 6 波：追蹤、熱度訊號、我的�
         setCatalogExtensions({ popularitySignals: [siteFollowsSignal, siteFollows7dSignal] });
         const byFollows = await getTrending({ locale: "en", limit: 100, filter });
         expect(byFollows.rankedBy).toBe("site_follows_7d");
-        expect(three(byFollows.items)).toEqual(["fl6-e", "fl6-a", "fl6-g"]); // 9、5、(0 → 分數 100)
+        expect(three(byFollows.items)).toEqual(["fl6-e", "fl6-a", "fl6-g"]); // 12、5、(0 → 分數 100)
         const explicit = await getTrending({ locale: "en", limit: 100, filter, rankBy: "popularity" });
         expect(three(explicit.items)).toEqual(["fl6-a", "fl6-e", "fl6-g"]);
       } finally {
         setCatalogExtensions({ popularitySignals: [siteFollowsSignal, siteFollows7dSignal] });
       }
+    });
+
+    it("D83：「上升中」需要 7 日新增 ≥ FOLLOW_RISING_MIN_7D（預設 10）才成立，即使是群內第一名", async () => {
+      await seed7d();
+      await getDb().execute(sql`UPDATE game_popularity_signals SET value = 9 WHERE game_id = ${gid.e} AND signal_name = 'site_follows_7d'`);
+      expect((await getGameDetail({ slug: "fl6-e", locale: "en" }))?.rising).toBe(false); // 第一名，但 9 < 10
+      process.env.FOLLOW_RISING_MIN_7D = "9";
+      expect((await getGameDetail({ slug: "fl6-e", locale: "en" }))?.rising).toBe(true);
+      process.env.FOLLOW_RISING_MIN_7D = "13";
+      await getDb().execute(sql`UPDATE game_popularity_signals SET value = 12 WHERE game_id = ${gid.e} AND signal_name = 'site_follows_7d'`);
+      expect((await getGameDetail({ slug: "fl6-e", locale: "en" }))?.rising).toBe(false);
+      delete process.env.FOLLOW_RISING_MIN_7D;
+      expect((await getGameDetail({ slug: "fl6-e", locale: "en" }))?.rising).toBe(true);
+      await getDb().execute(sql`DELETE FROM game_popularity_signals WHERE signal_name IN ('site_follows','site_follows_7d')`);
     });
 
     it("遊戲詳情：followerCount 低於 FOLLOW_COUNT_MIN_DISPLAY 為 null；rising＝7 日前 5%；accounts 停用時皆無", async () => {
@@ -516,7 +532,7 @@ describe.skipIf(!enabled)("accounts 第 6 波：追蹤、熱度訊號、我的�
       expect(a?.rising).toBe(false); // 群內有訊號的只有 a、e 兩款：只有第一名 e 在前 5%
       const e = await getGameDetail({ slug: "fl6-e", locale: "en" });
       expect(e?.followerCount).toBeNull(); // 3 < 10
-      expect(e?.rising).toBe(true);
+      expect(e?.rising).toBe(true); // 7 日新增 12 ≥ 門檻 10，且是群內第一名（D83）
       process.env.FOLLOW_COUNT_MIN_DISPLAY = "20";
       expect((await getGameDetail({ slug: "fl6-a", locale: "en" }))?.followerCount).toBeNull();
       delete process.env.FOLLOW_COUNT_MIN_DISPLAY;
@@ -713,11 +729,12 @@ describe.skipIf(!enabled)("accounts 第 6 波：追蹤、熱度訊號、我的�
       // 追蹤的活動 a＋與追蹤的遊戲 a 相關的活動 b；c 只關聯沒追蹤的遊戲 f → 不含
       expect(eventUids.sort()).toEqual([`event-${eventIds.a}@localhost:3000`, `event-${eventIds.b}@localhost:3000`].sort());
 
-      // includeEvents=false：只剩明確追蹤的活動
+      // D83：includeEvents=false → 完全不含活動，包括明確追蹤的活動（上市事件照舊）
       const patch = async (body: unknown) => handleFeed(request("PATCH", `/api/v1/calendar/feeds/${feed.id}`, { cookie: D.cookie, body }), String(feed.id));
       expect((await patch({ includeEvents: false })).status).toBe(200);
       let t = await (await ics(token)).text();
-      expect(parseIcs(t).events.map((e) => e.get("UID")).filter((u) => u?.startsWith("event-"))).toEqual([`event-${eventIds.a}@localhost:3000`]);
+      expect(parseIcs(t).events.map((e) => e.get("UID")).filter((u) => u?.startsWith("event-"))).toEqual([]);
+      expect(gameIdsInIcs(t)).toEqual(sorted(gid.a!, gid.b!, gid.c!));
       // includeReleases=false：沒有上市事件
       await patch({ includeEvents: true, includeReleases: false });
       t = await (await ics(token)).text();
@@ -774,6 +791,44 @@ describe.skipIf(!enabled)("accounts 第 6 波：追蹤、熱度訊號、我的�
       // 篩選 stage：全是 full，只留 early_access → 空
       expect((await patch({ filterPlatforms: [], filterStages: ["early_access"] })).status).toBe(200);
       expect(gameIdsInIcs(await (await ics(token)).text())).toEqual([]);
+    });
+
+    it("D83：filterGenres 依類型過濾上市事件（多個類型＝聯集；PATCH 後 settingsVersion + 1；活動不受類型限制）", async () => {
+      const db = getDb();
+      const H = await signUp("fl6-genre@example.com");
+      const feed = await getFeed(H);
+      const token = tokenOf(feed.url);
+      const [g1] = await db.insert(genres).values({ igdbId: 986701, name: "Fl6 Genre One", slug: "fl6-genre-one" }).returning({ id: genres.id });
+      const [g2] = await db.insert(genres).values({ igdbId: 986702, name: "Fl6 Genre Two", slug: "fl6-genre-two" }).returning({ id: genres.id });
+      await db.insert(gameGenres).values([
+        { gameId: gid.a!, genreId: g1!.id },
+        { gameId: gid.f!, genreId: g2!.id },
+      ]);
+      await db.insert(follows).values([
+        { userId: H.id, targetType: "platform", targetId: p1 }, // 視窗內：a、f
+        { userId: H.id, targetType: "event", targetId: eventIds.a! },
+      ]);
+      const patch = async (body: unknown) => json(await handleFeed(request("PATCH", `/api/v1/calendar/feeds/${feed.id}`, { cookie: H.cookie, body }), String(feed.id)));
+      expect(gameIdsInIcs(await (await ics(token)).text())).toEqual(sorted(gid.a!, gid.f!));
+
+      const one = await patch({ filterGenres: ["fl6-genre-one"] });
+      expect(one.changed).toBe(true);
+      expect(one.feed.filterGenres).toEqual(["fl6-genre-one"]);
+      expect(one.feed.settingsVersion).toBe(1);
+      let t = await (await ics(token)).text();
+      expect(gameIdsInIcs(t)).toEqual([gid.a]);
+      expect(parseIcs(t).events.map((e) => e.get("UID")).filter((u) => u?.startsWith("event-"))).toEqual([`event-${eventIds.a}@localhost:3000`]); // 活動不受類型限制
+
+      expect(gameIdsInIcs(await (await ics(token)).text())).toEqual([gid.a]);
+      await patch({ filterGenres: ["fl6-genre-two"] });
+      expect(gameIdsInIcs(await (await ics(token)).text())).toEqual([gid.f]);
+      await patch({ filterGenres: ["fl6-genre-one", "fl6-genre-two"] });
+      expect(gameIdsInIcs(await (await ics(token)).text())).toEqual(sorted(gid.a!, gid.f!));
+      // 沒變更不加版本；清空＝不限類型
+      expect((await patch({ filterGenres: ["fl6-genre-two", "fl6-genre-one"] })).changed).toBe(false);
+      await patch({ filterGenres: [] });
+      t = await (await ics(token)).text();
+      expect(gameIdsInIcs(t)).toEqual(sorted(gid.a!, gid.f!));
     });
 
     it("ETag／304：資料沒變回 304；設定變更（settingsVersion）、追蹤集合換掉（count 不變）都會換 ETag；PATCH 沒變化不 +1", async () => {

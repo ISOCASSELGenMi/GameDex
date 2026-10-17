@@ -39,6 +39,8 @@ export function apiErrorText(strings: AccountStrings, res: ApiResult<unknown>): 
       return str(strings, "error.followNotFound");
     case "unauthorized":
       return str(strings, "error.unauthorized");
+    case "account_suspended":
+      return str(strings, "error.suspended");
     case "invalid_origin":
       return str(strings, "account.error.notFresh");
     default:
@@ -265,6 +267,8 @@ export interface PlayRecordSummaryProps {
   locale: string;
   record: PlayRecordView;
   platforms: readonly GamePlatformOption[];
+  /** 列表（帳號頁）由伺服器一併回傳的平台名稱；不必先載入該遊戲的平台選項（D83）。 */
+  platformName?: string | null;
   onEdit: () => void;
   onDeleted: (id: number) => void;
   /** 回報結果（aria-live 區）。 */
@@ -272,10 +276,10 @@ export interface PlayRecordSummaryProps {
 }
 
 /** 一筆紀錄的摘要＋編輯／刪除（行內確認）。 */
-export function PlayRecordSummary({ strings, locale, record, platforms, onEdit, onDeleted, onMessage }: PlayRecordSummaryProps): ReactElement {
+export function PlayRecordSummary({ strings, locale, record, platforms, platformName, onEdit, onDeleted, onMessage }: PlayRecordSummaryProps): ReactElement {
   const platform = record.platformId != null ? platforms.find((p) => p.id === record.platformId) : undefined;
   const parts = [
-    platform ? (platform.abbreviation ?? platform.name) : null,
+    platformName ?? (platform ? (platform.abbreviation ?? platform.name) : null),
     record.startedOn || record.finishedOn ? `${record.startedOn ?? "…"} – ${record.finishedOn ?? "…"}` : null,
     record.playMinutes != null ? formatPlayTime(strings, record.playMinutes) : null,
     record.ratingHalfSteps != null ? str(strings, "play.ratingValue", { rating: formatRating(record.ratingHalfSteps, locale) }) : null,
