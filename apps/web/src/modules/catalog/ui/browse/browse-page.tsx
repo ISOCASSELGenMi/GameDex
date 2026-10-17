@@ -20,6 +20,7 @@ import { AppliedFilterChips, EmptyFilterResult, FilterNotices, FilterPanel } fro
 import { HeatBadge, heatBadgeLabel } from "../heat-badge";
 import { getTranslator } from "../labels";
 import { PageShell } from "../layout/page-shell";
+import type { PageSlots } from "../page-slots";
 import { gameHref, gamesBrowseHref, localeHref } from "../links";
 import { gameNameLang } from "../name-lang";
 import { PageNav } from "../page-nav";
@@ -41,6 +42,8 @@ export interface GamesBrowsePageProps {
   locale: Locale;
   supportedLocales: readonly Locale[];
   searchParams: SearchParamsRecord;
+  /** 篩選區旁的連結（D83；薄路由從 UI slot 取得）。瀏覽頁不放卡片動作。 */
+  slots?: Pick<PageSlots, "filterLinks">;
 }
 
 export function gamesTitle(locale: Locale): string {
@@ -87,7 +90,7 @@ function GameCard({ game, locale, t }: { game: BrowseGameCard; locale: Locale; t
   );
 }
 
-export async function GamesBrowsePage({ locale, supportedLocales, searchParams }: GamesBrowsePageProps): Promise<ReactElement> {
+export async function GamesBrowsePage({ locale, supportedLocales, searchParams, slots }: GamesBrowsePageProps): Promise<ReactElement> {
   await connection();
   const t = getTranslator(locale);
   const pageNo = parseBrowsePage(first(searchParams.page));
@@ -194,6 +197,7 @@ export async function GamesBrowsePage({ locale, supportedLocales, searchParams }
         <FilterNotices notices={notices} t={t} />
         <AppliedFilterChips chips={chips} t={t} clearHref={basePath} />
         <FilterPanel locale={locale} t={t} options={options} spec={spec} action={basePath} fields={BROWSE_FILTER_FIELDS} hidden={panelHidden} clearHref={basePath} />
+        {slots?.filterLinks}
         <p role="status" className="text-sm text-[var(--muted)]">
           {range
             ? t.t("ui.games.resultsRange", { from: formatNumber(range.from, locale), to: formatNumber(range.to, locale) })

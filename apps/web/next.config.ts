@@ -45,6 +45,9 @@ const nextConfig: NextConfig = {
       { source: "/:locale/companies/:slug", headers: medium },
       { source: "/:locale/franchises/:slug", headers: medium },
       { source: "/:locale/events", headers: medium },
+      // 公開清單頁（accounts，D83）：HTML 與檢視者無關（伺服器端以匿名檢視者讀取，不讀 Cookie），CDN 快取 60 秒；不進 sitemap。
+      // 只符合數字 id 的 public 清單；unlisted 分享頁（/lists/s/:token）不在這裡，維持 Next 預設的 private, no-store（並 noindex）。
+      { source: "/:locale/lists/:id(\\d+)", headers: [{ key: "Cache-Control", value: "public, s-maxage=60" }] },
       // 法務與說明頁（靜態內容）：Next 預設的一年太長（改文字要等 CDN 過期），改 1 小時；改動後部署即生效
       { source: "/:locale/about/:page", headers: [{ key: "Cache-Control", value: "public, s-maxage=3600, stale-while-revalidate=86400" }] },
     ];

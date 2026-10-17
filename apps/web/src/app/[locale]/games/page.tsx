@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getLocaleConfig, isSupportedLocale } from "@/kernel/locale";
 import { GamesBrowsePage, PAGE_RULE, gamesTitle, seoMetadata } from "@/modules/catalog/ui";
+import { renderUiSlot } from "../../_lib/slots";
 
 export const instant = false;
 
@@ -18,5 +19,5 @@ export default async function Games({ params, searchParams }: PageProps<"/[local
   const { locale } = await params;
   const config = getLocaleConfig();
   if (!isSupportedLocale(locale, config)) notFound();
-  return <GamesBrowsePage locale={locale} supportedLocales={config.supported} searchParams={await searchParams} />;
+  return <GamesBrowsePage locale={locale} supportedLocales={config.supported} searchParams={await searchParams} slots={{ filterLinks: renderUiSlot("filter.links", { locale }) }} />;
 }

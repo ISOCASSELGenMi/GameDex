@@ -316,7 +316,7 @@
     "visibility": {
       "default": "Use my default setting",
       "public": "Public",
-      "followers": "People who follow me",
+      "followers": "My followers",
       "private": "Only me"
     },
     "privateNoteHint": "Only you can see this, ever. Up to {limit} characters.",
@@ -372,7 +372,8 @@
     "notFound": "That item was not found; it may have been deleted. Please reload and try again.",
     "unauthorized": "Your session has expired. Please sign in again.",
     "followLimit": "You are following too quickly (there is a limit per 24 hours). Please try again later.",
-    "followNotFound": "That item was not found; it may have been removed."
+    "followNotFound": "That item was not found; it may have been removed.",
+    "suspended": "Your account is suspended, so you cannot do this."
   },
   "playerRating": {
     "title": "Player average",
@@ -392,7 +393,11 @@
     "private": {
       "text": "You can also subscribe to a private calendar that contains only what you follow.",
       "link": "Go to your private calendar"
-    }
+    },
+    "cardAria": "Follow {name}",
+    "cardOn": "Following {name}.",
+    "cardOff": "Unfollowed {name}.",
+    "count": "{count} following"
   },
   "follows": {
     "title": "My follows",
@@ -448,7 +453,8 @@
       "quarter": "Q{quarter} {year}",
       "year": "{year}",
       "tbd": "TBA"
-    }
+    },
+    "filterLink": "My games"
   },
   "feedcal": {
     "title": "Private calendar",
@@ -472,8 +478,8 @@
       "name": "Calendar name",
       "locale": "Calendar language",
       "includeReleases": "Include game release dates",
-      "includeEvents": "Include events related to games I follow",
-      "includeEventsHint": "Events you follow directly always appear in the calendar.",
+      "includeEvents": "Include events",
+      "includeEventsHint": "On: includes events you follow directly and events related to games you follow. Off: the calendar has no events at all, including events you follow directly.",
       "stages": "Only include these release stages",
       "stagesHint": "Tick none for the default (full release, early access, unspecified).",
       "platforms": "Only include these platforms",
@@ -481,7 +487,10 @@
       "save": "Save settings",
       "saved": "Settings saved. Calendar apps apply them the next time they refresh.",
       "unchanged": "Nothing changed.",
-      "tooManyPlatforms": "You can pick at most 20 platforms."
+      "tooManyPlatforms": "You can pick at most 20 platforms.",
+      "genres": "Only include these genres",
+      "genresHint": "Tick none for no genre limit (up to 20). Genres only affect release dates; events are not limited by genre.",
+      "tooManyGenres": "You can pick at most 20 genres."
     },
     "stage": {
       "unspecified": "Unspecified",
@@ -621,5 +630,10 @@
       "body": "Your account and data have been deleted, and you have been signed out. Thanks for using the site.",
       "home": "Back to the home page"
     }
+  },
+  "suspended": {
+    "title": "Account suspended",
+    "body": "Your account is currently suspended. You can still sign in, but you cannot add or change lists, play records, follows, the calendar or settings, and your public content is hidden from other people. You can export your data or delete your account.",
+    "toPrivacy": "Export data or delete account"
   }
 }

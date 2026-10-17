@@ -363,9 +363,9 @@ describe.skipIf(!enabled)("accounts 第 7 波：偏好、刪除帳號、匯出�
       expect((await del(A, { password: PASSWORD }, { origin: "https://evil.example" })).status).toBe(403);
       expect((await del(A, { password: PASSWORD }, { origin: null })).status).toBe(403);
       expect((await del({ cookie: "" }, { password: PASSWORD })).status).toBe(401);
-      const get = await handleAccountDelete(request("GET", "/api/v1/account", { cookie: A.cookie }));
-      expect(get.status).toBe(405);
-      expect(get.headers.get("allow")).toBe("DELETE");
+      const put = await handleAccountDelete(request("PUT", "/api/v1/account", { cookie: A.cookie }));
+      expect(put.status).toBe(405);
+      expect(put.headers.get("allow")).toBe("GET, DELETE");
       expect((await rowCounts(A.id)).users).toBe(1);
     });
 
@@ -693,7 +693,7 @@ describe.skipIf(!enabled)("accounts 第 7 波：偏好、刪除帳號、匯出�
       expect(await readPublic()).toBe(200);
     });
 
-    it("停權者仍可重新登入、讀寫自己的資料、匯出與刪除帳號（最小可回退；待決）", async () => {
+    it("停權者仍可重新登入、讀自己的資料、匯出與刪除帳號；新增／修改一律 403 account_suspended（D83）", async () => {
       const S = await signUp("t7-susp-still@example.com");
       await createListApi(S, { name: "Mine" });
       await adminSetSuspended(S.id, true);
@@ -701,7 +701,9 @@ describe.skipIf(!enabled)("accounts 第 7 波：偏好、刪除帳號、匯出�
       expect(login.status).toBe(200);
       const again = { ...S, cookie: cookieOf(login) };
       expect((await getPrefs(again)).status).toBe(200);
-      expect((await patchPrefs(again, { timezone: "UTC" })).status).toBe(200);
+      const blocked = await patchPrefs(again, { timezone: "UTC" });
+      expect(blocked.status).toBe(403);
+      expect(await json(blocked)).toEqual({ code: "account_suspended" });
       expect((await handleLists(request("GET", "/api/v1/lists", { cookie: again.cookie }))).status).toBe(200);
       const exported = await json(await exportReq(again));
       expect(exported.lists.map((l: J) => l.name)).toEqual(["Mine"]);

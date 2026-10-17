@@ -9,6 +9,8 @@ export interface CurrentUser {
   email: string | null;
   emailVerified: boolean;
   avatarUrl: string | null;
+  /** 停權中（users.suspended_at 不為 null；D83：可登入，但只能看說明、匯出、刪除帳號）。 */
+  suspended: boolean;
 }
 
 /** 帳號頁的「已綁定登入方式」一列（排除 credential）。 */

@@ -8,6 +8,7 @@
  */
 import Image from "next/image";
 import { useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type MouseEvent, type ReactElement } from "react";
+import { CardActionHost } from "../card-action-host";
 import { HeatBadge } from "../heat-badge";
 import { StageIcon, StatusIcon, WarningIcon } from "../icons";
 import { gameNameLang } from "../name-lang";
@@ -141,6 +142,7 @@ function TimelineCard({ card, groupKey, labels, locale, js }: { card: TimelineCa
           ) : null}
         </span>
       </a>
+      <CardActionHost gameId={card.g} name={card.n} />
       {js && card.ids && card.ids.length > 0 ? <HistoryToggle ids={card.ids} locale={locale} labels={labels} /> : null}
     </li>
   );

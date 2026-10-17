@@ -18,7 +18,7 @@ import type { AccountStrings } from "./strings";
 
 export function AccountPrivacy({ strings, locale }: { strings: AccountStrings; locale: string }): ReactElement {
   return (
-    <RequireUser strings={strings} locale={locale}>
+    <RequireUser strings={strings} locale={locale} allowSuspended>
       <div className="flex min-w-0 flex-col gap-8">
         <ExportSection strings={strings} />
         <DeleteSection strings={strings} locale={locale} />

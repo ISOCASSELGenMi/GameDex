@@ -15,6 +15,6 @@ export interface PlayerRatingView {
   ratingCount: number;
   /** 0.5~10、一位小數；人數 < 門檻時為 null（不顯示）。 */
   avg: number | null;
-  /** 站內回報的平均耗時（分鐘）；沒有資料為 null。 */
+  /** 站內回報的平均耗時（分鐘）；沒有資料或回報人數 < 門檻時為 null。 */
   avgPlayMinutes: number | null;
 }

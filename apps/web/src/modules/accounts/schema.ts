@@ -200,6 +200,8 @@ export const gamePlayerRatings = pgTable("game_player_ratings", {
   avgHalfSteps: numeric("avg_half_steps", { precision: 4, scale: 2 }),
   ratingCount: integer("rating_count").notNull().default(0),
   avgPlayMinutes: integer("avg_play_minutes"),
+  /** 回報耗時的人數（一人一票）；平均耗時與評分一樣要達 PLAYER_RATING_MIN_COUNT 才顯示（D83）。 */
+  playMinutesCount: integer("play_minutes_count").notNull().default(0),
   updatedAt: timestamp("updated_at", tz).notNull().defaultNow(),
 });
 

@@ -2,6 +2,8 @@
 import type { AccountPreferences, AccountPreferencesPatch, ExportCsvPart } from "../domain/entities/account-self";
 import { apiCall, jsonBody } from "./api-call";
 
+/** 帳號狀態（D83）：停權中的帳號只能看說明、匯出與刪除。 */
+export const getAccountStatus = () => apiCall<{ suspended: boolean }>("/api/v1/account");
 export const getPreferences = () => apiCall<{ preferences: AccountPreferences }>("/api/v1/account/preferences");
 export const patchPreferences = (body: AccountPreferencesPatch) =>
   apiCall<{ preferences: AccountPreferences; changed: boolean }>("/api/v1/account/preferences", jsonBody("PATCH", body));

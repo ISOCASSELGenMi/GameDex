@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import { getDb, type DbOrTx } from "@/kernel/db/client";
-import type { GameMiniCard, GamePlatformOption, ImageResolver, IsoDate } from "../domain/entities";
+import type { GameMiniCard, GamePlatformOption, ImageResolver, IsoDate, PlatformBrief } from "../domain/entities";
 
 /**
  * 給其他模組（accounts）顯示遊戲卡片、驗證平台、搜尋選擇器用的唯讀查詢（Phase 7 第 5 波）。不寫入任何東西。
@@ -65,6 +65,18 @@ export async function listGamePlatformOptions(gameId: number, db: DbOrTx = getDb
     WHERE gp.game_id = ${gameId} AND p.kind <> 'mobile'
     ORDER BY p.name ASC, p.id ASC`);
   return result.rows.map((r) => ({ id: Number(r.id), slug: r.slug, name: r.name, abbreviation: r.abbreviation }));
+}
+
+/** 依 id 批次取平台簡述（一次查詢；不存在的 id 不在 Map 裡）。 */
+export async function getPlatformBriefsByIds(ids: readonly number[], db: DbOrTx = getDb()): Promise<Map<number, PlatformBrief>> {
+  const out = new Map<number, PlatformBrief>();
+  const unique = [...new Set(ids)];
+  if (unique.length === 0) return out;
+  const result = await db.execute<{ id: number; name: string; abbreviation: string | null }>(
+    sql`SELECT id, name, abbreviation FROM platforms WHERE id IN (${sql.join(unique.map((i) => sql`${i}`), sql`, `)})`,
+  );
+  for (const r of result.rows) out.set(Number(r.id), { id: Number(r.id), name: r.name, abbreviation: r.abbreviation });
+  return out;
 }
 
 /** 搜尋選擇器：games.search_text 的 trigram（tokens 已經 tokenizeForSearch）。 */

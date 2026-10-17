@@ -6,7 +6,8 @@
  * 內容規則：
  * - 追蹤的遊戲：上市事件不受 90 天視窗限制，過去的保留近 30 天。
  * - 追蹤的平台／系列／公司：旗下遊戲的上市事件，90 天視窗，合計最多 ICAL_PUBLIC_MAX_EVENTS 筆（依熱度取前 N）。
- * - 追蹤的活動：一律輸出（明確追蹤）。includeEvents＝另外含與追蹤遊戲相關的活動（event_games，最多 ICAL_PUBLIC_MAX_EVENTS 筆）。
+ * - 活動（D83）：includeEvents＝false 時完全不含活動（包括明確追蹤的活動）。includeEvents＝true：追蹤的活動一律輸出（不受上限），
+ *   另外含與追蹤遊戲相關的活動（event_games，最多 ICAL_PUBLIC_MAX_EVENTS 筆）。
  * - includeReleases＝false：不輸出任何上市事件。
  * - 篩選（平台、類型、階段）取交集；地區只當偏好（見 filterRegionCodes）。
  * ETag 另外納入「追蹤集合與設定」的雜湊：換掉一款追蹤的遊戲時 count 與 max(updated_at) 可能不變、內容卻變了。
@@ -91,7 +92,8 @@ export async function prepareFollowingIcalFeed(input: FollowingFeedInput): Promi
     input.includeReleases && (f.gameIds.length + f.platformIds.length + f.franchiseIds.length + f.companyIds.length > 0);
   const eventScope: IcalFollowingEventScope = {
     today,
-    eventIds: sorted(f.eventIds),
+    // includeEvents=false：兩個範圍都是空的 → repository 不查詢、輸出沒有任何活動
+    eventIds: input.includeEvents ? sorted(f.eventIds) : [],
     relatedGameIds: input.includeEvents ? sorted(f.gameIds) : [],
     relatedLimit: cap,
   };

@@ -10,6 +10,8 @@ import { SteamLibrary } from "./steam-library";
 import { useSearchParam } from "./use-search-param";
 import { str } from "./str";
 import type { AccountStrings } from "./strings";
+import { SuspendedNotice } from "./suspended-notice";
+import { getAccountStatus } from "./account-self-api";
 
 type State = { kind: "loading" } | { kind: "anonymous" } | { kind: "user"; user: SessionUser };
 
@@ -18,6 +20,7 @@ export function AccountPanel({ strings, locale }: { strings: AccountStrings; loc
   const [linked, setLinked] = useState<LinkedAccountRow[]>([]);
   const [message, setMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
   const [leaving, setLeaving] = useState(false);
+  const [suspended, setSuspended] = useState(false);
   const [linking, setLinking] = useState(false);
   // Steam／OAuth 綁定失敗會帶 ?error= 回來（在客戶端讀，伺服器端 HTML 與使用者、網址無關）
   const returnedError = useSearchParam("error");
@@ -33,8 +36,12 @@ export function AccountPanel({ strings, locale }: { strings: AccountStrings; loc
       const res = await getSession();
       if (!alive) return;
       if (res.ok && res.data?.user) {
+        const status = await getAccountStatus();
+        if (!alive) return;
+        const isSuspended = status.ok && status.data?.suspended === true;
+        setSuspended(isSuspended);
         setState({ kind: "user", user: res.data.user });
-        await loadLinked();
+        if (!isSuspended) await loadLinked();
       } else setState({ kind: "anonymous" });
     })();
     return () => {
@@ -111,6 +118,10 @@ export function AccountPanel({ strings, locale }: { strings: AccountStrings; loc
         </dd>
       </dl>
 
+      {suspended ? (
+        <SuspendedNotice strings={strings} locale={locale} />
+      ) : (
+        <>
       <section aria-labelledby="mine-heading" className="flex flex-col gap-2">
         <h2 id="mine-heading" className="text-xl font-bold">
           {str(strings, "account.mine.title")}
@@ -212,6 +223,8 @@ export function AccountPanel({ strings, locale }: { strings: AccountStrings; loc
       </section>
 
       {steamLinked ? <SteamLibrary strings={strings} locale={locale} /> : null}
+        </>
+      )}
 
       <p>
         <button type="button" className="btn-secondary" disabled={leaving} onClick={() => void onSignOut()}>

@@ -15,6 +15,9 @@ export interface FollowStateItem {
 }
 export const getFollowState = (targets: readonly { targetType: FollowTarget; targetId: number }[]) =>
   apiCall<{ items: FollowStateItem[] }>(`/api/v1/me/follows/state?targets=${targets.map((t) => `${t.targetType}:${t.targetId}`).join(",")}`);
+/** 公開追蹤人數（與檢視者無關、CDN 可快取 300 秒）。count 為 null＝低於 FOLLOW_COUNT_MIN_DISPLAY，不顯示。 */
+export const getFollowCount = (targetType: FollowTarget, targetId: number) =>
+  apiCall<{ targetType: FollowTarget; targetId: number; count: number | null; minDisplay: number }>(`/api/v1/follows/count/${targetType}/${targetId}`, { cache: "default" });
 export const followTarget = (targetType: FollowTarget, targetId: number) =>
   apiCall<{ following: true; created: boolean }>(`/api/v1/follows/${targetType}/${targetId}`, jsonBody("PUT"));
 export const unfollowTarget = (targetType: FollowTarget, targetId: number) =>

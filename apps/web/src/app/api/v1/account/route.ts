@@ -2,4 +2,5 @@
 import { guardModule } from "@/kernel/modules/guard";
 import * as h from "@/modules/accounts/api/account-self";
 
+export const GET = guardModule("accounts", h.account);
 export const DELETE = guardModule("accounts", h.account);

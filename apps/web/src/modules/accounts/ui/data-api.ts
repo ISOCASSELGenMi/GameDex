@@ -1,5 +1,5 @@
 /** 客戶端呼叫清單、遊玩紀錄、玩家平均、me/games（第 5 波；契約見 07）。型別沿用 accounts Domain 與 catalog 的 GameMiniCard。 */
-import type { GameMiniCard, GamePlatformOption } from "@/modules/catalog";
+import type { GameMiniCard, GamePlatformOption, PlatformBrief } from "@/modules/catalog";
 import type { ListSummaryView, ListOwnerView, ListVisibility } from "../domain/entities/lists";
 import type { PlayRecordView, PlayStatsView, PlayStatus, ReviewVisibility } from "../domain/entities/play-records";
 import type { PlayerRatingView } from "../domain/entities/player-rating";
@@ -60,7 +60,7 @@ export interface PlayRecordInput {
   reviewVisibility?: ReviewVisibility;
   privateNote: string | null;
 }
-export type PlayRecordWithGame = PlayRecordView & { game: GameMiniCard | null };
+export type PlayRecordWithGame = PlayRecordView & { game: GameMiniCard | null; platform: PlatformBrief | null };
 export const getPlayRecords = (locale: string, offset = 0, limit = 50) =>
   apiCall<{ items: PlayRecordWithGame[]; hasMore: boolean }>(`/api/v1/play-records?${loc(locale)}&limit=${limit}&offset=${offset}`);
 export const createPlayRecord = (gameId: number, body: PlayRecordInput) =>

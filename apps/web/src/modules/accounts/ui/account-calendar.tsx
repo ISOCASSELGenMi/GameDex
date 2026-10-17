@@ -25,17 +25,23 @@ const LOCALES = ["zh-Hant", "en", "ja"] as const;
 
 export type { PlatformGroup };
 
+/** 類型選項（slug＋已翻譯的名稱；清單來自 catalog 的篩選選項，薄路由傳入）。 */
+export interface GenreChoice {
+  slug: string;
+  label: string;
+}
+
 type Notice = { tone: "ok" | "error"; text: string } | null;
 
-export function AccountCalendar({ strings, locale, platformGroups }: { strings: AccountStrings; locale: string; platformGroups: PlatformGroup[] }): ReactElement {
+export function AccountCalendar({ strings, locale, platformGroups, genreChoices }: { strings: AccountStrings; locale: string; platformGroups: PlatformGroup[]; genreChoices: GenreChoice[] }): ReactElement {
   return (
     <RequireUser strings={strings} locale={locale}>
-      <CalendarBody strings={strings} locale={locale} platformGroups={platformGroups} />
+      <CalendarBody strings={strings} locale={locale} platformGroups={platformGroups} genreChoices={genreChoices} />
     </RequireUser>
   );
 }
 
-function CalendarBody({ strings, locale, platformGroups }: { strings: AccountStrings; locale: string; platformGroups: PlatformGroup[] }): ReactElement {
+function CalendarBody({ strings, locale, platformGroups, genreChoices }: { strings: AccountStrings; locale: string; platformGroups: PlatformGroup[]; genreChoices: GenreChoice[] }): ReactElement {
   const [feed, setFeed] = useState<CalendarFeedView | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
   const [errorText, setErrorText] = useState<string>("");
@@ -70,7 +76,7 @@ function CalendarBody({ strings, locale, platformGroups }: { strings: AccountStr
     <div className="flex min-w-0 flex-col gap-6">
       <p>{str(strings, "feedcal.intro")}</p>
       <FeedUrlCard strings={strings} locale={locale} feed={feed} onFeed={setFeed} />
-      <SettingsForm strings={strings} feed={feed} platformGroups={platformGroups} onFeed={setFeed} />
+      <SettingsForm strings={strings} feed={feed} platformGroups={platformGroups} genreChoices={genreChoices} onFeed={setFeed} />
       <p className="text-sm">
         <a className="link inline-flex min-h-11 items-center" href={accountFollowsHref(locale)}>
           {str(strings, "account.track.follows")}
@@ -171,7 +177,19 @@ function FeedUrlCard({ strings, locale, feed, onFeed }: { strings: AccountString
   );
 }
 
-function SettingsForm({ strings, feed, platformGroups, onFeed }: { strings: AccountStrings; feed: CalendarFeedView; platformGroups: PlatformGroup[]; onFeed: (f: CalendarFeedView) => void }): ReactElement {
+function SettingsForm({
+  strings,
+  feed,
+  platformGroups,
+  genreChoices,
+  onFeed,
+}: {
+  strings: AccountStrings;
+  feed: CalendarFeedView;
+  platformGroups: PlatformGroup[];
+  genreChoices: GenreChoice[];
+  onFeed: (f: CalendarFeedView) => void;
+}): ReactElement {
   const uid = useId();
   const [name, setName] = useState(feed.name);
   const [feedLocale, setFeedLocale] = useState(feed.locale);
@@ -179,6 +197,7 @@ function SettingsForm({ strings, feed, platformGroups, onFeed }: { strings: Acco
   const [includeEvents, setIncludeEvents] = useState(feed.includeEvents);
   const [stages, setStages] = useState<Set<string>>(() => new Set(feed.filterStages));
   const [platforms, setPlatforms] = useState<Set<number>>(() => new Set(feed.filterPlatforms));
+  const [genres, setGenres] = useState<Set<string>>(() => new Set(feed.filterGenres));
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState<Notice>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -208,6 +227,7 @@ function SettingsForm({ strings, feed, platformGroups, onFeed }: { strings: Acco
       includeEvents,
       filterStages: [...stages],
       filterPlatforms: [...platforms],
+      filterGenres: [...genres],
     });
     setSaving(false);
     if (res.ok && res.data) {
@@ -281,6 +301,31 @@ function SettingsForm({ strings, feed, platformGroups, onFeed }: { strings: Acco
         fullText={str(strings, "feedcal.settings.tooManyPlatforms")}
         error={fieldErrors.filterPlatforms ? fieldErrorText(strings, fieldErrors.filterPlatforms) : null}
       />
+
+      {genreChoices.length > 0 ? (
+        <fieldset className="flex min-w-0 flex-col gap-1" data-section="private-feed-genres">
+          <legend className="font-semibold">{str(strings, "feedcal.settings.genres")}</legend>
+          <p className="text-sm text-[var(--muted)]">{str(strings, "feedcal.settings.genresHint")}</p>
+          <div className="flex flex-wrap gap-x-4">
+            {genreChoices.map((g) => {
+              const checked = genres.has(g.slug);
+              return (
+                <label key={g.slug} className="inline-flex min-h-11 items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    disabled={!checked && genres.size >= FEED_FILTER_MAX}
+                    onChange={(e) => setGenres((all) => toggle(all, g.slug, e.target.checked))}
+                  />
+                  <span>{g.label}</span>
+                </label>
+              );
+            })}
+          </div>
+          {genres.size >= FEED_FILTER_MAX ? <p className="text-sm text-[var(--muted)]">{str(strings, "feedcal.settings.tooManyGenres")}</p> : null}
+          {fieldErrors.filterGenres ? <p className="text-sm text-[var(--danger)]">{fieldErrorText(strings, fieldErrors.filterGenres)}</p> : null}
+        </fieldset>
+      ) : null}
 
       <div role="status" aria-live="polite" className="min-h-6">
         {notice ? <p className={notice.tone === "error" ? "text-[var(--danger)]" : ""}>{notice.text}</p> : null}

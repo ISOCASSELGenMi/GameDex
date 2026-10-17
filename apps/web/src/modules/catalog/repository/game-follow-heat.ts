@@ -4,7 +4,6 @@
  */
 import { sql } from "drizzle-orm";
 import { getDb, type DbOrTx } from "@/kernel/db/client";
-import { RISING_TOP_FRACTION } from "../domain/follow-display";
 import { popularityGroupOf } from "../domain/heat";
 import { SITE_FOLLOWS_7D_SIGNAL, SITE_FOLLOWS_SIGNAL, type IsoDate } from "../domain/entities";
 import { popularityGroupCondition } from "./popularity";
@@ -14,8 +13,8 @@ export interface GameFollowHeat {
   followers: number;
   /** site_follows_7d（沒有訊號＝0）。 */
   followers7d: number;
-  /** site_follows_7d > 0 且在同一群（upcoming／released）有訊號的遊戲之間排名前 5%。 */
-  rising: boolean;
+  /** site_follows_7d > 0 的遊戲在同一群（upcoming／released）內的 percent rank（0＝第一名）；沒有訊號為 null。「上升中」的判斷在 domain/follow-display.ts 的 isRising。 */
+  percentRank: number | null;
 }
 
 export async function getGameFollowHeat(
@@ -40,6 +39,6 @@ export async function getGameFollowHeat(
   return {
     followers: Number(row?.followers ?? 0),
     followers7d: Number(row?.followers_7d ?? 0),
-    rising: pr !== null && pr < RISING_TOP_FRACTION,
+    percentRank: pr,
   };
 }

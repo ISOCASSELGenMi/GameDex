@@ -14,6 +14,7 @@ import { AppliedFilterChips, EmptyFilterResult, FilterNotices, FilterPanel, TIME
 import { loadFilterOptions } from "../calendar/filter-options";
 import { getTranslator } from "../labels";
 import { PageShell } from "../layout/page-shell";
+import type { PageSlots } from "../page-slots";
 import { calendarMonthHref, localeHref, timelineHref } from "../links";
 import { monthOfDate } from "../month";
 import { rethrowForPage } from "../page-errors";
@@ -27,6 +28,8 @@ export interface TimelineViewPageProps {
   locale: Locale;
   supportedLocales: readonly Locale[];
   searchParams: SearchParamsRecord;
+  /** 篩選區旁的連結、卡片動作（D83；薄路由從 UI slot 取得）。 */
+  slots?: PageSlots;
 }
 
 export function timelineTitle(locale: Locale): string {
@@ -38,7 +41,7 @@ function firstValue(v: string | string[] | undefined): string | null {
   return s ? s : null;
 }
 
-export async function TimelineViewPage({ locale, supportedLocales, searchParams }: TimelineViewPageProps): Promise<ReactElement> {
+export async function TimelineViewPage({ locale, supportedLocales, searchParams, slots }: TimelineViewPageProps): Promise<ReactElement> {
   await connection();
   const t = getTranslator(locale);
   const parsed = parseFilterSpec(searchParams as FilterSearchInput);
@@ -130,6 +133,7 @@ export async function TimelineViewPage({ locale, supportedLocales, searchParams 
           hidden={{ at: at && !cursor ? at : undefined }}
           clearHref={at && !cursor ? timelineHref(locale, {}, at) : basePath}
         />
+        {slots?.filterLinks}
         <form method="get" action={basePath} className="flex flex-wrap items-end gap-3" aria-label={t.t("ui.timeline.jumpTo")}>
           {hiddenFilter.map(([k, v]) => (
             <input key={`${k}=${v}`} type="hidden" name={k} value={v} />
@@ -169,6 +173,7 @@ export async function TimelineViewPage({ locale, supportedLocales, searchParams 
         today={today}
         startsAtToday={startsAtToday}
       />
+      {slots?.cardActions}
       <p className="mt-4 text-sm text-[var(--muted)]">{t.t("ui.timeline.timesInUtc")}</p>
     </PageShell>
   );

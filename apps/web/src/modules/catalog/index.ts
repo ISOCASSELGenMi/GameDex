@@ -83,7 +83,7 @@ export { CATALOG_TAG, gameDetailTag } from "./ui/seo/cache-tags";
 export { findTitleMatchCandidates, findGameIdsByExternalIds, getGameBriefsByIds, TITLE_CANDIDATE_LIMIT, type GameBrief } from "./use-cases/matching";
 
 // ── Phase 7 第 5 波：清單、遊玩紀錄、手動比對用的唯讀查詢 ─────────────────
-export { getGameCardsByIds, getGamePlatformOptions, searchGameCards, gameExists, gameHasPlatform } from "./use-cases/game-cards";
+export { getGameCardsByIds, getPlatformBriefsByIds, getGamePlatformOptions, searchGameCards, gameExists, gameHasPlatform } from "./use-cases/game-cards";
 
 // ── Phase 7 第 6 波：追蹤、「我的遊戲」、熱度訊號、私人 iCal ───────────────
 export { filterExistingFollowTargets, followTargetExists, getFollowTargetViewMap } from "./use-cases/follow-targets";
@@ -91,6 +91,9 @@ export { setCatalogExtensions, getCatalogExtensions, hasPopularitySignal, resolv
 export {
   FOLLOW_COUNT_MIN_DISPLAY_DEFAULT,
   RISING_TOP_FRACTION,
+  FOLLOW_RISING_MIN_7D_DEFAULT,
+  resolveFollowRisingMin7d,
+  isRising,
   resolveFollowCountMinDisplay,
   displayFollowerCount,
 } from "./domain/follow-display";

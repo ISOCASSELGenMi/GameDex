@@ -4,6 +4,8 @@
 
 /** 一張卡（欄位名稱刻意縮短以減少 payload）。 */
 export interface TimelineCardData {
+  /** 遊戲 id（卡片動作掛載點用；D83）。 */
+  g: number;
   /** 組內唯一鍵：`${gameId}-${stage}`（同一組＝同日期＋精度，聚合規則保證同遊戲同階段只有一張）。 */
   k: string;
   /** 詳情頁網址 */

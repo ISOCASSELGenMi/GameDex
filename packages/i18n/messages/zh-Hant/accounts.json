@@ -316,7 +316,7 @@
     "visibility": {
       "default": "依我的預設設定",
       "public": "公開",
-      "followers": "追蹤我的人",
+      "followers": "關注我的人",
       "private": "只有我"
     },
     "privateNoteHint": "只有你看得到，永遠不會公開。最多 {limit} 字。",
@@ -372,7 +372,8 @@
     "notFound": "找不到這個項目，可能已被刪除。請重新整理後再試。",
     "unauthorized": "登入已過期，請重新登入。",
     "followLimit": "追蹤太頻繁了（每 24 小時有上限），請稍後再試。",
-    "followNotFound": "找不到要追蹤的項目，它可能已被移除。"
+    "followNotFound": "找不到要追蹤的項目，它可能已被移除。",
+    "suspended": "帳號已停權，無法進行這項操作。"
   },
   "playerRating": {
     "title": "玩家平均",
@@ -392,7 +393,11 @@
     "private": {
       "text": "也可以訂閱只含你追蹤內容的私人行事曆。",
       "link": "前往私人行事曆"
-    }
+    },
+    "cardAria": "追蹤 {name}",
+    "cardOn": "已追蹤 {name}。",
+    "cardOff": "已取消追蹤 {name}。",
+    "count": "{count} 人追蹤"
   },
   "follows": {
     "title": "我的追蹤",
@@ -448,7 +453,8 @@
       "quarter": "{year} 年第 {quarter} 季",
       "year": "{year} 年",
       "tbd": "日期未定"
-    }
+    },
+    "filterLink": "我的遊戲"
   },
   "feedcal": {
     "title": "私人行事曆",
@@ -472,8 +478,8 @@
       "name": "行事曆名稱",
       "locale": "行事曆語系",
       "includeReleases": "包含遊戲上市日期",
-      "includeEvents": "包含與追蹤遊戲相關的活動",
-      "includeEventsHint": "你直接追蹤的活動一律會出現在行事曆。",
+      "includeEvents": "包含活動",
+      "includeEventsHint": "開啟：包含你直接追蹤的活動，以及與你追蹤的遊戲相關的活動。關閉：行事曆完全不含活動，包括你直接追蹤的活動。",
       "stages": "只包含這些上市階段",
       "stagesHint": "都不勾選＝預設（正式版、搶先體驗、未標示）。",
       "platforms": "只包含這些平台",
@@ -481,7 +487,10 @@
       "save": "儲存設定",
       "saved": "設定已儲存。日曆 App 下次更新時才會套用。",
       "unchanged": "沒有變更。",
-      "tooManyPlatforms": "最多只能選 20 個平台。"
+      "tooManyPlatforms": "最多只能選 20 個平台。",
+      "genres": "只包含這些遊戲類型",
+      "genresHint": "都不勾選＝不限類型（最多 20 個）。類型只影響上市日期；活動不受類型限制。",
+      "tooManyGenres": "最多只能選 20 個類型。"
     },
     "stage": {
       "unspecified": "未標示",
@@ -621,5 +630,10 @@
       "body": "你的帳號與資料已刪除，並已登出。謝謝你使用本站。",
       "home": "回到首頁"
     }
+  },
+  "suspended": {
+    "title": "帳號已停權",
+    "body": "你的帳號目前已停權。你仍可登入，但無法新增或修改清單、遊玩紀錄、追蹤、行事曆與設定，你的公開內容也已對其他人隱藏。你可以匯出自己的資料，或刪除帳號。",
+    "toPrivacy": "匯出資料或刪除帳號"
   }
 }

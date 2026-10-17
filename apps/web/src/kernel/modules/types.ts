@@ -1,7 +1,7 @@
 import type { ComponentType } from "react";
 
 /** UI slot 名稱（02 §Manifest 與擴充點）。 */
-export type UiSlotName = "header.right" | "game.actions" | "game.sections" | "entity.actions" | "subscribe.private";
+export type UiSlotName = "header.right" | "game.actions" | "game.sections" | "entity.actions" | "subscribe.private" | "filter.links" | "card.actions";
 
 export interface JobContext {
   /** 任務開始時間；增量同步把它寫回 sync_state.lastSyncedAt。 */

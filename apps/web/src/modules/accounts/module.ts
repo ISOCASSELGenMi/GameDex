@@ -1,6 +1,6 @@
 import type { ComponentType } from "react";
 import type { ModuleManifest } from "@/modules/catalog";
-import { EntityActionsSlot, GameActionsSlot, PlayerRatingSlot, SubscribePrivateSlot } from "./ui/game-slots";
+import { CardActionsSlot, EntityActionsSlot, FilterLinksSlot, GameActionsSlot, PlayerRatingSlot, SubscribePrivateSlot } from "./ui/game-slots";
 import { HeaderRightSlot } from "./ui/header-slot";
 import { cleanupExpiredAuthRows } from "./use-cases/cleanup-expired";
 import { mineGameFilter, siteFollows7dSignal, siteFollowsSignal } from "./use-cases/catalog-extensions";
@@ -71,6 +71,9 @@ export const accountsModule: ModuleManifest = {
     // 第 6 波：活動、平台、系列、公司頁的追蹤按鈕；公開訂閱頁的私人行事曆入口（已登入才顯示）
     "entity.actions": EntityActionsSlot as ComponentType,
     "subscribe.private": SubscribePrivateSlot as ComponentType,
+    // D83：月曆／時間軸卡片的追蹤按鈕、篩選區旁的「我的遊戲」連結
+    "card.actions": CardActionsSlot as ComponentType,
+    "filter.links": FilterLinksSlot as ComponentType,
   },
   i18nNamespaces: ["accounts"],
 };

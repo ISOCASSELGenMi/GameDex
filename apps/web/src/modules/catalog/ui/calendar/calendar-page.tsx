@@ -16,6 +16,7 @@ import { collectFilterNotices, filterSpecToReadQuery, withoutIgnored } from "../
 import { appliedChips, filterSpecForPage, makeFilterLabeler, PAGE_FILTER_PARAMS } from "../filters/filter-labels";
 import { AppliedFilterChips, CALENDAR_FILTER_FIELDS, EmptyFilterResult, FilterNotices, FilterPanel } from "../filters/filter-panel";
 import { getTranslator } from "../labels";
+import type { PageSlots } from "../page-slots";
 import { PageShell } from "../layout/page-shell";
 import { calendarMonthHref, calendarMonthPath, calendarTodayHref, localeHref, searchParamsToQuery, timelineHref } from "../links";
 import { addMonths, isoDate, monthOfDate, parseMonthParam, weekStartFor, type YearMonth } from "../month";
@@ -34,6 +35,8 @@ export interface CalendarMonthPageProps {
   /** URL 的 `yyyy-mm` 區段（未驗證）。 */
   month: string;
   searchParams: SearchParamsRecord;
+  /** 篩選區旁的連結、卡片動作（D83；薄路由從 UI slot 取得）。 */
+  slots?: PageSlots;
 }
 
 /** `/[locale]/calendar`（無月份）與 `/[locale]`：導到「今天（UTC）」所在月份，保留 query。 */
@@ -47,7 +50,7 @@ export function calendarTitle(locale: Locale, ym: YearMonth): string {
   return getTranslator(locale).t("a11y.calendarGrid", { month: formatYearMonth(ym.year, ym.month, locale) });
 }
 
-export async function CalendarMonthPage({ locale, supportedLocales, month, searchParams }: CalendarMonthPageProps): Promise<ReactElement> {
+export async function CalendarMonthPage({ locale, supportedLocales, month, searchParams, slots }: CalendarMonthPageProps): Promise<ReactElement> {
   const ym = parseMonthParam(month);
   if (!ym) notFound();
   await connection();
@@ -163,6 +166,7 @@ export async function CalendarMonthPage({ locale, supportedLocales, month, searc
         <FilterNotices notices={notices} t={t} />
         {!empty ? <AppliedFilterChips chips={chips} t={t} clearHref={basePath} /> : null}
         <FilterPanel locale={locale} t={t} options={options} spec={spec} action={basePath} fields={CALENDAR_FILTER_FIELDS} />
+        {slots?.filterLinks}
         <p role="status" className="text-sm text-[var(--muted)]">
           {t.t("filters.resultsCount", { count: vm.releaseCount })}
         </p>
@@ -179,6 +183,7 @@ export async function CalendarMonthPage({ locale, supportedLocales, month, searc
         </div>
         <UndatedView locale={locale} t={t} groups={vm.undated} hrefOf={hrefOf} />
       </CalendarInteractive>
+      {slots?.cardActions}
       {vm.eventCount > 0 ? <p className="mt-4 text-sm text-[var(--muted)]">{t.t("ui.calendar.timesInUtc")}</p> : null}
       <p className="sr-only">{monthName}</p>
     </PageShell>

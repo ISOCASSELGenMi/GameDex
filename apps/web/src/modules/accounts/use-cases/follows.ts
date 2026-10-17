@@ -2,6 +2,8 @@
  * 追蹤 Use Case（09 §追蹤、03 §熱度）。目標是否存在、顯示資訊都經 catalog 的公開 API（accounts 不碰 catalog 的表）。
  * 隱私（D48）：追蹤清單只有本人讀得到；公開的只有人數，低於 FOLLOW_COUNT_MIN_DISPLAY 回 null，停權帳號不計。
  */
+import { sendAlertWebhook } from "@/kernel/alerts/webhook";
+import { getCoreEnv } from "@/kernel/config/env";
 import {
   displayFollowerCount,
   filterExistingFollowTargets,
@@ -138,12 +140,28 @@ const EXISTS_CHUNK = 5000;
 /** 安全閥：某種類被追蹤的目標 ≥ 這麼多、卻「全部」不存在時，視為 catalog 異常（連錯資料庫、整張表被清空…），不刪。 */
 export const ORPHAN_SANITY_MIN_TARGETS = 20;
 
+/** 保險觸發時的告警（只含種類與目標數，沒有任何個資）。 */
+export function orphanSanityAlertMessage(skipped: readonly { type: FollowTarget; targets: number }[]): string {
+  const detail = skipped.map((s) => `${s.type}（${s.targets} 個被追蹤的目標全部查不到）`).join("、");
+  return `[SoK] 追蹤孤兒清理的保險觸發，已跳過、沒有刪除任何追蹤：${detail}。請檢查 catalog 資料庫是否連錯或資料表被清空。`;
+}
+
+export interface CleanupOrphanFollowsDeps {
+  /** 告警通道（預設：kernel/alerts 的 webhook，網址取 ALERT_WEBHOOK_URL）。 */
+  alert?: (message: string) => Promise<unknown>;
+  /** 告警通道網址；省略＝讀環境設定。沒有網址就只寫 log。 */
+  webhookUrl?: string | undefined;
+  log?: (message: string) => void;
+}
+
 /**
  * 每晚孤兒清理（03）：刪除指向已不存在目標的 follows。accounts 不碰 catalog 的表：
  * 先列出各種類被追蹤的不同 id，再問 catalog 哪些還存在。回傳各種類刪除筆數。
+ * 保險：某種類 ≥ ORPHAN_SANITY_MIN_TARGETS 個目標「全部」不存在時不刪，並發告警（D83；訊息不含個資）。
  */
-export async function cleanupOrphanFollows(): Promise<Record<FollowTarget, number>> {
+export async function cleanupOrphanFollows(deps: CleanupOrphanFollowsDeps = {}): Promise<Record<FollowTarget, number>> {
   const out = {} as Record<FollowTarget, number>;
+  const skipped: { type: FollowTarget; targets: number }[] = [];
   for (const type of FOLLOW_TARGETS) {
     const ids = await listDistinctTargetIds(type);
     const orphans: number[] = [];
@@ -154,11 +172,27 @@ export async function cleanupOrphanFollows(): Promise<Record<FollowTarget, numbe
     }
     if (ids.length >= ORPHAN_SANITY_MIN_TARGETS && orphans.length === ids.length) {
       out[type] = 0; // 全部都不存在：不刪（見 ORPHAN_SANITY_MIN_TARGETS）
+      skipped.push({ type, targets: ids.length });
       continue;
     }
     let deleted = 0;
     for (let i = 0; i < orphans.length; i += EXISTS_CHUNK) deleted += await deleteFollowsByTarget(type, orphans.slice(i, i + EXISTS_CHUNK));
     out[type] = deleted;
   }
+  if (skipped.length > 0) await alertOrphanSanity(skipped, deps);
   return out;
+}
+
+/** 告警失敗不影響清理（sendAlertWebhook 本身不丟例外；自訂通道的例外在這裡吞掉並記 log）。 */
+async function alertOrphanSanity(skipped: readonly { type: FollowTarget; targets: number }[], deps: CleanupOrphanFollowsDeps): Promise<void> {
+  const log = deps.log ?? ((m: string) => console.warn(m));
+  const message = orphanSanityAlertMessage(skipped);
+  log(`[accounts] ${message}`);
+  const url = "webhookUrl" in deps ? deps.webhookUrl : getCoreEnv().ALERT_WEBHOOK_URL;
+  if (!url) return;
+  try {
+    await (deps.alert ?? ((m: string) => sendAlertWebhook(url, m)))(message);
+  } catch (err) {
+    log(`[accounts] 孤兒清理告警送出失敗：${err instanceof Error ? err.message : String(err)}`);
+  }
 }
