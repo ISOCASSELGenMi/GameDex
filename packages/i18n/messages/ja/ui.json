@@ -182,12 +182,19 @@
     "tbdSection": "発売日未定",
     "jumpTo": "日付へ移動",
     "jumpGo": "移動",
-    "jumpHint": "選んだ日付以降を表示します。未選択の場合は今日から表示します",
-    "empty": "この期間には条件に一致する発売データがありません",
+    "jumpHint": "選んだ日付を含む週に移動します。未選択の場合は今週に移動します",
+    "empty": "この週には条件に一致する発売ゲームがありません",
     "backToToday": "今日に戻る",
     "startsFrom": "{date}から",
-    "description": "発売日の近い順に表示します。日付が確定していないゲームは各期間の先頭に、完全に未定のものは最後に置きます。",
-    "timesInUtc": "日付はUTCで計算しています"
+    "description": "週ごとに、発売日ごとのカバーカードを表示します。週を上下に切り替えたり、日付を指定して移動できます。月・四半期・年までしか決まっていないゲームはカレンダーで確認できます。",
+    "timesInUtc": "日付はUTCで計算しています",
+    "prevWeek": "前の週",
+    "nextWeek": "次の週",
+    "weekNavigation": "週の切り替え",
+    "weekRange": "{from}～{to}",
+    "weekNavAria": "{label}：{range}",
+    "weekLoaded": "{range} を表示しました。発売 {count} 本",
+    "releasesCount": "発売 {count} 本"
   },
   "trending": {
     "title": "注目ランキング",

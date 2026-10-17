@@ -182,12 +182,19 @@
     "tbdSection": "日期未定",
     "jumpTo": "跳到日期",
     "jumpGo": "前往",
-    "jumpHint": "從選擇的日期開始往後列出；未選擇時從今天開始",
-    "empty": "這段期間沒有符合條件的上市資料",
+    "jumpHint": "跳到選擇日期所在的那一週；未選擇時回到本週",
+    "empty": "這一週沒有符合條件的上市遊戲",
     "backToToday": "回到今天",
     "startsFrom": "從 {date} 開始",
-    "description": "依上市日期由近到遠列出。日期未確定的遊戲放在所屬期間的頂端，完全未定的在最後。",
-    "timesInUtc": "日期以 UTC 計算"
+    "description": "以週為單位，每個發售日一張封面卡片。上下切換週，或跳到指定日期；日期只確定到月份、季度或年份的遊戲請到月曆查看。",
+    "timesInUtc": "日期以 UTC 計算",
+    "prevWeek": "上一週",
+    "nextWeek": "下一週",
+    "weekNavigation": "切換週",
+    "weekRange": "{from}～{to}",
+    "weekNavAria": "{label}：{range}",
+    "weekLoaded": "已載入 {range}，共 {count} 款上市",
+    "releasesCount": "{count} 款上市"
   },
   "trending": {
     "title": "熱門榜",

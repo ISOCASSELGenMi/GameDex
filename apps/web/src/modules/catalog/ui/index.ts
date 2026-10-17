@@ -14,6 +14,7 @@ export { listGenreChoices, type GenreChoice } from "./genre-choices";
 // Phase 3b（I）：時間軸、熱門榜（薄路由與 route handler 用）
 export { TimelineViewPage, timelineTitle } from "./timeline/timeline-page";
 export { timelineChunkResponse, timelineGroupResponse, timelineHistoryResponse } from "./timeline/api";
+export { timelineWeekResponse, TIMELINE_WEEK_CACHE_CONTROL } from "./timeline/week-api";
 export { calendarDayResponse, CALENDAR_DAY_CACHE_CONTROL } from "./calendar/day-api";
 export { TrendingViewPage, trendingTitle } from "./trending/trending-page";
 

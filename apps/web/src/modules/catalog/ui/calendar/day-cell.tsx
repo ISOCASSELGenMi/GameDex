@@ -8,51 +8,15 @@
  *   （避免整月上百個停駐點）；左右鍵在格內任何位置都能切換。
  * - 動畫（滑入）只存在於 CSS 的 prefers-reduced-motion: no-preference；此元件沒有任何時間性的動畫邏輯。
  */
-import { useCallback, useContext, useEffect, useRef, useState, useSyncExternalStore, type KeyboardEvent, type MouseEvent, type PointerEvent, type ReactElement, type ReactNode } from "react";
+import { useContext, useEffect, useRef, useState, type MouseEvent, type ReactElement, type ReactNode } from "react";
 import { CardActionHost } from "../card-action-host";
-import { StageIcon, StatusIcon, WarningIcon } from "../icons";
+import { ChevronIcon, StageIcon, StatusIcon, WarningIcon } from "../icons";
 import { CalendarCellConfigContext, useCalendarSheet } from "./sheet-context";
-import type { CalendarDayResponse, DayCardData } from "./types";
+import type { DayCardData } from "./types";
+import { fillTemplate as fill, useDayCards, useLocalToday } from "./use-day-cards";
 
 /** 款數不超過這個數字用點點，超過改用「3 / 24」。 */
 export const DAY_DOTS_MAX = 6;
-
-const SWIPE_MIN_PX = 40;
-
-const dayCache = new Map<string, Promise<CalendarDayResponse>>();
-
-function loadDay(url: string): Promise<CalendarDayResponse> {
-  let p = dayCache.get(url);
-  if (!p) {
-    p = fetch(url, { headers: { Accept: "application/json" } }).then((res) => {
-      if (!res.ok) throw new Error(`day ${res.status}`);
-      return res.json() as Promise<CalendarDayResponse>;
-    });
-    dayCache.set(url, p);
-    p.catch(() => dayCache.delete(url));
-  }
-  return p;
-}
-
-const noopSubscribe = () => () => {};
-
-function localTodayIso(): string {
-  const now = new Date();
-  const p = (n: number) => String(n).padStart(2, "0");
-  return `${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())}`;
-}
-
-function fill(template: string, values: Record<string, string | number>): string {
-  return template.replace(/\{(\w+)\}/g, (m, k: string) => (k in values ? String(values[k]) : m));
-}
-
-function ChevronIcon({ dir }: { dir: "prev" | "next" }): ReactElement {
-  return (
-    <svg aria-hidden="true" focusable="false" viewBox="0 0 16 16" width="1em" height="1em" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d={dir === "prev" ? "M10 3 5 8l5 5" : "M6 3l5 5-5 5"} />
-    </svg>
-  );
-}
 
 function isModified(e: MouseEvent): boolean {
   return e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey;
@@ -80,27 +44,21 @@ export function DayCell({ date, dayNum, weekday, ariaLabel, total, first, childr
   if (!config) throw new Error("DayCell 必須放在 CalendarInteractive 裡");
   const { apiBase, labels } = config;
   const rootRef = useRef<HTMLDivElement>(null);
-  const [cards, setCards] = useState<DayCardData[]>(first ? [first] : []);
-  const [count, setCount] = useState(total);
-  const [index, setIndex] = useState(0);
-  const [dir, setDir] = useState<"none" | "next" | "prev">("none");
-  const [busy, setBusy] = useState(false);
-  const [failed, setFailed] = useState(false);
-  const [announce, setAnnounce] = useState("");
   const [engaged, setEngaged] = useState(false);
-  const drag = useRef<{ x: number; y: number } | null>(null);
-  const swiped = useRef(false);
+  const { cards, card, count, index, dir, busy, failed, announce, hydrated, multi, go, onKeyDown, onPointerDown, onPointerUp, onPointerCancel, swiped } = useDayCards({
+    date,
+    apiBase,
+    first,
+    total,
+    currentLabel: labels.current,
+  });
 
   // 「今天」以使用者裝置的日期判斷（伺服器輸出不含今天，頁面可被共用快取）；伺服器端與水合時為空字串
-  const today = useSyncExternalStore(noopSubscribe, localTodayIso, () => "");
+  const today = useLocalToday();
   const isToday = today === date;
 
-  // 切換控制項只在水合後出現：沒有 JS 時只有第一款與詳情連結（按鈕沒有作用，不放）
-  const hydrated = useSyncExternalStore(noopSubscribe, () => true, () => false);
-  const multi = count > 1 && hydrated;
   // 內部控制項是否在 Tab 順序內：單款的格（沒有群組停駐點）一律在；多款的格要先 Tab 進格
   const innerTab = !multi || engaged;
-  const card = cards[index] ?? null;
 
   // 追蹤按鈕由 accounts 的 portal 放進掛載點；它的 tabindex 與上面的規則一致（card-follow-layer 讀 data-engaged）
   useEffect(() => {
@@ -108,69 +66,6 @@ export function DayCell({ date, dayNum, weekday, ariaLabel, total, first, childr
       b.tabIndex = innerTab ? 0 : -1;
     });
   }, [innerTab, index, cards]);
-
-  const currentLabel = labels.current;
-  const go = useCallback(
-    async (delta: 1 | -1) => {
-      if (count < 2 || busy) return;
-      const target = (index + delta + count) % count;
-      let list = cards;
-      if (target >= list.length) {
-        setBusy(true);
-        setFailed(false);
-        try {
-          const res = await loadDay(`${apiBase}&date=${date}`);
-          list = res.cards;
-          setCards(res.cards);
-          setCount(res.cards.length);
-        } catch {
-          setFailed(true);
-          setBusy(false);
-          return;
-        }
-        setBusy(false);
-      }
-      if (list.length === 0) return;
-      const next = Math.min(target, list.length - 1);
-      setDir(delta === 1 ? "next" : "prev");
-      setIndex(next);
-      setAnnounce(fill(currentLabel, { name: list[next]!.n, index: next + 1, total: list.length }));
-    },
-    [apiBase, busy, cards, count, currentLabel, date, index],
-  );
-
-  const onKeyDown = useCallback(
-    (e: KeyboardEvent<HTMLDivElement>) => {
-      if (!multi || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
-      if (e.key === "ArrowRight") {
-        e.preventDefault();
-        void go(1);
-      } else if (e.key === "ArrowLeft") {
-        e.preventDefault();
-        void go(-1);
-      }
-    },
-    [go, multi],
-  );
-
-  const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
-    if (e.pointerType === "mouse" || !multi) return;
-    drag.current = { x: e.clientX, y: e.clientY };
-  };
-  const onPointerUp = (e: PointerEvent<HTMLDivElement>) => {
-    const start = drag.current;
-    drag.current = null;
-    if (!start) return;
-    const dx = e.clientX - start.x;
-    const dy = e.clientY - start.y;
-    if (Math.abs(dx) >= SWIPE_MIN_PX && Math.abs(dx) > Math.abs(dy) * 1.5) {
-      swiped.current = true;
-      setTimeout(() => {
-        swiped.current = false;
-      }, 80);
-      void go(dx < 0 ? 1 : -1);
-    }
-  };
 
   const onLinkClick = (e: MouseEvent<HTMLAnchorElement>) => {
     if (swiped.current) {
@@ -213,9 +108,7 @@ export function DayCell({ date, dayNum, weekday, ariaLabel, total, first, childr
           data-loading={busy ? "true" : undefined}
           onPointerDown={onPointerDown}
           onPointerUp={onPointerUp}
-          onPointerCancel={() => {
-            drag.current = null;
-          }}
+          onPointerCancel={onPointerCancel}
         >
           {card ? (
             <a

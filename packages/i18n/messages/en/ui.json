@@ -182,12 +182,19 @@
     "tbdSection": "Date TBA",
     "jumpTo": "Jump to date",
     "jumpGo": "Go",
-    "jumpHint": "Lists releases from the chosen date onward; starts from today when empty",
-    "empty": "No releases match your filters in this period",
+    "jumpHint": "Jumps to the week containing the chosen date; goes to this week when empty",
+    "empty": "No releases match your filters this week",
     "backToToday": "Back to today",
     "startsFrom": "Starting {date}",
-    "description": "Releases from nearest to furthest. Games with only a month, quarter or year are listed at the top of that period; fully undated games come last.",
-    "timesInUtc": "Dates are in UTC"
+    "description": "One cover card per release day, a week at a time. Move up or down by week or jump to a date; games with only a month, quarter or year are listed in the calendar.",
+    "timesInUtc": "Dates are in UTC",
+    "prevWeek": "Previous week",
+    "nextWeek": "Next week",
+    "weekNavigation": "Change week",
+    "weekRange": "{from} – {to}",
+    "weekNavAria": "{label}: {range}",
+    "weekLoaded": "Showing {range}: {count} releases",
+    "releasesCount": "{count} releases"
   },
   "trending": {
     "title": "Trending",

@@ -268,17 +268,17 @@ test.describe("月曆卡片的追蹤按鈕（D83）", () => {
 });
 
 test.describe("時間軸卡片的追蹤按鈕（D83）", () => {
-  test("登入後一次批次查詢；載入更多只查新出現的遊戲", async ({ page }) => {
+  test("登入後一次批次查詢；切到下一週只查新出現的遊戲", async ({ page }) => {
     const locale: TestLocale = "en";
     await signedInUser(page, "card-tl");
     const reqs = trackStateRequests(page);
-    await page.goto(`/${locale}/timeline?at=${FIXTURE_3B.timeline.anchor}`);
+    await page.goto(`/${locale}/timeline?at=${FIXTURE_3B.timeline.bigDay}`);
     await expect.poll(() => reqs.length).toBe(1);
-    const cards = page.locator(".tl-card");
+    const cards = page.locator(".tw-card");
     await expect(cards.first()).toBeVisible();
-    await expect.poll(async () => page.locator(".tl-card [data-card-follow]").count()).toBe(await cards.count());
+    await expect.poll(async () => page.locator(".tw-card [data-card-follow]").count()).toBe(await cards.count());
     const first = reqs[0]!;
-    expect(first.length).toBeGreaterThan(10);
+    expect(first.length).toBeGreaterThanOrEqual(1);
 
     const btn = cards.first().locator("[data-card-follow]");
     await expect(btn).toHaveAttribute("aria-pressed", "false");
@@ -288,15 +288,15 @@ test.describe("時間軸卡片的追蹤按鈕（D83）", () => {
     expect(await btn.evaluate((e) => (e as HTMLElement).getBoundingClientRect().height)).toBeGreaterThanOrEqual(44);
     await expectNoA11yViolations(page, "時間軸 卡片追蹤按鈕");
 
-    const before = await cards.count();
-    await page.locator("a[data-load=next]").click();
-    await expect.poll(async () => cards.count()).toBeGreaterThan(before);
-    await expect.poll(() => reqs.length, "載入更多：再一次批次查詢").toBe(2);
+    await page.locator("a[data-week-nav=next]").click();
+    await expect(page.locator("[data-week-range]")).not.toHaveAttribute("data-week", /^2037-W10$/);
+    await expect.poll(() => reqs.length, "切週：再一次批次查詢").toBe(2);
     expect(reqs[1]!.filter((t) => first.includes(t)), "只查新出現的遊戲").toEqual([]);
-    await expect.poll(async () => page.locator(".tl-card [data-card-follow]").count()).toBe(await cards.count());
-    // 先前按下的狀態還在
+    await expect.poll(async () => page.locator(".tw-card [data-card-follow]").count()).toBe(await cards.count());
+    // 回到前一週：先前按下的狀態還在
+    await page.locator("a[data-week-nav=prev]").click();
+    await expect(page.locator("[data-week-range]")).toHaveAttribute("data-week", "2037-W10");
     await expect(cards.first().locator("[data-card-follow]")).toHaveAttribute("aria-pressed", "true");
-    expect(reqs.length).toBe(2);
   });
 });
 

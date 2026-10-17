@@ -61,6 +61,8 @@ export function CalendarInteractive({
     const dialog = dialogRef.current;
     if (!dialog) return;
     const onClose = () => {
+      // 原生 close 事件是非同步的：若在它送達前使用者已開了另一張預覽卡（dialog 又是 open），不要把新的卡片清掉
+      if (dialog.open) return;
       setCard(null);
       const trigger = triggerRef.current;
       triggerRef.current = null;

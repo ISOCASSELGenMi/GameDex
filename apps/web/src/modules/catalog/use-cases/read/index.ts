@@ -26,3 +26,5 @@ export { getMyGames, pickNextRelease, type GetMyGamesInput } from "./get-my-game
 export { getHomeDashboard, type GetHomeDashboardInput } from "./get-home-dashboard";
 // GameDex 第 3 段（X1）：月曆單日（格內切換按需載入）
 export { getCalendarDay, type GetCalendarDayInput, type CalendarDay } from "./get-calendar-day";
+// GameDex 第 3 段（X2）：時間軸一週
+export { getTimelineWeek, type GetTimelineWeekInput, type TimelineWeek, type TimelineWeekDay } from "./get-timeline-week";

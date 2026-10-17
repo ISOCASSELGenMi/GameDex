@@ -10,7 +10,8 @@ const TL = FIXTURE_3B.timeline;
 
 /** 要檢查的頁面（去掉語系前綴）。label 供失敗訊息。 */
 const PAGES: { label: string; path: string }[] = [
-  { label: "時間軸（從 2037-03）", path: `/timeline?at=${TL.anchor}` },
+  { label: "時間軸（2037-03-02 那一週）", path: `/timeline?week=2037-W10` },
+  { label: "時間軸（舊網址 at=）", path: `/timeline?at=${TL.bigDay}` },
   { label: "時間軸（預設起點）", path: "/timeline" },
   { label: "時間軸（空結果）", path: `/timeline?platform=${FIXTURE.platformSwitch}&genre=${FIXTURE.genreShooter}` },
   { label: "熱門榜（即將上市）", path: "/trending" },
@@ -75,14 +76,16 @@ for (const locale of LOCALES) {
       });
     }
 
-    test("時間軸：展開單日、載入更多之後仍 0 違規", async ({ page }) => {
-      await page.goto(`/${locale}/timeline?at=${TL.anchor}`);
-      const group = page.locator(`[data-group="day:${TL.bigDay}"]`);
-      await group.locator("button[data-expand]").click();
-      await expect(group.locator("a.card")).toHaveCount(TL.bigDayCount);
-      await page.locator("a[data-load=next]").click();
+    test("時間軸：切週、同日切換款數之後仍 0 違規", async ({ page }) => {
+      await page.goto(`/${locale}/timeline?week=2037-W10`);
+      await expect(page.locator('.tw-card[data-hydrated="true"]').first()).toBeAttached();
+      const big = page.locator(`.tw-day[data-date="${TL.bigDay}"] .tw-card`);
+      await big.locator('[data-cal-nav="next"]').click();
+      await expect(big.locator("[data-day-card]")).toHaveAttribute("data-dir", "next");
+      await page.locator("a[data-week-nav=next]").click();
+      await expect(page.locator("[data-week-range]")).not.toHaveAttribute("data-week", "2037-W10");
       await expect(page.locator("[data-timeline-status]")).toContainText(/\d/);
-      await expectNoA11yViolations(page, `${locale} 時間軸（展開＋載入更多後）`);
+      await expectNoA11yViolations(page, `${locale} 時間軸（切週＋切換款數後）`);
     });
 
     test("軟 404：不存在的 slug 回 notFound 版面＋noindex", async ({ page }) => {

@@ -6,6 +6,7 @@ import type { ReactElement, ReactNode } from "react";
 import type { Locale } from "@sok/i18n";
 import { getTranslator } from "../labels";
 import { aboutHref, eventsHref, gamesBrowseHref, languageMenuLinks, localeHref, platformsHref, subscribeHref, type LocalPath } from "../links";
+import { HeaderMenu } from "./header-menu";
 import { HeaderRightOutlet } from "./header-right";
 import { FollowingLanguageMenu } from "./following-language-menu";
 import { LanguageMenu } from "./language-menu";
@@ -53,6 +54,7 @@ export function PageShell({ locale, supportedLocales, path, query = "", followPa
           <a href={localeHref(locale, "/")} className="inline-flex min-h-11 items-center text-lg font-bold" data-site-brand="">
             {t.t("ui.site.name")}
           </a>
+          <HeaderMenu label={t.t("a11y.menu")}>
           <nav aria-label={t.t("a11y.mainNavigation")} className="flex-1">
             <ul className="flex flex-wrap gap-2">
               {navItems.map((item) => (
@@ -70,6 +72,7 @@ export function PageShell({ locale, supportedLocales, path, query = "", followPa
           </nav>
           {followPathname ? <FollowingLanguageMenu items={links} label={t.t("a11y.languageMenu")} /> : <LanguageMenu items={links} label={t.t("a11y.languageMenu")} />}
           {headerRight ?? <HeaderRightOutlet />}
+          </HeaderMenu>
         </div>
       </header>
       <main id="main" tabIndex={-1} className="mx-auto w-full max-w-screen-2xl flex-1 px-4 py-4 outline-none">

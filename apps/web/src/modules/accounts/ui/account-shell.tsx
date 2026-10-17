@@ -50,6 +50,8 @@ export function AccountShell({ strings, locale, children }: { strings: AccountSt
   const [leaving, setLeaving] = useState(false);
   const returnedError = useSearchParam("error");
   const currentRef = useRef<HTMLAnchorElement | null>(null);
+  // 分頁指示線的位置（量目前分頁的位置與寬度；用 CSS transition 滑動，reduced-motion 時直接移動）
+  const [indicator, setIndicator] = useState<{ left: number; width: number } | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -97,6 +99,20 @@ export function AccountShell({ strings, locale, children }: { strings: AccountSt
     return () => {
       alive = false;
     };
+  }, [tab, session.kind]);
+
+  useEffect(() => {
+    const measure = () => {
+      const el = currentRef.current;
+      setIndicator(el ? { left: el.offsetLeft, width: el.offsetWidth } : null);
+    };
+    measure();
+    void document.fonts?.ready.then(measure);
+    const list = currentRef.current?.closest("ul");
+    if (!list || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(measure);
+    ro.observe(list);
+    return () => ro.disconnect();
   }, [tab, session.kind]);
 
   const onSignOut = useCallback(async () => {
@@ -185,18 +201,19 @@ export function AccountShell({ strings, locale, children }: { strings: AccountSt
                     ref={t === tab ? currentRef : undefined}
                     aria-current={t === tab ? "page" : undefined}
                     data-account-tab={t}
-                    className="inline-flex min-h-11 items-center border-b-2 border-transparent px-3 whitespace-nowrap hover:bg-[var(--surface)] aria-[current=page]:border-[var(--link)] aria-[current=page]:font-bold"
+                    className={`inline-flex min-h-11 items-center border-b-2 border-transparent px-3 whitespace-nowrap hover:bg-[var(--surface)] aria-[current=page]:font-bold ${indicator ? "" : "aria-[current=page]:border-[var(--link)]"}`}
                   >
                     {str(strings, `account.tab.${t}`)}
                   </Link>
                 </li>
               ))}
+              {indicator ? <span aria-hidden="true" className="account-tab-ind" style={{ width: indicator.width, transform: `translateX(${indicator.left}px)` }} /> : null}
             </ul>
           </nav>
         ) : null}
 
         {session.kind !== "anonymous" ? (
-          <div className="min-w-0" data-account-panel={tab ?? ""}>
+          <div key={tab ?? ""} className="min-w-0" data-account-panel={tab ?? ""}>
             {children}
           </div>
         ) : null}

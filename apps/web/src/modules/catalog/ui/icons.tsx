@@ -125,3 +125,13 @@ export function ExternalIcon(props: IconProps): ReactElement {
     </Svg>
   );
 }
+
+/** 左右（或上下）切換用的箭頭（描邊圖示，大小跟字）。 */
+export function ChevronIcon({ dir }: { dir: "prev" | "next" | "up" | "down" }): ReactElement {
+  const d = dir === "prev" ? "M10 3 5 8l5 5" : dir === "next" ? "M6 3l5 5-5 5" : dir === "up" ? "M3 10l5-5 5 5" : "M3 6l5 5 5-5";
+  return (
+    <svg aria-hidden="true" focusable="false" viewBox="0 0 16 16" width="1em" height="1em" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d={d} />
+    </svg>
+  );
+}
