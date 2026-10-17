@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState, type ReactElement } from "react";
 import { isExternalProvider } from "../domain/entities/providers";
 import { isPlaceholderEmail } from "../domain/entities/email";
 import { getSession, listAccounts, signInSteam, signOut, unlinkAccount, type LinkedAccountRow, type SessionUser } from "./auth-api";
-import { accountFollowsHref, accountGamesHref, accountListsHref, accountPageHref, accountPlaysHref, accountPrivateCalendarHref } from "./links";
+import { accountFollowsHref, accountGamesHref, accountListsHref, accountPageHref, accountPlaysHref, accountPrivacyHref, accountPrivateCalendarHref, accountSettingsHref } from "./links";
 import { oauthErrorText } from "./oauth-error";
 import { SteamLibrary } from "./steam-library";
 import { useSearchParam } from "./use-search-param";
@@ -149,6 +149,25 @@ export function AccountPanel({ strings, locale }: { strings: AccountStrings; loc
           <li>
             <a className="link inline-flex min-h-11 items-center" href={accountPrivateCalendarHref(locale)}>
               {str(strings, "account.track.calendar")}
+            </a>
+          </li>
+        </ul>
+      </section>
+
+      <section aria-labelledby="settings-heading" className="flex flex-col gap-2">
+        <h2 id="settings-heading" className="text-xl font-bold">
+          {str(strings, "settings.nav.title")}
+        </h2>
+        <p className="text-sm text-[var(--muted)]">{str(strings, "settings.nav.hint")}</p>
+        <ul className="flex flex-col gap-1">
+          <li>
+            <a className="link inline-flex min-h-11 items-center" href={accountSettingsHref(locale)}>
+              {str(strings, "settings.nav.settings")}
+            </a>
+          </li>
+          <li>
+            <a className="link inline-flex min-h-11 items-center" href={accountPrivacyHref(locale)}>
+              {str(strings, "settings.nav.privacy")}
             </a>
           </li>
         </ul>

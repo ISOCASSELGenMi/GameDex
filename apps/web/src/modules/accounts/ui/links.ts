@@ -38,3 +38,14 @@ export function accountGamesHref(locale: string, query = ""): string {
 export function accountPrivateCalendarHref(locale: string): string {
   return `/${locale}/account/calendar`;
 }
+
+/** 第 7 波：帳號設定、隱私與資料（匯出、刪除）、刪除完成。 */
+export function accountSettingsHref(locale: string): string {
+  return `/${locale}/account/settings`;
+}
+export function accountPrivacyHref(locale: string): string {
+  return `/${locale}/account/privacy`;
+}
+export function accountDeletedHref(locale: string): string {
+  return `/${locale}/account/deleted`;
+}

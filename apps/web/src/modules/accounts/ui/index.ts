@@ -10,6 +10,9 @@ export {
   AccountFollowsPageView,
   AccountMyGamesPageView,
   AccountCalendarPageView,
+  AccountSettingsPageView,
+  AccountPrivacyPageView,
+  AccountDeletedPageView,
   ForgotPasswordPage,
   LoginPage,
   ResetPasswordPage,
@@ -22,3 +25,4 @@ export { PublicListView, loadPublicList, publicListTitle, PUBLIC_LIST_PAGE_SIZE 
 export type { PlatformGroup } from "./account-calendar";
 export { ACCOUNT_PAGES, accountPageHref, safeNextPath, type AccountPage } from "./links";
 export { parseIdParam } from "../domain/entities/lists";
+export { AdminUsersPage } from "./admin-users-page";

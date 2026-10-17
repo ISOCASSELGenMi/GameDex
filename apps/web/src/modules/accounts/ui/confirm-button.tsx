@@ -14,9 +14,11 @@ export interface ConfirmButtonProps {
   /** 確認鈕文字；省略＝「確定刪除」。 */
   confirmLabel?: string;
   onConfirm: () => Promise<void> | void;
+  /** 停用最初的按鈕（例如尚未勾選「我了解」）。 */
+  disabled?: boolean;
 }
 
-export function ConfirmButton({ strings, label, srContext, confirmText, confirmLabel, onConfirm }: ConfirmButtonProps): ReactElement {
+export function ConfirmButton({ strings, label, srContext, confirmText, confirmLabel, onConfirm, disabled }: ConfirmButtonProps): ReactElement {
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -32,7 +34,7 @@ export function ConfirmButton({ strings, label, srContext, confirmText, confirmL
 
   if (!confirming) {
     return (
-      <button type="button" className="btn-secondary" onClick={() => setConfirming(true)}>
+      <button type="button" className="btn-secondary" disabled={disabled} onClick={() => setConfirming(true)}>
         {label}
         {srContext ? <span className="sr-only"> {srContext}</span> : null}
       </button>
