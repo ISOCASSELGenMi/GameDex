@@ -14,6 +14,11 @@ async function ready(page: Page): Promise<void> {
   await expect(page.locator('.tw-card[data-hydrated="true"]').first()).toBeAttached();
 }
 
+/** 模擬 Linux CI 較寬的字形（本機 Windows 字型較窄會漏掉溢出）：只用在水平溢出檢查。 */
+async function widenFonts(page: Page): Promise<void> {
+  await page.addStyleTag({ content: "* { font-family: Verdana, sans-serif !important; letter-spacing: 0.05em !important; }" });
+}
+
 const range = (page: Page) => page.locator("[data-week-range]");
 
 test.describe("時間軸（週）：結構與網址", () => {
@@ -86,6 +91,8 @@ test.describe("時間軸（週）：結構與網址", () => {
         expect(cb.x + cb.width).toBeLessThanOrEqual(width);
       }
       expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);
+      await widenFonts(page);
+      expect(await horizontalOverflow(page), "字形加寬後").toBeLessThanOrEqual(0);
     });
   }
 });
@@ -228,6 +235,7 @@ test.describe("手機 header 收合選單", () => {
   test("點選導覽連結後前往該頁並收合；點面板外收合；Enter／Space 可開合", async ({ page }) => {
     await page.goto(`/en/calendar/${FIXTURE.month}`);
     const toggle = page.locator("[data-menu-toggle]");
+    await expect(toggle).toBeVisible(); // 按鈕在水合後才顯示：等到它再按鍵
     await toggle.focus();
     await page.keyboard.press("Enter");
     await expect(toggle).toHaveAttribute("aria-expanded", "true");
@@ -328,6 +336,8 @@ test.describe("axe：亮色與暗色", () => {
       await page.goto(`/en${p}`);
       await expect(page.locator("main h1").first()).toBeVisible();
       expect(await horizontalOverflow(page), p).toBeLessThanOrEqual(0);
+      await widenFonts(page);
+      expect(await horizontalOverflow(page), `${p}（字形加寬後）`).toBeLessThanOrEqual(0);
     }
   });
 });

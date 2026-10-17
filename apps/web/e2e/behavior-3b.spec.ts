@@ -63,8 +63,14 @@ test.describe("導覽列", () => {
   test("手機 375 寬：六個入口都完整在視窗內、觸控目標 >= 44px、頁面不水平捲動", async ({ page }) => {
     await page.setViewportSize(MOBILE);
     await page.goto("/en/games");
+    // < 768px 時導覽收在選單裡：等水合（按鈕出現）後打開，再檢查六個入口
+    const toggle = page.locator("[data-menu-toggle]");
+    await expect(toggle).toBeVisible();
+    await toggle.click();
+    await expect(toggle).toHaveAttribute("aria-expanded", "true");
     const links = mainNav(page, "en").getByRole("link");
     await expect(links).toHaveCount(6);
+    await expect(links.first()).toBeVisible();
     for (const link of await links.all()) {
       const box = await link.boundingBox();
       expect(box, "導覽連結要有版面").not.toBeNull();

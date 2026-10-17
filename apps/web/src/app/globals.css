@@ -1578,6 +1578,7 @@ button.sheet-entry:hover {
 }
 .tw-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
@@ -1589,6 +1590,8 @@ button.sheet-entry:hover {
   font-weight: 700;
 }
 .tw-count {
+  min-width: 0;
+  overflow-wrap: anywhere;
   font-variant-numeric: tabular-nums;
 }
 .tw-switch {
