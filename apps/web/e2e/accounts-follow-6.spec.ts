@@ -70,7 +70,7 @@ test.describe("追蹤按鈕：詳情頁（已登入）", () => {
     await btn.click();
     await expect(btn).toHaveAttribute("aria-pressed", "true");
     await expect(page.getByRole("status").filter({ hasText: m(locale, "follow.statusOn") })).toBeVisible();
-    expect(await followState(page, "game", gameId)).toBe(true);
+    await expect.poll(() => followState(page, "game", gameId)).toBe(true);
     await expectNoA11yViolations(page, "詳情頁 已追蹤");
 
     await page.reload();
@@ -79,7 +79,7 @@ test.describe("追蹤按鈕：詳情頁（已登入）", () => {
     await again.click();
     await expect(again).toHaveAttribute("aria-pressed", "false");
     await expect(page.getByRole("status").filter({ hasText: m(locale, "follow.statusOff") })).toBeVisible();
-    expect(await followState(page, "game", gameId)).toBe(false);
+    await expect.poll(() => followState(page, "game", gameId)).toBe(false);
   });
 
   test("達每日上限：還原按鈕並顯示原因", async ({ page }) => {
@@ -131,13 +131,13 @@ test.describe("追蹤按鈕：平台、活動、系列、公司頁", () => {
       await expect(on).toBeEnabled();
       await on.click();
       await expect(on).toHaveAttribute("aria-pressed", "true");
-      expect(await followState(page, e.type, id)).toBe(true);
+      await expect.poll(() => followState(page, e.type, id)).toBe(true);
       await expectNoA11yViolations(page, `${e.type} 頁 已追蹤`);
       await page.reload();
       await expect(page.getByRole("button", { name: m(locale, "follow.button"), exact: true })).toHaveAttribute("aria-pressed", "true");
       await page.getByRole("button", { name: m(locale, "follow.button"), exact: true }).click();
       await expect(page.getByRole("button", { name: m(locale, "follow.button"), exact: true })).toHaveAttribute("aria-pressed", "false");
-      expect(await followState(page, e.type, id)).toBe(false);
+      await expect.poll(() => followState(page, e.type, id)).toBe(false);
     });
   }
 
@@ -202,7 +202,7 @@ test.describe("我的追蹤頁", () => {
     await eventTab.click();
     await page.getByRole("button", { name: new RegExp(m(locale, "follows.unfollow")) }).click();
     await expect(page.getByText(m(locale, "follows.empty"))).toBeVisible();
-    expect(await followState(page, "event", ev)).toBe(false);
+    await expect.poll(() => followState(page, "event", ev)).toBe(false);
 
     for (const l of LOCALES) {
       await page.goto(`/${l}/account/follows`);
