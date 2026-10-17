@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getLocaleConfig, isSupportedLocale } from "@/kernel/locale";
 import { listPlatforms } from "@/modules/catalog";
-import { PageShell, SubscribeClientsSection, listGenreChoices, type GenreChoice } from "@/modules/catalog/ui";
+import { SubscribeClientsSection, listGenreChoices, type GenreChoice } from "@/modules/catalog/ui";
 import type { Locale } from "@sok/i18n";
 import { AccountCalendarPageView, accountSubPageTitle, gateAccountsPage, type PlatformGroup } from "@/modules/accounts/ui";
 
@@ -41,10 +41,8 @@ export default async function AccountCalendar({ params }: PageProps<"/[locale]/a
   if (!isSupportedLocale(locale, config)) notFound();
   await gateAccountsPage();
   return (
-    <PageShell locale={locale} supportedLocales={config.supported} path="/account/calendar">
-      <AccountCalendarPageView locale={locale} platformGroups={await platformGroups(locale)} genreChoices={await genreChoices(locale)}>
-        <SubscribeClientsSection locale={locale} />
-      </AccountCalendarPageView>
-    </PageShell>
+    <AccountCalendarPageView locale={locale} platformGroups={await platformGroups(locale)} genreChoices={await genreChoices(locale)}>
+      <SubscribeClientsSection locale={locale} />
+    </AccountCalendarPageView>
   );
 }

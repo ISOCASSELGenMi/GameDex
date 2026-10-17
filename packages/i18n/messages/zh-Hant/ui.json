@@ -471,5 +471,34 @@
       "title": "想要即時通知？",
       "body": "行事曆訂閱不是即時的。之後我們會提供 Email 與 Discord 私訊通知，延期時第一時間告訴你。"
     }
+  },
+  "home": {
+    "metaTitle": "遊戲圖鑑 GameDex：新作上市、活動與熱門遊戲一覽",
+    "metaDescription": "遊戲圖鑑 GameDex 整理即將上市與最新上市的遊戲、近期遊戲活動與熱門遊戲，並提供月曆、時間軸與資料庫。",
+    "searchLabel": "搜尋遊戲",
+    "searchPlaceholder": "輸入遊戲名稱",
+    "searchButton": "搜尋",
+    "more": "查看更多",
+    "moreAria": "查看更多：{section}",
+    "platformMore": "+{count}",
+    "upcoming": {
+      "title": "即將上市",
+      "hint": "今天起 {days} 天內上市，依日期由近到遠",
+      "empty": "目前沒有即將上市的遊戲。"
+    },
+    "recent": {
+      "title": "最新上市",
+      "hint": "過去 {days} 天內上市，由新到舊",
+      "empty": "最近沒有已上市的遊戲。"
+    },
+    "events": {
+      "title": "近期活動",
+      "hint": "即將舉行與進行中的活動",
+      "empty": "目前沒有即將舉行的活動。"
+    },
+    "trending": {
+      "title": "近期熱門",
+      "empty": "目前沒有熱門遊戲。"
+    }
   }
 }

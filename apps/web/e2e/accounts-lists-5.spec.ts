@@ -241,8 +241,8 @@ test.describe("帳號子頁", () => {
         await makeRecord(page, FIXTURE.monthPrecision.slug, { status: "want_to_play" });
 
         await page.goto(`/${locale}/account`);
-        await expect(page.getByRole("link", { name: m(locale, "account.mine.lists") })).toBeVisible();
-        await expect(page.getByRole("link", { name: m(locale, "account.mine.plays") })).toBeVisible();
+        await expect(page.getByRole("link", { name: m(locale, "account.tab.lists"), exact: true })).toBeVisible();
+        await expect(page.getByRole("link", { name: m(locale, "account.tab.plays"), exact: true })).toBeVisible();
         expect(await horizontalOverflow(page), "account").toBeLessThanOrEqual(0);
 
         await page.goto(`/${locale}/account/lists`);
@@ -443,7 +443,7 @@ test.describe("Steam 遊戲庫：手動指定", () => {
     const locale: TestLocale = "en";
     const email = await signedInUser(page, "steam-match");
     await seedManualSteam(email, FIXTURE.hero.slug);
-    await page.goto(`/${locale}/account`);
+    await page.goto(`/${locale}/account/steam`);
     const summary = page.getByTestId("steam-summary");
     await expect(summary).toContainText(m(locale, "steam.summary", { total: 4, matched: 1, review: 2, notFound: 1 }));
     const list = page.getByRole("list", { name: m(locale, "steam.listLabel") });

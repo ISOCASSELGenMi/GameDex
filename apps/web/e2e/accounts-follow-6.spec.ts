@@ -387,14 +387,15 @@ test.describe("私人行事曆頁", () => {
   });
 });
 
-test.describe("帳號首頁入口與訂閱頁入口", () => {
-  test("帳號首頁有追蹤、我的遊戲、私人行事曆三個入口", async ({ page }) => {
+test.describe("帳號分頁入口與訂閱頁入口", () => {
+  test("帳號頁有追蹤、我的遊戲、行事曆三個分頁", async ({ page }) => {
     const locale: TestLocale = "en";
     await signedInUser(page, "home");
     await page.goto(`/${locale}/account`);
-    await expect(page.getByRole("link", { name: m(locale, "account.track.follows"), exact: true })).toHaveAttribute("href", `/${locale}/account/follows`);
-    await expect(page.getByRole("link", { name: m(locale, "account.track.games"), exact: true })).toHaveAttribute("href", `/${locale}/account/games`);
-    await expect(page.getByRole("link", { name: m(locale, "account.track.calendar"), exact: true })).toHaveAttribute("href", `/${locale}/account/calendar`);
+    const tabs = page.getByRole("navigation", { name: m(locale, "account.tabs.label") });
+    await expect(tabs.getByRole("link", { name: m(locale, "account.tab.follows"), exact: true })).toHaveAttribute("href", `/${locale}/account/follows`);
+    await expect(tabs.getByRole("link", { name: m(locale, "account.tab.games"), exact: true })).toHaveAttribute("href", `/${locale}/account/games`);
+    await expect(tabs.getByRole("link", { name: m(locale, "account.tab.calendar"), exact: true })).toHaveAttribute("href", `/${locale}/account/calendar`);
   });
 
   test("訂閱頁：已登入出現私人入口、未登入不出現；伺服器 HTML 不含入口", async ({ page, request, browser }) => {

@@ -2,7 +2,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getLocaleConfig, isSupportedLocale } from "@/kernel/locale";
-import { PageShell } from "@/modules/catalog/ui";
 import { AccountPrivacyPageView, accountSubPageTitle, gateAccountsPage } from "@/modules/accounts/ui";
 
 export const instant = false;
@@ -20,8 +19,6 @@ export default async function AccountPrivacy({ params }: PageProps<"/[locale]/ac
   if (!isSupportedLocale(locale, config)) notFound();
   await gateAccountsPage();
   return (
-    <PageShell locale={locale} supportedLocales={config.supported} path="/account/privacy">
-      <AccountPrivacyPageView locale={locale} />
-    </PageShell>
+    <AccountPrivacyPageView locale={locale} />
   );
 }

@@ -50,6 +50,12 @@ export async function countFollowsSince(userId: number, since: Date): Promise<nu
   return row?.n ?? 0;
 }
 
+/** 本人的追蹤總數（所有目標類型；帳號頁摘要用）。 */
+export async function countFollowsOfUser(userId: number): Promise<number> {
+  const [row] = await getDb().select({ n: sql<number>`count(*)::int` }).from(follows).where(eq(follows.userId, userId));
+  return row?.n ?? 0;
+}
+
 /** 本人的追蹤清單（新到舊）。多取一筆判斷 hasMore。 */
 export async function listFollows(
   userId: number,

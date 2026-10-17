@@ -146,3 +146,19 @@ export function breadcrumbJsonLd(crumbs: readonly Crumb[], ctx: JsonLdContext): 
     })),
   };
 }
+
+/** 首頁 -> WebSite + SearchAction（搜尋是 `/games?q=`，與遊戲瀏覽頁同一個查詢參數）。 */
+export function websiteJsonLd(name: string, ctx: JsonLdContext): JsonLd {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name,
+    url: url(ctx, `/${ctx.locale}`),
+    inLanguage: ctx.locale,
+    potentialAction: {
+      "@type": "SearchAction",
+      target: { "@type": "EntryPoint", urlTemplate: `${url(ctx, `/${ctx.locale}/games`)}?q={search_term_string}` },
+      "query-input": "required name=search_term_string",
+    },
+  };
+}

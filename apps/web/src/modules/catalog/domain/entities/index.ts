@@ -24,3 +24,4 @@ export * from "./game-card";
 export * from "./follow-target";
 export * from "./game-filter";
 export * from "./my-games";
+export * from "./home";

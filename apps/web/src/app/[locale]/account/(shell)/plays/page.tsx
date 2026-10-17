@@ -2,7 +2,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getLocaleConfig, isSupportedLocale } from "@/kernel/locale";
-import { PageShell } from "@/modules/catalog/ui";
 import { AccountPlaysPageView, accountSubPageTitle, gateAccountsPage } from "@/modules/accounts/ui";
 
 export const instant = false;
@@ -19,8 +18,6 @@ export default async function AccountPlays({ params }: PageProps<"/[locale]/acco
   if (!isSupportedLocale(locale, config)) notFound();
   await gateAccountsPage();
   return (
-    <PageShell locale={locale} supportedLocales={config.supported} path="/account/plays">
-      <AccountPlaysPageView locale={locale} />
-    </PageShell>
+    <AccountPlaysPageView locale={locale} />
   );
 }

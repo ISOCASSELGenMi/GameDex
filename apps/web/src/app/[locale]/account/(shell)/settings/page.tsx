@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import { createTranslator } from "@sok/i18n";
 import { getLocaleConfig, isSupportedLocale } from "@/kernel/locale";
 import { KNOWN_RATING_PROVIDERS, listPlatforms, listRegions } from "@/modules/catalog";
-import { PageShell } from "@/modules/catalog/ui";
 import { AccountSettingsPageView, accountSubPageTitle, gateAccountsPage, type PlatformGroup } from "@/modules/accounts/ui";
 
 export const instant = false;
@@ -42,8 +41,6 @@ export default async function AccountSettings({ params }: PageProps<"/[locale]/a
   if (!isSupportedLocale(locale, config)) notFound();
   await gateAccountsPage();
   return (
-    <PageShell locale={locale} supportedLocales={config.supported} path="/account/settings">
-      <AccountSettingsPageView locale={locale} platformGroups={await platformGroups(locale)} regions={await regionOptions(locale)} scoreProviders={[...KNOWN_RATING_PROVIDERS]} />
-    </PageShell>
+    <AccountSettingsPageView locale={locale} platformGroups={await platformGroups(locale)} regions={await regionOptions(locale)} scoreProviders={[...KNOWN_RATING_PROVIDERS]} />
   );
 }

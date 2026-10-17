@@ -24,14 +24,14 @@ async function openPrivacy(page: Page, locale: TestLocale): Promise<void> {
   await expect(page.getByRole("heading", { level: 2, name: m(locale, "privacy.delete.title") })).toBeVisible();
 }
 
-test.describe("帳號首頁入口", () => {
-  test("有設定、隱私與資料的連結", async ({ page }) => {
+test.describe("帳號分頁入口", () => {
+  test("有設定、隱私與資料的分頁", async ({ page }) => {
     const locale: TestLocale = "en";
     await signedInUser(page, "home7");
     await page.goto(`/${locale}/account`);
-    const settings = page.getByRole("link", { name: m(locale, "settings.nav.settings"), exact: true });
+    const settings = page.getByRole("link", { name: m(locale, "account.tab.settings"), exact: true });
     await expect(settings).toHaveAttribute("href", `/${locale}/account/settings`);
-    await expect(page.getByRole("link", { name: m(locale, "settings.nav.privacy"), exact: true })).toHaveAttribute("href", `/${locale}/account/privacy`);
+    await expect(page.getByRole("link", { name: m(locale, "account.tab.privacy"), exact: true })).toHaveAttribute("href", `/${locale}/account/privacy`);
     await settings.click();
     await page.waitForURL(`**/${locale}/account/settings`);
   });

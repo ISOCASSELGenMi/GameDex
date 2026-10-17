@@ -150,7 +150,7 @@ test.describe("多語系與快取標頭", () => {
       const ctx = await playwright.request.newContext({ baseURL, extraHTTPHeaders: { "Accept-Language": lang } });
       const res = await ctx.get("/", { maxRedirects: 0 });
       expect(res.status(), lang).toBe(302);
-      expect(res.headers()["location"], lang).toMatch(new RegExp(`^(https?://[^/]+)?/${locale}/calendar/\\d{4}-\\d{2}$`));
+      expect(res.headers()["location"], lang).toMatch(new RegExp(`^(https?://[^/]+)?/${locale}$`)); // 首頁（GameDex 第 2 段起 / 不再一路導到月曆）
       expect(res.headers()["vary"]?.toLowerCase(), lang).toContain("accept-language");
       expect(res.headers()["set-cookie"], lang).toBeUndefined();
       await ctx.dispose();

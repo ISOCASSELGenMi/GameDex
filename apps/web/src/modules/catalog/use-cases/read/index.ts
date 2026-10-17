@@ -22,3 +22,5 @@ export { getSitemapCounts, listSitemapEntries, listSitemapSmall, type ListSitema
 export { getRatingDisplayConfig, validateRatingDisplayEnv } from "./rating-config";
 // Phase 7 第 6 波：我的遊戲
 export { getMyGames, pickNextRelease, type GetMyGamesInput } from "./get-my-games";
+// GameDex 第 2 段：首頁儀表板
+export { getHomeDashboard, type GetHomeDashboardInput } from "./get-home-dashboard";

@@ -49,3 +49,23 @@ export function accountPrivacyHref(locale: string): string {
 export function accountDeletedHref(locale: string): string {
   return `/${locale}/account/deleted`;
 }
+
+/** 帳號頁的分頁（GameDex 第 2 段）：每個分頁有自己的網址 `/{locale}/account[/<tab>]`，`overview` 就是 `/account`。 */
+export const ACCOUNT_TABS = ["overview", "lists", "plays", "follows", "games", "calendar", "steam", "settings", "privacy"] as const;
+export type AccountTab = (typeof ACCOUNT_TABS)[number];
+
+export function accountTabHref(locale: string, tab: AccountTab): string {
+  return tab === "overview" ? `/${locale}/account` : `/${locale}/account/${tab}`;
+}
+
+/**
+ * 由 pathname 判斷目前分頁（`/en/account/lists/12` 屬於 lists）。不在帳號頁底下、或分頁名稱不認得時回 null。
+ * 語系前綴不驗證（呼叫端傳的就是目前網址）。
+ */
+export function accountTabFromPath(pathname: string): AccountTab | null {
+  const segs = pathname.split("/").filter(Boolean);
+  if (segs[1] !== "account") return null;
+  if (segs.length === 2) return "overview";
+  const tab = segs[2] as AccountTab;
+  return (ACCOUNT_TABS as readonly string[]).includes(tab) && tab !== "overview" ? tab : null;
+}

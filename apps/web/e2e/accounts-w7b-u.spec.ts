@@ -71,7 +71,7 @@ test.describe("停權者（D83）", () => {
     await expect(notice).toContainText(m(locale, "suspended.body"));
     await expect(notice.getByRole("link", { name: m(locale, "suspended.toPrivacy") })).toHaveAttribute("href", `/${locale}/account/privacy`);
     await expect(page.getByRole("button", { name: m(locale, "account.signOut"), exact: true })).toBeVisible();
-    for (const key of ["account.mine.lists", "account.track.follows", "settings.nav.settings"]) {
+    for (const key of ["account.tab.lists", "account.tab.follows", "account.tab.settings"]) {
       await expect(page.getByRole("link", { name: m(locale, key), exact: true }), key).toHaveCount(0);
     }
     await expect(page.getByRole("heading", { name: m(locale, "account.linked") })).toHaveCount(0);

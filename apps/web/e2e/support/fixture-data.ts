@@ -59,3 +59,18 @@ export const FIXTURE_4 = {
   nullRow: { slug: "e2e-month-precision" },
   noRow: { slug: "e2e-aurora-prequel" },
 } as const;
+
+/**
+ * GameDex 第 2 段（首頁儀表板）：日期相對於 seed 當天（UTC），所以只放天數偏移。
+ * 即將上市＝今天起 30 天內（day 精度）、最新上市＝過去 30 天內。近期活動沿用既有 fixture 的即將舉行活動（首頁的活動區不設時間上限，只取最近的 6 筆）。
+ */
+export const FIXTURE_HOME = {
+  upcoming: [
+    { slug: "e2e-home-up-1", name: "Home Upcoming One", offset: 3 },
+    { slug: "e2e-home-up-2", name: "Home Upcoming Two", offset: 12 },
+  ],
+  recent: [
+    { slug: "e2e-home-rc-1", name: "Home Recent One", offset: -4 },
+    { slug: "e2e-home-rc-2", name: "Home Recent Two", offset: -20 },
+  ],
+} as const;

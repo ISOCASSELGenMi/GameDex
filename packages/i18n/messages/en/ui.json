@@ -471,5 +471,34 @@
       "title": "Want instant alerts?",
       "body": "Calendar subscriptions are not instant. We plan to offer email and Discord direct-message alerts later, so you hear about a delay right away."
     }
+  },
+  "home": {
+    "metaTitle": "GameDex: upcoming releases, events and trending games",
+    "metaDescription": "GameDex tracks upcoming and recently released games, upcoming gaming events and trending titles, with a calendar, a timeline and a game database.",
+    "searchLabel": "Search games",
+    "searchPlaceholder": "Enter a game title",
+    "searchButton": "Search",
+    "more": "See more",
+    "moreAria": "See more: {section}",
+    "platformMore": "+{count}",
+    "upcoming": {
+      "title": "Upcoming releases",
+      "hint": "Releasing in the next {days} days, nearest first",
+      "empty": "No upcoming releases right now."
+    },
+    "recent": {
+      "title": "Recently released",
+      "hint": "Released in the past {days} days, newest first",
+      "empty": "No recent releases."
+    },
+    "events": {
+      "title": "Upcoming events",
+      "hint": "Events coming up and in progress",
+      "empty": "No upcoming events right now."
+    },
+    "trending": {
+      "title": "Trending now",
+      "empty": "No trending games right now."
+    }
   }
 }

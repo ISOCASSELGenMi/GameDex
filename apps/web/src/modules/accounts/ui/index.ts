@@ -4,6 +4,8 @@ export { CardActionsSlot, EntityActionsSlot, FilterLinksSlot, GameActionsSlot, P
 export { gateAccountsPage } from "./gate";
 export {
   AccountPageView,
+  AccountShellView,
+  AccountSteamPageView,
   AccountListsPageView,
   AccountListDetailPageView,
   AccountPlaysPageView,

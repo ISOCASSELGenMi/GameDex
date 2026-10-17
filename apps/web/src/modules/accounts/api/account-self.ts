@@ -17,3 +17,7 @@ export async function accountPreferences(request: Request): Promise<Response> {
   await connection();
   return r.handleAccountPreferences(request);
 }
+export async function accountSummary(request: Request): Promise<Response> {
+  await connection();
+  return r.handleAccountSummary(request);
+}

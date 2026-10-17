@@ -35,7 +35,7 @@ export async function signedInUser(page: Page, tag: string, name = `W5 ${tag}`):
 }
 
 /** 帶 Origin 的寫入呼叫（POST／PATCH／DELETE），回傳 JSON。 */
-export async function api<T = unknown>(page: Page, method: "POST" | "PATCH" | "DELETE" | "GET", url: string, data?: unknown): Promise<{ status: number; json: T }> {
+export async function api<T = unknown>(page: Page, method: "POST" | "PUT" | "PATCH" | "DELETE" | "GET", url: string, data?: unknown): Promise<{ status: number; json: T }> {
   const res = await page.request.fetch(url, { method, headers: { origin: E2E_BASE_URL }, ...(data === undefined ? {} : { data }) });
   const text = await res.text();
   return { status: res.status(), json: (text ? JSON.parse(text) : null) as T };

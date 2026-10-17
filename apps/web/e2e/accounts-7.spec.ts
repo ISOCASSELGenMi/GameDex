@@ -356,7 +356,7 @@ test.describe("Steam（第 3 波）", () => {
   });
 
   for (const locale of LOCALES) {
-    test(`${locale} 帳號頁：Steam 遊戲庫區（提示、停用的匯入鈕與原因、摘要、清單、顯示更多）；三種寬度 axe 與無水平溢出`, async ({ page }) => {
+    test(`${locale} 帳號頁 Steam 遊戲庫分頁（提示、停用的匯入鈕與原因、摘要、清單、顯示更多）；三種寬度 axe 與無水平溢出`, async ({ page }) => {
       const email = uniqueEmail(`steam-lib-${locale}`);
       await register(E2E_BASE_URL, email, `Steam ${locale}`);
       await seedSteamLibrary(email);
@@ -365,8 +365,8 @@ test.describe("Steam（第 3 波）", () => {
       await page.waitForURL(`**/${locale}/calendar**`);
       for (const width of [1280, 375, 320]) {
         await page.setViewportSize({ width, height: 900 });
-        await page.goto(`/${locale}/account`);
-        await expect(page.getByRole("heading", { level: 2, name: m(locale, "steam.title") })).toBeVisible();
+        await page.goto(`/${locale}/account/steam`);
+        await expect(page.getByRole("heading", { level: 1, name: m(locale, "steam.title") })).toBeVisible();
         await expect(page.getByText(m(locale, "steam.privacyNote"))).toBeVisible();
         await expect(page.getByText(m(locale, "steam.privacyHow"))).toBeVisible();
         // e2e 伺服器沒有 STEAM_WEB_API_KEY：匯入鈕停用並說明原因
@@ -381,7 +381,7 @@ test.describe("Steam（第 3 波）", () => {
         const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
         const offenders = await page.evaluate(() => [...document.querySelectorAll("*")].filter((e) => e.getBoundingClientRect().right > document.documentElement.clientWidth + 0.5).map((e) => e.tagName + "." + e.className + " " + (e.textContent ?? "").slice(0, 30)).slice(0, 8));
         expect(overflow, `${width} 寬不可水平捲動（溢出 ${overflow}px）${JSON.stringify(offenders)}`).toBeLessThanOrEqual(0);
-        await expectNoA11yViolations(page, `${locale} /account Steam ${width}`);
+        await expectNoA11yViolations(page, `${locale} /account/steam ${width}`);
       }
       await page.setViewportSize({ width: 1280, height: 900 });
       await page.getByRole("button", { name: m(locale, "steam.showMore") }).click();
@@ -390,7 +390,7 @@ test.describe("Steam（第 3 波）", () => {
     });
   }
 
-  test("沒綁 Steam 的帳號：帳號頁有「綁定 Steam」，沒有遊戲庫區；GET／POST /api/v1/imports/steam → 409", async ({ page }) => {
+  test("沒綁 Steam 的帳號：總覽有「綁定 Steam」，沒有遊戲庫區；GET／POST /api/v1/imports/steam → 409", async ({ page }) => {
     const locale: TestLocale = "en";
     const email = uniqueEmail("steam-none");
     await register(E2E_BASE_URL, email, "No Steam");

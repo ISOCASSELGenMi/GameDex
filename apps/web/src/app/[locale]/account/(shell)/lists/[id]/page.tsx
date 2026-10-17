@@ -2,7 +2,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getLocaleConfig, isSupportedLocale } from "@/kernel/locale";
-import { PageShell } from "@/modules/catalog/ui";
 import { AccountListDetailPageView, accountSubPageTitle, gateAccountsPage, parseIdParam } from "@/modules/accounts/ui";
 
 export const instant = false;
@@ -21,8 +20,6 @@ export default async function AccountListDetail({ params }: PageProps<"/[locale]
   const listId = parseIdParam(id);
   if (listId === null) notFound();
   return (
-    <PageShell locale={locale} supportedLocales={config.supported} path={`/account/lists/${listId}`}>
-      <AccountListDetailPageView locale={locale} listId={listId} />
-    </PageShell>
+    <AccountListDetailPageView locale={locale} listId={listId} />
   );
 }

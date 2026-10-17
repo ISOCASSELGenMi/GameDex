@@ -238,6 +238,13 @@ test.describe("時間軸：載入更多／較早", () => {
     await prev.click();
     await expect(page.locator("[data-timeline-card]")).toHaveCount(2);
     await expect(page.locator(`[data-group="day:${TL_SPARSE.date}"]`)).toHaveCount(1);
+    // 再往前：首頁儀表板的 fixture（日期相對於今天）比 2032 更早，所以還要再掃幾次才確定到盡頭（卡片數不再增加）
+    const noEarlier = page.getByText(msg("en", "ui.timeline.noEarlier"));
+    await expect(async () => {
+      if ((await noEarlier.count()) === 0 && (await prev.count()) > 0) await prev.click();
+      expect(await noEarlier.count()).toBeGreaterThan(0);
+    }).toPass({ timeout: 40_000, intervals: [1_500] });
+    await expect(page.locator("[data-timeline-card]")).toHaveCount(2);
     await expect(page.getByText(msg("en", "ui.timeline.noEarlier"))).toBeVisible();
     await expect(page.locator("a[data-load=prev]")).toHaveCount(0);
     await expect(page.locator("[data-partial=prev]")).toHaveCount(0);
