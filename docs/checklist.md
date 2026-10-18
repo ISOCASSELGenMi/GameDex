@@ -187,4 +187,7 @@
   - 追蹤數：現在 `countFollowsOfUser` 算全部類型 → 只算遊戲
 - [ ] 第二輪 Z1：Holodex 式 header、活動時間單行＋時區、刪舊 `/api/timeline/*`、手機選單對齊（10/22 用量重置後開工）
 - [ ] 第二輪 Z2：全遊戲列表頁與廠商分欄、評分排名頁、月曆遊戲／活動開關
+- [x] 開發 DB 重算 `display_names`：1,693 款補上 zh-Hant（例：王國之淚），未移除任何既有中文名；全庫 zh-Hant 218 → 1,911（2026-10-18）
+- [ ] Z1 加做：搜尋候選名單（所有搜尋框共用 combobox 元件）；`recompute_display_names` 任務（規則改動時全庫重算，只動 display_names，不打 IGDB）（2026-10-18 新增）
 - [ ] 第二輪 Z3：互動背景、彩蛋、隱藏主題、解鎖同步（新 migration，套開發 DB 前先問使用者）
+- [ ] 第二輪 Z4：遊戲詳情頁補資訊（公司分三欄、Theme、Game Modes、Player Perspectives、引擎、各語言標題、其他稱呼、Storyline、Editions 與相關內容分組）；新欄位需 migration＋全庫重新回填（數小時，套開發 DB 與回填前先問使用者）；使用者決定一次做完（2026-10-18 新增）
