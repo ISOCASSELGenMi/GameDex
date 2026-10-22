@@ -2,7 +2,7 @@
  * 行為（06 §月曆、§篩選、§多語系、§SEO 與快取；14 §前端；15 Phase 3a 完成標準）。
  * 一律以固定月份網址進入（fixture 2036-05），不依賴「今天」。
  */
-import { FIXTURE, calendarUrl, expect, gameUrl, msg, test, waitForCalendarReady } from "./support/helpers";
+import { FIXTURE, calendarUrl, expect, gameUrl, msg, openHeaderMenu, test, waitForCalendarReady } from "./support/helpers";
 
 const MOBILE = { width: 375, height: 812 };
 const grid = ".cal-grid";
@@ -172,6 +172,7 @@ test.describe("多語系與快取標頭", () => {
     const q = `platform=${FIXTURE.platformPs5}`;
     await page.goto(calendarUrl("zh-Hant", FIXTURE.month, q));
     await expect(page.locator("html")).toHaveAttribute("lang", "zh-Hant");
+    await openHeaderMenu(page, "language");
     const menu = page.getByRole("navigation", { name: msg("zh-Hant", "a11y.languageMenu") });
     const en = menu.locator('a[hreflang="en"]');
     await expect(en).toHaveAttribute("href", calendarUrl("en", FIXTURE.month, q));
@@ -180,6 +181,7 @@ test.describe("多語系與快取標頭", () => {
 
     await page.goto(gameUrl("en", FIXTURE.hero.slug));
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
+    await openHeaderMenu(page, "language");
     await expect(page.getByRole("navigation", { name: msg("en", "a11y.languageMenu") }).locator('a[hreflang="zh-Hant"]')).toHaveAttribute(
       "href",
       gameUrl("zh-Hant", FIXTURE.hero.slug),

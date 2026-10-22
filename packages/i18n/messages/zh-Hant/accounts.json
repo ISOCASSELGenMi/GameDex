@@ -20,7 +20,9 @@
     "menu": "{name} 的帳號選單",
     "account": "我的帳號",
     "signOut": "登出",
-    "signingOut": "登出中…"
+    "signingOut": "登出中…",
+    "signUp": "註冊",
+    "accountLabel": "帳號"
   },
   "login": {
     "title": "登入",

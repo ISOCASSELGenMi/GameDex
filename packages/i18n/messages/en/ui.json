@@ -1,7 +1,8 @@
 {
   "site": {
     "name": "GameDex",
-    "tagline": "Game release calendar and database"
+    "tagline": "Game release calendar and database",
+    "shortName": "GameDex"
   },
   "org": {
     "backTo": "Back to {name}"
@@ -12,7 +13,8 @@
     "games": "Games",
     "platforms": "Platforms",
     "events": "Events",
-    "trending": "Trending"
+    "trending": "Trending",
+    "home": "Home"
   },
   "language": {
     "menuLabel": "Language",
@@ -65,7 +67,7 @@
     "dayListTitle": "Releases and events on {date}",
     "backToList": "Back to the day list",
     "timeTbd": "Time TBA",
-    "timesInUtc": "Event times follow your time zone, with UTC underneath",
+    "timesInUtc": "Event times are shown in your local time zone",
     "monthNavigation": "Change month",
     "noItemsThisMonth": "No releases or events this month",
     "undatedGroupTitle": "{group}: {label}",
@@ -126,7 +128,7 @@
     "historyChange": "{from} → {to}",
     "historyChangedAt": "Updated {date}",
     "noReleaseDates": "No release dates yet",
-    "timesInUtc": "Event times follow your time zone, with UTC underneath",
+    "timesInUtc": "Event times are shown in your local time zone",
     "ageRating": "Age rating: {label}",
     "historyEntry": "{change} ({date})",
     "franchiseTitle": {
@@ -305,7 +307,7 @@
   },
   "events": {
     "title": "Events",
-    "timesInUtc": "Event times follow your time zone, with UTC underneath",
+    "timesInUtc": "Event times are shown in your local time zone",
     "scopeLabel": "Time range",
     "kindLabel": "Event type",
     "scope": {
@@ -503,11 +505,32 @@
     "events": {
       "title": "Upcoming events",
       "hint": "Events coming up and in progress",
-      "empty": "No upcoming events right now."
+      "empty": "No upcoming events right now.",
+      "hintWindow": "In progress, or starting within {days} days",
+      "emptyWindow": "No events in progress or starting within {days} days."
     },
     "trending": {
       "title": "Trending now",
       "empty": "No trending games right now."
     }
+  },
+  "theme": {
+    "menuLabel": "Theme",
+    "system": "System",
+    "light": "Light",
+    "dark": "Dark"
+  },
+  "search": {
+    "label": "Search games",
+    "placeholder": "Search games",
+    "submit": "Search",
+    "open": "Open search",
+    "close": "Close search",
+    "listLabel": "Search suggestions",
+    "viewAll": "See all results",
+    "empty": "No matching games",
+    "count": "{n} suggestions",
+    "error": "Suggestions are unavailable right now",
+    "siteLabel": "Site search"
   }
 }

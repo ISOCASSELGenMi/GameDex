@@ -28,9 +28,10 @@ export interface HomeDashboard {
   today: IsoDate;
   upcoming: HomeGameCard[];
   recent: HomeGameCard[];
-  /** 即將與進行中的活動（開始時間舊到新）。 */
+  /** 進行中的活動＋今天起 HOME_EVENT_DAYS 天內開始的活動（進行中在前，再依開始時間近到遠；D86）。 */
   events: EventListItem[];
-  trending: TrendingCard[];
+  /** 熱門榜兩群各自排名（熱度百分位只在群內可比；D86）。 */
+  trending: { upcoming: TrendingCard[]; released: TrendingCard[] };
   /** 熱門榜實際使用的排序依據（accounts 啟用時 site_follows_7d）。 */
   trendingRankedBy: "popularity" | "site_follows_7d";
 }

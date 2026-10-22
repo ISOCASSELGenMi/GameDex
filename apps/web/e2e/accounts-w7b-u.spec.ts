@@ -81,7 +81,7 @@ test.describe("停權者（D83）", () => {
     for (const sub of ["lists", "plays", "follows", "games", "calendar", "settings"]) {
       await page.goto(`/${locale}/account/${sub}`);
       await expect(page.locator("[data-account-suspended]"), sub).toBeVisible();
-      await expect(page.locator("form"), sub).toHaveCount(0);
+      await expect(page.locator("main form"), sub).toHaveCount(0);
     }
 
     // 隱私與資料：說明＋匯出＋刪除

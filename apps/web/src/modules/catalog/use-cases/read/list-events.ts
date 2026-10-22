@@ -17,6 +17,8 @@ export interface ListEventsInput {
   pageSize?: number | null;
   /** 「現在」；測試用，預設資料庫 now()。 */
   now?: Date;
+  /** 只取開始時間在今天起 N 天內（含已開始、進行中）的活動；未給＝不限（首頁近期活動用，D86）。 */
+  startsWithinDays?: number | null;
 }
 
 /**
@@ -30,7 +32,7 @@ export async function listEvents(input: ListEventsInput = {}): Promise<EventList
   const kind: EventKind | null = t && (EVENT_KINDS as readonly string[]).includes(t) ? (t as EventKind) : null;
   const pageSize = clampInt(input.pageSize, 1, EVENT_LIST_MAX_PAGE_SIZE, EVENT_LIST_DEFAULT_PAGE_SIZE);
   const page = clampInt(input.page, 1, MAX_PAGE, 1);
-  const res = await listEventsPage({ scope, kind, limit: pageSize, offset: (page - 1) * pageSize, now: input.now, resolveImage: resolveImageRef });
+  const res = await listEventsPage({ scope, kind, limit: pageSize, offset: (page - 1) * pageSize, now: input.now, startsWithinDays: input.startsWithinDays ?? undefined, resolveImage: resolveImageRef });
   return { scope, kind, page, pageSize, hasMore: res.hasMore, items: res.items };
 }
 

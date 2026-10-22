@@ -40,11 +40,11 @@ test.describe("混合型平台雙掛（主機＋掌機）", () => {
   });
 });
 
-test.describe("活動時間：本地時區主行＋UTC 小字", () => {
+test.describe("活動時間：一行本地時間＋時區縮寫（不再有 UTC 行）", () => {
   test.use({ timezoneId: "Asia/Tokyo" });
-  const EVENT = "/en/events/e2e-showcase-2036"; // 2036-05-12 17:00–18:30 UTC ＝ 東京 2036-05-13 02:00–03:30
+  const EVENT = "/en/events/e2e-showcase-2036"; // 2036-05-12 17:00–18:30 UTC ＝ 東京 2036-05-13 02:00–03:30（GMT+9）
 
-  test("伺服器 HTML 只有 UTC（無使用者資訊）；訪客掛載後改成瀏覽器時區，下一行小字補 UTC", async ({ page, request }) => {
+  test("伺服器 HTML 只有 UTC（無使用者資訊）；訪客掛載後改成瀏覽器時區並標 GMT+9，沒有 UTC 行", async ({ page, request }) => {
     const html = await (await request.get(EVENT)).text();
     expect(html).toContain("UTC");
     expect(html).not.toContain('data-event-time="utc"');
@@ -54,26 +54,27 @@ test.describe("活動時間：本地時區主行＋UTC 小字", () => {
     await expect(local).toContainText("May 13, 2036");
     await expect(local).toContainText("2:00");
     await expect(local).toContainText("3:30");
-    const utc = info.locator('[data-event-time="utc"]');
-    await expect(utc).toContainText("May 12, 2036");
-    await expect(utc).toContainText("5:00");
-    await expect(utc).toContainText("UTC");
-    // 無障礙：time 元素帶 ISO datetime，兩行都讀得到
+    await expect(local).toContainText("GMT+9");
+    await expect(local).not.toContainText("UTC");
+    await expect(info.locator('[data-event-time="utc"]')).toHaveCount(0);
+    // 無障礙：time 元素帶 ISO datetime（開始、結束）
     const stamps = await info.locator("time").evaluateAll((els) => els.map((e) => e.getAttribute("datetime")));
-    expect(stamps).toEqual(["2036-05-12T17:00:00.000Z", "2036-05-12T18:30:00.000Z", "2036-05-12T17:00:00.000Z", "2036-05-12T18:30:00.000Z"]);
+    expect(stamps).toEqual(["2036-05-12T17:00:00.000Z", "2036-05-12T18:30:00.000Z"]);
     await expectNoA11yViolations(page, "活動詳情（東京時區）");
   });
 
-  test("活動列表與月曆、遊戲詳情的活動時間都改寫成本地時區", async ({ page }) => {
+  test("活動列表與月曆、遊戲詳情的活動時間都改寫成本地時區（一行）", async ({ page }) => {
     await page.goto("/en/events?scope=all");
     const row = page.locator('[data-event="e2e-showcase-2036"]');
     await expect(row.locator('[data-event-time="local"]')).toContainText("May 13, 2036");
-    await expect(row.locator('[data-event-time="utc"]')).toContainText("May 12, 2036");
+    await expect(row.locator('[data-event-time="local"]')).toContainText("GMT+9");
+    await expect(row.locator('[data-event-time="utc"]')).toHaveCount(0);
     await page.goto("/en/calendar/2036-05");
     const cal = page.locator(".ev").filter({ hasText: "E2E Showcase 2036" }).first();
-    await expect(cal.locator('[data-event-time="utc"]').first()).toContainText("UTC");
+    await expect(cal.locator('[data-event-time="local"]').first()).toContainText("GMT+9");
     await page.goto(`/en/games/${FIXTURE.hero.slug}`);
-    await expect(page.locator('[data-event-time="utc"]').first()).toContainText("May 12, 2036");
+    await expect(page.locator('[data-event-time="local"]').first()).toContainText("May 13, 2036");
+    await expect(page.locator('[data-event-time="utc"]')).toHaveCount(0);
   });
 
   test("登入者用帳號時區（優先於瀏覽器時區）", async ({ page }) => {
@@ -84,26 +85,31 @@ test.describe("活動時間：本地時區主行＋UTC 小字", () => {
     const info = page.locator("[data-event-info]");
     await expect(info.locator('[data-event-time="local"]')).toContainText("May 12, 2036");
     await expect(info.locator('[data-event-time="local"]')).toContainText("1:00");
-    await expect(info.locator('[data-event-time="local"]')).toContainText("EDT");
-    await expect(info.locator('[data-event-time="utc"]')).toContainText("UTC");
+    await expect(info.locator('[data-event-time="local"]')).toContainText("GMT-4");
+    await expect(info.locator('[data-event-time="utc"]')).toHaveCount(0);
   });
 
-  test("三語", async ({ page }) => {
+  test("三語各自的格式", async ({ page }) => {
+    const expected: Record<string, RegExp> = {
+      "zh-Hant": /2036\/05\/13 02:00 GMT\+9/,
+      ja: /2036\/05\/13 02:00 GMT\+9/,
+      en: /May 13, 2036,? 2:00\s?AM GMT\+9/,
+    };
     for (const locale of LOCALES) {
       await page.goto(`/${locale}/events/e2e-showcase-2036`);
       const info = page.locator("[data-event-info]");
-      await expect(info.locator('[data-event-time="utc"]'), locale).toBeVisible();
-      await expect(info.locator('[data-event-time="local"]'), locale).toContainText(/2036/);
+      await expect(info.locator('[data-event-time="local"]'), locale).toContainText(expected[locale]!);
     }
   });
 });
 
-test.describe("活動時間：UTC 瀏覽器不重複顯示第二行", () => {
+test.describe("活動時間：UTC 瀏覽器", () => {
   test.use({ timezoneId: "UTC" });
-  test("時區是 UTC → 只有一行", async ({ page }) => {
+  test("時區是 UTC → 一行，標 UTC", async ({ page }) => {
     await page.goto("/en/events/e2e-showcase-2036");
     const info = page.locator("[data-event-info]");
     await expect(info.locator('[data-event-time="local"]')).toContainText("May 12, 2036");
+    await expect(info.locator('[data-event-time="local"]')).toContainText("UTC");
     await expect(info.locator('[data-event-time="utc"]')).toHaveCount(0);
   });
 });

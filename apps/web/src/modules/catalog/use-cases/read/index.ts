@@ -14,7 +14,6 @@ export { getEventDetail, type GetEventDetailInput } from "./get-event-detail";
 // Phase 3b（F）：熱門榜
 export { getTrending, TRENDING_DEFAULT_LIMIT, TRENDING_MAX_LIMIT, type GetTrendingInput } from "./get-trending";
 // Phase 3b（G）：時間軸、瀏覽／搜尋
-export { getTimeline, expandTimelineGroup, getReleaseDateHistory, type GetTimelineInput, type ExpandTimelineGroupInput } from "./get-timeline";
 export { browseGames, type BrowseGamesInput } from "./browse-games";
 // Phase 3.5：sitemap
 export { getSitemapCounts, listSitemapEntries, listSitemapSmall, type ListSitemapShardInput } from "./sitemap";

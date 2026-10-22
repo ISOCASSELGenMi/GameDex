@@ -296,6 +296,15 @@ export async function seedE2eDatabase(): Promise<void> {
     await addGame(445002, { slug: H.upcoming[1].slug, name: H.upcoming[1].name, popularityScore: 700, heatLevel: 3, firstReleaseDate: dayFromToday(H.upcoming[1].offset), events: [{ platform: "e2e-pc", date: dayFromToday(H.upcoming[1].offset) }] });
     await addGame(445003, { slug: H.recent[0].slug, name: H.recent[0].name, popularityScore: 800, heatLevel: 4, firstReleaseDate: dayFromToday(H.recent[0].offset), events: [{ platform: "e2e-ps5", date: dayFromToday(H.recent[0].offset), status: "released" }] });
     await addGame(445004, { slug: H.recent[1].slug, name: H.recent[1].name, popularityScore: 300, heatLevel: 2, firstReleaseDate: dayFromToday(H.recent[1].offset), events: [{ platform: "e2e-pc", date: dayFromToday(H.recent[1].offset), status: "released" }] });
+    await addGame(445005, { slug: H.released[0].slug, name: H.released[0].name, popularityScore: 600, heatLevel: 3, firstReleaseDate: dayFromToday(H.released[0].offset), events: [{ platform: "e2e-pc", date: dayFromToday(H.released[0].offset), status: "released" }] });
+    // 首頁近期活動（D86）：進行中（昨天開始、明天結束）、10 天後開始、45 天後開始（窗外）
+    const HE = H.events;
+    const hoursFromNow = (h: number): Date => new Date(Date.now() + h * 3_600_000);
+    await db.insert(events).values([
+      { name: HE.ongoing.name, slug: HE.ongoing.slug, kind: "other", startTime: hoursFromNow(-24), endTime: hoursFromNow(24) },
+      { name: HE.soon.name, slug: HE.soon.slug, kind: "other", startTime: hoursFromNow(HE.soon.offsetDays * 24) },
+      { name: HE.far.name, slug: HE.far.slug, kind: "other", startTime: hoursFromNow(HE.far.offsetDays * 24) },
+    ]);
   } finally {
     await closeDb();
   }

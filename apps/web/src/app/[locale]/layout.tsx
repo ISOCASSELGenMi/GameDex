@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createTranslator } from "@sok/i18n";
 import { getLocaleConfig, isSupportedLocale } from "@/kernel/locale";
+import { THEME_INIT_SCRIPT } from "@/kernel/ui/theme";
 import { LocaleBody } from "@/modules/catalog/ui";
 import { renderUiSlot } from "../_lib/slots";
 import "../globals.css";
@@ -25,7 +26,11 @@ export default async function LocaleLayout({ children, params }: LayoutProps<"/[
   const { locale } = await params;
   if (!isSupportedLocale(locale)) notFound();
   return (
-    <html lang={locale} className="antialiased">
+    <html lang={locale} className="antialiased" suppressHydrationWarning>
+      <head>
+        {/* 首次繪製前套用使用者選的主題（localStorage），避免亮暗閃爍；伺服器 HTML 與使用者無關 */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body>
         <LocaleBody locale={locale} headerRight={renderUiSlot("header.right", { locale })}>{children}</LocaleBody>
       </body>

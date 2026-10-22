@@ -1,21 +1,10 @@
 /**
- * Phase 3b（G）純函式：FilterSpec → 讀取條件對應、Domain 正規化、時間軸 cursor／組鍵／分組。
+ * Phase 3b（G）純函式：FilterSpec → 讀取條件對應、Domain 正規化（舊時間軸 cursor／組鍵測試已於 D85 刪除）。
  */
 import { describe, expect, it } from "vitest";
 import { parseFilterSpec } from "@sok/api-contract";
 import { collectFilterNotices, filterSpecToReadQuery, filterSpecToReleaseFilter, withoutIgnored } from "@/modules/catalog/ui/filter-mapping";
 import { normalizeReleaseFilter, regionPrefIssue } from "@/modules/catalog/domain/release-filter";
-import {
-  boundaryKey,
-  compareTimelineKeys,
-  decodeTimelineCursor,
-  encodeTimelineCursor,
-  groupTimelineRows,
-  parseTimelineGroupKey,
-  timelineGroupKey,
-  timelineKeyOf,
-} from "@/modules/catalog/repository/timeline";
-import type { ReleaseCard } from "@/modules/catalog";
 
 const defaults = { gameTypes: ["main_game"], stages: ["full"] };
 
@@ -78,95 +67,5 @@ describe("normalizeReleaseFilter（3b）", () => {
     expect(regionPrefIssue(null)).toBeNull();
     expect(regionPrefIssue("jp")).toBeNull();
     expect(regionPrefIssue("XX")).toEqual({ dimension: "region", slug: "XX" });
-  });
-});
-
-function card(over: Partial<ReleaseCard>): ReleaseCard {
-  return {
-    gameId: 1,
-    slug: "g",
-    name: "G",
-    originalName: "G",
-    cover: null,
-    date: "2026-10-13",
-    periodStart: "2026-10-13",
-    precision: "day",
-    stage: "full",
-    status: "scheduled",
-    sourceStatus: "active",
-    platforms: [],
-    popularityScore: 0,
-    heatLevel: 0,
-    gameType: "main_game",
-    gameStatus: null,
-    releaseEventIds: [1],
-    hasDateHistory: false,
-    ...over,
-  };
-}
-
-describe("時間軸 cursor 與組", () => {
-  it("encode／decode round-trip；壞字串回 null", () => {
-    const c = { dir: "before" as const, key: { sk: "2027-04-01", pr: 1, np: -500, gameId: 42, st: 2 } };
-    expect(decodeTimelineCursor(encodeTimelineCursor(c))).toEqual(c);
-    for (const bad of ["", "!!!", "abc", Buffer.from("[2,\"a\"]").toString("base64url"), Buffer.from('[1,"a","2026-13-45",0,0,0,0]').toString("base64url")]) {
-      expect(decodeTimelineCursor(bad)).toBeNull();
-    }
-    expect(decodeTimelineCursor(undefined)).toBeNull();
-  });
-
-  it("排序鍵：同 periodStart 時 year → quarter → month → day；tbd 最後；邊界鍵在該日之前", () => {
-    const keys = [
-      timelineKeyOf(card({ precision: "day", periodStart: "2027-04-01", date: "2027-04-01" })),
-      timelineKeyOf(card({ precision: "quarter", periodStart: "2027-04-01", date: "2027-06-30" })),
-      timelineKeyOf(card({ precision: "tbd", periodStart: null, date: null })),
-      timelineKeyOf(card({ precision: "month", periodStart: "2027-04-01", date: "2027-04-01" })),
-      timelineKeyOf(card({ precision: "day", periodStart: "2027-03-31", date: "2027-03-31", popularityScore: 1 })),
-      boundaryKey("2027-04-01"),
-    ].sort(compareTimelineKeys);
-    expect(keys.map((k) => `${k.sk}/${k.pr}`)).toEqual([
-      "2027-03-31/3",
-      "2027-04-01/-1",
-      "2027-04-01/1",
-      "2027-04-01/2",
-      "2027-04-01/3",
-      "9999-12-31/4",
-    ]);
-  });
-
-  it("組鍵 round-trip", () => {
-    expect(timelineGroupKey("quarter", "2027-04-01")).toBe("quarter:2027-04-01");
-    expect(parseTimelineGroupKey("quarter:2027-04-01")).toEqual({ precision: "quarter", periodStart: "2027-04-01" });
-    expect(parseTimelineGroupKey("tbd")).toEqual({ precision: "tbd", periodStart: null });
-    expect(parseTimelineGroupKey("week:2027-01-01")).toBeNull();
-  });
-
-  it("低-1／2：不存在的日期（02-31、0000）在 cursor 與組鍵一律視為無效（不送進 PG 變 500）", () => {
-    expect(parseTimelineGroupKey("day:2026-02-31")).toBeNull();
-    expect(parseTimelineGroupKey("month:0000-01-01")).toBeNull();
-    expect(parseTimelineGroupKey("day:2026-02-28")).toEqual({ precision: "day", periodStart: "2026-02-28" });
-    const mk = (sk: string) => Buffer.from(JSON.stringify([1, "a", sk, 0, 0, 1, 1])).toString("base64url");
-    expect(decodeTimelineCursor(mk("2026-02-31"))).toBeNull();
-    expect(decodeTimelineCursor(mk("2026-02-28"))).not.toBeNull();
-    expect(decodeTimelineCursor(mk("9999-12-31"))).not.toBeNull(); // tbd 的排序日期
-  });
-
-  it("groupTimelineRows：月份區段、hiddenCount、跨頁延續旗標", () => {
-    const row = (c: ReleaseCard, rank: number, groupTotal: number) => ({ card: c, key: timelineKeyOf(c), rank, groupTotal });
-    const groups = groupTimelineRows(
-      [
-        row(card({ gameId: 1, precision: "quarter", periodStart: "2027-04-01", date: "2027-06-30" }), 2, 3),
-        row(card({ gameId: 2, precision: "quarter", periodStart: "2027-04-01", date: "2027-06-30" }), 3, 3),
-        row(card({ gameId: 3, periodStart: "2027-04-02", date: "2027-04-02" }), 1, 15),
-        row(card({ gameId: 4, periodStart: "2027-04-02", date: "2027-04-02" }), 2, 15),
-        row(card({ gameId: 5, precision: "tbd", periodStart: null, date: null }), 1, 1),
-      ],
-      10,
-    );
-    expect(groups.map((g) => [g.key, g.month, g.cards.length, g.hiddenCount, g.continuesFromPrev, g.continuesToNext])).toEqual([
-      ["quarter:2027-04-01", "2027-04", 2, 0, true, false],
-      ["day:2027-04-02", "2027-04", 2, 5, false, true],
-      ["tbd", null, 1, 0, false, false],
-    ]);
   });
 });

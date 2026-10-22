@@ -64,9 +64,9 @@ export interface AccountSummary {
   follows: number;
 }
 
-/** 帳號頁上方的統計摘要（清單數、遊玩紀錄數、追蹤數）。三個 COUNT，各自走 user_id 索引。 */
+/** 帳號頁上方的統計摘要（清單數、遊玩紀錄數、追蹤的遊戲數；D86 只算 game）。三個 COUNT，各自走 user_id 索引。 */
 export async function getAccountSummary(userId: number): Promise<AccountSummary> {
-  const [lists, playRecords, follows] = await Promise.all([countUserLists(userId), countPlayRecords(userId), countFollowsOfUser(userId)]);
+  const [lists, playRecords, follows] = await Promise.all([countUserLists(userId), countPlayRecords(userId), countFollowsOfUser(userId, "game")]);
   return { lists, playRecords, follows };
 }
 

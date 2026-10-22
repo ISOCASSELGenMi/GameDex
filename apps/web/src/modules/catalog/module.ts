@@ -6,6 +6,7 @@ import { getIgdbProvider } from "./providers/igdb";
 import { backfillGames, parseBackfillArgs } from "./use-cases/sync/backfill-games";
 import { checkDictionaryDrift } from "./use-cases/sync/dictionary-drift";
 import { clearOldReporterIpHashes } from "./use-cases/reports/cleanup-report-ips";
+import { parseRecomputeDisplayNamesArgs, recomputeDisplayNames } from "./use-cases/sync/recompute-display-names";
 import { parseRefreshPopularityArgs, refreshPopularity } from "./use-cases/sync/refresh-popularity";
 import { resolveRelations } from "./use-cases/sync/resolve-relations";
 import { rollingRefresh } from "./use-cases/sync/rolling-refresh";
@@ -112,6 +113,14 @@ export const catalogModule: ModuleManifest = {
           externalSignals: getCatalogExtensions().popularitySignals,
           ...parseRefreshPopularityArgs(ctx.args),
         });
+      },
+    },
+    {
+      // 手動：npm run job -- recompute_display_names [--batch-size N]。display_names 規則改動後全庫重算（不打 IGDB、不寫 change_feed）
+      name: "recompute_display_names",
+      lockMode: "session",
+      run: async (ctx) => {
+        await recomputeDisplayNames(ctx.log, parseRecomputeDisplayNamesArgs(ctx.args));
       },
     },
     {

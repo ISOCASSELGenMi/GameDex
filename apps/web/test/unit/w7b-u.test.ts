@@ -10,9 +10,6 @@ import { suspendedResponse } from "@/modules/accounts/use-cases/suspension";
 import { accountStrings } from "@/modules/accounts/ui/strings";
 import { FOLLOW_RISING_MIN_7D_DEFAULT, isRising, resolveFollowCountMinDisplay, resolveFollowRisingMin7d, RISING_TOP_FRACTION } from "@/modules/catalog/domain/follow-display";
 import { CARD_ACTION_HOST_ATTR, CardActionHost } from "@/modules/catalog/ui/card-action-host";
-import { toTimelineCard } from "@/modules/catalog/ui/timeline/view-model";
-import { getTranslator } from "@/modules/catalog/ui/labels";
-import type { ReleaseCard } from "@/modules/catalog/domain/entities";
 
 const LOCALES: Locale[] = ["zh-Hant", "en", "ja"];
 
@@ -51,30 +48,6 @@ describe("卡片動作掛載點（catalog 不認識 accounts）", () => {
   it("掛載點是空的 <span>，帶遊戲 id 與名稱，伺服器 HTML 與使用者無關", () => {
     const html = renderToStaticMarkup(createElement(CardActionHost, { gameId: 42, name: 'Tom & "Jerry"' }));
     expect(html).toBe(`<span class="card-action" ${CARD_ACTION_HOST_ATTR}="42" data-card-action-name="Tom &amp; &quot;Jerry&quot;"></span>`);
-  });
-
-  it("時間軸卡片資料帶 gameId（g）", () => {
-    const card = {
-      gameId: 77,
-      slug: "x",
-      name: "X",
-      originalName: "X",
-      cover: null,
-      date: "2027-01-01",
-      periodStart: null,
-      precision: "day",
-      stage: "full",
-      status: "scheduled",
-      sourceStatus: "confirmed",
-      platforms: [],
-      popularityScore: 0,
-      heatLevel: 0,
-      gameType: "main_game",
-      gameStatus: null,
-      releaseEventIds: [],
-      hasDateHistory: false,
-    } as unknown as ReleaseCard;
-    expect(toTimelineCard(card, "en", getTranslator("en")).g).toBe(77);
   });
 });
 

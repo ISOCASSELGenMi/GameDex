@@ -11,21 +11,25 @@ import type { ReactElement, ReactNode } from "react";
 import { formatNumber, formatReleaseLabel, type Locale, type Translator } from "@sok/i18n";
 import { EventTime } from "@/kernel/ui/event-time";
 import type { EventListItem, HomeDashboard, HomeGameCard, TrendingCard } from "../../domain/entities";
-import { HOME_RECENT_DAYS, HOME_UPCOMING_DAYS, addDaysIso } from "../../domain/home-dashboard";
+import { HOME_EVENT_DAYS, HOME_RECENT_DAYS, HOME_UPCOMING_DAYS, addDaysIso } from "../../domain/home-dashboard";
 import { utcToday } from "../../domain/utc-date";
 import { getHomeDashboard } from "../../use-cases/read/get-home-dashboard";
 import { platformChipText } from "../calendar/view-model";
 import { eventStatusLabel } from "../events/view-model";
-import { HeatBadge, heatBadgeLabel } from "../heat-badge";
+import { HeatBadge, HeatSprite, heatBadgeLabel } from "../heat-badge";
 import { EventIcon } from "../icons";
 import { eventKindLabel, getTranslator } from "../labels";
 import { PageShell } from "../layout/page-shell";
 import { calendarTodayHref, eventHref, eventsHref, gameHref, gamesBrowseHref, timelineHref, trendingHref } from "../links";
 import { gameNameLang } from "../name-lang";
 import { rethrowForPage, timeoutMarkerOrRethrow, unwrapCachedForPage, type CachedTimeout } from "../page-errors";
+import { searchBoxLabels } from "../search/labels";
+import { SearchCombobox } from "../search/search-combobox";
 import { websiteJsonLd } from "../seo/json-ld";
 import { JsonLdScript } from "../seo/json-ld-script";
 import { siteOrigin } from "../seo/site-url";
+import { HomeEventsEmpty } from "./home-events-empty";
+import { HomeTrendingTabs } from "./home-trending-tabs";
 
 export function homeTitle(locale: Locale): string {
   return getTranslator(locale).t("ui.home.metaTitle");
@@ -56,6 +60,8 @@ async function loadHome(locale: string): Promise<HomeDashboard> {
   }
 }
 
+/** 首頁卡片多（上限 48 張），火焰圖示共用一份 sprite。 */
+const HEAT_SPRITE_ID = "home-heat-flame";
 const ROW = "mt-3 flex list-none snap-x gap-3 overflow-x-auto p-0 pb-3";
 const CARD_W = "w-36 shrink-0 snap-start sm:w-40";
 
@@ -113,7 +119,7 @@ function GameCardItem({ card, locale, t, eager }: { card: HomeGameCard; locale: 
             {card.platformMore > 0 ? ` ${t.t("ui.home.platformMore", { count: card.platformMore })}` : ""}
           </span>
         ) : null}
-        <HeatBadge level={card.heatLevel} label={heatBadgeLabel(t, card.heatLevel)} compact />
+        <HeatBadge level={card.heatLevel} label={heatBadgeLabel(t, card.heatLevel)} compact spriteId={HEAT_SPRITE_ID} />
       </a>
     </li>
   );
@@ -129,9 +135,26 @@ function TrendingItem({ item, rank, locale, t }: { item: TrendingCard; rank: num
           {item.name}
         </span>
         <span className="text-xs text-[var(--muted)]">{formatReleaseLabel(item.releaseDate, item.releasePrecision ?? "tbd", locale)}</span>
-        <HeatBadge level={item.heatLevel} label={heatBadgeLabel(t, item.heatLevel)} compact />
+        <HeatBadge level={item.heatLevel} label={heatBadgeLabel(t, item.heatLevel)} compact spriteId={HEAT_SPRITE_ID} />
       </a>
     </li>
+  );
+}
+
+function TrendingRow({ items, locale, t }: { items: readonly TrendingCard[]; locale: Locale; t: Translator }): ReactElement {
+  if (items.length === 0) {
+    return (
+      <p className="mt-3" data-home-empty="">
+        {t.t("ui.home.trending.empty")}
+      </p>
+    );
+  }
+  return (
+    <ul className={ROW}>
+      {items.map((c, i) => (
+        <TrendingItem key={c.gameId} item={c} rank={i + 1} locale={locale} t={t} />
+      ))}
+    </ul>
   );
 }
 
@@ -181,6 +204,7 @@ export async function HomePage({ locale, supportedLocales }: { locale: Locale; s
   return (
     <PageShell locale={locale} supportedLocales={supportedLocales} path="/">
       <JsonLdScript data={websiteJsonLd(t.t("ui.site.name"), { origin: siteOrigin(), locale })} />
+      <HeatSprite id={HEAT_SPRITE_ID} />
       <div className="py-4">
         <h1 className="text-3xl font-bold">{t.t("ui.site.name")}</h1>
         <p className="mt-1 text-[var(--muted)]">{t.t("ui.site.tagline")}</p>
@@ -188,13 +212,13 @@ export async function HomePage({ locale, supportedLocales }: { locale: Locale; s
           <label className="sr-only" htmlFor="home-search">
             {t.t("ui.home.searchLabel")}
           </label>
-          <input
+          <SearchCombobox
+            locale={locale}
             id="home-search"
-            name="q"
-            type="search"
-            autoComplete="off"
             placeholder={t.t("ui.home.searchPlaceholder")}
-            className="min-h-11 min-w-0 flex-1 rounded-md border border-[var(--border)] bg-[var(--background)] px-3"
+            labels={searchBoxLabels(t)}
+            className="flex-1"
+            inputClassName="min-h-11 w-full rounded-md border border-[var(--border)] bg-[var(--background)] px-3"
           />
           <button type="submit" className="btn-primary">
             {t.t("ui.home.searchButton")}
@@ -233,9 +257,9 @@ export async function HomePage({ locale, supportedLocales }: { locale: Locale; s
         )}
       </Section>
 
-      <Section id="home-events" title={titles.events} hint={t.t("ui.home.events.hint")} moreHref={eventsHref(locale)} moreText={more} moreAria={aria(titles.events)}>
+      <Section id="home-events" title={titles.events} hint={t.t("ui.home.events.hintWindow", { days: HOME_EVENT_DAYS })} moreHref={eventsHref(locale)} moreText={more} moreAria={aria(titles.events)}>
         {data.events.length === 0 ? (
-          empty(t.t("ui.home.events.empty"))
+          <HomeEventsEmpty t={t} />
         ) : (
           <ul className={ROW}>
             {data.events.map((e) => (
@@ -245,17 +269,25 @@ export async function HomePage({ locale, supportedLocales }: { locale: Locale; s
         )}
       </Section>
 
-      <Section id="home-trending" title={titles.trending} hint={t.t(`ui.trending.rankedBy.${data.trendingRankedBy}`)} moreHref={trendingHref(locale)} moreText={more} moreAria={aria(titles.trending)}>
-        {data.trending.length === 0 ? (
-          empty(t.t("ui.home.trending.empty"))
-        ) : (
-          <ul className={ROW}>
-            {data.trending.map((c, i) => (
-              <TrendingItem key={c.gameId} item={c} rank={i + 1} locale={locale} t={t} />
-            ))}
-          </ul>
-        )}
-      </Section>
+      <HomeTrendingTabs
+        title={titles.trending}
+        tablistLabel={t.t("ui.trending.groupLabel")}
+        tabLabels={{ upcoming: t.t("ui.trending.upcoming"), released: t.t("ui.trending.released") }}
+        hints={{
+          upcoming: `${t.t(`ui.trending.rankedBy.${data.trendingRankedBy}`)} ${t.t("ui.trending.upcomingHint")}`,
+          released: `${t.t(`ui.trending.rankedBy.${data.trendingRankedBy}`)} ${t.t("ui.trending.releasedHint")}`,
+        }}
+        moreHrefs={{ upcoming: trendingHref(locale), released: trendingHref(locale, {}, "released") }}
+        moreText={more}
+        moreAria={{
+          upcoming: aria(`${titles.trending} (${t.t("ui.trending.upcoming")})`),
+          released: aria(`${titles.trending} (${t.t("ui.trending.released")})`),
+        }}
+        panels={{
+          upcoming: <TrendingRow items={data.trending.upcoming} locale={locale} t={t} />,
+          released: <TrendingRow items={data.trending.released} locale={locale} t={t} />,
+        }}
+      />
     </PageShell>
   );
 }

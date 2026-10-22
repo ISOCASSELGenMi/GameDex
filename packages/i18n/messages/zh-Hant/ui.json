@@ -1,7 +1,8 @@
 {
   "site": {
     "name": "遊戲圖鑑 GameDex",
-    "tagline": "遊戲上市月曆與資料庫"
+    "tagline": "遊戲上市月曆與資料庫",
+    "shortName": "GameDex"
   },
   "org": {
     "backTo": "回到 {name}"
@@ -12,7 +13,8 @@
     "games": "遊戲",
     "platforms": "平台",
     "events": "活動",
-    "trending": "熱門榜"
+    "trending": "熱門榜",
+    "home": "首頁"
   },
   "language": {
     "menuLabel": "語言",
@@ -65,7 +67,7 @@
     "dayListTitle": "{date} 的上市與活動",
     "backToList": "回到當天清單",
     "timeTbd": "時間未定",
-    "timesInUtc": "活動時間依你的時區顯示，下方小字為 UTC",
+    "timesInUtc": "活動時間依你的時區顯示",
     "monthNavigation": "切換月份",
     "noItemsThisMonth": "這個月沒有上市或活動資料",
     "undatedGroupTitle": "{group}：{label}",
@@ -126,7 +128,7 @@
     "historyChange": "{from} → {to}",
     "historyChangedAt": "{date} 更新",
     "noReleaseDates": "尚無上市日資料",
-    "timesInUtc": "活動時間依你的時區顯示，下方小字為 UTC",
+    "timesInUtc": "活動時間依你的時區顯示",
     "ageRating": "年齡分級：{label}",
     "historyEntry": "{change}（{date}）",
     "franchiseTitle": {
@@ -305,7 +307,7 @@
   },
   "events": {
     "title": "活動",
-    "timesInUtc": "活動時間依你的時區顯示，下方小字為 UTC",
+    "timesInUtc": "活動時間依你的時區顯示",
     "scopeLabel": "時間範圍",
     "kindLabel": "活動類型",
     "scope": {
@@ -503,11 +505,32 @@
     "events": {
       "title": "近期活動",
       "hint": "即將舉行與進行中的活動",
-      "empty": "目前沒有即將舉行的活動。"
+      "empty": "目前沒有即將舉行的活動。",
+      "hintWindow": "進行中，或 {days} 天內開始的活動",
+      "emptyWindow": "目前沒有進行中或 {days} 天內開始的活動。"
     },
     "trending": {
       "title": "近期熱門",
       "empty": "目前沒有熱門遊戲。"
     }
+  },
+  "theme": {
+    "menuLabel": "主題",
+    "system": "系統",
+    "light": "亮色",
+    "dark": "暗色"
+  },
+  "search": {
+    "label": "搜尋遊戲",
+    "placeholder": "搜尋遊戲",
+    "submit": "搜尋",
+    "open": "開啟搜尋",
+    "close": "關閉搜尋",
+    "listLabel": "搜尋建議",
+    "viewAll": "查看全部結果",
+    "empty": "找不到符合的遊戲",
+    "count": "{n} 筆建議",
+    "error": "暫時無法載入建議",
+    "siteLabel": "網站搜尋"
   }
 }

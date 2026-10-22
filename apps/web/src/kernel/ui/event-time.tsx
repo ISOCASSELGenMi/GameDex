@@ -1,8 +1,9 @@
 "use client";
 /**
  * 活動時間顯示（所有顯示活動時間的頁面共用）。
- * 伺服器 HTML 與使用者無關（可快取，不含使用者資訊）：先輸出 UTC；掛載後改寫成使用者的時區，
- * 並在下一行以小字補上 UTC。登入者用帳號時區（users.timezone），訪客與未設定者用瀏覽器時區。
+ * 只顯示一行使用者本地時間，後面標註時區縮寫（例如「2026/10/24 03:00 GMT+8」）；不再另外補 UTC。
+ * 伺服器 HTML 與使用者無關（可快取，不含使用者資訊）：先輸出 UTC；掛載後改寫成使用者的時區。
+ * 登入者用帳號時區（users.timezone），訪客與未設定者用瀏覽器時區。
  * 格式化只實作一次：`@sok/i18n` 的 formatEventTimeText。
  */
 import { formatEventTimeText, type Locale } from "@sok/i18n";
@@ -63,12 +64,10 @@ export interface EventTimeProps {
   locale: Locale;
 }
 
-/** 主行：使用者時區；時區不是 UTC 時，下一行小字補 UTC。`<time datetime>` 用 ISO。 */
+/** 一行：使用者時區的本地時間＋時區縮寫。`<time datetime>` 用 ISO。 */
 export function EventTime({ startIso, endIso = null, locale }: EventTimeProps): ReactElement {
   const zone = useDisplayTimeZone();
   const main = formatEventTimeText(startIso, endIso, locale, zone);
-  const showUtc = zone !== UTC;
-  const utc = showUtc ? formatEventTimeText(startIso, endIso, locale, UTC) : null;
   return (
     <span className="event-time" data-event-time-zone={zone}>
       <span data-event-time="local">
@@ -80,17 +79,6 @@ export function EventTime({ startIso, endIso = null, locale }: EventTimeProps): 
           </>
         ) : null}
       </span>
-      {utc ? (
-        <span className="block text-xs text-[var(--muted)]" data-event-time="utc">
-          <time dateTime={startIso}>{utc.start}</time>
-          {utc.end && endIso ? (
-            <>
-              {" – "}
-              <time dateTime={endIso}>{utc.end}</time>
-            </>
-          ) : null}
-        </span>
-      ) : null}
     </span>
   );
 }

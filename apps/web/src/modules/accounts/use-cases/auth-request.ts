@@ -28,6 +28,11 @@ export function authSubPath(url: string): string {
 export async function handleAuthRequest(request: Request): Promise<Response> {
   const path = authSubPath(request.url);
   if (BLOCKED_PATHS.has(path)) return notFound();
+  // header 的帳號選單要知道是否開放註冊（執行時的環境變數；頁面 HTML 是預渲染的，不能把它烤進去）
+  if (path === "/public-config") {
+    if (request.method !== "GET") return notFound();
+    return Response.json(readAccountsPublicConfig(), { headers: { "Cache-Control": "public, max-age=300" } });
+  }
   if (path === "/sign-up/email") {
     if (request.method !== "POST" || !readAccountsPublicConfig().signupEnabled) return notFound();
     const body = (await request.clone().json().catch(() => null)) as { name?: unknown; email?: unknown } | null;

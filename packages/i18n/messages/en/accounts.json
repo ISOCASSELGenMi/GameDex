@@ -20,7 +20,9 @@
     "menu": "Account menu for {name}",
     "account": "My account",
     "signOut": "Sign out",
-    "signingOut": "Signing out…"
+    "signingOut": "Signing out…",
+    "signUp": "Sign up",
+    "accountLabel": "Account"
   },
   "login": {
     "title": "Sign in",

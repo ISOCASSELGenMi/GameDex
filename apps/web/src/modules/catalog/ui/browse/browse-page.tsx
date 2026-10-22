@@ -25,6 +25,8 @@ import { gameHref, gamesBrowseHref, localeHref } from "../links";
 import { gameNameLang } from "../name-lang";
 import { PageNav } from "../page-nav";
 import { rethrowForPage } from "../page-errors";
+import { searchBoxLabels } from "../search/labels";
+import { SearchCombobox } from "../search/search-combobox";
 import {
   BROWSE_FILTER_FIELDS,
   BROWSE_SORT_OPTIONS,
@@ -147,17 +149,20 @@ export async function GamesBrowsePage({ locale, supportedLocales, searchParams, 
           <input key={`${h.name}:${h.value}`} type="hidden" name={h.name} value={h.value} />
         ))}
         <div className="flex flex-wrap items-end gap-3">
-          <label className="flex min-w-[14rem] flex-1 flex-col gap-1">
-            <span className="font-bold">{t.t("ui.games.searchLabel")}</span>
-            <input
-              type="search"
-              name="q"
+          <div className="flex min-w-[14rem] flex-1 flex-col gap-1">
+            <label htmlFor="browse-search" className="font-bold">
+              {t.t("ui.games.searchLabel")}
+            </label>
+            <SearchCombobox
+              locale={locale}
+              id="browse-search"
               defaultValue={spec.q ?? ""}
               maxLength={FILTER_QUERY_MAX_LENGTH}
               placeholder={t.t("ui.games.searchPlaceholder")}
-              className={inputClass}
+              labels={searchBoxLabels(t)}
+              inputClassName={`${inputClass} w-full`}
             />
-          </label>
+          </div>
           <label className="flex flex-col gap-1">
             <span className="font-bold">{t.t("ui.games.sortLabel")}</span>
             <select name="sort" defaultValue={sort} aria-describedby="browse-sort-note" className={inputClass}>

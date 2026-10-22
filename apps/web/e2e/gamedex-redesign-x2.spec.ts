@@ -3,7 +3,7 @@
  * fixture：2037-W10（2037-03-02 週一）有單日 13 款的 bigDay 與後續填充；固定網址進入，不依賴「今天」。
  */
 import type { Page } from "@playwright/test";
-import { FIXTURE, FIXTURE_3B, LOCALES, expect, expectNoA11yViolations, msg, test } from "./support/helpers";
+import { FIXTURE, FIXTURE_3B, LOCALES, expect, expectNoA11yViolations, headerMenu, msg, openHeaderMenu, test } from "./support/helpers";
 import { horizontalOverflow, signedInUser } from "./support/accounts";
 
 const TL = FIXTURE_3B.timeline;
@@ -203,83 +203,12 @@ test.describe("時間軸（週）：切換", () => {
   });
 });
 
-test.describe("手機 header 收合選單", () => {
-  test.use({ viewport: MOBILE });
-
-  test("收合時只有品牌與選單按鈕；展開後有導覽、語言、登入；Esc 關閉並把焦點還給按鈕", async ({ page }) => {
-    await page.goto(`/en/calendar/${FIXTURE.month}`);
-    const toggle = page.locator("[data-menu-toggle]");
-    await expect(toggle).toBeVisible();
-    await expect(toggle).toHaveAttribute("aria-expanded", "false");
-    await expect(toggle).toHaveAttribute("aria-controls", "site-menu");
-    const mainNav = page.getByRole("navigation", { name: msg("en", "a11y.mainNavigation") });
-    await expect(mainNav).toBeHidden();
-    // header 高度：收合時不超過 4.5rem（改版前窄螢幕佔掉近半螢幕）
-    const closedH = (await page.locator("header.site-header").boundingBox())!.height;
-    expect(closedH).toBeLessThan(90);
-
-    await toggle.click();
-    await expect(toggle).toHaveAttribute("aria-expanded", "true");
-    await expect(mainNav).toBeVisible();
-    await expect(page.getByRole("navigation", { name: msg("en", "a11y.languageMenu") })).toBeVisible();
-    await expect(page.locator("#site-menu")).toBeVisible();
-
-    await page.keyboard.press("Tab");
-    await expect(mainNav.getByRole("link").first()).toBeFocused();
-    await page.keyboard.press("Escape");
-    await expect(toggle).toHaveAttribute("aria-expanded", "false");
-    await expect(toggle).toBeFocused();
-    await expect(mainNav).toBeHidden();
-  });
-
-  test("點選導覽連結後前往該頁並收合；點面板外收合；Enter／Space 可開合", async ({ page }) => {
-    await page.goto(`/en/calendar/${FIXTURE.month}`);
-    const toggle = page.locator("[data-menu-toggle]");
-    await expect(toggle).toBeVisible(); // 按鈕在水合後才顯示：等到它再按鍵
-    await toggle.focus();
-    await page.keyboard.press("Enter");
-    await expect(toggle).toHaveAttribute("aria-expanded", "true");
-    await page.keyboard.press("Space");
-    await expect(toggle).toHaveAttribute("aria-expanded", "false");
-    await toggle.click();
-    await page.getByRole("navigation", { name: msg("en", "a11y.mainNavigation") }).getByRole("link", { name: msg("en", "ui.nav.timeline") }).click();
-    await page.waitForURL(/\/en\/timeline/);
-    await expect(page.locator("[data-menu-toggle]")).toHaveAttribute("aria-expanded", "false");
-    await page.locator("[data-menu-toggle]").click();
-    await page.locator("main h1").click();
-    await expect(page.locator("[data-menu-toggle]")).toHaveAttribute("aria-expanded", "false");
-  });
-
-  test("沒有 JS：面板一律展開、沒有選單按鈕（導覽可用）", async ({ browser }) => {
-    const ctx = await browser.newContext({ javaScriptEnabled: false, viewport: MOBILE, baseURL: test.info().project.use.baseURL });
-    const page = await ctx.newPage();
-    await page.goto(`/en/calendar/${FIXTURE.month}`);
-    await expect(page.locator("[data-menu-toggle]")).toBeHidden();
-    await expect(page.getByRole("navigation", { name: msg("en", "a11y.mainNavigation") })).toBeVisible();
-    await ctx.close();
-  });
-
-  test("320px：header 展開／收合都不水平溢出", async ({ page }) => {
-    await page.setViewportSize({ width: 320, height: 700 });
-    await page.goto(`/ja/`);
-    expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);
-    await page.locator("[data-menu-toggle]").click();
-    expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);
-  });
-
-  test("桌機寬度：沒有選單按鈕，導覽同一列", async ({ page }) => {
-    await page.setViewportSize({ width: 1280, height: 800 });
-    await page.goto(`/en/calendar/${FIXTURE.month}`);
-    await expect(page.locator("[data-menu-toggle]")).toBeHidden();
-    await expect(page.getByRole("navigation", { name: msg("en", "a11y.mainNavigation") })).toBeVisible();
-    expect((await page.locator("header.site-header").boundingBox())!.height).toBeLessThan(90);
-  });
-});
+// 手機 header 收合選單已由 Holodex 式 header 取代（GameDex 第二輪 Z1A，見 gamedex-redesign-z1a.spec.ts）
 
 test.describe("減少動態", () => {
   test.use({ reducedMotion: "reduce" });
 
-  test("時間軸切週、header 選單功能正常，且沒有進場動畫", async ({ page }) => {
+  test("時間軸切週、header 下拉功能正常，且沒有進場動畫", async ({ page }) => {
     await page.goto(`/en/timeline?week=${WEEK}`);
     await ready(page);
     await page.locator("a[data-week-nav=next]").click();
@@ -288,11 +217,11 @@ test.describe("減少動態", () => {
     expect(anim).toBe("none");
     const mainAnim = await page.locator("main > *").first().evaluate((el) => getComputedStyle(el).animationName);
     expect(mainAnim).toBe("none");
-    await page.setViewportSize(MOBILE);
-    await page.locator("[data-menu-toggle]").click();
-    await expect(page.getByRole("navigation", { name: msg("en", "a11y.mainNavigation") })).toBeVisible();
+    // header 下拉：減少動態時仍可開合
+    const panel = await openHeaderMenu(page, "nav");
+    await expect(panel.getByRole("navigation", { name: msg("en", "a11y.mainNavigation") })).toBeVisible();
     await page.keyboard.press("Escape");
-    await expect(page.locator("[data-menu-toggle]")).toHaveAttribute("aria-expanded", "false");
+    await expect(headerMenu(page, "nav").trigger).toHaveAttribute("aria-expanded", "false");
   });
 });
 
@@ -304,7 +233,7 @@ test.describe("axe：亮色與暗色", () => {
   ];
   for (const scheme of ["light", "dark"] as const) {
     for (const locale of LOCALES) {
-      test(`${locale} ${scheme}：首頁、時間軸（含展開的 header 選單）、遊戲詳情`, async ({ page }) => {
+      test(`${locale} ${scheme}：首頁、時間軸（含展開的 header 下拉）、遊戲詳情`, async ({ page }) => {
         await page.emulateMedia({ colorScheme: scheme });
         for (const [label, p] of PAGES) {
           await page.goto(`/${locale}${p}`);
@@ -315,8 +244,8 @@ test.describe("axe：亮色與暗色", () => {
         await page.setViewportSize(MOBILE);
         await page.goto(`/${locale}/timeline?week=${WEEK}`);
         await ready(page);
-        await page.locator("[data-menu-toggle]").click();
-        await expectNoA11yViolations(page, `${locale} ${scheme} 手機 header 展開`);
+        await openHeaderMenu(page, "language");
+        await expectNoA11yViolations(page, `${locale} ${scheme} 手機 header 語言下拉展開`);
       });
     }
 

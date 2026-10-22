@@ -51,6 +51,8 @@ export interface SessionUser {
 
 /** 目前 session；`data` 為 null＝未登入。404＝accounts 在這個部署沒有啟用。 */
 export const getSession = () => call<{ user: SessionUser } | null>("/get-session", { cache: "no-store" });
+/** 登入頁／header 要顯示什麼（是否開放註冊、可用的社群登入）；執行時環境變數，不含 secret。 */
+export const getPublicConfig = () => call<{ signupEnabled: boolean; socialProviders: string[] }>("/public-config");
 export const signInEmail = (email: string, password: string) => post<{ user: SessionUser }>("/sign-in/email", { email, password });
 export const signUpEmail = (name: string, email: string, password: string) => post<{ user: SessionUser }>("/sign-up/email", { name, email, password });
 export const signOut = () => post<{ success: boolean }>("/sign-out", {});

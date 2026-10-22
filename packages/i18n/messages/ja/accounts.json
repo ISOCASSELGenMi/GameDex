@@ -20,7 +20,9 @@
     "menu": "{name} のアカウントメニュー",
     "account": "マイアカウント",
     "signOut": "ログアウト",
-    "signingOut": "ログアウト中…"
+    "signingOut": "ログアウト中…",
+    "signUp": "新規登録",
+    "accountLabel": "アカウント"
   },
   "login": {
     "title": "ログイン",

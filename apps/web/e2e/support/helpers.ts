@@ -4,7 +4,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test as base, type Page } from "@playwright/test";
+import { expect, test as base, type Locator, type Page } from "@playwright/test";
 import { WEB_DIR } from "./env";
 
 export { FIXTURE, FIXTURE_3B, FIXTURE_4, FIXTURE_HOME } from "./fixture-data";
@@ -85,4 +85,32 @@ export const gameUrl = (locale: TestLocale, slug: string) => `/${locale}/games/$
 /** 等客戶端元件接手（月曆格水合完成、切換鈕出現）後再操作。 */
 export async function waitForCalendarReady(page: Page): Promise<void> {
   await expect(page.locator('.cal-cell[data-hydrated="true"]').first()).toBeAttached();
+}
+
+// ---- header 下拉（導覽、主題、語言、帳號共用 kernel/ui/dropdown） ----
+
+export type HeaderMenu = "nav" | "theme" | "language" | "account";
+
+/** header 下拉的觸發按鈕與面板（不操作）。 */
+export function headerMenu(page: Page, menu: HeaderMenu): { root: Locator; trigger: Locator; panel: Locator } {
+  const root = page.locator(`[data-dropdown="${menu}"]`);
+  return { root, trigger: root.locator("[data-dropdown-trigger]"), panel: root.locator(".dd-panel") };
+}
+
+/** 等水合後點開 header 下拉，回傳面板。已經開著就不再點。 */
+export async function openHeaderMenu(page: Page, menu: HeaderMenu): Promise<Locator> {
+  const { root, trigger, panel } = headerMenu(page, menu);
+  await expect(root).toHaveAttribute("data-ready", "true");
+  if ((await trigger.getAttribute("aria-expanded")) !== "true") await trigger.click();
+  await expect(trigger).toHaveAttribute("aria-expanded", "true");
+  await expect(panel).toBeVisible();
+  // 等開啟動畫跑完（縮放中量到的尺寸與點擊位置都會偏）
+  await panel.evaluate((el) => Promise.all(el.getAnimations().map((an) => an.finished)));
+  return panel;
+}
+
+/** 開啟導覽下拉並回傳其中的主要導覽 <nav>。 */
+export async function openMainNav(page: Page, locale: TestLocale): Promise<Locator> {
+  const panel = await openHeaderMenu(page, "nav");
+  return panel.getByRole("navigation", { name: msg(locale, "a11y.mainNavigation") });
 }

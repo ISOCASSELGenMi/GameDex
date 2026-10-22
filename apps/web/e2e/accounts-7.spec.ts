@@ -11,7 +11,7 @@ import { spawn, type ChildProcess } from "node:child_process";
 import path from "node:path";
 import pg from "pg";
 import { E2E_BASE_URL, E2E_CLOSED_BASE_URL, E2E_CLOSED_PORT, WEB_DIR, serverEnv, testDatabaseUrl } from "./support/env";
-import { FIXTURE, LOCALES, calendarUrl, expect, expectNoA11yViolations, gameUrl, msg, test, type TestLocale } from "./support/helpers";
+import { FIXTURE, LOCALES, calendarUrl, expect, expectNoA11yViolations, gameUrl, msg, openHeaderMenu, test, type TestLocale } from "./support/helpers";
 import { request as pwRequest, type Page } from "@playwright/test";
 
 const PASSWORD = "e2e long password 1";
@@ -38,6 +38,8 @@ async function login(page: Page, locale: TestLocale, email: string, password = P
 }
 
 const header = (page: Page) => page.getByRole("banner");
+/** 未登入時帳號下拉裡的「登入」連結（先打開帳號下拉）。 */
+const signInLink = async (page: Page, locale: TestLocale) => (await openHeaderMenu(page, "account")).getByRole("link", { name: m(locale, "header.signIn") });
 
 test.describe("頁面無障礙（三語；桌機、375、320）", () => {
   const pages: { path: string; heading: (l: TestLocale) => string; skipNote?: string }[] = [
@@ -91,14 +93,13 @@ test.describe("登入流程", () => {
 
       await page.goto(`/${locale}/login`);
       // 載入完成後 header 顯示「登入」連結（未登入）
-      await expect(header(page).getByRole("link", { name: m(locale, "header.signIn") })).toBeVisible();
+      await expect(await signInLink(page, locale)).toBeVisible();
 
       await login(page, locale, email);
       await page.waitForURL(`**/${locale}/calendar**`);
       const menuButton = header(page).getByRole("button", { name: m(locale, "header.menu", { name }) });
       await expect(menuButton).toBeVisible();
-      await expect(menuButton).toContainText(name);
-      await expect(header(page).getByRole("link", { name: m(locale, "header.signIn") })).toHaveCount(0);
+      await expect(header(page).locator('[data-account-slot="anonymous"]')).toHaveCount(0);
 
       // 選單：我的帳號、登出；Escape 關閉
       await menuButton.click();
@@ -107,7 +108,7 @@ test.describe("登入流程", () => {
       await expect(menuButton).toHaveAttribute("aria-expanded", "false");
       await menuButton.click();
       await header(page).getByRole("button", { name: m(locale, "header.signOut") }).click();
-      await expect(header(page).getByRole("link", { name: m(locale, "header.signIn") })).toBeVisible();
+      await expect(await signInLink(page, locale)).toBeVisible();
       await expect(header(page).getByRole("button", { name: m(locale, "header.menu", { name }) })).toHaveCount(0);
     }
   });
@@ -119,7 +120,7 @@ test.describe("登入流程", () => {
     await login(page, "en", email, "definitely wrong password");
     await expect(page.locator("main").getByRole("alert")).toHaveText(m("en", "login.error.invalid"));
     await expect(page).toHaveURL(/\/en\/login$/);
-    await expect(header(page).getByRole("link", { name: m("en", "header.signIn") })).toBeVisible();
+    await expect(await signInLink(page, "en")).toBeVisible();
   });
 
   test("註冊表單：密碼太短 → 欄位錯誤；成功 → 自動登入並回到月曆", async ({ page }) => {

@@ -50,9 +50,10 @@ export async function countFollowsSince(userId: number, since: Date): Promise<nu
   return row?.n ?? 0;
 }
 
-/** 本人的追蹤總數（所有目標類型；帳號頁摘要用）。 */
-export async function countFollowsOfUser(userId: number): Promise<number> {
-  const [row] = await getDb().select({ n: sql<number>`count(*)::int` }).from(follows).where(eq(follows.userId, userId));
+/** 本人的追蹤數；給 targetType 時只算該類型（帳號頁摘要只算 game，D86；走主鍵 user_id, target_type, target_id）。 */
+export async function countFollowsOfUser(userId: number, targetType?: FollowTarget): Promise<number> {
+  const where = targetType ? and(eq(follows.userId, userId), eq(follows.targetType, targetType)) : eq(follows.userId, userId);
+  const [row] = await getDb().select({ n: sql<number>`count(*)::int` }).from(follows).where(where);
   return row?.n ?? 0;
 }
 

@@ -1,6 +1,6 @@
 /**
  * 活動列表與詳情的純函式（網址參數解析、時間文字）。不依賴 React，可單元測試。
- * 活動時間依使用者時區顯示、下一行補 UTC（2026-10-17）；start_time 為 NULL＝「時間未定」。
+ * 活動時間依使用者時區顯示一行、標註時區縮寫（例如 GMT+8；2026-10-18 起不再補 UTC 行）；start_time 為 NULL＝「時間未定」。
  */
 import { formatEventTimeText, type Locale, type Translator } from "@sok/i18n";
 import { EVENT_KINDS, EVENT_LIST_SCOPES, type EventKind, type EventListScope, type EventTimeStatus } from "../../domain/entities";

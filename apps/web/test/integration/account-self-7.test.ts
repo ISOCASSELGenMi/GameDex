@@ -269,7 +269,8 @@ describe.skipIf(!enabled)("accounts 第 7 波：偏好、刪除帳號、匯出�
       expect((await followApi(A, "game", gid.c!)).status).toBe(201);
       expect((await followApi(A, "platform", platformId)).status).toBe(201);
       const res = await handleAccountSummary(request("GET", "/api/v1/account/summary", { cookie: A.cookie }));
-      expect(await json(res)).toEqual({ lists: 2, playRecords: 1, follows: 3 });
+      // D86：追蹤數只算遊戲（平台追蹤不計）
+      expect(await json(res)).toEqual({ lists: 2, playRecords: 1, follows: 2 });
       // 其他測試看的是遊戲追蹤訊號與玩家平均：這個帳號用完就刪（FK cascade 一併帶走追蹤與紀錄）
       await getDb().delete(users).where(eq(users.email, "t7-summary@example.com"));
     });

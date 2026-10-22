@@ -1,6 +1,6 @@
 /**
  * 活動列表 `/[locale]/events` 與活動詳情 `/[locale]/events/[slug]`（06 §活動）。伺服器元件。
- * 時間一律顯示 UTC 並標註；start_time 為 NULL＝「時間未定」。找不到 → notFound()；逾時 → 錯誤邊界。
+ * 時間依使用者時區顯示一行並標註時區縮寫（kernel/ui/event-time）；start_time 為 NULL＝「時間未定」。找不到 → notFound()；逾時 → 錯誤邊界。
  */
 import Image from "next/image";
 import { cacheLife, cacheTag } from "next/cache";

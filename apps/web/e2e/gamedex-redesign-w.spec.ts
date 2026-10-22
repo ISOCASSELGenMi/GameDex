@@ -6,7 +6,7 @@
  * - 帳號頁殼＋分頁：切換不整頁重載（殼不重新載入）、直接開子網址選中正確分頁、鍵盤操作、各分頁 axe、320px 不溢出、停權者只剩隱私與資料。
  */
 import { api, gameIdBySlug, horizontalOverflow, seedManualSteam, signedInUser, withDb } from "./support/accounts";
-import { FIXTURE, FIXTURE_3B, FIXTURE_HOME, LOCALES, expect, expectNoA11yViolations, msg, test, type TestLocale } from "./support/helpers";
+import { FIXTURE, FIXTURE_HOME, LOCALES, expect, expectNoA11yViolations, msg, openHeaderMenu, openMainNav, test, type TestLocale } from "./support/helpers";
 
 const HOME_HTML_BUDGET = 200 * 1024;
 
@@ -31,10 +31,11 @@ test.describe("首頁儀表板", () => {
     expect(up).toEqual(FIXTURE_HOME.upcoming.map((g) => g.slug));
     const rc = await slugsIn("recent");
     expect(rc).toEqual(FIXTURE_HOME.recent.map((g) => g.slug)); // -4 在 -20 之前（新到舊）
-    // 活動區：fixture 的即將舉行活動（2036），開始時間舊到新
+    // 活動區（D86）：進行中在前，再依開始時間近到遠；30 天外的活動（含 2036 年的 fixture）不在首頁
     const events = await page.locator('[data-home-section="events"] [data-home-event]').evaluateAll((els) => els.map((e) => e.getAttribute("data-home-event")));
-    expect(events).toEqual([FIXTURE_3B.events.showcase.slug, FIXTURE_3B.events.expo.slug]);
-    const trending = await slugsIn("trending");
+    // 其他測試檔也會在 10 天後插入活動（ical-5），所以只看自己的 fixture：進行中在前、再依開始時間；45 天後的不在窗內
+    expect(events.filter((slug) => slug!.startsWith("e2e-home-ev-"))).toEqual([FIXTURE_HOME.events.ongoing.slug, FIXTURE_HOME.events.soon.slug]);
+    const trending = await page.locator('[data-trending-panel="upcoming"] [data-home-game]').evaluateAll((els) => els.map((e) => e.getAttribute("data-home-game")));
     expect(trending.length).toBeGreaterThan(0);
     expect(trending.length).toBeLessThanOrEqual(12);
     // 卡片連到遊戲詳情；日期在卡片上
@@ -68,12 +69,13 @@ test.describe("首頁儀表板", () => {
   test("導覽：品牌連結回首頁、「月曆」連到 /calendar（獨立分頁）", async ({ page }) => {
     await page.goto(`/en/calendar/${FIXTURE.month}`);
     await expect(page.locator("[data-site-brand]")).toHaveAttribute("href", "/en");
-    const nav = page.getByRole("navigation", { name: msg("en", "a11y.mainNavigation") });
+    let nav = await openMainNav(page, "en");
     await expect(nav.getByRole("link", { name: msg("en", "ui.nav.calendar"), exact: true })).toHaveAttribute("href", "/en/calendar");
     await expect(nav.getByRole("link", { name: msg("en", "ui.nav.calendar"), exact: true })).toHaveAttribute("aria-current", "page");
     await page.locator("[data-site-brand]").click();
     await page.waitForURL("**/en");
     expect(new URL(page.url()).pathname).toBe("/en");
+    nav = await openMainNav(page, "en");
     await nav.getByRole("link", { name: msg("en", "ui.nav.calendar"), exact: true }).click();
     await page.waitForURL(/\/en\/calendar\/\d{4}-\d{2}$/);
   });
@@ -131,8 +133,8 @@ test.describe("首頁儀表板", () => {
 
   test("搜尋框送到 /games?q=", async ({ page }) => {
     await page.goto("/en");
-    await page.getByRole("searchbox", { name: msg("en", "ui.home.searchLabel") }).fill("Aurora");
-    await page.getByRole("button", { name: msg("en", "ui.home.searchButton"), exact: true }).click();
+    await page.locator("#home-search").fill("Aurora");
+    await page.locator("main").getByRole("button", { name: msg("en", "ui.home.searchButton"), exact: true }).click();
     await page.waitForURL(/\/en\/games\?q=Aurora$/);
   });
 
@@ -263,10 +265,12 @@ test.describe("帳號頁殼＋分頁", () => {
   test("語言選單連結跟著目前分頁（/en/account/lists → /ja/account/lists），切換分頁後仍正確", async ({ page }) => {
     await signedInUser(page, "tabs-lang");
     await page.goto("/en/account");
+    await openHeaderMenu(page, "language");
     const ja = page.getByRole("navigation", { name: msg("en", "a11y.languageMenu") }).locator('a[lang="ja"]');
     await expect(ja).toHaveAttribute("href", "/ja/account");
     await tabLink(page, "en", "lists").click();
     await page.waitForURL("**/en/account/lists");
+    await openHeaderMenu(page, "language");
     await expect(ja).toHaveAttribute("href", "/ja/account/lists");
   });
 
@@ -311,7 +315,7 @@ test.describe("帳號頁殼＋分頁", () => {
     for (const sub of ["lists", "plays", "follows", "games", "calendar", "steam", "settings"]) {
       await page.goto(`/${locale}/account/${sub}`);
       await expect(page.locator("[data-account-suspended]"), sub).toHaveCount(1);
-      await expect(page.locator("form"), sub).toHaveCount(0);
+      await expect(page.locator("main form"), sub).toHaveCount(0);
     }
     await page.goto(`/${locale}/account/privacy`);
     await expect(page.locator("[data-account-suspended]")).toHaveCount(1);

@@ -44,6 +44,8 @@ export interface EventListQuery {
   offset: number;
   /** 測試用；預設資料庫 now()。 */
   now?: Date;
+  /** 只取開始時間 ≤ now + 這麼多天的活動（進行中的活動開始時間 ≤ now，自然包含）；未給＝不限。 */
+  startsWithinDays?: number;
   /** logo 網址 → ImageRef（Provider 實作，由 Use Case 傳入）。 */
   resolveImage: ImageResolver;
 }
@@ -66,12 +68,13 @@ export async function listEventsPage(
         ? sql`e.start_time DESC NULLS LAST, e.id DESC`
         : sql`e.name ASC, e.id ASC`;
   const kindCond = q.kind ? sql`AND e.kind = ${q.kind}` : sql``;
+  const withinCond = q.startsWithinDays != null ? sql`AND e.start_time <= ${now} + make_interval(days => ${Math.floor(q.startsWithinDays)})` : sql``;
   const res = await withReadTimeout(
     (tx) =>
       tx.execute<EventListRow>(sql`
         SELECT ${listColumns(now)}
         FROM events e
-        WHERE ${scopeCond} ${kindCond}
+        WHERE ${scopeCond} ${kindCond} ${withinCond}
         ORDER BY ${order}
         LIMIT ${q.limit + 1} OFFSET ${q.offset}
       `),
