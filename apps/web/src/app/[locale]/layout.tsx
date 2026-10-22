@@ -6,7 +6,7 @@ import { notFound } from "next/navigation";
 import { createTranslator } from "@sok/i18n";
 import { getLocaleConfig, isSupportedLocale } from "@/kernel/locale";
 import { THEME_INIT_SCRIPT } from "@/kernel/ui/theme";
-import { LocaleBody } from "@/modules/catalog/ui";
+import { LocaleBody, TOGGLE_TRANSITION_SCRIPT } from "@/modules/catalog/ui";
 import { renderUiSlot } from "../_lib/slots";
 import "../globals.css";
 
@@ -30,6 +30,8 @@ export default async function LocaleLayout({ children, params }: LayoutProps<"/[
       <head>
         {/* 首次繪製前套用使用者選的主題（localStorage），避免亮暗閃爍；伺服器 HTML 與使用者無關 */}
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        {/* 月曆開關換頁時，新頁面的 pagereveal 加上 cal-toggle（月曆本體 120ms 淡入；機制見 toggle-transition.ts） */}
+        <script dangerouslySetInnerHTML={{ __html: TOGGLE_TRANSITION_SCRIPT }} />
       </head>
       <body>
         <LocaleBody locale={locale} headerRight={renderUiSlot("header.right", { locale })}>{children}</LocaleBody>

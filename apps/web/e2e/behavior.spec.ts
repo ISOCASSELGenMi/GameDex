@@ -65,7 +65,7 @@ test.describe("月曆", () => {
   });
 
   test("階段、延期、來源待確認以圖示＋文字顯示（不只靠顏色）；活動有圖示＋文字", async ({ page }) => {
-    await page.goto(calendarUrl("zh-Hant", FIXTURE.month));
+    await page.goto(calendarUrl("zh-Hant", FIXTURE.month, "show=events,releases")); // 月曆預設不顯示活動（Z2B）：要看活動需明確打開
     await waitForCalendarReady(page);
     // 搶先體驗（Busy Day Game 03，第三款）
     const busy = page.locator(cellOf(FIXTURE.busyDay));

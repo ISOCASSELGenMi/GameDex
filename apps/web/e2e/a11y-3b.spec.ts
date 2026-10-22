@@ -24,6 +24,7 @@ const PAGES: { label: string; path: string }[] = [
   { label: "平台總覽", path: "/platforms" },
   { label: "平台頁", path: `/platforms/${FIXTURE.platformPs5}` },
   { label: "平台頁（近期上市＋熱度排序）", path: `/platforms/${FIXTURE.platformPs5}?section=recent&sort=popularity` },
+  { label: "平台頁（全部遊戲＋名稱排序）", path: `/platforms/${FIXTURE.platformPs5}?section=all&sort=name` },
   { label: "公司頁", path: "/companies/e2e-northern-studio" },
   { label: "公司頁（角色篩選）", path: "/companies/e2e-northern-studio?role=publisher" },
   { label: "系列頁", path: "/franchises/e2e-aurora-saga" },

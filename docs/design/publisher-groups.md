@@ -12,11 +12,15 @@
 
 ## 名單
 
+使用者 2026-10-23 對照表疑義定案：上表「包含」欄補入 Sony／Sony Online Entertainment／Bungie → 索尼互動娛樂、Xbox Live Arcade／Production → Xbox、Codemasters → 美商藝電、Intelligent Systems → 任天堂、Taito → 史克威爾艾尼克斯。Crystal Dynamics、Eidos、Relic、Amplitude、Time Warner Interactive、Fire Falcom、Snkl Studio 不納入（獨立／其他）。
+
+IGDB 順序目前沒存進資料庫時的替代規則：多個開發商都在名單內，取名單欄位順序最後者（合開作品歸更具體的品牌）。
+
 | 欄位名稱 | 包含 | 代表作 |
 |---|---|---|
-| 索尼互動娛樂 | Sony Interactive Entertainment、PlayStation Studios 各工作室（Santa Monica、Naughty Dog、Insomniac、Guerrilla、Sucker Punch 等） | 戰神、最後生還者、漫威蜘蛛人、地平線 |
-| 任天堂 | Nintendo、Nintendo EPD、HAL 研究所、Retro Studios、Monolith Soft 等 | 薩爾達傳說、超級瑪利歐、集合啦！動物森友會、斯普拉遁 |
-| Xbox Game Studios（微軟） | Microsoft、Xbox Game Studios（343、Playground、Rare、Obsidian、Double Fine 等） | 最後一戰、極限競速、盜賊之海 |
+| 索尼互動娛樂 | Sony Interactive Entertainment、Sony、Sony Online Entertainment、Bungie、PlayStation Studios 各工作室（Santa Monica、Naughty Dog、Insomniac、Guerrilla、Sucker Punch 等） | 戰神、最後生還者、漫威蜘蛛人、地平線 |
+| 任天堂 | Nintendo、Nintendo EPD、HAL 研究所、Retro Studios、Monolith Soft、Intelligent Systems 等 | 薩爾達傳說、超級瑪利歐、集合啦！動物森友會、斯普拉遁 |
+| Xbox Game Studios（微軟） | Microsoft、Xbox Live Arcade、Xbox Live Production、Xbox Game Studios（343、Playground、Rare、Obsidian、Double Fine 等） | 最後一戰、極限競速、盜賊之海 |
 | 貝塞斯達（微軟） | Bethesda Softworks、Bethesda Game Studios、id Software、Arkane、MachineGames、ZeniMax | 上古卷軸、異塵餘生、毀滅戰士 |
 | 動視暴雪（微軟） | Activision、Blizzard Entertainment、King、Treyarch、Infinity Ward 等 | 決勝時刻、暗黑破壞神、魔獸世界、鬥陣特攻 |
 | Rockstar Games（Take-Two） | Rockstar 各工作室 | 俠盜獵車手 GTA、碧血狂殺 |
@@ -24,10 +28,10 @@
 | 卡普空 | Capcom | 惡靈古堡、魔物獵人、快打旋風、逆轉裁判 |
 | 光榮特庫摩 | Koei Tecmo、Omega Force、Team NINJA、Gust | 真・三國無雙、仁王、信長之野望、鍊金工房 |
 | 萬代南夢宮 | Bandai Namco | 鐵拳、太鼓之達人、偶像大師、破曉傳奇 |
-| 史克威爾艾尼克斯 | Square Enix | Final Fantasy、勇者鬥惡龍、王國之心、尼爾 |
+| 史克威爾艾尼克斯 | Square Enix、Taito | Final Fantasy、勇者鬥惡龍、王國之心、尼爾 |
 | Epic Games | Epic Games | 要塞英雄、Rocket League、Fall Guys |
 | 育碧 | Ubisoft 各工作室 | 刺客教條、極地戰嚎、湯姆克蘭西系列、舞力全開 |
-| 美商藝電 | Electronic Arts、EA SPORTS、Respawn、BioWare、DICE、Maxis | EA SPORTS FC、Apex 英雄、模擬市民、戰地風雲 |
+| 美商藝電 | Electronic Arts、EA SPORTS、Respawn、BioWare、DICE、Maxis、Codemasters | EA SPORTS FC、Apex 英雄、模擬市民、戰地風雲 |
 | SEGA | SEGA、Ryu Ga Gotoku Studio、Sonic Team、Creative Assembly | 人中之龍、音速小子、全軍破敵 |
 | Atlus（SEGA） | Atlus | 女神異聞錄、真・女神轉生、暗喻幻想 |
 | 科樂美 | Konami | 潛龍諜影、沉默之丘、eFootball、桃太郎電鐵 |

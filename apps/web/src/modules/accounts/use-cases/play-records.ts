@@ -2,6 +2,7 @@
  * 遊玩紀錄與玩家平均 Use Case（09 §遊玩紀錄）。所有紀錄只回給本人；對外（非本人）的轉換一律經 toPublicPlayRecord（不含 privateNote）。
  */
 import {
+  publishSitePlayerRatings,
   gameExists,
   gameHasPlatform,
   getGameCardsByIds,
@@ -32,6 +33,7 @@ import {
   findPlayRecord,
   findPlayerRating,
   insertPlayRecord,
+  listPublishablePlayerRatings,
   listPlayRecords,
   playStatsForUser,
   refreshPlayerRatings,
@@ -162,3 +164,22 @@ export async function getPlayerRating(gameId: number, minCount: number = resolve
 
 /** 排程 refresh_player_ratings。 */
 export const runRefreshPlayerRatings = refreshPlayerRatings;
+
+/** 玩家平均（0.5 分一格的平均）→ ratings 的 0~100 整數：8.5／10 → 85（與詳情頁顯示的一位小數同精度）。 */
+export function playerAverageToRatingScore(avgHalfSteps: number): number {
+  return Math.round(averageHalfStepsToScore(avgHalfSteps) * 10);
+}
+
+/**
+ * 排程 publish_player_ratings：把「人數達 PLAYER_RATING_MIN_COUNT」的玩家平均整批寫進 catalog 的 ratings（site_players／user_average），
+ * 評分排名頁只讀 catalog 的 ratings；人數降到門檻以下的遊戲，舊值在這裡被刪除。經 catalog 的公開寫入函式（02：寫入經擁有者）。
+ */
+export async function runPublishPlayerRatings(
+  minCount: number = resolvePlayerRatingMinCount(process.env.PLAYER_RATING_MIN_COUNT),
+): Promise<{ published: number; upserted: number; deleted: number }> {
+  const rows = await listPublishablePlayerRatings(minCount);
+  const res = await publishSitePlayerRatings(
+    rows.map((r) => ({ gameId: r.gameId, score: playerAverageToRatingScore(r.avgHalfSteps), reviewCount: r.ratingCount })),
+  );
+  return { published: rows.length, ...res };
+}

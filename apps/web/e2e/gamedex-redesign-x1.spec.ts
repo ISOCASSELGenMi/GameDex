@@ -73,7 +73,7 @@ test.describe("月曆：一日一格一款", () => {
   });
 
   test("模糊日期（月精度）在「本月未定日」，不在格子裡；活動有圖示＋文字", async ({ page }) => {
-    await page.goto(calendarUrl("zh-Hant", FIXTURE.month));
+    await page.goto(calendarUrl("zh-Hant", FIXTURE.month, "show=events,releases")); // 月曆預設不顯示活動（Z2B）
     await expect(page.locator("section.undated h2")).toHaveText(msg("zh-Hant", "ui.calendar.undatedThisMonth"));
     await expect(page.locator("section.undated").getByText(FIXTURE.monthPrecision.name)).toBeVisible();
     await expect(page.locator(".cal-grid").getByText(FIXTURE.monthPrecision.name)).toHaveCount(0);

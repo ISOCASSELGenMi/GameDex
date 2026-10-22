@@ -34,6 +34,8 @@ describe("連結", () => {
     expect(platformHref("en", "ps5", 3)).toBe("/en/platforms/ps5?page=3");
     expect(platformHref("en", "ps5", 1, { section: "upcoming", sort: "date" })).toBe("/en/platforms/ps5");
     expect(platformHref("en", "ps5", 2, { section: "recent", sort: "popularity" })).toBe("/en/platforms/ps5?section=recent&sort=popularity&page=2");
+    expect(platformHref("en", "ps5", 1, { section: "all" })).toBe("/en/platforms/ps5?section=all");
+    expect(platformHref("en", "ps5", 3, { section: "all", sort: "name" })).toBe("/en/platforms/ps5?section=all&sort=name&page=3");
     expect(companyHref("en", "nintendo")).toBe("/en/companies/nintendo");
     expect(companyHref("en", "nintendo", 2, { role: "publisher" })).toBe("/en/companies/nintendo?role=publisher&page=2");
     expect(companyHref("en", "nintendo", 1, { role: null })).toBe("/en/companies/nintendo");
@@ -81,6 +83,8 @@ describe("網址參數解析", () => {
     expect(parsePlatformSection("recent")).toBe("recent");
     expect(parsePlatformSection("nope")).toBe("upcoming");
     expect(parsePlatformSection(undefined)).toBe("upcoming");
+    expect(parsePlatformSection("all")).toBe("all");
+    expect(parsePlatformSort("name")).toBe("name");
     expect(parsePlatformSort("popularity")).toBe("popularity");
     expect(parsePlatformSort("x")).toBe("date");
     expect(parseCompanyRole("publisher")).toBe("publisher");

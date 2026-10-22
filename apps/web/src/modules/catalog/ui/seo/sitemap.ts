@@ -110,6 +110,7 @@ export function pageSpecs(input: {
     { path: "/timeline" },
     { path: "/trending" },
     { path: "/games" },
+    { path: "/ratings" },
     { path: "/platforms" },
     { path: "/events" },
     { path: "/subscribe" },

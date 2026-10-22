@@ -1,13 +1,14 @@
 import { sql } from "drizzle-orm";
 import type { DbOrTx } from "@/kernel/db/client";
-import { SUGGEST_CANDIDATE_POOL, SUGGEST_PLATFORM_MAX, type GameSuggestion, type ImageResolver } from "../domain/entities";
+import { SUGGEST_CANDIDATE_POOL, SUGGEST_EXACT_PROBE, SUGGEST_PLATFORM_MAX, type GameSuggestion, type ImageResolver } from "../domain/entities";
 import { withReadTimeout } from "./read-tx";
 
 /**
  * 搜尋候選（打字時的下拉清單）。查詢字串已經 tokenizeForSearch（呼叫端做）；比對方式與瀏覽頁搜尋相同
  * （≥ 2 字元用 trigram `<%`，1 字元用 ILIKE）。排序：名稱完全符合 → 名稱開頭符合 → 熱度。
  * 效能：先取「符合者中熱度最高的 SUGGEST_CANDIDATE_POOL 筆」，只對這些算顯示名稱（games.display_names 是 TOAST 的 jsonb，對全部符合列解開要 2 秒以上），
- * 再排序；所以「完全符合優先」只在這個候選池內生效（常見短字如 the 符合數萬筆時，熱度更低的完全符合者不在池內）。
+ * 再排序。熱度較低、不在候選池內的「名稱完全相同」者，另用 games_lower_name_prefix_idx（lower(name) = 輸入）補進候選（最多 SUGGEST_EXACT_PROBE 筆），
+ * 所以像 z 這種符合數萬筆的短字，名稱剛好是 Z 的遊戲仍會排第一。顯示名稱（非原名）完全相同但不在池內的仍不保證（沒有索引，量測見 Z2B 報告）。
  * `exact` 是 NFKC＋小寫後的原始輸入（不經 bigram 拆字），用來和 games.name／顯示名稱比對。
  */
 
@@ -51,11 +52,12 @@ export async function suggestGames(q: SuggestGamesQuery, resolveImage: ImageReso
                FROM game_platforms gp JOIN platforms pl ON pl.id = gp.platform_id
                WHERE gp.game_id = g.id AND pl.kind <> 'mobile'
                ORDER BY pl.name, pl.id LIMIT ${SUGGEST_PLATFORM_MAX}) p) AS platforms
-          FROM (
-            SELECT * FROM games g WHERE ${match}
-            ORDER BY g.popularity_score DESC, g.id ASC
-            LIMIT ${SUGGEST_CANDIDATE_POOL}
-          ) g
+          FROM games g
+          JOIN (
+            (SELECT g.id FROM games g WHERE ${match} ORDER BY g.popularity_score DESC, g.id ASC LIMIT ${SUGGEST_CANDIDATE_POOL})
+            UNION
+            (SELECT g.id FROM games g WHERE lower(g.name) = ${q.exact} ORDER BY g.popularity_score DESC, g.id ASC LIMIT ${SUGGEST_EXACT_PROBE})
+          ) pool ON pool.id = g.id
           ORDER BY (CASE WHEN ${exactCond} THEN 0 WHEN ${prefixCond} THEN 1 ELSE 2 END) ASC, g.popularity_score DESC, g.id ASC
           LIMIT ${Math.max(1, Math.min(q.limit, 50))}`)
       ).rows,

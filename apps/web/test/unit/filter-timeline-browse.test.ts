@@ -24,9 +24,9 @@ describe("filter-mapping（3b）", () => {
     });
   });
 
-  it("filterSpecToReadQuery：year 優先、yearFrom>yearTo 對調、show 預設兩者、sort 預設 popularity", () => {
+  it("filterSpecToReadQuery：year 優先、yearFrom>yearTo 對調、show 預設只有遊戲、sort 預設 popularity", () => {
     const q1 = filterSpecToReadQuery(parseFilterSpec({ year: "2024", yearFrom: "2000", region: "jp", q: "zelda" }).filter);
-    expect(q1).toMatchObject({ yearFrom: 2024, yearTo: 2024, regionPref: "JP", q: "zelda", sort: "popularity", show: { releases: true, events: true } });
+    expect(q1).toMatchObject({ yearFrom: 2024, yearTo: 2024, regionPref: "JP", q: "zelda", sort: "popularity", show: { releases: true, events: false } });
     const q2 = filterSpecToReadQuery(parseFilterSpec({ yearFrom: "2025", yearTo: "2020", show: "events", sort: "name", from: "2026-01-01" }).filter);
     expect(q2).toMatchObject({ yearFrom: 2020, yearTo: 2025, sort: "name", from: "2026-01-01", show: { releases: false, events: true } });
   });

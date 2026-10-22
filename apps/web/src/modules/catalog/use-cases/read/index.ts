@@ -27,3 +27,15 @@ export { getHomeDashboard, type GetHomeDashboardInput } from "./get-home-dashboa
 export { getCalendarDay, type GetCalendarDayInput, type CalendarDay } from "./get-calendar-day";
 // GameDex 第 3 段（X2）：時間軸一週
 export { getTimelineWeek, type GetTimelineWeekInput, type TimelineWeek, type TimelineWeekDay } from "./get-timeline-week";
+// GameDex 第 2 輪（Z2B）：評分排名
+export { getRatingsRanking, getRatingColumns, type GetRatingsRankingInput } from "./get-ratings-ranking";
+// GameDex 第 2 輪（Z2A）：瀏覽頁分組檢視（依日期／平台／廠商）
+export {
+  getGameGroups,
+  getGameGroupPage,
+  platformColumnRanks,
+  isGroupKey,
+  type GetGameGroupsInput,
+  type GetGameGroupPageInput,
+  type GameGroups,
+} from "./get-game-groups";

@@ -1,6 +1,6 @@
 import { getCoreEnv } from "@/kernel/config/env";
 import type { ModuleManifestBase } from "@/kernel/modules/types";
-import type { GameFilterProvider, PopularitySignal } from "./domain/entities";
+import type { GameFilterProvider, PopularitySignal, RatingColumn } from "./domain/entities";
 import { getCatalogExtensions } from "./extensions";
 import { getIgdbProvider } from "./providers/igdb";
 import { backfillGames, parseBackfillArgs } from "./use-cases/sync/backfill-games";
@@ -24,6 +24,8 @@ export interface CatalogExtensions {
   ratingProviders?: unknown[];
   popularitySignals?: PopularitySignal[];
   gameFilters?: GameFilterProvider[];
+  /** 評分排名頁（/ratings）的額外分數欄；模組停用時欄位與 `sort=<id>` 一併消失。 */
+  ratingColumns?: RatingColumn[];
 }
 
 export type ModuleManifest = ModuleManifestBase & CatalogExtensions;

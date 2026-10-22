@@ -200,7 +200,8 @@ test.describe("玩家平均（詳情頁 game.sections）", () => {
     await page.goto(gameUrl("zh-Hant", FIXTURE.monthPrecision.slug));
     await expect(page.getByText(m("zh-Hant", "playerRating.notEnough"))).toBeVisible();
     await expect(page.getByTestId("player-rating-avg")).toHaveCount(0);
-    expect(await page.content()).not.toContain("123");
+    // 只檢查玩家平均區本身（整頁 HTML 的 flight 資料會碰巧含有 "123"）
+    expect(await page.locator("[data-player-rating]").innerText()).not.toContain("123");
     const none = page.waitForResponse((r) => r.url().includes("/api/v1/player-ratings/"));
     await page.goto(gameUrl("zh-Hant", "e2e-aurora-prequel"));
     await none;

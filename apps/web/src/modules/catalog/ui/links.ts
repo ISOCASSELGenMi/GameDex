@@ -3,6 +3,7 @@
  */
 import { filterSpecToQueryString, type FilterSpec } from "@sok/api-contract";
 import { localeSelfName, type Locale } from "@sok/i18n";
+import type { GameGroupBy } from "../domain/entities/game-groups";
 import { formatMonthParam, type YearMonth } from "./month";
 
 /** 去掉語系前綴後的路徑，一律以 `/` 開頭（`/calendar/2026-10`）；根目錄為 `/`。 */
@@ -65,7 +66,7 @@ export function platformHref(
   locale: Locale,
   slug: string,
   page?: number,
-  opts: { section?: "upcoming" | "recent"; sort?: "date" | "popularity" } = {},
+  opts: { section?: "upcoming" | "recent" | "all"; sort?: "date" | "popularity" | "name" } = {},
 ): string {
   const extra: string[] = [];
   if (opts.section && opts.section !== "upcoming") extra.push(`section=${opts.section}`);
@@ -114,11 +115,16 @@ export function eventHref(locale: Locale, slug: string): string {
 
 /**
  * 遊戲瀏覽／搜尋 `/games`。篩選參數（含 q、sort；順序同 FILTER_PARAMS）在前，`page`（第 1 頁不寫入）在後，
- * 與 proxy 的正規形式一致。
+ * 與 proxy 的正規形式一致。`by`（分組檢視；none 不寫入）依名稱排序在 `page` 前。
  */
-export function gamesBrowseHref(locale: Locale, filter: FilterSpec = {}, page = 1): string {
-  const q = [filterSpecToQueryString(filter), page > 1 ? `page=${Math.floor(page)}` : ""].filter(Boolean).join("&");
+export function gamesBrowseHref(locale: Locale, filter: FilterSpec = {}, page = 1, by: GameGroupBy = "none"): string {
+  const q = [filterSpecToQueryString(filter), by !== "none" ? `by=${by}` : "", page > 1 ? `page=${Math.floor(page)}` : ""].filter(Boolean).join("&");
   return localeHref(locale, "/games", q);
+}
+
+/** 評分排名 `/ratings`；query 為已組好的字串（view-model 的 ratingsQuery）。 */
+export function ratingsHref(locale: Locale, query = ""): string {
+  return localeHref(locale, "/ratings", query);
 }
 
 export interface LanguageLink {

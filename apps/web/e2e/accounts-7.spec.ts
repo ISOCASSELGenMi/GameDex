@@ -108,6 +108,9 @@ test.describe("登入流程", () => {
       await expect(menuButton).toHaveAttribute("aria-expanded", "false");
       await menuButton.click();
       await header(page).getByRole("button", { name: m(locale, "header.signOut") }).click();
+      // 登出後 header 會重新渲染成未登入：等「未登入」的帳號區出現再開下拉，否則下拉會被重新渲染重設而關閉
+      await expect(header(page).locator('[data-account-slot="anonymous"]')).toHaveCount(1);
+      await page.waitForLoadState("networkidle");
       await expect(await signInLink(page, locale)).toBeVisible();
       await expect(header(page).getByRole("button", { name: m(locale, "header.menu", { name }) })).toHaveCount(0);
     }

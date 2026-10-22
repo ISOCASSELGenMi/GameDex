@@ -21,3 +21,5 @@ export const SUGGEST_LIMIT_MAX = 10;
 export const SUGGEST_PLATFORM_MAX = 3;
 /** 排序前的候選池：符合者中熱度最高的前 N 筆（見 repository/game-suggest.ts）。 */
 export const SUGGEST_CANDIDATE_POOL = 120;
+/** 名稱完全相同（lower(games.name) = 輸入）者另外用索引直接找，不論熱度高低都進候選（games_lower_name_prefix_idx）。 */
+export const SUGGEST_EXACT_PROBE = 10;

@@ -260,6 +260,7 @@ async function readDetail(tx: DbOrTx, q: GameDetailQuery): Promise<GameDetail | 
     SELECT r.score_provider, r.score_type, r.score, COALESCE(r.score_max, 100) AS score_max, r.review_count,
       r.platform_id, r.source_url
     FROM ratings r WHERE r.game_id = ${id} AND r.score IS NOT NULL
+      AND r.score_provider::text <> 'site_players' -- 站內玩家平均走 accounts 的 game.sections（06）；ratings 裡這列只給評分排名頁用
     ORDER BY r.id
   `);
 

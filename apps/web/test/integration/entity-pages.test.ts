@@ -204,6 +204,39 @@ describe.skipIf(!enabled)("平台／公司／系列頁（整合）", () => {
     expect(page!.games.items.map((g) => g.slug)).toEqual(["h3b-830005", "h3b-830006"]);
   });
 
+  it("getPlatformPage all（Z2B）：過往＋未來＋日期未定都列，新到舊、未定最後；排除項（rumored、DLC、取消、beta、別的平台）不列", async () => {
+    const page = await getPlatformPage({ slug: "h3b-console", locale: "en", today: TODAY, section: "all" });
+    expect(page!.section).toBe("all");
+    expect(page!.games.items.map((g) => [g.slug, g.date, g.precision])).toEqual([
+      ["h3b-830002", "2041-08-01", "day"],
+      ["h3b-830001", "2041-07-01", "day"],
+      ["h3b-830003", "2041-06-15", "day"],
+      ["h3b-830005", "2041-06-10", "day"],
+      ["h3b-830004", "2041-06-01", "month"],
+      ["h3b-830006", "2041-04-01", "day"],
+      ["h3b-830007", "2040-01-01", "day"],
+      ["h3b-830015", null, "tbd"],
+    ]);
+  });
+
+  it("getPlatformPage all：熱度排序、名稱排序（日期未定同樣在內）、分頁不重複不遺漏", async () => {
+    const pop = await getPlatformPage({ slug: "h3b-console", locale: "en", today: TODAY, section: "all", sort: "popularity" });
+    expect(pop!.games.items.slice(0, 3).map((g) => g.slug)).toEqual(["h3b-830002", "h3b-830006", "h3b-830005"]);
+    const name = await getPlatformPage({ slug: "h3b-console", locale: "en", today: TODAY, section: "all", sort: "name" });
+    expect(name!.sort).toBe("name");
+    const names = name!.games.items.map((g) => g.name.toLowerCase());
+    expect(names).toEqual([...names].sort());
+    const seen: string[] = [];
+    for (let offset = 0; offset < 8; offset += 3) {
+      const pg = await getPlatformPage({ slug: "h3b-console", locale: "en", today: TODAY, section: "all", limit: 3, offset });
+      seen.push(...pg!.games.items.map((g) => g.slug));
+      expect(pg!.games.hasMore).toBe(offset + 3 < 8);
+    }
+    expect(seen).toHaveLength(8);
+    expect(new Set(seen).size).toBe(8);
+    expect(seen[7]).toBe("h3b-830015");
+  });
+
   it("getPlatformPage：不存在／mobile → null；未知 section/sort → 預設", async () => {
     expect(await getPlatformPage({ slug: "h3b-nope", locale: "en", today: TODAY })).toBeNull();
     expect(await getPlatformPage({ slug: "h3b-phone", locale: "en", today: TODAY })).toBeNull();

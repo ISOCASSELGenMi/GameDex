@@ -20,7 +20,8 @@ export type PlatformKind = (typeof PLATFORM_KINDS)[number];
 export const PLATFORM_STATUSES = ["announced", "active", "discontinued"] as const;
 export type PlatformStatus = (typeof PLATFORM_STATUSES)[number];
 
-export const SCORE_PROVIDERS = ["igdb", "opencritic", "metacritic_scrape"] as const;
+/** site_players：站內玩家平均（accounts 排程寫入 ratings；只給評分排名頁用，詳情頁不從 ratings 讀）。 */
+export const SCORE_PROVIDERS = ["igdb", "opencritic", "metacritic_scrape", "site_players"] as const;
 export type ScoreProvider = (typeof SCORE_PROVIDERS)[number];
 
 export const GAME_COMPANY_ROLES = ["developer", "publisher", "porting", "supporting"] as const;

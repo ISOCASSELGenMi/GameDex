@@ -2,7 +2,7 @@
  * 遊玩紀錄（play_records）與玩家平均（game_player_ratings）的查詢與寫入（09 §遊玩紀錄）。
  * 玩家平均的彙整是單一 SQL（refreshPlayerRatings）：全量重算、一個 statement 內完成 upsert 與刪除。
  */
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, gte, isNotNull, sql } from "drizzle-orm";
 import { getDb } from "@/kernel/db/client";
 import { FINISHED_STATUSES, PLAY_STATUSES, type PlayStatus, type PlayStatsView, type ReviewVisibility } from "../domain/entities/play-records";
 import { gamePlayerRatings, playRecords, users } from "../schema";
@@ -125,6 +125,15 @@ export async function findPlayerRating(gameId: number): Promise<PlayerRatingRow 
   const [row] = await getDb().select().from(gamePlayerRatings).where(eq(gamePlayerRatings.gameId, gameId)).limit(1);
   if (!row) return null;
   return { ratingCount: row.ratingCount, avgHalfSteps: row.avgHalfSteps === null ? null : Number(row.avgHalfSteps), avgPlayMinutes: row.avgPlayMinutes, playMinutesCount: row.playMinutesCount };
+}
+
+/** 達人數門檻、有平均的遊戲（評分排名頁 players 欄的來源）。avgHalfSteps 為 0.5 分一格的平均。 */
+export async function listPublishablePlayerRatings(minCount: number): Promise<Array<{ gameId: number; avgHalfSteps: number; ratingCount: number }>> {
+  const rows = await getDb()
+    .select({ gameId: gamePlayerRatings.gameId, avg: gamePlayerRatings.avgHalfSteps, count: gamePlayerRatings.ratingCount })
+    .from(gamePlayerRatings)
+    .where(and(gte(gamePlayerRatings.ratingCount, minCount), isNotNull(gamePlayerRatings.avgHalfSteps)));
+  return rows.map((r) => ({ gameId: r.gameId, avgHalfSteps: Number(r.avg), ratingCount: r.count }));
 }
 
 /**

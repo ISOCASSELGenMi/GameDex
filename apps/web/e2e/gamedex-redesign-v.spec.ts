@@ -69,7 +69,7 @@ test.describe("活動時間：一行本地時間＋時區縮寫（不再有 UTC 
     await expect(row.locator('[data-event-time="local"]')).toContainText("May 13, 2036");
     await expect(row.locator('[data-event-time="local"]')).toContainText("GMT+9");
     await expect(row.locator('[data-event-time="utc"]')).toHaveCount(0);
-    await page.goto("/en/calendar/2036-05");
+    await page.goto("/en/calendar/2036-05?show=events,releases"); // 月曆預設不顯示活動（Z2B）
     const cal = page.locator(".ev").filter({ hasText: "E2E Showcase 2036" }).first();
     await expect(cal.locator('[data-event-time="local"]').first()).toContainText("GMT+9");
     await page.goto(`/en/games/${FIXTURE.hero.slug}`);
@@ -116,10 +116,12 @@ test.describe("活動時間：UTC 瀏覽器", () => {
 
 test.describe("站名 GameDex", () => {
   for (const locale of LOCALES) {
-    test(`${locale}：header 品牌與 <title>`, async ({ page }) => {
-      await page.goto(`/${locale}/platforms`);
+    test(`${locale}：header 品牌（依區塊切換，Z2A）與 <title>（站名不變）`, async ({ page }) => {
       expect(msg(locale, "ui.site.name")).toBe(SITE_NAMES[locale]);
-      await expect(page.getByRole("banner").getByRole("link", { name: SITE_NAMES[locale], exact: true })).toBeVisible();
+      await page.goto(`/${locale}`);
+      await expect(page.getByRole("banner").getByRole("link", { name: "GameDex", exact: true })).toBeVisible();
+      await page.goto(`/${locale}/platforms`);
+      await expect(page.getByRole("banner").getByRole("link", { name: "GamePlat", exact: true })).toBeVisible();
       expect(await page.title()).toContain(SITE_NAMES[locale]);
       expect(await page.content()).not.toContain("SoK 遊戲月曆");
     });

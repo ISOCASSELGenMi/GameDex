@@ -12,7 +12,7 @@ const MOBILE = { width: 375, height: 812 };
 
 test.describe("導覽列（header 的導覽下拉）", () => {
   for (const locale of LOCALES) {
-    test(`七個入口都在、連到對應頁、當前頁 aria-current（${locale}）`, async ({ page }) => {
+    test(`八個入口都在、連到對應頁、當前頁 aria-current（${locale}）`, async ({ page }) => {
       await page.goto(`/${locale}/calendar/${FIXTURE.month}`);
       const items: [string, RegExp][] = [
         ["ui.nav.home", new RegExp(`/${locale}$`)],
@@ -22,6 +22,7 @@ test.describe("導覽列（header 的導覽下拉）", () => {
         ["ui.nav.games", /\/games$/],
         ["ui.nav.platforms", /\/platforms$/],
         ["ui.nav.events", /\/events$/],
+        ["ui.nav.ratings", /\/ratings/],
       ];
       let nav = await openMainNav(page, locale);
       await expect(nav.getByRole("link")).toHaveCount(items.length);
@@ -67,11 +68,11 @@ test.describe("導覽列（header 的導覽下拉）", () => {
     await expect((await openMainNav(page, "en")).getByRole("link", { name: msg("en", "ui.nav.games") })).not.toHaveAttribute("aria-current", "page");
   });
 
-  test("手機 375 寬：七個入口都完整在視窗內、觸控目標 >= 44px、頁面不水平捲動", async ({ page }) => {
+  test("手機 375 寬：八個入口都完整在視窗內、觸控目標 >= 44px、頁面不水平捲動", async ({ page }) => {
     await page.setViewportSize(MOBILE);
     await page.goto("/en/games");
     const links = (await openMainNav(page, "en")).getByRole("link");
-    await expect(links).toHaveCount(7);
+    await expect(links).toHaveCount(8);
     await expect(links.first()).toBeVisible();
     for (const link of await links.all()) {
       const box = await link.boundingBox();

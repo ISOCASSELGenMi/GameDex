@@ -14,8 +14,10 @@ export interface GetCalendarMonthInput {
   regionPref?: string | null;
   /** games.displayNames 的語系鍵（zh-Hant、en、ja）。 */
   locale: string;
-  /** 是否查活動（`show=releases,events`）；預設 true。 */
+  /** 是否查活動（`show=events`）；預設 true。關掉時完全不查活動、也不會出現在結果裡。 */
   includeEvents?: boolean;
+  /** 是否查遊戲上市；預設 true。關掉（只看活動）時不查上市資料。 */
+  includeReleases?: boolean;
 }
 
 const PRECISION_RANK: Record<DatePrecision, number> = { day: 0, month: 1, quarter: 2, year: 3, tbd: 4 };
@@ -36,7 +38,9 @@ export async function getCalendarMonth(input: GetCalendarMonthInput): Promise<Ca
   const nextMonthStart = new Date(Date.UTC(input.year, input.month, 1));
 
   const [cards, events] = await Promise.all([
-    aggregateReleases({ from: first, to: last, filter, regionPref, locale: input.locale, resolveImage: resolveImageRef }),
+    input.includeReleases === false
+      ? Promise.resolve([] as ReleaseCard[])
+      : aggregateReleases({ from: first, to: last, filter, regionPref, locale: input.locale, resolveImage: resolveImageRef }),
     input.includeEvents === false ? Promise.resolve([]) : listEventsInRange({ from: monthStart, to: nextMonthStart, resolveImage: resolveImageRef }),
   ]);
 

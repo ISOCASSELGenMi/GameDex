@@ -15,7 +15,7 @@ import { HeaderRightOutlet } from "./header-right";
 import { FollowingLanguageMenu } from "./following-language-menu";
 import { LanguageMenu } from "./language-menu";
 import { FollowingNavMenu, NavMenu } from "./nav-menu";
-import { navItems } from "./nav-items";
+import { brandOfPath, DEFAULT_BRAND, navItems } from "./nav-items";
 import { orgLink } from "./org-link";
 import { ThemeMenu } from "./theme-menu";
 
@@ -63,8 +63,9 @@ export function PageShell({ locale, supportedLocales, path, query = "", followPa
               </a>
             ) : null}
             <a href={localeHref(locale, "/")} className="hd-brand" data-site-brand="">
-              <span className="hd-brand-full">{t.t("ui.site.name")}</span>
-              <span className="hd-brand-short">{t.t("ui.site.shortName")}</span>
+              <span className="hd-brand-text" lang="en">
+                {followPathname ? DEFAULT_BRAND : brandOfPath(path)}
+              </span>
             </a>
             {followPathname ? <FollowingNavMenu {...navProps} /> : <NavMenu {...navProps} currentPath={path} />}
           </div>

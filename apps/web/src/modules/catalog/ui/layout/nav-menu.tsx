@@ -25,7 +25,7 @@ export function NavMenu({ items, currentPath, label, navLabel, footer }: NavMenu
         <ul className="dd-list">
           {items.map((item) => (
             <li key={item.path}>
-              <a href={item.href} className="dd-item" aria-current={isCurrentNav(item, currentPath) ? "page" : undefined}>
+              <a href={item.href} className="dd-item" data-brand={item.brand} aria-current={isCurrentNav(item, currentPath) ? "page" : undefined}>
                 {item.label}
               </a>
             </li>

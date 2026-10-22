@@ -208,12 +208,12 @@ describe("擴充點收集（registry）", () => {
     expect(on.popularitySignals.map((s) => s.name)).toEqual(["site_follows", "site_follows_7d"]);
     expect(on.gameFilters.map((f) => f.dimension)).toEqual(["mine"]);
     expect(accountsModule.popularitySignals).toHaveLength(2);
-    expect(collectCatalogExtensions(enabledModules({ MODULES: "none" }))).toEqual({ popularitySignals: [], gameFilters: [] });
+    expect(collectCatalogExtensions(enabledModules({ MODULES: "none" }))).toEqual({ popularitySignals: [], gameFilters: [], ratingColumns: [] });
   });
 
   it("catalog 的執行期擴充點：沒注入＝空；mine 值沒有提供者處理 → null", async () => {
     setCatalogExtensions({});
-    expect(getCatalogExtensions()).toEqual({ popularitySignals: [], gameFilters: [] });
+    expect(getCatalogExtensions()).toEqual({ popularitySignals: [], gameFilters: [], ratingColumns: [] });
     expect(await resolveMineGameIds(1, "followed")).toBeNull();
     setCatalogExtensions({
       gameFilters: [{ dimension: "mine", handles: (v) => v === "followed", resolve: async () => [7, 8] }],

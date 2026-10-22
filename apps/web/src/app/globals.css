@@ -29,6 +29,7 @@
   --accent-2: #7c3aed;
   --warn: #92400e;
   --danger: #b91c1c;
+  --up: #166534;
   --today: #dbe6ff;
   --focus: #1d4ed8;
 
@@ -83,6 +84,7 @@
   --accent-2: #c4b5fd;
   --warn: #fcd34d;
   --danger: #fca5a5;
+  --up: #86efac;
   --today: #1e3a8a;
   --focus: #8fb4ff;
 
@@ -112,6 +114,7 @@
     --accent-2: #c4b5fd;
     --warn: #fcd34d;
     --danger: #fca5a5;
+    --up: #86efac;
     --today: #1e3a8a;
     --focus: #8fb4ff;
 
@@ -1924,8 +1927,21 @@ button.sheet-entry:hover {
   font-weight: 700;
   white-space: nowrap;
 }
-.hd-brand-short {
-  display: none;
+/* 品牌文字依頁面區塊切換（Holodex 式）：換頁後短暫淡入，帶一點模糊遮蓋字形切換；只動 opacity／filter，reduced-motion 直接切換 */
+.hd-brand-text {
+  display: inline-block;
+  animation: hd-brand-in 150ms var(--ease-out) both;
+}
+@keyframes hd-brand-in {
+  from {
+    opacity: 0;
+    filter: blur(2px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hd-brand-text {
+    animation: none;
+  }
 }
 .hd-right {
   display: flex;
@@ -1959,11 +1975,22 @@ button.sheet-entry:hover {
     padding-inline: 0.25rem;
     font-size: 1rem;
   }
-  .hd-brand-full {
-    display: none;
+}
+/* 320px：右側三個圖示＋搜尋圖示＋導覽鈕共約 220px，品牌文字（最長 GameCalendar／GameTimeline）要縮小並可截斷，不能把頁面撐寬 */
+@media (max-width: 359px) {
+  .hd-left {
+    flex: 0 1 auto;
+    gap: 0;
   }
-  .hd-brand-short {
-    display: inline;
+  .hd-brand {
+    min-width: 0;
+    padding-inline: 0.125rem;
+    font-size: 0.8125rem;
+  }
+  .hd-brand-text {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 
@@ -2044,6 +2071,16 @@ button.sheet-entry:hover {
   right: 0;
   transform-origin: top right;
 }
+/* 窄螢幕的導覽下拉（項目帶品牌小字，比觸發按鈕右側的空間寬）：貼著視窗左邊展開，不被切到螢幕外 */
+@media (max-width: 479px) {
+  [data-dropdown="nav"] {
+    position: static;
+  }
+  [data-dropdown="nav"] > .dd-panel {
+    left: 0.5rem;
+    min-width: min(16rem, calc(100vw - 1rem));
+  }
+}
 .dd-panel[data-open="true"] {
   visibility: visible;
   opacity: 1;
@@ -2097,6 +2134,18 @@ button.sheet-entry:hover {
 }
 .dd-item:active {
   background: var(--surface-strong);
+}
+/* 導覽項目右側的小字品牌名（CSS 產生的內容：不進文字內容，可及名稱仍會唸出） */
+.dd-item[data-brand]::before {
+  content: attr(data-brand) / ""; /* 替代文字為空：品牌小字只是視覺輔助，不進可及名稱（名稱就是項目文字） */
+  order: 1;
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+.dd-item[data-brand]::after {
+  order: 2;
 }
 .dd-item:disabled {
   opacity: 0.6;
@@ -2460,5 +2509,469 @@ a.card:hover {
   .tw-kind:active,
   .filter-chip:active {
     transform: scale(0.97);
+  }
+}
+
+/* ── 瀏覽頁分組檢視 /games?by=…（GameDex 第 2 輪 Z2A）：每組一個區塊，封面為主角的卡片格。前綴 rc- ───────── */
+.rc-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+/* 分組切換（radio group）：方角分段控制，不用膠囊 */
+.rc-switch {
+  display: inline-flex;
+  flex-wrap: wrap;
+  max-width: 100%;
+  margin: 0;
+  padding: 3px;
+  gap: 2px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  min-inline-size: 0;
+}
+.rc-switch-item {
+  position: relative;
+  display: inline-flex;
+  min-width: 0;
+}
+.rc-switch-item input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 1; /* 透明的 radio 蓋在分段按鈕上面，點哪裡都是點到 radio 本身 */
+}
+.rc-switch-item span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 0.9rem;
+  border-radius: calc(var(--radius-md) - 3px);
+  font-weight: 600;
+  transition:
+    background-color var(--dur-1) ease,
+    color var(--dur-1) ease,
+    transform var(--dur-1) var(--ease-out);
+}
+@media (max-width: 479px) {
+  .rc-switch-item span {
+    padding: 0 0.65rem;
+  }
+}
+.rc-switch-item input:checked + span {
+  background: var(--link);
+  color: var(--on-link);
+}
+.rc-switch-item input:focus-visible + span {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+.rc-switch-item input:active + span {
+  transform: scale(0.97);
+}
+@media (hover: hover) and (pointer: fine) {
+  .rc-switch-item input:not(:checked):hover + span {
+    background: var(--surface-strong);
+  }
+}
+.rc-noscript {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rc-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-top: 1rem;
+  animation: rc-in var(--dur-2) var(--ease-out) both;
+}
+.rc-group {
+  min-width: 0;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--panel);
+  box-shadow: var(--shadow-1);
+}
+.rc-group-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.2rem 0.75rem;
+  margin: 0 0 0.75rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.rc-count {
+  color: var(--muted);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.rc-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+/* 封面卡片：封面滿版，名稱與平台疊在底部的深色漸層上（白字不依賴主題色） */
+.rc-card-link {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  aspect-ratio: 3 / 4;
+  border-radius: var(--radius-md);
+  background: #1b1f3a;
+  box-shadow: var(--shadow-1);
+  color: #fff;
+  text-decoration: none;
+  transition: transform var(--dur-2) var(--ease-out);
+}
+.rc-card-link:active {
+  transform: scale(0.97);
+}
+@media (hover: hover) and (pointer: fine) {
+  .rc-card-link:hover {
+    transform: translateY(-3px);
+  }
+  .rc-card-link:hover:active {
+    transform: scale(0.97);
+  }
+}
+.rc-cover {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  color: transparent;
+}
+.rc-cover-empty {
+  background: linear-gradient(150deg, #243b6b, #1b1f3a);
+}
+.rc-info {
+  position: absolute;
+  inset: auto 0 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 1.75rem 0.5rem 0.5rem;
+  background: linear-gradient(to top, var(--scrim) 60%, transparent);
+}
+.rc-name {
+  display: -webkit-box;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.2;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+.rc-meta {
+  color: #e5e7eb;
+  font-size: 0.75rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.rc-tag {
+  align-self: flex-start;
+  padding: 0 0.35rem;
+  border: 1px solid rgb(255 255 255 / 0.4);
+  border-radius: var(--radius-sm);
+  background: rgb(255 255 255 / 0.16);
+  color: #fff;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.rc-more {
+  margin-top: 0.75rem;
+}
+.rc-error {
+  margin: 0.5rem 0 0;
+  color: var(--danger);
+  font-size: 0.8125rem;
+}
+/* 換月／換分組時整排淡入；「顯示更多」新增的卡片淡入（鍵盤操作時 data-instant 不做動畫）。只動 opacity */
+@keyframes rc-in {
+  from {
+    opacity: 0;
+  }
+}
+.rc-list:not([data-instant]) > .rc-card[data-rc-new] {
+  animation: rc-in var(--dur-1) var(--ease-out) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .rc-card-link,
+  .rc-switch-item span {
+    transform: none !important;
+  }
+}
+
+/* ── 評分排名表（/ratings；Z2B） ─────────────────────────────────────────────────────────────────────
+ * 排序換列的位移動畫（FLIP）在 ratings-table.tsx 用 WAAPI 只動 transform；這裡只管版面與名次升降標示的淡入。
+ * 儲存格一律有不透明底（--panel），位移中的列才不會透出底下的列。 */
+.rk-status {
+  margin: 0 0 0.5rem;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+.rk-wrap {
+  /* relative：容器內的 sr-only（絕對定位）要被這個捲動容器裁切，否則會把整頁撐寬 */
+  position: relative;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--panel);
+  box-shadow: var(--shadow-1);
+}
+.rk-table {
+  width: 100%;
+  min-width: 32rem;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+.rk-table th,
+.rk-table td {
+  padding: 0.5rem 0.75rem;
+  background: var(--panel);
+  text-align: left;
+  vertical-align: middle;
+}
+.rk-table thead th {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.rk-table tbody tr + tr > * {
+  border-top: 1px solid var(--border);
+}
+.rk-th-rank,
+.rk-rank {
+  width: 6.5rem;
+  white-space: nowrap;
+}
+.rk-rank-n {
+  display: inline-block;
+  min-width: 1.75rem;
+  font-weight: 700;
+}
+.rk-delta {
+  display: inline-block;
+  margin-left: 0.25rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1.25rem;
+  transition: opacity 150ms ease-out;
+}
+.rk-delta[data-kind="up"] {
+  color: var(--up);
+}
+.rk-delta[data-kind="down"] {
+  color: var(--danger);
+}
+.rk-delta[data-show="false"] {
+  opacity: 0;
+}
+.rk-th-num,
+.rk-num {
+  min-width: 8rem;
+}
+.rk-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 44px;
+  margin: -0.25rem -0.5rem;
+  padding: 0 0.5rem;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--foreground);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-1) ease,
+    transform var(--dur-1) ease-out;
+}
+.rk-sort[data-active="true"] {
+  color: var(--link);
+}
+.rk-caret {
+  display: inline-block;
+  min-width: 1em;
+  font-size: 0.75rem;
+}
+.rk-sort:active {
+  transform: scale(0.97);
+}
+@media (hover: hover) and (pointer: fine) {
+  .rk-sort:hover {
+    background: var(--surface-strong);
+  }
+  .rk-game-link:hover .rk-title {
+    text-decoration: underline;
+  }
+}
+.rk-game {
+  min-width: 12rem;
+  font-weight: 400;
+}
+.rk-game-link {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: inherit;
+  text-decoration: none;
+}
+.rk-thumb {
+  width: 36px;
+  height: 51px;
+  flex: none;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+}
+.rk-name {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+.rk-title {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.rk-year,
+.rk-count {
+  display: block;
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+.rk-score {
+  display: block;
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+.rk-empty {
+  padding: 1.5rem 0.75rem;
+  color: var(--muted);
+  text-align: center;
+}
+.rk-more {
+  margin: 1rem 0 0;
+  text-align: center;
+}
+.rk-error {
+  margin: 0.75rem 0 0;
+  color: var(--danger);
+  font-weight: 600;
+}
+@media (max-width: 479px) {
+  .rk-table th,
+  .rk-table td {
+    padding: 0.5rem;
+  }
+  .rk-th-rank,
+  .rk-rank {
+    width: 5rem;
+  }
+}
+
+/* ── 月曆「遊戲／活動」顯示開關（Z2B）。方角的開關（不用膠囊）；thumb 只動 transform ───────────────────────── */
+.cal-show {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.cal-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 44px;
+  /* 兩個開關併排的總寬固定在導覽下拉（≥ 11rem，貼著導覽按鈕左緣）蓋得住的範圍內：
+     下拉展開時開關會「整個被蓋住」而不是露出一小截（axe target-size 會把露出不到 24px 的部分判為違規）。 */
+  min-width: 8.5rem;
+  padding: 0 0.875rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--panel);
+  box-shadow: var(--shadow-1);
+  color: var(--foreground);
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-1) ease,
+    border-color var(--dur-1) ease,
+    transform var(--dur-1) ease-out;
+}
+.cal-switch:active {
+  transform: scale(0.97);
+}
+.cal-switch[aria-disabled="true"] {
+  cursor: default;
+}
+.cal-switch-track {
+  position: relative;
+  flex: none;
+  width: 2.25rem;
+  height: 1.25rem;
+  border: 1px solid var(--muted);
+  border-radius: var(--radius-sm);
+  background: var(--surface-strong);
+  transition: background-color var(--dur-1) ease;
+}
+.cal-switch-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: calc(1.25rem - 6px);
+  height: calc(1.25rem - 6px);
+  border-radius: 3px;
+  background: var(--muted);
+  transition:
+    transform var(--dur-1) var(--ease-out),
+    background-color var(--dur-1) ease;
+}
+.cal-switch[aria-checked="true"] .cal-switch-track {
+  border-color: var(--link);
+  background: var(--link);
+}
+.cal-switch[aria-checked="true"] .cal-switch-thumb {
+  background: var(--on-link);
+  transform: translateX(1rem);
+}
+@media (hover: hover) and (pointer: fine) {
+  a.cal-switch:hover {
+    border-color: var(--link);
+    background: var(--surface);
+  }
+}
+/* 切換開關換頁時（ShowSwitches 在 pageswap 加上 cal-toggle）：月曆本體只做 120ms 淡入，不用換月的 380ms 浮入；舊畫面留在底下直到淡入完成 */
+@media (prefers-reduced-motion: no-preference) {
+  :root:active-view-transition-type(cal-toggle)::view-transition-old(cal-grid) {
+    animation: none;
+  }
+  :root:active-view-transition-type(cal-toggle)::view-transition-new(cal-grid) {
+    animation: vt-fade-in 120ms ease-out both;
+  }
+  @keyframes vt-fade-in {
+    from {
+      opacity: 0;
+    }
   }
 }

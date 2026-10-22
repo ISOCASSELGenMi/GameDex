@@ -25,3 +25,5 @@ export * from "./follow-target";
 export * from "./game-filter";
 export * from "./my-games";
 export * from "./home";
+export * from "./game-groups";
+export * from "./ratings-ranking";

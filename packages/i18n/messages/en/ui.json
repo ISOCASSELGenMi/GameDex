@@ -14,7 +14,8 @@
     "platforms": "Platforms",
     "events": "Events",
     "trending": "Trending",
-    "home": "Home"
+    "home": "Home",
+    "ratings": "Ratings"
   },
   "language": {
     "menuLabel": "Language",
@@ -72,7 +73,12 @@
     "noItemsThisMonth": "No releases or events this month",
     "undatedGroupTitle": "{group}: {label}",
     "dayLoadError": "Could not load the other games for this day. Please try again later.",
-    "dayRetry": "Retry"
+    "dayRetry": "Retry",
+    "switchGames": "Games",
+    "switchEvents": "Events",
+    "showLegend": "Show",
+    "showAtLeastOne": "At least one kind must stay on, so the last switch that is on cannot be turned off.",
+    "noEvents": "No events match this month"
   },
   "game": {
     "sections": {
@@ -247,7 +253,26 @@
     "otherPage": "This page has no results.",
     "viewAll": "View all",
     "viewAllFranchise": "View all works in “{name}”",
-    "viewCompany": "View works by “{name}”"
+    "viewCompany": "View works by “{name}”",
+    "groupBy": "Group by",
+    "by": {
+      "none": "No grouping",
+      "date": "By date",
+      "platform": "By platform",
+      "publisher": "By publisher"
+    },
+    "groupCount": "{count} games",
+    "groupsRange": "Showing groups {from}–{to}",
+    "groupsLabel": "Grouped games",
+    "groupMore": "Show more ({count} more)",
+    "groupLoading": "Loading…",
+    "groupLoadError": "Could not load. Please try again later.",
+    "groupLoaded": "Loaded {count} more games",
+    "groupNote": {
+      "date": "Grouped by first release date. Group order follows the sort (oldest first when sorting by release date, newest first otherwise); undated games come last. Each group shows a few games first.",
+      "platform": "Grouped by platform (mobile excluded). A game appears in each of its platform groups. Each group shows a few games first.",
+      "publisher": "Only major publishers get their own group; everything else is Indie & Other. A game is placed in one group, developer first. Each group shows a few games first."
+    }
   },
   "langSupport": {
     "language": "Language",
@@ -283,6 +308,10 @@
     "recentHint": "Games released on this platform in the last 90 days.",
     "emptyUpcoming": "No upcoming games on this platform",
     "emptyRecent": "No recent releases on this platform",
+    "all": "All games",
+    "sortName": "Name",
+    "allHint": "Every known game on this platform (released, upcoming and date TBD), newest first by default; games without a date come last.",
+    "emptyAll": "No games on this platform yet",
     "subscribeFeed": "Subscribe to this platform’s calendar"
   },
   "companies": {
@@ -532,5 +561,38 @@
     "count": "{n} suggestions",
     "error": "Suggestions are unavailable right now",
     "siteLabel": "Site search"
+  },
+  "ratings": {
+    "title": "Ratings ranking",
+    "intro": "Games ranked by IGDB critic score and the site players' average. Select a column heading to sort by it; select it again to reverse the order.",
+    "col": {
+      "igdb": "IGDB score",
+      "players": "Player average"
+    },
+    "count": {
+      "critics": "{count} reviews",
+      "players": "{count} players"
+    },
+    "rank": "Rank",
+    "game": "Game",
+    "noScore": "No rating yet",
+    "caption": "Game ratings ranking",
+    "regionLabel": "Ratings ranking table (scrolls horizontally)",
+    "status": "{total} games, sorted by {column}, {direction}",
+    "dirDesc": "descending",
+    "dirAsc": "ascending",
+    "loadError": "Could not load the ranking. Please try again later.",
+    "empty": "No games match the minimum votes and filters.",
+    "loaded": "{n} more games loaded",
+    "rankUp": "Moved up {n} (was {prev})",
+    "rankDown": "Moved down {n} (was {prev})",
+    "sortLegend": "Sort",
+    "sortHint": "You can also select a column heading in the table. Rank is always counted from the highest score.",
+    "sortBy": "Sort by",
+    "direction": "Direction",
+    "minVotesLegend": "Minimum votes",
+    "minVotesLabel": "Minimum number for “{column}”",
+    "minVotesHint": "Only games whose “{column}” count reaches this number are listed, so a game with a handful of ratings does not top the list. Leave empty for the default of {default}.",
+    "note": "Rank is counted from the highest score of the sorted column; equal scores share a rank. Rank changes are relative to the previously sorted column. By default the sorted column lists only games with at least {default} ratings; change it in the filters."
   }
 }

@@ -15,7 +15,7 @@ import {
   writeTheme,
 } from "@/kernel/ui/theme";
 import { COMBO_CLOSED, comboKeyDown } from "@/modules/catalog/ui/search/combobox-state";
-import { isCurrentNav, navItems, stripLocalePrefix } from "@/modules/catalog/ui/layout/nav-items";
+import { brandOfPath, isCurrentNav, navItems, stripLocalePrefix } from "@/modules/catalog/ui/layout/nav-items";
 import { searchBoxLabels } from "@/modules/catalog/ui/search/labels";
 
 function fakeStorage(initial: Record<string, string> = {}) {
@@ -172,9 +172,26 @@ describe("導覽下拉", () => {
   const t = createTranslator("en");
   const items = navItems("en", t);
   const current = (path: string) => items.filter((i) => isCurrentNav(i, path)).map((i) => i.path);
-  it("項目是單一陣列，含首頁、月曆、時間軸、熱門、遊戲、平台、活動", () => {
-    expect(items.map((i) => i.path)).toEqual(["/", "/calendar", "/timeline", "/trending", "/games", "/platforms", "/events"]);
+  it("項目是單一陣列，順序為首頁、月曆、時間軸、熱門榜、遊戲、平台、活動、評分，各帶品牌名", () => {
+    expect(items.map((i) => i.path)).toEqual(["/", "/calendar", "/timeline", "/trending", "/games", "/platforms", "/events", "/ratings"]);
+    expect(items.map((i) => i.brand)).toEqual(["GameDex", "GameCalendar", "GameTimeline", "GameTrend", "GameBase", "GamePlat", "GameEvent", "GameRanking"]);
     expect(items[0]!.href).toBe("/en");
+  });
+  it("header 品牌文字：依路徑所屬區塊；子頁面跟隨區塊；其餘用 GameDex", () => {
+    expect(brandOfPath("/")).toBe("GameDex");
+    expect(brandOfPath("/calendar/2026-10")).toBe("GameCalendar");
+    expect(brandOfPath("/timeline")).toBe("GameTimeline");
+    expect(brandOfPath("/trending")).toBe("GameTrend");
+    expect(brandOfPath("/games")).toBe("GameBase");
+    expect(brandOfPath("/games/elden-ring")).toBe("GameBase");
+    expect(brandOfPath("/companies/fromsoftware")).toBe("GameBase");
+    expect(brandOfPath("/franchises/zelda")).toBe("GameBase");
+    expect(brandOfPath("/platforms/ps5")).toBe("GamePlat");
+    expect(brandOfPath("/events/e3")).toBe("GameEvent");
+    expect(brandOfPath("/ratings")).toBe("GameRanking");
+    expect(brandOfPath("/account/lists")).toBe("GameDex");
+    expect(brandOfPath("/about/privacy")).toBe("GameDex");
+    expect(brandOfPath("/subscribe")).toBe("GameDex");
   });
   it("目前頁：首頁只有 / ；/games 不含詳情；其餘依路徑前綴", () => {
     expect(current("/")).toEqual(["/"]);

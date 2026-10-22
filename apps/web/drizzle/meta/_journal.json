@@ -85,6 +85,13 @@
       "when": 1792215756136,
       "tag": "0011_remarkable_maelstrom",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1792691440064,
+      "tag": "0012_ratings_rank_suggest_idx",
+      "breakpoints": true
     }
   ]
 }

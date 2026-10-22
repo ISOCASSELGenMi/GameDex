@@ -3,10 +3,10 @@ import type { ModuleManifest } from "@/modules/catalog";
 import { CardActionsSlot, EntityActionsSlot, FilterLinksSlot, GameActionsSlot, PlayerRatingSlot, SubscribePrivateSlot } from "./ui/game-slots";
 import { HeaderRightSlot } from "./ui/header-slot";
 import { cleanupExpiredAuthRows } from "./use-cases/cleanup-expired";
-import { mineGameFilter, siteFollows7dSignal, siteFollowsSignal } from "./use-cases/catalog-extensions";
+import { mineGameFilter, playersRatingColumn, siteFollows7dSignal, siteFollowsSignal } from "./use-cases/catalog-extensions";
 import { cleanupOrphanFollows } from "./use-cases/follows";
 import { matchOwnedGames } from "./use-cases/owned-games";
-import { runRefreshPlayerRatings } from "./use-cases/play-records";
+import { runPublishPlayerRatings, runRefreshPlayerRatings } from "./use-cases/play-records";
 
 /**
  * accounts 模組（02、09）：帳號、登入（Better Auth；D76）、之後的收藏／追蹤／遊玩紀錄。
@@ -58,11 +58,23 @@ export const accountsModule: ModuleManifest = {
         ctx.log("refresh_player_ratings", { ...r });
       },
     },
+    {
+      // GameDex 第 2 輪：把達人數門檻的玩家平均寫進 catalog 的 ratings（評分排名頁 players 欄）。refresh_player_ratings（:17）之後；
+      // 整批取代、含刪除人數降到門檻以下的舊值。accounts 停用時不註冊（排名頁沒有這一欄）。
+      name: "publish_player_ratings",
+      cron: "27 * * * *",
+      lockMode: "session",
+      run: async (ctx) => {
+        const r = await runPublishPlayerRatings();
+        ctx.log("publish_player_ratings", { ...r });
+      },
+    },
   ],
   // 第 6 波：擴充點（catalog 的 PopularitySignal／GameFilterProvider）。registry 收集已啟用模組的這兩個欄位後注入 catalog；
   // accounts 停用時兩者都不存在，catalog 行為與沒有擴充點時完全相同。
   popularitySignals: [siteFollowsSignal, siteFollows7dSignal],
   gameFilters: [mineGameFilter],
+  ratingColumns: [playersRatingColumn],
   uiSlots: {
     "header.right": HeaderRightSlot as ComponentType,
     // 第 5 波：詳情頁動作列（加入清單、記錄遊玩）與玩家平均區。伺服器 HTML 與使用者無關，使用者狀態由客戶端元件取得

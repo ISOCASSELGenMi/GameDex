@@ -14,7 +14,8 @@
     "platforms": "平台",
     "events": "活動",
     "trending": "熱門榜",
-    "home": "首頁"
+    "home": "首頁",
+    "ratings": "評分排名"
   },
   "language": {
     "menuLabel": "語言",
@@ -72,7 +73,12 @@
     "noItemsThisMonth": "這個月沒有上市或活動資料",
     "undatedGroupTitle": "{group}：{label}",
     "dayLoadError": "無法載入當天的其他遊戲，請稍後再試。",
-    "dayRetry": "重試"
+    "dayRetry": "重試",
+    "switchGames": "遊戲",
+    "switchEvents": "活動",
+    "showLegend": "顯示內容",
+    "showAtLeastOne": "至少要顯示一種內容，所以最後一個開著的開關不能關閉。",
+    "noEvents": "這個月沒有符合條件的活動"
   },
   "game": {
     "sections": {
@@ -247,7 +253,26 @@
     "otherPage": "這一頁沒有結果。",
     "viewAll": "查看全部",
     "viewAllFranchise": "查看「{name}」的全部作品",
-    "viewCompany": "查看「{name}」的作品"
+    "viewCompany": "查看「{name}」的作品",
+    "groupBy": "分組檢視",
+    "by": {
+      "none": "不分組",
+      "date": "依日期",
+      "platform": "依平台",
+      "publisher": "依廠商"
+    },
+    "groupCount": "{count} 款",
+    "groupsRange": "顯示第 {from}–{to} 組",
+    "groupsLabel": "分組的遊戲",
+    "groupMore": "顯示更多（還有 {count} 款）",
+    "groupLoading": "載入中…",
+    "groupLoadError": "載入失敗，請稍後再試",
+    "groupLoaded": "已載入 {count} 款",
+    "groupNote": {
+      "date": "依首發日期分組，順序跟隨排序方式（依日期由舊到新，其餘由新到舊），日期未定的在最後。每組先顯示一部分。",
+      "platform": "依平台分組（不含行動平台），一款遊戲會出現在它的每個平台組。每組先顯示一部分。",
+      "publisher": "廠商分組只列主要大廠，其餘歸「獨立／其他」；一款遊戲只放一組，開發商優先。每組先顯示一部分。"
+    }
   },
   "langSupport": {
     "language": "語言",
@@ -283,6 +308,10 @@
     "recentHint": "最近 90 天在此平台上市的遊戲。",
     "emptyUpcoming": "此平台目前沒有即將上市的遊戲",
     "emptyRecent": "此平台近期沒有新上市的遊戲",
+    "all": "全部遊戲",
+    "sortName": "名稱",
+    "allHint": "此平台上所有已知的遊戲（含已上市、即將上市與日期未定），預設由新到舊，日期未定的排在最後。",
+    "emptyAll": "此平台目前沒有任何遊戲",
     "subscribeFeed": "訂閱此平台的行事曆"
   },
   "companies": {
@@ -532,5 +561,38 @@
     "count": "{n} 筆建議",
     "error": "暫時無法載入建議",
     "siteLabel": "網站搜尋"
+  },
+  "ratings": {
+    "title": "評分排名",
+    "intro": "依 IGDB 專業評論分數與站內玩家平均排名。點選欄位標題可改變排序，再點一次切換升降冪。",
+    "col": {
+      "igdb": "IGDB 分數",
+      "players": "站內玩家平均"
+    },
+    "count": {
+      "critics": "{count} 則評論",
+      "players": "{count} 位玩家"
+    },
+    "rank": "名次",
+    "game": "遊戲",
+    "noScore": "尚無評分",
+    "caption": "遊戲評分排名",
+    "regionLabel": "評分排名表（可左右捲動）",
+    "status": "共 {total} 款，依「{column}」{direction}排序",
+    "dirDesc": "降冪",
+    "dirAsc": "升冪",
+    "loadError": "無法載入排名，請稍後再試。",
+    "empty": "沒有符合最低票數與篩選條件的遊戲。",
+    "loaded": "已再載入 {n} 款",
+    "rankUp": "名次上升 {n} 名（原第 {prev} 名）",
+    "rankDown": "名次下降 {n} 名（原第 {prev} 名）",
+    "sortLegend": "排序",
+    "sortHint": "也可以直接點表格的欄位標題。名次永遠依分數由高到低計算。",
+    "sortBy": "排序依據",
+    "direction": "方向",
+    "minVotesLegend": "最低票數",
+    "minVotesLabel": "「{column}」至少要有幾筆",
+    "minVotesHint": "只列出「{column}」的評分人數達到這個數字的遊戲，避免只有少數人評分的遊戲衝上榜首。留空使用預設值 {default}。",
+    "note": "名次依排序欄位的分數由高到低計算，同分同名次；名次升降是相對於上一個排序欄位。排序欄位預設只列出評分人數至少 {default} 的遊戲，可在篩選中調整。"
   }
 }

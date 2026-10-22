@@ -24,6 +24,8 @@ import { rethrowForPage } from "../page-errors";
 import { CalendarInteractive } from "./calendar-interactive";
 import { loadFilterOptions } from "./filter-options";
 import { MonthGridView, UndatedView } from "./month-views";
+import { ShowSwitches } from "./show-switches";
+import { showSwitchModels } from "./show-toggle";
 import type { CalendarClientLabels, DayCellLabels } from "./types";
 import { buildCalendarViewModel, type CardItem } from "./view-model";
 
@@ -70,6 +72,7 @@ export async function CalendarMonthPage({ locale, supportedLocales, month, searc
         filter: rq.filter,
         regionPref: rq.regionPref,
         includeEvents: rq.show.events,
+        includeReleases: rq.show.releases,
         locale,
       }),
       loadFilterOptions(locale),
@@ -77,8 +80,6 @@ export async function CalendarMonthPage({ locale, supportedLocales, month, searc
   } catch (err) {
     rethrowForPage(err);
   }
-  // show=events（只看活動）：上市卡片不顯示
-  if (!rq.show.releases) data = { ...data, days: {}, undated: [] };
   const regionIssue = regionPrefIssue(rq.regionPref);
 
   const notices = collectFilterNotices(
@@ -91,12 +92,20 @@ export async function CalendarMonthPage({ locale, supportedLocales, month, searc
   const basePath = localeHref(locale, path);
   const vm = buildCalendarViewModel(data, locale, t);
   const labeler = makeFilterLabeler(t, options);
-  const chips = appliedChips(spec, basePath, labeler);
+  // 「遊戲／活動」有自己的開關（下方 ShowSwitches），不再列成可移除的條件 chip
+  const chips = appliedChips(spec, basePath, labeler).filter((c) => c.param !== "show");
   const monthName = formatYearMonth(ym.year, ym.month, locale);
   const prev = addMonths(ym, -1);
   const next = addMonths(ym, 1);
   const hrefOf = (item: CardItem) => vm.previews[item.key]!.h;
-  const empty = rq.show.releases ? vm.releaseCount === 0 : vm.eventCount === 0;
+  const shownCount = (rq.show.releases ? vm.releaseCount : 0) + (rq.show.events ? vm.eventCount : 0);
+  const empty = shownCount === 0;
+  const showItems = showSwitchModels(spec).map((m) => ({
+    kind: m.kind,
+    checked: m.checked,
+    label: t.t(m.kind === "releases" ? "ui.calendar.switchGames" : "ui.calendar.switchEvents"),
+    href: m.nextSpec ? calendarMonthHref(locale, ym, m.nextSpec) : null,
+  }));
 
   const labels: CalendarClientLabels = {
     close: t.t("ui.common.close"),
@@ -171,16 +180,25 @@ export async function CalendarMonthPage({ locale, supportedLocales, month, searc
       </div>
 
       <div className="cal-tools">
+        <ShowSwitches items={showItems} groupLabel={t.t("ui.calendar.showLegend")} hint={t.t("ui.calendar.showAtLeastOne")} />
         <FilterNotices notices={notices} t={t} />
         {!empty ? <AppliedFilterChips chips={chips} t={t} clearHref={basePath} /> : null}
-        <FilterPanel locale={locale} t={t} options={options} spec={spec} action={basePath} fields={CALENDAR_FILTER_FIELDS} />
+        <FilterPanel
+          locale={locale}
+          t={t}
+          options={options}
+          spec={spec}
+          action={basePath}
+          fields={CALENDAR_FILTER_FIELDS}
+          hidden={{ show: spec.show?.join(",") }} // 篩選表單送出時保留「遊戲／活動」開關的狀態
+        />
         {slots?.filterLinks}
         <p role="status" className="text-sm text-[var(--muted)]">
           {t.t("filters.resultsCount", { count: vm.releaseCount })}
         </p>
       </div>
 
-      {empty ? <EmptyFilterResult chips={isEmptyFilter(spec) ? [] : chips} t={t} clearHref={basePath} emptyText={t.t("ui.calendar.noReleases")} /> : null}
+      {empty ? <EmptyFilterResult chips={isEmptyFilter(spec) ? [] : chips} t={t} clearHref={basePath} emptyText={t.t(rq.show.releases ? "ui.calendar.noReleases" : "ui.calendar.noEvents")} /> : null}
 
       <CalendarInteractive key={`${path}?${query}`} previews={vm.previews} labels={labels} cell={{ apiBase: dayApiBase, labels: cellLabels }}>
         <MonthGridView ym={ym} locale={locale} t={t} vm={vm} weekStart={weekStartFor(locale)} titleId="cal-title" />

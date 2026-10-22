@@ -131,6 +131,8 @@ export const games = pgTable(
     index("games_type_popularity_idx").on(t.gameType, t.popularityScore.desc()),
     index("games_first_release_date_idx").on(t.firstReleaseDate),
     index("games_search_text_trgm_idx").using("gin", sql`${t.searchText} gin_trgm_ops`),
+    // 搜尋候選的「名稱完全相同」補進候選用（repository/game-suggest.ts）；text_pattern_ops 同時支援 = 與前綴 LIKE
+    index("games_lower_name_prefix_idx").using("btree", sql`lower(${t.name}) text_pattern_ops`),
   ],
 );
 

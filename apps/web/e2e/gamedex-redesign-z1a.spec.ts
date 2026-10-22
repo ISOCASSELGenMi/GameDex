@@ -119,7 +119,7 @@ test.describe("header 下拉（導覽、主題、語言、帳號）", () => {
     const page = await ctx.newPage();
     await page.goto("/en/calendar/" + FIXTURE.month);
     const nav = page.getByRole("navigation", { name: msg("en", "a11y.mainNavigation") });
-    await expect(nav.getByRole("link")).toHaveCount(7);
+    await expect(nav.getByRole("link")).toHaveCount(8);
     // 搜尋框沒有 JS 也是一般表單
     await ctx.close();
   });

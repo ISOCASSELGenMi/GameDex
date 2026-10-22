@@ -37,7 +37,7 @@ export interface BrowseGamesQuery {
   resolveImage: ImageResolver;
 }
 
-interface BrowseRow extends Record<string, unknown> {
+export interface BrowseRow extends Record<string, unknown> {
   id: number;
   slug: string;
   name: string;
@@ -57,7 +57,8 @@ function likeEscape(s: string): string {
   return s.replace(/[\\%_]/g, (c) => `\\${c}`);
 }
 
-export function buildBrowseQuery(q: Omit<BrowseGamesQuery, "resolveImage">): SQL {
+/** 瀏覽的 WHERE 條件（games 別名 g）。評分排名頁（repository/ratings-ranking.ts）共用同一份，不另寫一套篩選。 */
+export function buildBrowseConditions(q: Pick<BrowseGamesQuery, "filter" | "yearFrom" | "yearTo" | "searchTokens" | "today">): SQL[] {
   const f = q.filter;
   const conds: SQL[] = [sql`COALESCE(g.game_type, 'main_game') = ANY(${pgArray(f.gameTypes)}::text[])`];
   if (!f.includeRumored) conds.push(sql`g.game_status IS DISTINCT FROM 'rumored'`);
@@ -105,7 +106,24 @@ export function buildBrowseQuery(q: Omit<BrowseGamesQuery, "resolveImage">): SQL
       conds.push(sql`${tokens} <% g.search_text`);
     }
   }
+  return conds;
+}
 
+/** 瀏覽卡片的 SELECT 欄位（games 別名 g）；分組檢視（browse-groups.ts）共用。 */
+export function browseCardColumns(locale: string): SQL {
+  return sql`g.id, g.slug,
+  COALESCE(NULLIF(g.display_names ->> ${locale}, ''), g.name) AS name,
+  g.name AS original_name, g.cover_url,
+  g.first_release_date::text AS first_release_date, g.first_release_precision,
+  g.heat_level, g.popularity_score, COALESCE(g.game_type, 'main_game') AS game_type, g.game_status,
+  (SELECT jsonb_agg(jsonb_build_object('slug', pl.slug, 'name', pl.name, 'abbreviation', pl.abbreviation, 'kind', pl.kind)
+                    ORDER BY pl.name, pl.id)
+     FROM game_platforms gp JOIN platforms pl ON pl.id = gp.platform_id
+     WHERE gp.game_id = g.id AND pl.kind <> 'mobile') AS platforms`;
+}
+
+export function buildBrowseQuery(q: Omit<BrowseGamesQuery, "resolveImage">): SQL {
+  const conds = buildBrowseConditions(q);
   const order =
     q.sort === "name"
       ? sql`g.name ASC, g.id ASC`
@@ -114,20 +132,29 @@ export function buildBrowseQuery(q: Omit<BrowseGamesQuery, "resolveImage">): SQL
         : sql`g.popularity_score DESC, g.name ASC, g.id ASC`;
 
   return sql`
-    SELECT g.id, g.slug,
-      COALESCE(NULLIF(g.display_names ->> ${q.locale}, ''), g.name) AS name,
-      g.name AS original_name, g.cover_url,
-      g.first_release_date::text AS first_release_date, g.first_release_precision,
-      g.heat_level, g.popularity_score, COALESCE(g.game_type, 'main_game') AS game_type, g.game_status,
-      (SELECT jsonb_agg(jsonb_build_object('slug', pl.slug, 'name', pl.name, 'abbreviation', pl.abbreviation, 'kind', pl.kind)
-                        ORDER BY pl.name, pl.id)
-         FROM game_platforms gp JOIN platforms pl ON pl.id = gp.platform_id
-         WHERE gp.game_id = g.id AND pl.kind <> 'mobile') AS platforms
+    SELECT ${browseCardColumns(q.locale)}
     FROM games g
     WHERE ${sql.join(conds, sql` AND `)}
     ORDER BY ${order}
     LIMIT ${q.limit} OFFSET ${q.offset}
   `;
+}
+
+export function browseRowToCard(r: BrowseRow, resolveImage: ImageResolver): BrowseGameCard {
+  return {
+    gameId: r.id,
+    slug: r.slug,
+    name: r.name,
+    originalName: r.original_name,
+    cover: resolveImage(r.cover_url, "cover"),
+    platforms: r.platforms ?? [],
+    firstReleaseDate: r.first_release_date,
+    firstReleasePrecision: r.first_release_precision,
+    heatLevel: r.heat_level,
+    popularityScore: r.popularity_score,
+    gameType: r.game_type,
+    gameStatus: r.game_status,
+  };
 }
 
 /** 多取 1 筆判斷 hasMore。 */
@@ -139,19 +166,6 @@ export async function browseGameList(
   const rows = res.rows.slice(0, q.limit);
   return {
     hasMore: res.rows.length > q.limit,
-    games: rows.map((r) => ({
-      gameId: r.id,
-      slug: r.slug,
-      name: r.name,
-      originalName: r.original_name,
-      cover: q.resolveImage(r.cover_url, "cover"),
-      platforms: r.platforms ?? [],
-      firstReleaseDate: r.first_release_date,
-      firstReleasePrecision: r.first_release_precision,
-      heatLevel: r.heat_level,
-      popularityScore: r.popularity_score,
-      gameType: r.game_type,
-      gameStatus: r.game_status,
-    })),
+    games: rows.map((r) => browseRowToCard(r, q.resolveImage)),
   };
 }
