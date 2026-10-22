@@ -61,3 +61,9 @@
   - Game Modes、Player Perspectives、Game Engines、Editions（version_parent／version_title）、Storyline 目前沒向 IGDB 取，需要新表／欄位、migration 與全庫重新回填。
 - **搜尋候選名單**：所有搜尋框（header、首頁、遊戲列表頁）打字時在下方即時列出候選，共用一個元件；每筆顯示封面、標題（依介面語言）、年份、平台，最多 8 筆，可用鍵盤上下選擇、Enter 進入，符合 combobox 無障礙模式。
 - **標題語言一致**：介面是哪個語言就顯示那個語言的標題，抓不到才退回原名。原因是繁中名稱只在同步時計算、舊資料沒重算；2026-10-18 已對開發 DB 重算（1,693 款補上 zh-Hant），之後規則有改要能全庫重算。
+
+## 2026-10-23 修正指示（使用者）
+
+- **全遊戲列表**：不另開頁面；改造既有「遊戲」頁（`/games`），維持列出所有遊戲，新增依**上市日期／平台／廠商**分組檢視（可配合篩選）。先前做的 `/releases` 頁面刪除。首頁「最新上市」的「查看更多」改連到**時間軸 30 天前的那一週**。
+- **平台頁**：要能列出該平台過往上架的**所有遊戲**（不只即將上市與最近上市）。
+- **Holodex 式 header 的意思**：header 品牌文字**依頁面切換**（像 Holodex 在不同頁顯示不同標題）。導覽依序為：首頁 GameDex、月曆 GameCalendar、時間軸 GameTimeline、熱門榜 GameTrend、遊戲 GameBase、平台 GamePlat、活動 GameEvent、評分 GameRanking。子頁跟隨所屬區塊，其他頁（帳號、關於等）顯示 GameDex。
