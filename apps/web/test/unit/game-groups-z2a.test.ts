@@ -174,28 +174,33 @@ describe("組查詢的 SQL 組裝", () => {
   const dialect = new PgDialect();
   const base = { filter: { gameTypes: ["main_game"], stages: ["full"], statuses: ["scheduled"], includeRumored: false, includeRemoved: true } as const, sort: "popularity" as const, locale: "en", today: "2026-10-23" as const };
   const sqlOf = (q: Parameters<PgDialect["sqlToQuery"]>[0]) => dialect.sqlToQuery(q);
-  it("組清單：日期組日期未定排最後、sort=release_date 由舊到新", () => {
+  it("組清單：日期組讀預先計算的 release_group，日期未定排最後、sort=release_date 由舊到新", () => {
     const desc = sqlOf(buildGroupListQuery({ ...base, by: "date", groupOffset: 0, groupLimit: 6 })).sql;
-    expect(desc).toMatch(/min\(gdate\) DESC NULLS LAST/);
+    expect(desc).toContain("GROUP BY g.release_group");
+    expect(desc).toMatch(/FILTER \(WHERE g\.release_group <> \$\d+\) DESC NULLS LAST/);
+    expect(desc).not.toContain("to_char");
     const asc = sqlOf(buildGroupListQuery({ ...base, by: "date", sort: "release_date", groupOffset: 12, groupLimit: 6 }));
-    expect(asc.sql).toMatch(/min\(gdate\) ASC NULLS LAST/);
+    expect(asc.sql).toMatch(/FILTER \(WHERE g\.release_group <> \$\d+\) ASC NULLS LAST/);
     expect(asc.sql).toMatch(/LIMIT \$?\d+ OFFSET \$?\d+/);
   });
-  it("組清單：多取 1 組判斷後面還有；廠商組 other 最後；廠商對照表是參數而非內嵌", () => {
+  it("組清單：多取 1 組判斷後面還有；廠商組讀 publisher_group、other(-1) 最後，不再即時比對公司名單", () => {
     const q = sqlOf(buildGroupListQuery({ ...base, by: "publisher", groupOffset: 0, groupLimit: 6 }));
-    expect(q.sql).toContain("(gkey = '-1') ASC");
-    expect(q.sql).toContain("unnest(");
-    expect(q.params.some((p) => Array.isArray(p) && p.length > 500)).toBe(true);
-    expect(q.sql).toMatch(/LIMIT 7\b|LIMIT \$\d+/);
+    expect(q.sql).toContain("GROUP BY g.publisher_group");
+    expect(q.sql).toContain("(g.publisher_group = -1) ASC");
+    expect(q.sql).not.toContain("unnest(");
+    expect(q.params.some((p) => Array.isArray(p) && p.length > 500)).toBe(false);
+    expect(q.sql).toMatch(/LIMIT 7|LIMIT \$\d+/);
   });
-  it("組內卡片：key 條件推進 base，只掃選到的組", () => {
+  it("組內卡片：每組一個 LATERAL 依組 index 取 [offset, offset+limit)，不掃其他組", () => {
     const date = sqlOf(buildGroupCardsQuery({ ...base, by: "date", keys: ["2026-10"], offset: 0, limit: 8 }));
-    expect(date.sql).toMatch(/= ANY\(\$\d+::text\[\]\)/);
+    expect(date.sql).toContain("g.release_group = k.gkey");
+    expect(date.sql).toContain("CROSS JOIN LATERAL");
+    expect(date.sql).toContain("g.popularity_score DESC NULLS LAST, g.name ASC, g.id ASC");
     const plat = sqlOf(buildGroupCardsQuery({ ...base, by: "platform", keys: ["ps5"], offset: 0, limit: 8 }));
-    expect(plat.sql).toContain("plg.slug = ANY(");
+    expect(plat.sql).toContain("plg.slug = k.gkey");
     expect(plat.sql).toContain("plg.kind <> 'mobile'");
     const pub = sqlOf(buildGroupCardsQuery({ ...base, by: "publisher", keys: ["0"], offset: 8, limit: 24 }));
-    expect(pub.sql).toContain("COALESCE(mp.idx, -1)::text = ANY(");
+    expect(pub.sql).toContain("g.publisher_group = (k.gkey)::int");
   });
   it("offset／limit 夾成非負整數", () => {
     const q = sqlOf(buildGroupCardsQuery({ ...base, by: "date", keys: ["tbd"], offset: -5.7, limit: 24.9 }));

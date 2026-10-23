@@ -25,8 +25,11 @@
 import { expandPlatformKindFilter } from "../domain/platform-groups";
 import { sql, type SQL } from "drizzle-orm";
 import { utcToday } from "../domain/utc-date";
+import { DEFAULT_RELEASE_STATUSES } from "../domain/release-filter";
 import {
   DATE_PRECISIONS,
+  GAME_TYPES,
+  RELEASE_STAGES,
   type DatePrecision,
   type ImageResolver,
   type IsoDate,
@@ -229,6 +232,41 @@ export function buildAggregatePicksQuery(input: Omit<AggregateReleasesInput, "re
       WHERE x.game_id = p.game_id AND x.platform_id = p.platform_id AND x.release_stage = p.release_stage
     ) grp
     WHERE ${sql.join(pickedConds, sql` AND `)}
+  `;
+}
+
+/**
+ * 預先計算 `release_picks` 的篩選：所有階段、所有遊戲類型、含傳聞（這些在讀取時才套）；上市列層級只取預設狀態（scheduled／delayed／released）
+ * 並納入 removed。挑選規則（優先序、地區偏好 WW）就是聚合規則本身，所以預先計算結果與即時查詢一致。
+ */
+export const RELEASE_PICKS_FILTER: ResolvedReleaseFilter = {
+  stages: RELEASE_STAGES,
+  gameTypes: GAME_TYPES,
+  statuses: DEFAULT_RELEASE_STATUSES,
+  includeRumored: true,
+  includeRemoved: true,
+};
+
+/** 請求的上市列篩選是否與 release_picks 預先計算時相同（狀態集合與 removed）；不同就要走即時聚合。 */
+export function releasePicksUsable(f: Pick<ResolvedReleaseFilter, "statuses" | "includeRemoved">): boolean {
+  const a = [...f.statuses].sort().join(",");
+  const b = [...RELEASE_PICKS_FILTER.statuses].sort().join(",");
+  return a === b && f.includeRemoved === RELEASE_PICKS_FILTER.includeRemoved;
+}
+
+/** 這些遊戲的 release_picks 內容（INSERT … SELECT 用）：每個 (遊戲, 平台, 階段) 的代表上市列。與聚合共用 keys／picked CTE。 */
+export function buildReleasePicksQuery(gameIds: readonly number[]): SQL {
+  const { ctes } = buildAggregateCtes({
+    filter: RELEASE_PICKS_FILTER,
+    regionPref: "WW",
+    locale: "en",
+    gameIds,
+    windowSql: () => sql`TRUE`,
+  });
+  return sql`
+    WITH ${ctes}
+    SELECT p.game_id, p.platform_id, p.release_stage, p.id AS release_event_id, p.release_date, p.precision
+    FROM picked p
   `;
 }
 

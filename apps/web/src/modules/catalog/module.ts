@@ -4,6 +4,7 @@ import type { GameFilterProvider, PopularitySignal, RatingColumn } from "./domai
 import { getCatalogExtensions } from "./extensions";
 import { getIgdbProvider } from "./providers/igdb";
 import { backfillDetailFields, parseDetailBackfillArgs } from "./use-cases/sync/backfill-detail-fields";
+import { backfillGameGroups, parseGameGroupsBackfillArgs } from "./use-cases/sync/backfill-game-groups";
 import { backfillGames, parseBackfillArgs } from "./use-cases/sync/backfill-games";
 import { checkDictionaryDrift } from "./use-cases/sync/dictionary-drift";
 import { clearOldReporterIpHashes } from "./use-cases/reports/cleanup-report-ips";
@@ -43,7 +44,7 @@ export const catalogModule: ModuleManifest = {
     "game_franchises", "game_similar_games", "game_external_links", "events", "event_series", "event_games",
     "genres", "themes", "game_genres", "game_themes",
     "game_modes", "player_perspectives", "game_engines", "game_game_modes", "game_player_perspectives", "game_game_engines", "game_localizations", "languages",
-    "game_language_supports", "change_feed", "game_popularity_signals", "data_reports",
+    "game_language_supports", "change_feed", "game_popularity_signals", "data_reports", "release_picks",
   ],
   // 頻率見 04 §排程任務
   jobs: [
@@ -133,6 +134,15 @@ export const catalogModule: ModuleManifest = {
       lockMode: "session",
       run: async (ctx) => {
         await recomputeDisplayNames(ctx.log, parseRecomputeDisplayNamesArgs(ctx.args));
+      },
+    },
+    {
+      // 手動：npm run job -- backfill_game_groups [--max-batches N] [--batch-size N] [--restart]。
+      // migration 0015 之後跑一次：補 games.release_group／publisher_group 與 release_picks（之後由寫入路徑維護）；可續跑
+      name: "backfill_game_groups",
+      lockMode: "session",
+      run: async (ctx) => {
+        await backfillGameGroups(ctx, parseGameGroupsBackfillArgs(ctx.args));
       },
     },
     {

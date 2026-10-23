@@ -15,6 +15,7 @@ import type {
 } from "../domain/entities";
 import { releaseDateHistory, releaseEvents } from "../schema";
 import { appendChange, appendChanges } from "./change-feed";
+import { refreshReleasePicks } from "./release-picks";
 
 function monthRange(year: number, month: number): { first: string; last: string } {
   if (!Number.isInteger(year) || !Number.isInteger(month) || month < 1 || month > 12) {
@@ -99,6 +100,7 @@ export async function upsertReleaseEvent(
         changeType: "created",
         payload: { releaseDate: created.releaseDate, precision: created.precision, status: created.status },
       });
+      await refreshReleasePicks(tx, [created.gameId]);
       return { kind: "created", event: created };
     }
 
@@ -165,6 +167,7 @@ export async function upsertReleaseEvent(
         changeType: sourceStatus === "removed" ? "removed" : "restored",
       });
     }
+    await refreshReleasePicks(tx, [updated.gameId]);
     return { kind: "updated", event: updated, dateChanged, statusChanged };
   });
 }
@@ -300,6 +303,8 @@ export async function applyReleaseDiffPlan(
   if (history.length > 0) await tx.insert(releaseDateHistory).values(history);
   await supersedeManualRows(tx, gameId, dateUpdates, changes);
   await appendChanges(tx, changes);
+  // 預先計算的代表上市列（release_picks）與上市列在同一個 transaction 內更新
+  if (plan.creates.length > 0 || plan.updates.length > 0) await refreshReleasePicks(tx, [gameId]);
   return stats;
 }
 
