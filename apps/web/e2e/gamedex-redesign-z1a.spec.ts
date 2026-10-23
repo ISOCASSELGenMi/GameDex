@@ -578,7 +578,8 @@ test.describe("axe：header 下拉展開", () => {
         await page.goto(`/${locale}/calendar/${FIXTURE.month}`);
         for (const menu of MENUS) {
           await openHeaderMenu(page, menu);
-          await expectNoA11yViolations(page, `${locale} ${scheme} ${menu} 下拉`);
+          // 下拉是浮層，會遮住頁面內容（Linux 的 CJK 字形較寬時 target-size 會誤判）；頁面本身的 axe 由其他測試負責
+          await expectNoA11yViolations(page, `${locale} ${scheme} ${menu} 下拉`, ".site-header");
           if (locale === "en" && scheme === "light" && menu !== "account") await shot(page, `dropdown-${menu}`);
           if (locale === "en" && menu === "nav") await shot(page, `dropdown-nav-${scheme}`);
           await page.keyboard.press("Escape");
