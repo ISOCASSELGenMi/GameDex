@@ -8,7 +8,6 @@
  *   每組先送 GAME_GROUP_INITIAL 張卡，其餘「顯示更多」按需從 /api/v1/games/group 載入
  */
 import Form from "next/form";
-import Image from "next/image";
 import { connection } from "next/server";
 import type { ReactElement } from "react";
 import { FILTER_QUERY_MAX_LENGTH, filterSpecToQueryString, parseFilterSpec, type FilterSearchInput } from "@sok/api-contract";
@@ -19,7 +18,7 @@ import { loadFilterOptions } from "../calendar/filter-options";
 import { collectFilterNotices, filterSpecToReadQuery, withoutIgnored } from "../filter-mapping";
 import { appliedChips, filterSpecForPage, makeFilterLabeler, PAGE_FILTER_PARAMS } from "../filters/filter-labels";
 import { AppliedFilterChips, EmptyFilterResult, FilterNotices, FilterPanel } from "../filters/filter-panel";
-import { HeatBadge, heatBadgeLabel } from "../heat-badge";
+import { HeatBadge, HeatSprite, heatBadgeLabel } from "../heat-badge";
 import { getTranslator } from "../labels";
 import { PageShell } from "../layout/page-shell";
 import type { PageSlots } from "../page-slots";
@@ -63,33 +62,37 @@ function first(v: string | string[] | undefined): string | undefined {
 
 const inputClass = "min-h-11 rounded-md border border-[var(--border)] bg-[var(--background)] px-2 text-[var(--foreground)]";
 
+const HEAT_SPRITE_ID = "browse-heat-flame";
+
 function GameCard({ game, locale, t }: { game: BrowseGameCard; locale: Locale; t: Translator }): ReactElement {
   const dateText = formatReleaseLabel(game.firstReleaseDate, game.firstReleasePrecision ?? "tbd", locale);
   const shown = game.platforms.slice(0, 4).map((p) => p.abbreviation ?? p.name);
   const platformText = shown.join(t.t("ui.common.listSeparator")) + (game.platforms.length > 4 ? ` +${game.platforms.length - 4}` : "");
+  // 卡片 markup 刻意精簡（class 名稱、純 <img>、熱度圖示用 sprite）：一頁 24 張卡，伺服器 HTML 與 RSC payload 各會出現一次（06 §瀏覽與搜尋 的頁面大小預算）
   return (
-    <li className="rounded-lg border border-[var(--border)]" data-browse-item={game.slug}>
-      <a className="summary-card border-0" href={gameHref(locale, game.slug)}>
+    <li className="bc-item" data-browse-item={game.slug}>
+      <a className="summary-card" href={gameHref(locale, game.slug)}>
         {game.cover ? (
-          <Image className="summary-thumb" src={game.cover.small} alt="" width={90} height={128} unoptimized loading="lazy" />
+          // eslint-disable-next-line @next/next/no-img-element -- 封面本來就是 unoptimized 外部圖；純 <img> 少掉 next/image 的屬性與客戶端元件參照
+          <img className="summary-thumb" src={game.cover.small} alt="" width={90} height={128} loading="lazy" decoding="async" />
         ) : (
           <span className="summary-thumb card-thumb-empty" aria-hidden="true" />
         )}
-        <span className="flex min-w-0 flex-col gap-1">
-          <span className="font-semibold [overflow-wrap:anywhere]" lang={gameNameLang(game.name, game.name === game.originalName, locale)}>
+        <span className="bc-info">
+          <span className="bc-name" lang={gameNameLang(game.name, game.name === game.originalName, locale)}>
             {game.name}
           </span>
           {game.originalName !== game.name ? (
-            <span className="text-sm text-[var(--muted)] [overflow-wrap:anywhere]" lang="en">
+            <span className="bc-meta [overflow-wrap:anywhere]" lang="en">
               {game.originalName}
             </span>
           ) : null}
-          <span className="text-sm text-[var(--muted)]">{t.t("ui.common.labelValue", { label: t.t("ui.games.firstRelease"), value: dateText })}</span>
-          {game.platforms.length > 0 ? <span className="text-sm text-[var(--muted)]">{platformText}</span> : null}
-          <span className="flex flex-wrap items-center gap-1 text-sm">
+          <span className="bc-meta">{t.t("ui.common.labelValue", { label: t.t("ui.games.firstRelease"), value: dateText })}</span>
+          {game.platforms.length > 0 ? <span className="bc-meta">{platformText}</span> : null}
+          <span className="bc-tags">
             {game.gameType !== "main_game" ? <span className="chip">{t.t(`enums.gameType.${game.gameType}`)}</span> : null}
             {game.gameStatus === "rumored" ? <span className="chip">{t.t("enums.gameStatus.rumored")}</span> : null}
-            <HeatBadge level={game.heatLevel} label={heatBadgeLabel(t, game.heatLevel)} />
+            <HeatBadge level={game.heatLevel} label={heatBadgeLabel(t, game.heatLevel)} spriteId={HEAT_SPRITE_ID} />
           </span>
         </span>
       </a>
@@ -291,11 +294,14 @@ export async function GamesBrowsePage({ locale, supportedLocales, searchParams, 
           </div>
         </GroupsProvider>
       ) : (
-        <ul className="mt-4 grid list-none grid-cols-1 gap-2 p-0 md:grid-cols-2 xl:grid-cols-3" aria-label={t.t("ui.games.listLabel")}>
-          {games.map((g) => (
-            <GameCard key={g.gameId} game={g} locale={locale} t={t} />
-          ))}
-        </ul>
+        <>
+          <HeatSprite id={HEAT_SPRITE_ID} />
+          <ul className="mt-4 grid list-none grid-cols-1 gap-2 p-0 md:grid-cols-2 xl:grid-cols-3" aria-label={t.t("ui.games.listLabel")}>
+            {games.map((g) => (
+              <GameCard key={g.gameId} game={g} locale={locale} t={t} />
+            ))}
+          </ul>
+        </>
       )}
 
       {pageNo > 1 || pager.next || pager.limitReached ? (

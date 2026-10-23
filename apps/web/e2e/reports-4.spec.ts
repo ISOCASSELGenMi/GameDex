@@ -46,10 +46,16 @@ test.beforeAll(async () => {
     await c.query("INSERT INTO game_platforms (game_id, platform_id) VALUES ($1, $2) ON CONFLICT DO NOTHING", [gameId, ps5Id]);
     const has = await c.query("SELECT 1 FROM release_events WHERE game_id = $1", [gameId]);
     if (has.rowCount === 0) {
-      await c.query(
+      const ev = await c.query(
         `INSERT INTO release_events (game_id, platform_id, region_id, release_date, period_start, precision, release_stage, status, source, sequence)
-         VALUES ($1, $2, $3, $4, $4, 'day', 'full', 'scheduled', 'igdb', 2)`,
+         VALUES ($1, $2, $3, $4, $4, 'day', 'full', 'scheduled', 'igdb', 2) RETURNING id`,
         [gameId, ps5Id, ww.rows[0].id, GAME.date],
+      );
+      // 直接 insert 沒走寫入路徑：補預先計算的代表上市列（release_picks，平台頁「全部遊戲」用）
+      await c.query(
+        `INSERT INTO release_picks (game_id, platform_id, release_stage, release_event_id, release_date, precision)
+         VALUES ($1, $2, 'full', $3, $4, 'day') ON CONFLICT DO NOTHING`,
+        [gameId, ps5Id, ev.rows[0].id, GAME.date],
       );
     }
     await c.query("SELECT pg_advisory_unlock(442001)");

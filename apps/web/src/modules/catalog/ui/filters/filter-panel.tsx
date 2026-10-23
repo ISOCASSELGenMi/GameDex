@@ -153,6 +153,27 @@ function Checkbox({
   );
 }
 
+const HTML_ESCAPES: Readonly<Record<string, string>> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+const escapeHtml = (v: string): string => v.replace(/[&<>"']/g, (c) => HTML_ESCAPES[c]!);
+/** 屬性值只含這些字元時不加引號（HTML5 允許；slug 都符合，少掉 payload 裡跳脫的 \"）。 */
+const attr = (v: string): string => (/^[A-Za-z0-9_.:-]+$/.test(v) ? v : `"${escapeHtml(v)}"`);
+
+/**
+ * 核取方塊清單：整段做成一個 HTML 字串（一個 dangerouslySetInnerHTML）而不是幾百個 React 元素。
+ * 伺服器元件的輸出會同時出現在 HTML 與 RSC payload（flight 資料）兩處，每個元素在 payload 裡要約 200 bytes 的陣列語法；
+ * 字串只佔 HTML 本身的長度（平台約 210 個＋類型／主題等約 70 個，整頁省 40 KB 以上，06 §瀏覽與搜尋 的頁面大小預算）。
+ * 內容全部經 escapeHtml／attr 處理；產生 `.check-grid > label > input[type=checkbox] ＋ 文字`（樣式與 <Checkbox> 的 label.check 相同，見 globals.css），沒有 JS 也能送出。
+ */
+function checkGridHtml(name: string, items: readonly { value: string; label: string; checked: boolean }[]): string {
+  return items
+    .map((it) => `<label><input type=checkbox name=${attr(name)} value=${attr(it.value)}${it.checked ? " checked" : ""}>${escapeHtml(it.label)}</label>`)
+    .join("");
+}
+
+function CheckGrid({ name, items }: { name: string; items: readonly { value: string; label: string; checked: boolean }[] }): ReactElement {
+  return <div className="check-grid" dangerouslySetInnerHTML={{ __html: checkGridHtml(name, items) }} />;
+}
+
 function CheckGroup({
   name,
   legend,
@@ -176,11 +197,7 @@ function CheckGroup({
           {hint}
         </p>
       ) : null}
-      <div className="check-grid">
-        {items.map((it) => (
-          <Checkbox key={it.value} name={name} value={it.value} label={it.label} checked={hasFilterValue(spec, name, it.value as never)} />
-        ))}
-      </div>
+      <CheckGrid name={name} items={items.map((it) => ({ ...it, checked: hasFilterValue(spec, name, it.value as never) }))} />
     </fieldset>
   );
 }
@@ -229,21 +246,13 @@ export function FilterPanel({ locale, t, options, spec, action, fields, hidden, 
                   {common.length > 0 ? (
                     <>
                       <p className="fieldset-sub">{t.t("filters.commonPlatforms")}</p>
-                      <div className="check-grid">
-                        {common.map((p) => (
-                          <Checkbox key={p.slug} name="platform" value={p.slug} label={p.name} checked={hasFilterValue(spec, "platform", p.slug)} />
-                        ))}
-                      </div>
+                      <CheckGrid name="platform" items={common.map((p) => ({ value: p.slug, label: p.name, checked: hasFilterValue(spec, "platform", p.slug) }))} />
                     </>
                   ) : null}
                   {others.length > 0 ? (
                     <details className="more-platforms" open={othersChecked}>
                       <summary>{t.t("filters.morePlatforms")}</summary>
-                      <div className="check-grid">
-                        {others.map((p) => (
-                          <Checkbox key={p.slug} name="platform" value={p.slug} label={p.name} checked={hasFilterValue(spec, "platform", p.slug)} />
-                        ))}
-                      </div>
+                      <CheckGrid name="platform" items={others.map((p) => ({ value: p.slug, label: p.name, checked: hasFilterValue(spec, "platform", p.slug) }))} />
                     </details>
                   ) : null}
                 </fieldset>
