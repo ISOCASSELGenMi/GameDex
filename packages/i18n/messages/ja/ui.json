@@ -547,7 +547,16 @@
     "menuLabel": "テーマ",
     "system": "システム",
     "light": "ライト",
-    "dark": "ダーク"
+    "dark": "ダーク",
+    "deepBlue": "ディープブルー",
+    "emerald": "エメラルド",
+    "crimson": "クリムゾン",
+    "eightBit": "8ビット",
+    "gold": "コンプリートゴールド",
+    "standbyPurple": "スタンバイ パープル",
+    "arcadeNeon": "アーケードネオン",
+    "nightOwl": "夜ふかし",
+    "coding": "Coding"
   },
   "search": {
     "label": "ゲームを検索",
@@ -594,5 +603,29 @@
     "minVotesLabel": "「{column}」の最低件数",
     "minVotesHint": "「{column}」の評価数がこの数に達したゲームだけを表示します。評価が数件のゲームが上位に来るのを防ぎます。空欄なら既定値 {default} を使います。",
     "note": "順位は並べ替えた列のスコアが高い順に数え、同点は同順位です。順位の増減は直前に並べ替えていた列との比較です。並べ替えた列は既定で評価数が {default} 件以上のゲームだけを表示します（絞り込みで変更できます）。"
+  },
+  "egg": {
+    "unlockedTheme": "テーマを解放",
+    "unlockedCollectible": "入手",
+    "unlockedAchievement": "実績を解除",
+    "apply": "今すぐ適用",
+    "close": "閉じる",
+    "collectible": {
+      "cartridge": "カートリッジ",
+      "floppy": "フロッピーディスク",
+      "cd": "CD",
+      "dvd": "DVD",
+      "bluray": "ブルーレイ",
+      "memoryCard": "メモリーカード",
+      "gameCard": "ゲームカード",
+      "cloud": "クラウド"
+    },
+    "achievement": {
+      "viewed50Games": "ゲーム詳細を50本閲覧",
+      "firstIcalSubscribe": "初めてカレンダーを購読",
+      "firstFollow": "初めてのフォロー",
+      "firstList": "初めてのリスト作成",
+      "allAchievements": "全実績"
+    }
   }
 }

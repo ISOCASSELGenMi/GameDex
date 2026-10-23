@@ -46,6 +46,7 @@ import { countFollowsOfUser } from "../repository/follows";
 import { countUserLists } from "../repository/lists";
 import { countPlayRecords } from "../repository/play-records";
 import { getAuth } from "./auth-instance";
+import { getMyUnlocks } from "./unlocks";
 
 /** 稽核 log：只有 userId 與時間，沒有任何個資。 */
 export type AuditLog = (event: string, data: { userId: number; at: string }) => void;
@@ -136,7 +137,7 @@ const iso = (d: Date): string => d.toISOString();
 export async function buildAccountExport(userId: number, now: Date = new Date()): Promise<AccountExport | null> {
   const profile = await readExportProfile(userId);
   if (!profile) return null;
-  const [prefs, connections, lists, plays, followRows, owned, feed] = await Promise.all([
+  const [prefs, connections, lists, plays, followRows, owned, feed, unlocks] = await Promise.all([
     findPreferences(userId),
     readExportConnections(userId),
     readExportLists(userId),
@@ -144,6 +145,7 @@ export async function buildAccountExport(userId: number, now: Date = new Date())
     readExportFollows(userId),
     readExportOwnedGames(userId),
     readExportActiveFeed(userId),
+    getMyUnlocks(userId),
   ]);
   if (!prefs) return null;
   const listGames = await readExportListGames(lists.map((l) => l.id));
@@ -242,6 +244,7 @@ export async function buildAccountExport(userId: number, now: Date = new Date())
           lastAccessedAt: feed.lastAccessedAt ? iso(feed.lastAccessedAt) : null,
         }
       : null,
+    unlocks,
   };
 }
 

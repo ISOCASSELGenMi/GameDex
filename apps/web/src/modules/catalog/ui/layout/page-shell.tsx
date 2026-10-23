@@ -6,7 +6,7 @@
  */
 import type { ReactElement, ReactNode } from "react";
 import type { Locale } from "@sok/i18n";
-import { visibleThemeOptions } from "@/kernel/ui/theme";
+import { THEME_OPTIONS, visibleThemeOptions } from "@/kernel/ui/theme";
 import { getTranslator } from "../labels";
 import { aboutHref, gamesBrowseHref, languageMenuLinks, localeHref, subscribeHref, type LocalPath } from "../links";
 import { searchBoxLabels } from "../search/labels";
@@ -51,6 +51,7 @@ export function PageShell({ locale, supportedLocales, path, query = "", followPa
     ) : null,
   };
   const themeOptions = visibleThemeOptions().map((o) => ({ id: o.id, label: t.t(`ui.theme.${o.labelKey}`) }));
+  const hiddenThemeOptions = THEME_OPTIONS.filter((o) => o.locked).map((o) => ({ id: o.id, label: t.t(`ui.theme.${o.labelKey}`) }));
   const languageProps = { items: links, label: t.t("a11y.languageMenu"), triggerLabel: t.t("a11y.languageMenu") };
   return (
     <>
@@ -81,7 +82,7 @@ export function PageShell({ locale, supportedLocales, path, query = "", followPa
             closeLabel={t.t("ui.search.close")}
           />
           <div className="hd-right">
-            <ThemeMenu label={t.t("ui.theme.menuLabel")} options={themeOptions} />
+            <ThemeMenu label={t.t("ui.theme.menuLabel")} options={themeOptions} hiddenOptions={hiddenThemeOptions} />
             {followPathname ? <FollowingLanguageMenu {...languageProps} /> : <LanguageMenu {...languageProps} />}
             {headerRight ?? <HeaderRightOutlet />}
           </div>

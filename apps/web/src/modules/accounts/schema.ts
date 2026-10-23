@@ -10,6 +10,7 @@ import { boolean, date, index, integer, jsonb, numeric, pgEnum, pgTable, primary
 import { FEED_TYPES } from "./domain/entities/calendar-feeds";
 import { FOLLOW_TARGETS } from "./domain/entities/follows";
 import { PLAY_STATUSES } from "./domain/entities/play-records";
+import { UNLOCK_TYPES } from "./domain/entities/unlocks";
 import { LIST_VISIBILITIES, REVIEW_VISIBILITIES } from "./domain/entities/providers";
 
 const tz = { withTimezone: true } as const;
@@ -259,4 +260,22 @@ export const calendarFeeds = pgTable(
       .where(sql`${t.feedType} = 'following' AND ${t.revokedAt} IS NULL`),
     index("calendar_feeds_user_created_idx").on(t.userId, t.createdAt),
   ],
+);
+
+// ── GameDex 第 2 輪 Z3B：彩蛋解鎖紀錄（跨裝置同步） ─────────────────────────────────────────
+// key 的合法值由 kernel/ui/unlocks.ts 的 isValidUnlock 在寫入前驗證（資料庫只存 type＋key＋時間，不存顯示文字）。
+
+export const unlockTypeEnum = pgEnum("unlock_type", UNLOCK_TYPES);
+
+export const userUnlocks = pgTable(
+  "user_unlocks",
+  {
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    type: unlockTypeEnum("type").notNull(),
+    key: varchar("key", { length: 48 }).notNull(),
+    unlockedAt: timestamp("unlocked_at", tz).notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.type, t.key] })],
 );

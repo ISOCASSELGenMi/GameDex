@@ -642,5 +642,48 @@
     "title": "アカウントは停止されています",
     "body": "このアカウントは現在停止されています。ログインはできますが、リスト、プレイ記録、フォロー、カレンダー、設定を追加・変更することはできず、公開していた内容は他の人から見えなくなっています。データのエクスポートとアカウントの削除は行えます。",
     "toPrivacy": "データのエクスポート・アカウント削除"
+  },
+  "collection": {
+    "title": "コレクションと実績",
+    "loading": "読み込み中…",
+    "error": "コレクションを読み込めませんでした。しばらくしてからもう一度お試しください。",
+    "mediaTitle": "ゲームメディア図鑑",
+    "mediaCount": "{total} 種中 {n} 種を収集",
+    "notCollected": "未収集",
+    "themesTitle": "解除したテーマ",
+    "themesNone": "解除したテーマはまだありません。",
+    "themesHidden": "未解除のテーマがあと {n} 個",
+    "achievementsTitle": "達成した実績",
+    "achievementsNone": "達成した実績はまだありません。",
+    "achievementsHidden": "隠し実績があと {n} 個",
+    "allDone": "全実績達成",
+    "media": {
+      "cartridge": "カートリッジ",
+      "floppy": "フロッピーディスク",
+      "cd": "CD",
+      "dvd": "DVD",
+      "bluray": "ブルーレイディスク",
+      "memory-card": "メモリーカード",
+      "game-card": "ゲームカード",
+      "cloud": "クラウド"
+    },
+    "theme": {
+      "sony-blue": "ディープブルー",
+      "xbox-green": "エメラルドグリーン",
+      "nintendo-red": "ブレイズレッド",
+      "eight-bit": "8ビット",
+      "gold": "コレクターゴールド",
+      "standby-purple": "スタンバイパープル",
+      "arcade-neon": "アーケードネオン",
+      "night-owl": "夜更かし",
+      "coding": "ターミナル"
+    },
+    "achievement": {
+      "viewed-50-games": "ゲームを 50 本閲覧",
+      "first-ical-subscribe": "初めてのカレンダー購読",
+      "first-follow": "初めてのフォロー",
+      "first-list": "初めてのリスト作成",
+      "all-achievements": "全実績"
+    }
   }
 }

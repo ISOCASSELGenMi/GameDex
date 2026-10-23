@@ -277,7 +277,7 @@ describe("可移除性（02）", () => {
     expect(accountsModule.name).toBe("accounts");
     expect(accountsModule.kind).toBe("optional");
     expect(accountsModule.requiredEnv).toEqual(["AUTH_SECRET", "TOKEN_ENCRYPTION_KEY"]);
-    expect(accountsModule.ownedTables).toEqual(["users", "connected_accounts", "sessions", "auth_verifications", "auth_tokens", "owned_games", "user_lists", "user_list_games", "play_records", "game_player_ratings", "follows", "calendar_feeds"]);
+    expect(accountsModule.ownedTables).toEqual(["users", "connected_accounts", "sessions", "auth_verifications", "auth_tokens", "owned_games", "user_lists", "user_list_games", "play_records", "game_player_ratings", "follows", "calendar_feeds", "user_unlocks"]);
     expect(accountsModule.jobs?.map((j) => j.name)).toEqual(["cleanup_auth_rows", "match_owned_games", "cleanup_orphan_follows", "refresh_player_ratings", "publish_player_ratings"]);
     expect(accountsModule.uiSlots?.["header.right"]).toBeTypeOf("function");
   });

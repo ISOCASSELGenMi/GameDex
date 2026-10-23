@@ -547,7 +547,16 @@
     "menuLabel": "Theme",
     "system": "System",
     "light": "Light",
-    "dark": "Dark"
+    "dark": "Dark",
+    "deepBlue": "Deep blue",
+    "emerald": "Emerald",
+    "crimson": "Crimson",
+    "eightBit": "8-bit",
+    "gold": "Collection gold",
+    "standbyPurple": "Standby purple",
+    "arcadeNeon": "Arcade neon",
+    "nightOwl": "Night owl",
+    "coding": "Coding"
   },
   "search": {
     "label": "Search games",
@@ -594,5 +603,29 @@
     "minVotesLabel": "Minimum number for “{column}”",
     "minVotesHint": "Only games whose “{column}” count reaches this number are listed, so a game with a handful of ratings does not top the list. Leave empty for the default of {default}.",
     "note": "Rank is counted from the highest score of the sorted column; equal scores share a rank. Rank changes are relative to the previously sorted column. By default the sorted column lists only games with at least {default} ratings; change it in the filters."
+  },
+  "egg": {
+    "unlockedTheme": "Theme unlocked",
+    "unlockedCollectible": "Collected",
+    "unlockedAchievement": "Achievement unlocked",
+    "apply": "Apply now",
+    "close": "Close",
+    "collectible": {
+      "cartridge": "Cartridge",
+      "floppy": "Floppy disk",
+      "cd": "CD",
+      "dvd": "DVD",
+      "bluray": "Blu-ray",
+      "memoryCard": "Memory card",
+      "gameCard": "Game card",
+      "cloud": "Cloud"
+    },
+    "achievement": {
+      "viewed50Games": "Viewed 50 games",
+      "firstIcalSubscribe": "First calendar subscription",
+      "firstFollow": "First follow",
+      "firstList": "First list created",
+      "allAchievements": "All achievements"
+    }
   }
 }

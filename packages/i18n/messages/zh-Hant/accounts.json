@@ -642,5 +642,48 @@
     "title": "帳號已停權",
     "body": "你的帳號目前已停權。你仍可登入，但無法新增或修改清單、遊玩紀錄、追蹤、行事曆與設定，你的公開內容也已對其他人隱藏。你可以匯出自己的資料，或刪除帳號。",
     "toPrivacy": "匯出資料或刪除帳號"
+  },
+  "collection": {
+    "title": "收藏與成就",
+    "loading": "載入中…",
+    "error": "無法載入收藏與成就，請稍後再試。",
+    "mediaTitle": "遊戲媒體圖鑑",
+    "mediaCount": "已收集 {n} / {total} 種",
+    "notCollected": "尚未收集",
+    "themesTitle": "已解鎖的主題",
+    "themesNone": "尚未解鎖任何主題。",
+    "themesHidden": "還有 {n} 個主題未解鎖",
+    "achievementsTitle": "已達成的成就",
+    "achievementsNone": "尚未達成任何成就。",
+    "achievementsHidden": "還有 {n} 個隱藏成就",
+    "allDone": "全成就達成",
+    "media": {
+      "cartridge": "卡匣",
+      "floppy": "磁片",
+      "cd": "CD",
+      "dvd": "DVD",
+      "bluray": "藍光光碟",
+      "memory-card": "記憶卡",
+      "game-card": "遊戲卡帶",
+      "cloud": "雲端"
+    },
+    "theme": {
+      "sony-blue": "深海藍",
+      "xbox-green": "翡翠綠",
+      "nintendo-red": "烈焰紅",
+      "eight-bit": "8-bit",
+      "gold": "圖鑑金",
+      "standby-purple": "待機暗紫",
+      "arcade-neon": "街機霓虹",
+      "night-owl": "夜貓子",
+      "coding": "終端機"
+    },
+    "achievement": {
+      "viewed-50-games": "看過 50 款遊戲",
+      "first-ical-subscribe": "第一次訂閱行事曆",
+      "first-follow": "第一次追蹤",
+      "first-list": "第一次建立清單",
+      "all-achievements": "全成就"
+    }
   }
 }

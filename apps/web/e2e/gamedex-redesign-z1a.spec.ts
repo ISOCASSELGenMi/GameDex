@@ -128,7 +128,11 @@ test.describe("header 下拉（導覽、主題、語言、帳號）", () => {
 // ── 主題 ───────────────────────────────────────────────────────────────
 
 test.describe("主題下拉", () => {
-  const bg = (page: Page) => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  // 切換主題有 ≤200ms 的 crossfade（theme-fade class）：等它結束再量底色
+  const bg = async (page: Page) => {
+    await expect(page.locator("html")).not.toHaveClass(/theme-fade/);
+    return page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  };
   const LIGHT_BG = "rgb(238, 241, 247)";
   const DARK_BG = "rgb(10, 15, 28)";
 

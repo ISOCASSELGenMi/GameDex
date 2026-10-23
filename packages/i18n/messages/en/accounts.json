@@ -642,5 +642,48 @@
     "title": "Account suspended",
     "body": "Your account is currently suspended. You can still sign in, but you cannot add or change lists, play records, follows, the calendar or settings, and your public content is hidden from other people. You can export your data or delete your account.",
     "toPrivacy": "Export data or delete account"
+  },
+  "collection": {
+    "title": "Collection and achievements",
+    "loading": "Loading…",
+    "error": "Could not load your collection. Please try again later.",
+    "mediaTitle": "Game media collection",
+    "mediaCount": "Collected {n} of {total}",
+    "notCollected": "Not collected yet",
+    "themesTitle": "Unlocked themes",
+    "themesNone": "No themes unlocked yet.",
+    "themesHidden": "{n} more themes locked",
+    "achievementsTitle": "Achievements earned",
+    "achievementsNone": "No achievements yet.",
+    "achievementsHidden": "{n} hidden achievements left",
+    "allDone": "All achievements earned",
+    "media": {
+      "cartridge": "Cartridge",
+      "floppy": "Floppy disk",
+      "cd": "CD",
+      "dvd": "DVD",
+      "bluray": "Blu-ray disc",
+      "memory-card": "Memory card",
+      "game-card": "Game card",
+      "cloud": "Cloud"
+    },
+    "theme": {
+      "sony-blue": "Deep sea blue",
+      "xbox-green": "Emerald green",
+      "nintendo-red": "Blaze red",
+      "eight-bit": "8-bit",
+      "gold": "Collector gold",
+      "standby-purple": "Standby purple",
+      "arcade-neon": "Arcade neon",
+      "night-owl": "Night owl",
+      "coding": "Terminal"
+    },
+    "achievement": {
+      "viewed-50-games": "Viewed 50 games",
+      "first-ical-subscribe": "First calendar subscription",
+      "first-follow": "First follow",
+      "first-list": "First list",
+      "all-achievements": "All achievements"
+    }
   }
 }

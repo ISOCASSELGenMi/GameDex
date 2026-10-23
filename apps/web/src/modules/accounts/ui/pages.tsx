@@ -105,7 +105,7 @@ export function AccountShellView({ locale, children }: { locale: Locale; childre
 
 /** `/account`（總覽分頁）：已綁定的登入方式。 */
 export function AccountPageView({ locale }: { locale: Locale }): ReactElement {
-  const s = accountStrings(locale, ["account.", "common.", "login.error.", "providers."]);
+  const s = accountStrings(locale, ["account.", "common.", "login.error.", "providers.", "collection."]);
   return (
     <TabFrame title={str(s, "account.title")}>
       <AccountOverview strings={s} locale={locale} />

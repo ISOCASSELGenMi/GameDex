@@ -84,6 +84,8 @@ export function serverEnv(): NodeJS.ProcessEnv {
     AUTH_RATE_LIMIT_ENABLED: "false",
     AUTH_TRUSTED_ORIGINS: `${E2E_BASE_URL},${E2E_CLOSED_BASE_URL}`,
     NEXT_DIST_DIR: E2E_DIST_DIR,
+    // 彩蛋測試掛鉤（window.__eggTest）：只在 e2e 建置啟用；production 建置不設定，不暴露
+    NEXT_PUBLIC_EGG_TEST: "1",
     NEXT_TELEMETRY_DISABLED: "1",
     PORT: String(E2E_PORT),
   };

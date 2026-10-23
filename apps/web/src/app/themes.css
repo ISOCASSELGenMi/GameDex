@@ -1,0 +1,347 @@
+/*
+ * 隱藏主題（彩蛋解鎖；docs/design/easter-eggs.md）：每個主題是一組完整的 token，覆寫 globals.css 的 :root 預設。
+ * 只用配色與通用符號，不使用任何公司商標圖形。每組都過 WCAG AA（文字 4.5:1、焦點框 3:1）——
+ * test/unit/themes-z3a.test.ts 會解析本檔重新計算；改色時一併跑。
+ * 套用條件：<html data-theme="…"> 只在 localStorage 的解鎖紀錄有這個主題時才會被設上（kernel/ui/theme.ts、THEME_INIT_SCRIPT）。
+ */
+
+/* 深海藍（彩蛋 1a） */
+:root[data-theme="sony-blue"] {
+  color-scheme: dark;
+  --background: #071a3d;
+  --foreground: #e8f0ff;
+  --muted: #adc0e2;
+  --border: #2b4f93;
+  --surface: #0c2658;
+  --surface-strong: #143272;
+  --panel: #0b2354;
+  --link: #82b6ff;
+  --on-link: #04122e;
+  --accent-2: #a8b8ff;
+  --warn: #fcd34d;
+  --danger: #ffb3b3;
+  --up: #86efac;
+  --today: #123a85;
+  --focus: #9cc7ff;
+
+  --glass: rgb(11 35 84 / 0.78);
+  --glass-border: rgb(130 182 255 / 0.22);
+  --scrim: rgb(2 4 12 / 0.94);
+  --veil: rgb(2 4 12 / 0.62);
+
+  --glow-a: rgb(59 130 246 / 0.2);
+  --glow-b: rgb(14 165 233 / 0.14);
+
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4), 0 1px 1px rgb(0 0 0 / 0.3);
+  --shadow-2: 0 10px 24px -8px rgb(0 0 0 / 0.6), 0 2px 6px rgb(0 0 0 / 0.4);
+  --shadow-3: 0 26px 50px -14px rgb(0 0 0 / 0.75), 0 10px 16px -8px rgb(0 0 0 / 0.5);
+}
+
+/* 翡翠綠（彩蛋 1b） */
+:root[data-theme="xbox-green"] {
+  color-scheme: dark;
+  --background: #07160c;
+  --foreground: #e8f8ec;
+  --muted: #a9cdb2;
+  --border: #25673a;
+  --surface: #0d2616;
+  --surface-strong: #15351f;
+  --panel: #0c2214;
+  --link: #5fe38c;
+  --on-link: #04150a;
+  --accent-2: #b6f5cf;
+  --warn: #fcd34d;
+  --danger: #ffb4b4;
+  --up: #8ff5a8;
+  --today: #1b5a31;
+  --focus: #7df0a4;
+
+  --glass: rgb(12 34 20 / 0.78);
+  --glass-border: rgb(95 227 140 / 0.22);
+  --scrim: rgb(2 4 12 / 0.94);
+  --veil: rgb(2 4 12 / 0.62);
+
+  --glow-a: rgb(34 197 94 / 0.2);
+  --glow-b: rgb(16 185 129 / 0.14);
+
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4), 0 1px 1px rgb(0 0 0 / 0.3);
+  --shadow-2: 0 10px 24px -8px rgb(0 0 0 / 0.6), 0 2px 6px rgb(0 0 0 / 0.4);
+  --shadow-3: 0 26px 50px -14px rgb(0 0 0 / 0.75), 0 10px 16px -8px rgb(0 0 0 / 0.5);
+}
+
+/* 赤紅（彩蛋 1c） */
+:root[data-theme="nintendo-red"] {
+  color-scheme: light;
+  --background: #fdeeee;
+  --foreground: #2a0b0b;
+  --muted: #6b2b2b;
+  --border: #d99a9a;
+  --surface: #f8dede;
+  --surface-strong: #f0c8c8;
+  --panel: #ffffff;
+  --link: #b00f0f;
+  --on-link: #ffffff;
+  --accent-2: #7a1fa2;
+  --warn: #8a3b0a;
+  --danger: #9b1111;
+  --up: #14602f;
+  --today: #ffd0d0;
+  --focus: #b00f0f;
+
+  --glass: rgb(255 255 255 / 0.78);
+  --glass-border: rgb(176 15 15 / 0.22);
+  --scrim: rgb(20 6 6 / 0.94);
+  --veil: rgb(20 6 6 / 0.62);
+
+  --glow-a: rgb(239 68 68 / 0.14);
+  --glow-b: rgb(251 146 60 / 0.1);
+
+  --shadow-1: 0 1px 2px rgb(60 10 10 / 0.08), 0 1px 1px rgb(60 10 10 / 0.05);
+  --shadow-2: 0 8px 20px -6px rgb(60 10 10 / 0.18), 0 2px 5px rgb(60 10 10 / 0.08);
+  --shadow-3: 0 22px 44px -12px rgb(60 10 10 / 0.34), 0 8px 14px -8px rgb(60 10 10 / 0.18);
+}
+
+/* 8-bit 復古像素（彩蛋 2） */
+:root[data-theme="eight-bit"] {
+  color-scheme: dark;
+  --background: #1a1c2c;
+  --foreground: #f4f4f4;
+  --muted: #b9bddb;
+  --border: #5d6290;
+  --surface: #262a43;
+  --surface-strong: #323859;
+  --panel: #222640;
+  --link: #ffcd75;
+  --on-link: #1a1c2c;
+  --accent-2: #73eff7;
+  --warn: #ffcd75;
+  --danger: #ff9ba8;
+  --up: #a7f070;
+  --today: #2b3a7a;
+  --focus: #73eff7;
+
+  --glass: rgb(34 38 64 / 0.78);
+  --glass-border: rgb(255 205 117 / 0.22);
+  --scrim: rgb(2 4 12 / 0.94);
+  --veil: rgb(2 4 12 / 0.62);
+
+  --glow-a: rgb(59 93 201 / 0.2);
+  --glow-b: rgb(65 166 246 / 0.14);
+
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4), 0 1px 1px rgb(0 0 0 / 0.3);
+  --shadow-2: 0 10px 24px -8px rgb(0 0 0 / 0.6), 0 2px 6px rgb(0 0 0 / 0.4);
+  --shadow-3: 0 26px 50px -14px rgb(0 0 0 / 0.75), 0 10px 16px -8px rgb(0 0 0 / 0.5);
+}
+
+/* 圖鑑完成金（彩蛋 3） */
+:root[data-theme="gold"] {
+  color-scheme: dark;
+  --background: #16110a;
+  --foreground: #fdf3d6;
+  --muted: #d4c08c;
+  --border: #6e5622;
+  --surface: #231a0c;
+  --surface-strong: #322410;
+  --panel: #1f160a;
+  --link: #ffd24d;
+  --on-link: #1a1204;
+  --accent-2: #ffe496;
+  --warn: #ffd24d;
+  --danger: #ffb4a8;
+  --up: #b8f08c;
+  --today: #5e4410;
+  --focus: #ffd24d;
+
+  --glass: rgb(31 22 10 / 0.78);
+  --glass-border: rgb(255 210 77 / 0.22);
+  --scrim: rgb(2 4 12 / 0.94);
+  --veil: rgb(2 4 12 / 0.62);
+
+  --glow-a: rgb(234 179 8 / 0.2);
+  --glow-b: rgb(245 158 11 / 0.14);
+
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4), 0 1px 1px rgb(0 0 0 / 0.3);
+  --shadow-2: 0 10px 24px -8px rgb(0 0 0 / 0.6), 0 2px 6px rgb(0 0 0 / 0.4);
+  --shadow-3: 0 26px 50px -14px rgb(0 0 0 / 0.75), 0 10px 16px -8px rgb(0 0 0 / 0.5);
+}
+
+/* 待機暗紫（彩蛋 4） */
+:root[data-theme="standby-purple"] {
+  color-scheme: dark;
+  --background: #140b28;
+  --foreground: #f0eaff;
+  --muted: #c1b3e8;
+  --border: #4d3688;
+  --surface: #1d1139;
+  --surface-strong: #291852;
+  --panel: #1a0f35;
+  --link: #c8a9ff;
+  --on-link: #140b28;
+  --accent-2: #f0abfc;
+  --warn: #fcd34d;
+  --danger: #ffb3c1;
+  --up: #9af0b8;
+  --today: #3d2379;
+  --focus: #d6bcff;
+
+  --glass: rgb(26 15 53 / 0.78);
+  --glass-border: rgb(200 169 255 / 0.22);
+  --scrim: rgb(2 4 12 / 0.94);
+  --veil: rgb(2 4 12 / 0.62);
+
+  --glow-a: rgb(139 92 246 / 0.2);
+  --glow-b: rgb(217 70 239 / 0.14);
+
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4), 0 1px 1px rgb(0 0 0 / 0.3);
+  --shadow-2: 0 10px 24px -8px rgb(0 0 0 / 0.6), 0 2px 6px rgb(0 0 0 / 0.4);
+  --shadow-3: 0 26px 50px -14px rgb(0 0 0 / 0.75), 0 10px 16px -8px rgb(0 0 0 / 0.5);
+}
+
+/* 街機霓虹（彩蛋 5） */
+:root[data-theme="arcade-neon"] {
+  color-scheme: dark;
+  --background: #06030f;
+  --foreground: #f6f1ff;
+  --muted: #bcb3dc;
+  --border: #a0239a;
+  --surface: #0e0625;
+  --surface-strong: #1a0b3d;
+  --panel: #0b0520;
+  --link: #3df5ff;
+  --on-link: #06030f;
+  --accent-2: #ff7af0;
+  --warn: #ffe24d;
+  --danger: #ff94a8;
+  --up: #7dffb0;
+  --today: #3a0f63;
+  --focus: #ffe24d;
+
+  --glass: rgb(11 5 32 / 0.78);
+  --glass-border: rgb(61 245 255 / 0.22);
+  --scrim: rgb(2 4 12 / 0.94);
+  --veil: rgb(2 4 12 / 0.62);
+
+  --glow-a: rgb(255 43 214 / 0.2);
+  --glow-b: rgb(34 211 238 / 0.14);
+
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4), 0 1px 1px rgb(0 0 0 / 0.3);
+  --shadow-2: 0 10px 24px -8px rgb(0 0 0 / 0.6), 0 2px 6px rgb(0 0 0 / 0.4);
+  --shadow-3: 0 26px 50px -14px rgb(0 0 0 / 0.75), 0 10px 16px -8px rgb(0 0 0 / 0.5);
+}
+
+/* 夜貓子（彩蛋 6） */
+:root[data-theme="night-owl"] {
+  color-scheme: dark;
+  --background: #08141a;
+  --foreground: #e0f4f6;
+  --muted: #9fc4ca;
+  --border: #245660;
+  --surface: #0e222a;
+  --surface-strong: #15313b;
+  --panel: #0d1f27;
+  --link: #6ee3da;
+  --on-link: #052222;
+  --accent-2: #a5c9ff;
+  --warn: #fcd34d;
+  --danger: #ffb4b4;
+  --up: #8ef0b4;
+  --today: #17505a;
+  --focus: #8ff0e8;
+
+  --glass: rgb(13 31 39 / 0.78);
+  --glass-border: rgb(110 227 218 / 0.22);
+  --scrim: rgb(2 4 12 / 0.94);
+  --veil: rgb(2 4 12 / 0.62);
+
+  --glow-a: rgb(20 184 166 / 0.2);
+  --glow-b: rgb(56 189 248 / 0.14);
+
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4), 0 1px 1px rgb(0 0 0 / 0.3);
+  --shadow-2: 0 10px 24px -8px rgb(0 0 0 / 0.6), 0 2px 6px rgb(0 0 0 / 0.4);
+  --shadow-3: 0 26px 50px -14px rgb(0 0 0 / 0.75), 0 10px 16px -8px rgb(0 0 0 / 0.5);
+}
+
+/* Coding 終端機（彩蛋 8；等寬字型為使用者指定的例外） */
+:root[data-theme="coding"] {
+  color-scheme: dark;
+  --background: #000000;
+  --foreground: #4dff7a;
+  --muted: #6fd88a;
+  --border: #1f8a3c;
+  --surface: #06140a;
+  --surface-strong: #0c2412;
+  --panel: #030d06;
+  --link: #5ff5ff;
+  --on-link: #000000;
+  --accent-2: #ffe66d;
+  --warn: #ffe66d;
+  --danger: #ff8a8a;
+  --up: #4dff7a;
+  --today: #0f3d1c;
+  --focus: #5ff5ff;
+
+  --glass: rgb(3 13 6 / 0.78);
+  --glass-border: rgb(95 245 255 / 0.22);
+  --scrim: rgb(2 4 12 / 0.94);
+  --veil: rgb(2 4 12 / 0.62);
+
+  --glow-a: rgb(34 197 94 / 0.2);
+  --glow-b: rgb(0 0 0 / 0.14);
+
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4), 0 1px 1px rgb(0 0 0 / 0.3);
+  --shadow-2: 0 10px 24px -8px rgb(0 0 0 / 0.6), 0 2px 6px rgb(0 0 0 / 0.4);
+  --shadow-3: 0 26px 50px -14px rgb(0 0 0 / 0.75), 0 10px 16px -8px rgb(0 0 0 / 0.5);
+}
+
+/* 8-bit：方角、硬陰影、等寬粗體（系統字型，不新增字型套件） */
+:root[data-theme="eight-bit"] {
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  --radius-xl: 0;
+  --shadow-1: 2px 2px 0 rgb(0 0 0 / 0.55);
+  --shadow-2: 4px 4px 0 rgb(0 0 0 / 0.55);
+  --shadow-3: 6px 6px 0 rgb(0 0 0 / 0.6);
+  --glass-blur: none;
+}
+:root[data-theme="eight-bit"] body {
+  font-family: ui-monospace, "Cascadia Mono", "SFMono-Regular", Consolas, "Courier New", monospace;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  image-rendering: pixelated;
+}
+:root[data-theme="eight-bit"] img,
+:root[data-theme="eight-bit"] canvas {
+  image-rendering: pixelated;
+}
+
+/* Coding：終端機（黑底綠字、等寬字型；使用者指定的例外，見 docs/design/easter-eggs.md #8） */
+:root[data-theme="coding"] {
+  --radius-sm: 2px;
+  --radius-md: 2px;
+  --radius-lg: 3px;
+  --radius-xl: 4px;
+  --shadow-1: none;
+  --shadow-2: 0 0 0 1px rgb(77 255 122 / 0.35);
+  --shadow-3: 0 0 0 1px rgb(77 255 122 / 0.5);
+  --glass-blur: none;
+}
+:root[data-theme="coding"] body {
+  font-family: ui-monospace, "Cascadia Mono", "SFMono-Regular", Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+/* 街機霓虹：輪廓發光（只用 box-shadow／text-shadow，不影響文字對比判定） */
+:root[data-theme="arcade-neon"] .btn-primary {
+  box-shadow: 0 0 0 1px rgb(61 245 255 / 0.7), 0 0 14px rgb(61 245 255 / 0.35);
+}
+
+/* 主題切換的短 crossfade：只對背景色、文字色、邊框色做 ≤ 200ms 轉場（逐項列出屬性，不用 all 簡寫）；reduced-motion 時 JS 不會加這個 class */
+html.theme-fade,
+html.theme-fade *,
+html.theme-fade *::before,
+html.theme-fade *::after {
+  transition:
+    background-color 180ms ease,
+    color 180ms ease,
+    border-color 180ms ease;
+}

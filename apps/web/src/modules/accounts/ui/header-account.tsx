@@ -9,11 +9,13 @@
  */
 import { useEffect, useState, type ReactElement } from "react";
 import { Dropdown } from "@/kernel/ui/dropdown";
+import { registerUnlockSync } from "@/kernel/ui/unlocks";
 import { UserIcon } from "@/kernel/ui/header-icons";
 import { getPublicConfig, getSession, signOut, type SessionUser } from "./auth-api";
 import { ACCOUNT_TABS, accountPageHref, accountTabHref } from "./links";
 import { str } from "./str";
 import type { AccountStrings } from "./strings";
+import { accountUnlockSync } from "./unlocks-api";
 
 type State = { kind: "loading" } | { kind: "disabled" } | { kind: "anonymous"; signupEnabled: boolean } | { kind: "user"; user: SessionUser };
 
@@ -38,6 +40,14 @@ export function HeaderAccount({ locale, strings }: { locale: string; strings: Ac
       alive = false;
     };
   }, []);
+
+  // 登入狀態確定後掛上解鎖紀錄同步器（kernel/ui/unlocks 的合約；登出或元件卸載時移除）。彩蛋端在掛上時合併一次。
+  const signedIn = state.kind === "user";
+  useEffect(() => {
+    if (!signedIn) return;
+    registerUnlockSync(accountUnlockSync);
+    return () => registerUnlockSync(null);
+  }, [signedIn]);
 
   if (state.kind === "disabled") return null;
   if (state.kind === "loading") return <div className="dd-slot" aria-hidden="true" data-account-slot="loading" />;

@@ -547,7 +547,16 @@
     "menuLabel": "主題",
     "system": "系統",
     "light": "亮色",
-    "dark": "暗色"
+    "dark": "暗色",
+    "deepBlue": "深海藍",
+    "emerald": "翡翠綠",
+    "crimson": "赤紅",
+    "eightBit": "8-bit",
+    "gold": "圖鑑完成金",
+    "standbyPurple": "待機暗紫",
+    "arcadeNeon": "街機霓虹",
+    "nightOwl": "夜貓子",
+    "coding": "Coding"
   },
   "search": {
     "label": "搜尋遊戲",
@@ -594,5 +603,29 @@
     "minVotesLabel": "「{column}」至少要有幾筆",
     "minVotesHint": "只列出「{column}」的評分人數達到這個數字的遊戲，避免只有少數人評分的遊戲衝上榜首。留空使用預設值 {default}。",
     "note": "名次依排序欄位的分數由高到低計算，同分同名次；名次升降是相對於上一個排序欄位。排序欄位預設只列出評分人數至少 {default} 的遊戲，可在篩選中調整。"
+  },
+  "egg": {
+    "unlockedTheme": "已解鎖主題",
+    "unlockedCollectible": "收集到",
+    "unlockedAchievement": "達成成就",
+    "apply": "立即套用",
+    "close": "關閉",
+    "collectible": {
+      "cartridge": "卡匣",
+      "floppy": "磁片",
+      "cd": "CD",
+      "dvd": "DVD",
+      "bluray": "藍光",
+      "memoryCard": "記憶卡",
+      "gameCard": "遊戲卡帶",
+      "cloud": "雲端"
+    },
+    "achievement": {
+      "viewed50Games": "看過 50 款遊戲",
+      "firstIcalSubscribe": "第一次訂閱行事曆",
+      "firstFollow": "第一次追蹤",
+      "firstList": "第一次建立清單",
+      "allAchievements": "全成就"
+    }
   }
 }

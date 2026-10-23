@@ -1,0 +1,144 @@
+/*
+ * 互動背景與彩蛋（kernel/ui/eggs；docs/design/easter-eggs.md）：背景 canvas、解鎖提示、波動拳、全成就彩虹框線。
+ * 動畫準則：提示從畫面右緣進出（同方向）、進場 ease-out 220ms、出場更快（140ms）；只動 transform／opacity。
+ * 波動拳是罕見的驚喜，可以長一點（1.15s）。prefers-reduced-motion：提示只淡入淡出、波動拳不飛。
+ */
+
+/* 背景：固定、在所有內容下層、不吃指標事件（點擊用事件 target 判斷，見 bg-target.ts） */
+.egg-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* 解鎖提示 */
+.egg-toasts {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+  max-width: calc(100vw - 2rem);
+  pointer-events: none;
+}
+.egg-toast {
+  pointer-events: auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.875rem;
+  max-width: 26rem;
+  padding: 0.75rem 0.875rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--panel);
+  color: var(--foreground);
+  box-shadow: var(--shadow-3);
+  opacity: 0;
+  transform: translateX(calc(100% + 1.5rem));
+  transition:
+    transform 220ms var(--ease-out),
+    opacity 220ms var(--ease-out);
+}
+.egg-toast[data-state="in"] {
+  opacity: 1;
+  transform: none;
+}
+.egg-toast[data-state="out"] {
+  opacity: 0;
+  transform: translateX(calc(100% + 1.5rem));
+  transition-duration: 140ms;
+}
+.egg-toast-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.egg-toast-kind {
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+.egg-toast-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.egg-toast-btn {
+  min-height: 44px;
+  padding-inline: 0.875rem;
+}
+.egg-toast-btn:active {
+  transform: scale(0.97);
+}
+@media (max-width: 479px) {
+  .egg-toasts {
+    right: 0.5rem;
+    left: 0.5rem;
+    bottom: 0.5rem;
+    max-width: none;
+    align-items: stretch;
+  }
+  .egg-toast {
+    max-width: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .egg-toast,
+  .egg-toast[data-state="out"] {
+    transform: none;
+    transition-property: opacity;
+  }
+}
+
+/* 波動拳（彩蛋 5）：一顆能量球從左緣飛到右緣 */
+.egg-hadouken {
+  position: fixed;
+  left: 0;
+  z-index: 95;
+  width: 84px;
+  height: 84px;
+  margin-top: -42px;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(circle at 40% 40%, #ffffff 0 14%, #a5e4ff 32%, #2f7bff 62%, rgb(47 123 255 / 0) 72%);
+  box-shadow:
+    -60px 0 40px -6px rgb(47 123 255 / 0.55),
+    -140px 0 60px -14px rgb(47 123 255 / 0.3);
+  animation: egg-hadouken 1.15s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+  will-change: transform;
+}
+@keyframes egg-hadouken {
+  from {
+    transform: translateX(-220px) scale(0.7);
+  }
+  to {
+    transform: translateX(calc(100vw + 280px)) scale(1.1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .egg-hadouken {
+    display: none;
+  }
+}
+
+/* 全成就（彩蛋 7 的 all-achievements）：header 帳號按鈕的彩虹框線（<html data-all-achievements>） */
+:root[data-all-achievements] .hd-right [data-dropdown="account"] .dd-trigger {
+  --rb-fill: var(--background);
+  border: 2px solid transparent;
+  background:
+    linear-gradient(var(--rb-fill), var(--rb-fill)) padding-box,
+    linear-gradient(90deg, #f43f5e, #f59e0b, #eab308, #22c55e, #06b6d4, #6366f1, #d946ef) border-box;
+}
+@media (hover: hover) and (pointer: fine) {
+  :root[data-all-achievements] .hd-right [data-dropdown="account"] .dd-trigger:hover {
+    --rb-fill: var(--surface);
+  }
+}

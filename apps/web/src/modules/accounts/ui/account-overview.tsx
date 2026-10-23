@@ -1,6 +1,7 @@
 "use client";
 /** `/[locale]/account`（總覽分頁）：已綁定的登入方式（解除綁定、綁定 Steam）。個人摘要與登出在帳號頁殼（account-shell.tsx）。 */
 import { useCallback, useEffect, useState, type ReactElement } from "react";
+import { AccountCollection } from "./account-collection";
 import { isExternalProvider } from "../domain/entities/providers";
 import { listAccounts, unlinkAccount, type LinkedAccountRow } from "./auth-api";
 import { useAccountSession } from "./account-session";
@@ -52,40 +53,48 @@ export function AccountOverview({ strings, locale }: { strings: AccountStrings; 
   }
 
   return (
-    <section aria-labelledby="linked-heading" className="flex flex-col gap-2">
-      <h2 id="linked-heading" className="text-xl font-bold">
-        {str(strings, "account.linked")}
-      </h2>
-      <p className="text-sm text-[var(--muted)]">{str(strings, "account.linkedHint")}</p>
-      {returnedError && !message ? (
-        <p role="alert" className="notice text-[var(--danger)]">
-          {oauthErrorText(strings, returnedError)}
-        </p>
-      ) : null}
-      {message ? (
-        <p role={message.tone === "error" ? "alert" : "status"} className={`notice ${message.tone === "error" ? "text-[var(--danger)]" : ""}`}>
-          {message.text}
-        </p>
-      ) : null}
-      {linked.length === 0 ? (
-        <p>{str(strings, "account.linkedNone")}</p>
-      ) : (
-        <ul className="flex flex-col gap-2">
-          {linked.map((row) => (
-            <li key={row.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-[var(--border)] px-3 py-1">
-              <span>{str(strings, `providers.${row.providerId}`)}</span>
-              <button type="button" className="btn-secondary" aria-label={str(strings, "account.unlinkAria", { provider: str(strings, `providers.${row.providerId}`) })} onClick={() => void onUnlink(row)}>
-                {str(strings, "account.unlink")}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-      {!steamLinked ? (
-        <p>
-          <LinkSteamButton strings={strings} returnTo={accountPageHref(locale, "account")} onError={(text) => setMessage({ tone: "error", text })} />
-        </p>
-      ) : null}
-    </section>
+    <div className="flex flex-col gap-6">
+      <AccountCollection strings={strings} />
+      <section aria-labelledby="linked-heading" className="flex flex-col gap-2">
+        <h2 id="linked-heading" className="text-xl font-bold">
+          {str(strings, "account.linked")}
+        </h2>
+        <p className="text-sm text-[var(--muted)]">{str(strings, "account.linkedHint")}</p>
+        {returnedError && !message ? (
+          <p role="alert" className="notice text-[var(--danger)]">
+            {oauthErrorText(strings, returnedError)}
+          </p>
+        ) : null}
+        {message ? (
+          <p role={message.tone === "error" ? "alert" : "status"} className={`notice ${message.tone === "error" ? "text-[var(--danger)]" : ""}`}>
+            {message.text}
+          </p>
+        ) : null}
+        {linked.length === 0 ? (
+          <p>{str(strings, "account.linkedNone")}</p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {linked.map((row) => (
+              <li key={row.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-[var(--border)] px-3 py-1">
+                <span>{str(strings, `providers.${row.providerId}`)}</span>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  aria-label={str(strings, "account.unlinkAria", { provider: str(strings, `providers.${row.providerId}`) })}
+                  onClick={() => void onUnlink(row)}
+                >
+                  {str(strings, "account.unlink")}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {!steamLinked ? (
+          <p>
+            <LinkSteamButton strings={strings} returnTo={accountPageHref(locale, "account")} onError={(text) => setMessage({ tone: "error", text })} />
+          </p>
+        ) : null}
+      </section>
+    </div>
   );
 }

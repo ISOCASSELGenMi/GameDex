@@ -3,6 +3,7 @@
  */
 import { isRecord, readText, type FieldErrors, type ListVisibility, type Validated } from "./lists";
 import { LIST_VISIBILITIES, REVIEW_VISIBILITIES } from "./providers";
+import type { UnlockView } from "./unlocks";
 import type { ReviewVisibility } from "./play-records";
 
 export const DISPLAY_NAME_MAX = 100;
@@ -236,4 +237,6 @@ export interface AccountExport {
     createdAt: string;
     lastAccessedAt: string | null;
   } | null;
+  /** 彩蛋解鎖紀錄（主題、收集物、成就；Z3B）。 */
+  unlocks: UnlockView[];
 }

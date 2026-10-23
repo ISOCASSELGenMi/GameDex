@@ -9,6 +9,8 @@ import { THEME_INIT_SCRIPT } from "@/kernel/ui/theme";
 import { LocaleBody, TOGGLE_TRANSITION_SCRIPT } from "@/modules/catalog/ui";
 import { renderUiSlot } from "../_lib/slots";
 import "../globals.css";
+import "../themes.css";
+import "../eggs.css";
 
 export async function generateStaticParams(): Promise<{ locale: string }[]> {
   return getLocaleConfig().supported.map((locale) => ({ locale }));

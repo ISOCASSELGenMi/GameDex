@@ -20,7 +20,7 @@ export const accountsModule: ModuleManifest = {
   kind: "optional",
   requires: [],
   requiredEnv: ["AUTH_SECRET", "TOKEN_ENCRYPTION_KEY"],
-  ownedTables: ["users", "connected_accounts", "sessions", "auth_verifications", "auth_tokens", "owned_games", "user_lists", "user_list_games", "play_records", "game_player_ratings", "follows", "calendar_feeds"],
+  ownedTables: ["users", "connected_accounts", "sessions", "auth_verifications", "auth_tokens", "owned_games", "user_lists", "user_list_games", "play_records", "game_player_ratings", "follows", "calendar_feeds", "user_unlocks"],
   jobs: [
     {
       name: "cleanup_auth_rows",
