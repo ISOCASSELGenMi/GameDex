@@ -164,7 +164,7 @@
   - `mine` 維持 `/account/games` 專頁，月曆／時間軸／瀏覽頁加連結；`followed` 只含直接追蹤的遊戲；月曆／時間軸卡片加追蹤按鈕（批次查狀態）；平台／系列／公司／活動頁也顯示追蹤人數
   - 「上升中」加門檻：7 天至少 10 人新追蹤且在同群前 5%；私人 iCal 關掉「包含活動」時完全不含活動（含明確追蹤的）；私人 iCal 加遊戲類型篩選 UI，地區維持偏好
   - 孤兒清理保險（≥ 20 個全不存在時不刪）保留並發告警；匯出加入 role、handle、emailVerified；刪帳號後等每小時重算可接受
-- [ ] 實作 D83（分支 `feat/phase7-w7b`，疊在第 7 波上）
+- [x] 實作 D83（分支 `feat/phase7-w7b`，疊在第 7 波上；舊 repo PR 已合併，2026-10-17）
 - [ ] 使用者：過目 ja 用語（クリア／全クリア／挫折 等）；隱私權政策帳號段落請律師審閱
 - [x] 第 6 波：追蹤、我的遊戲（mine）、熱度訊號、私人 iCal（分支 `feat/phase7-w6`，PR 疊在 #9 上，2026-10-17；待合併；migration 0010 未套開發 DB）
 - [x] 第 7 波：資料匯出、刪除帳號、停權、偏好設定頁（分支 `feat/phase7-w7`，PR 疊在 #10 上，2026-10-17；待合併；無 migration）
@@ -190,10 +190,11 @@
 - [ ] Z2 待決：評分排名頁篩選只列常用平台（為壓 HTML）（2026-10-23 新增）。同列的其他項目已處理：分組查詢、平台頁全部遊戲冷查詢、/games HTML 由 Z6 解決；Next 16.4.0 安全漏洞由 GameDex#2 升到 16.4.1 解決（2026-10-24）
 - [x] 第二輪 Z6 效能（2026-10-24，PR `ISOCASSELGenMi/GameDex#3`，`perf/z2-queries`；npm test 1271、單元 928、test:a11y 892 過）：預先計算 `games.release_group`／`publisher_group` 與 `release_picks`；migration 0015、0016 已套開發 DB，`backfill_game_groups` 已跑完（408 秒）；開發 DB 實測分組最慢 391 ms、平台頁全部遊戲最慢 308 ms，/games HTML 166～173 KB；spec 寫回 03、04、06、16、90、CHANGELOG
 - [x] GameDex#1（第二輪 Z1～Z4）、#2（Next 16.4.1 安全修補）合併到 main（2026-10-24）
+- [x] GameDex#3（Z6）合併到 main；修偶發失敗的 PR 開立、交接檔 `docs/handoff/2026-10-24-gamedex-z6-done.md`；開發暫停等使用者重開（2026-10-24）
 - [x] 開發 DB 重算 `display_names`：1,693 款補上 zh-Hant（例：王國之淚），未移除任何既有中文名；全庫 zh-Hant 218 → 1,911（2026-10-18）
 - [x] Z1 加做（2026-10-22 完成；`recompute_display_names` 尚未在開發 DB 執行）：搜尋候選名單（所有搜尋框共用 combobox 元件）；`recompute_display_names` 任務（規則改動時全庫重算，只動 display_names，不打 IGDB）（2026-10-18 新增）
 - [x] 第二輪 Z3（2026-10-23，`7d8f251`；npm test 1227、test:a11y 871 過／1 偶發失敗，單跑 51/51 過）：互動背景（只在內容欄兩側）、彩蛋 1～8、9 個隱藏主題、`user_unlocks` 跨裝置同步、帳號頁收藏與成就；migration 0013 已套開發 DB（2026-10-23）
-- [ ] 偶發失敗：`accounts-w7b-u.spec.ts:271`（時間軸追蹤按鈕批次查詢）整套負載重時逾時，Z2、Z3 各一次（2026-10-23 新增）
+- [x] 偶發失敗：`accounts-w7b-u.spec.ts:271`（時間軸追蹤按鈕批次查詢）整套負載重時失敗，Z2、Z3 各一次（2026-10-23 新增；2026-10-24 修）。根因：不是逾時也不是批次查詢競爭，而是 axe target-size 誤報——點追蹤鈕時 Playwright 把頁面捲到 scrollY≈269，頁首的「我的遊戲」連結被捲到 sticky 標頭底下（rect y=-4），axe 判定部分被遮住；捲動量隨載入時序變，負載重時才出現。修法：axe 前 `scrollTo(0,0)`。壓力重現（8 顆 CPU 燒滿、`--repeat-each=24 --workers=8`）修前 4、1、1/24 失敗，修後 48/48 通過
 - [x] 第二輪 Z4（2026-10-23，`ab514f1`；npm test 1256、test:a11y 892 過）：詳情頁補資訊（公司分三欄、Theme、Game Modes、Player Perspectives、引擎、各語言標題、其他稱呼、Storyline、Editions 與相關內容分組）；migration 0014 已套開發 DB，`backfill_detail_fields` 已跑完（634 批、16.5 分、0 失敗；storyline 31,208 款、遊戲人數 315,710 筆、引擎 89,153 筆）（2026-10-23）
 - [x] 修正時間軸 client 不合法 week 被退回今天的 bug（e2e x2:48 偶發失敗的原因）（2026-10-23）
 - [x] 第二輪收尾：spec 寫回（02、03、04、05、06、07、09、15、90、CHANGELOG；D87）、開 PR `feat/gamedex-v2` → main（2026-10-23）
