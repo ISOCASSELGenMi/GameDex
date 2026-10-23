@@ -110,6 +110,10 @@ describe.skipIf(!enabled)("Z6 預先計算（整合）", () => {
   });
   afterAll(async () => {
     await db().execute(sql`DELETE FROM sync_state WHERE job_name = ${GAME_GROUPS_BACKFILL_STATE}`);
+    // 公司的 igdb_id 與其他測試檔共用（FromSoftware 等真實 id），測試資料全部清掉
+    await db().delete(games).where(like(games.slug, "z6-%"));
+    await db().delete(companies).where(like(companies.slug, "z6-co-%"));
+    await db().delete(platforms).where(like(platforms.slug, "z6-%"));
     await closeDb();
   });
 
@@ -118,7 +122,7 @@ describe.skipIf(!enabled)("Z6 預先計算（整合）", () => {
       // 開發 FromSoftware、發行萬代南夢宮 → fromsoftware；日精度
       { id: 870001, name: "Z6 Elden", slug: "z6-elden", platforms: [PC, CONSOLE], involved_companies: [company(BANDAI, "publisher"), company(FROM, "developer")], release_dates: [rd(PC, "2036-09-10", 0), rd(CONSOLE, "2036-09-12", 0)] },
       // 開發商不在名單、發行任天堂 → nintendo；年精度
-      { id: 870002, name: "Z6 Zelda", slug: "z6-zelda", platforms: [CONSOLE], involved_companies: [company(INDIE, "developer"), company(NINTENDO, "publisher")], release_dates: [rd(CONSOLE, "2037-01-01", 6)] },
+      { id: 870002, name: "Z6 Zelda", slug: "z6-zelda", platforms: [CONSOLE], involved_companies: [company(INDIE, "developer"), company(NINTENDO, "publisher")], release_dates: [rd(CONSOLE, "2037-01-01", 2)] },
       // porting 不參與 → other；日期未定
       { id: 870003, name: "Z6 Port", slug: "z6-port", platforms: [PC], involved_companies: [company(FROM, "porting")], release_dates: [rd(PC, null, 7)] },
       // 沒有公司、沒有上市日
@@ -207,9 +211,10 @@ describe.skipIf(!enabled)("Z6 預先計算（整合）", () => {
   it("/games 分組檢視讀預先計算的欄位：廠商欄與日期組", async () => {
     const byPub = await getGameGroups({ by: "publisher", q: "z6", locale: "zh-Hant", perGroup: 6, now: new Date("2026-10-21T00:00:00Z") });
     const keys = byPub.groups.map((g) => g.key);
-    expect(keys).toEqual(["fromsoftware", "nintendo", "other"].filter((k) => keys.includes(k)));
+    expect(keys).toEqual(["nintendo", "fromsoftware", "other"].filter((k) => keys.includes(k)));
     expect(byPub.groups.find((g) => g.key === "fromsoftware")!.cards.map((c) => c.slug)).toEqual(["z6-elden"]);
-    expect(byPub.groups.find((g) => g.key === "other")!.cards.map((c) => c.slug).sort()).toEqual(["z6-bare", "z6-port", "z6-zelda"].sort());
+    expect(byPub.groups.find((g) => g.key === "nintendo")!.cards.map((c) => c.slug)).toEqual(["z6-zelda"]);
+    expect(byPub.groups.find((g) => g.key === "other")!.cards.map((c) => c.slug).sort()).toEqual(["z6-bare", "z6-port"]);
     const byDate = await getGameGroups({ by: "date", q: "z6", locale: "zh-Hant", perGroup: 6, now: new Date("2026-10-21T00:00:00Z") });
     expect(byDate.groups.map((g) => g.key)).toEqual(["2036-09", "tbd"]);
   });
@@ -226,7 +231,7 @@ describe.skipIf(!enabled)("Z6 平台頁 全部遊戲：release_picks 與即時�
       // 日期：每 3 款同一天（日期平手由熱度／名稱決定）；每 7 款一個年精度、每 11 款日期未定；每 9 款多一個搶先體驗階段
       const day = `2036-${String(1 + (i % 12)).padStart(2, "0")}-${String(1 + (Math.floor(i / 3) % 27)).padStart(2, "0")}`;
       const dates = [i % 11 === 0 ? rd(PLAT, null, 7) : i % 7 === 0 ? rd(PLAT, `${2036 + (i % 3)}-01-01`, 6) : rd(PLAT, day, 0)];
-      if (i % 9 === 0) dates.push(rd(PLAT, day, 0, 4));
+      if (i % 9 === 0) dates.push(rd(PLAT, `${day.slice(0, 8)}28`, 0, 4)); // 日期不同才不會被合併成同一列
       rows.push({ id: 871000 + i, name: `Z6 All ${String(((i * 7) % N) + 1).padStart(2, "0")}${i % 5 === 0 ? " Ä" : ""}`, slug: `z6-all-${i}`, platforms: [PLAT], release_dates: dates });
     }
     await sync(rows);
@@ -277,7 +282,7 @@ describe.skipIf(!enabled)("Z6 平台頁 全部遊戲：release_picks 與即時�
 
   it("日期排序：日期未定排最後；全部頁串起來沒有重複也沒有遺漏", async () => {
     const seen: string[] = [];
-    let dates: Array<string | null> = [];
+    const dates: Array<string | null> = [];
     for (let offset = 0; offset < 200; offset += 7) {
       const p = await page("date", offset, true);
       for (const i of p.items) {
@@ -287,7 +292,7 @@ describe.skipIf(!enabled)("Z6 平台頁 全部遊戲：release_picks 與即時�
       if (!p.hasMore) break;
     }
     expect(new Set(seen).size).toBe(seen.length);
-    const total = N + Math.floor(N / 9); // 每 9 款多一個階段
+    const total = N; // 每 9 款多的搶先體驗階段不在預設篩選的階段內，不會出現
     expect(seen).toHaveLength(total);
     const firstNull = dates.indexOf(null);
     expect(firstNull).toBeGreaterThan(0);

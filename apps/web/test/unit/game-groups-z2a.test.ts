@@ -191,16 +191,19 @@ describe("組查詢的 SQL 組裝", () => {
     expect(q.params.some((p) => Array.isArray(p) && p.length > 500)).toBe(false);
     expect(q.sql).toMatch(/LIMIT 7|LIMIT \$\d+/);
   });
-  it("組內卡片：每組一個 LATERAL 依組 index 取 [offset, offset+limit)，不掃其他組", () => {
+  it("組內卡片：每組一個 UNION ALL 子查詢依組 index 取 [offset, offset+limit)，不掃其他組", () => {
     const date = sqlOf(buildGroupCardsQuery({ ...base, by: "date", keys: ["2026-10"], offset: 0, limit: 8 }));
-    expect(date.sql).toContain("g.release_group = k.gkey");
-    expect(date.sql).toContain("CROSS JOIN LATERAL");
+    expect(date.sql).toMatch(/g\.release_group = \$\d+/);
+    expect(date.sql).toContain("OFFSET");
+    expect(date.sql).toContain("LIMIT");
     expect(date.sql).toContain("g.popularity_score DESC NULLS LAST, g.name ASC, g.id ASC");
     const plat = sqlOf(buildGroupCardsQuery({ ...base, by: "platform", keys: ["ps5"], offset: 0, limit: 8 }));
-    expect(plat.sql).toContain("plg.slug = k.gkey");
-    expect(plat.sql).toContain("plg.kind <> 'mobile'");
+    expect(plat.sql).toContain("EXISTS (SELECT 1 FROM game_platforms gpg");
+    expect(plat.sql).toContain("(SELECT id FROM platforms WHERE slug = ");
+    const twoKeys = sqlOf(buildGroupCardsQuery({ ...base, by: "date", keys: ["2026-10", "tbd"], offset: 0, limit: 8 }));
+    expect(twoKeys.sql).toContain("UNION ALL");
     const pub = sqlOf(buildGroupCardsQuery({ ...base, by: "publisher", keys: ["0"], offset: 8, limit: 24 }));
-    expect(pub.sql).toContain("g.publisher_group = (k.gkey)::int");
+    expect(pub.sql).toMatch(/g\.publisher_group = \$\d+/);
   });
   it("offset／limit 夾成非負整數", () => {
     const q = sqlOf(buildGroupCardsQuery({ ...base, by: "date", keys: ["tbd"], offset: -5.7, limit: 24.9 }));

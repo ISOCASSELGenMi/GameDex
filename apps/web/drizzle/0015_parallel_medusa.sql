@@ -20,8 +20,6 @@ CREATE INDEX "release_picks_platform_game_idx" ON "release_picks" USING btree ("
 CREATE INDEX "games_release_group_browse_idx" ON "games" USING btree ("release_group","popularity_score" DESC NULLS LAST,"name","id","game_type","game_status","heat_level","first_release_date");--> statement-breakpoint
 CREATE INDEX "games_publisher_group_browse_idx" ON "games" USING btree ("publisher_group","popularity_score" DESC NULLS LAST,"name","id","game_type","game_status","heat_level","first_release_date");--> statement-breakpoint
 CREATE INDEX "games_browse_pop_idx" ON "games" USING btree ("popularity_score" DESC NULLS LAST,"name","id","game_type","game_status","heat_level","first_release_date");--> statement-breakpoint
-CREATE INDEX "games_browse_name_idx" ON "games" USING btree ("name","id","game_type","game_status","heat_level","first_release_date","popularity_score");--> statement-breakpoint
-CREATE INDEX "games_browse_date_idx" ON "games" USING btree ("first_release_date","popularity_score" DESC NULLS LAST,"id","game_type","game_status","heat_level","name");--> statement-breakpoint
 CREATE INDEX "games_dname_zh_hant_idx" ON "games" USING btree ((lower(COALESCE(NULLIF("display_names" ->> 'zh-Hant', ''), "name"))),"id","game_type","game_status");--> statement-breakpoint
 CREATE INDEX "games_dname_en_idx" ON "games" USING btree ((lower(COALESCE(NULLIF("display_names" ->> 'en', ''), "name"))),"id","game_type","game_status");--> statement-breakpoint
 CREATE INDEX "games_dname_ja_idx" ON "games" USING btree ((lower(COALESCE(NULLIF("display_names" ->> 'ja', ''), "name"))),"id","game_type","game_status");--> statement-breakpoint
