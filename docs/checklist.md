@@ -192,4 +192,6 @@
 - [x] Z1 加做（2026-10-22 完成；`recompute_display_names` 尚未在開發 DB 執行）：搜尋候選名單（所有搜尋框共用 combobox 元件）；`recompute_display_names` 任務（規則改動時全庫重算，只動 display_names，不打 IGDB）（2026-10-18 新增）
 - [x] 第二輪 Z3（2026-10-23，`7d8f251`；npm test 1227、test:a11y 871 過／1 偶發失敗，單跑 51/51 過）：互動背景（只在內容欄兩側）、彩蛋 1～8、9 個隱藏主題、`user_unlocks` 跨裝置同步、帳號頁收藏與成就；migration 0013 已套開發 DB（2026-10-23）
 - [ ] 偶發失敗：`accounts-w7b-u.spec.ts:271`（時間軸追蹤按鈕批次查詢）整套負載重時逾時，Z2、Z3 各一次（2026-10-23 新增）
-- [ ] 第二輪 Z4：遊戲詳情頁補資訊（公司分三欄、Theme、Game Modes、Player Perspectives、引擎、各語言標題、其他稱呼、Storyline、Editions 與相關內容分組）；新欄位需 migration＋全庫重新回填（數小時，套開發 DB 與回填前先問使用者）；使用者決定一次做完（2026-10-18 新增）
+- [x] 第二輪 Z4（2026-10-23，`ab514f1`；npm test 1256、test:a11y 892 過）：詳情頁補資訊（公司分三欄、Theme、Game Modes、Player Perspectives、引擎、各語言標題、其他稱呼、Storyline、Editions 與相關內容分組）；migration 0014 與 `backfill_detail_fields` 尚未對開發 DB 執行
+- [x] 修正時間軸 client 不合法 week 被退回今天的 bug（e2e x2:48 偶發失敗的原因）（2026-10-23）
+- [ ] 第二輪收尾：spec 寫回（06、07、03、04、09、90）、開 PR `feat/gamedex-v2` → main（2026-10-23 新增）
