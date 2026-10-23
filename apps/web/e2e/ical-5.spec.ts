@@ -46,10 +46,16 @@ test.beforeAll(async () => {
     monthGameId = await addGame(MONTH_GAME, {});
     const insertRel = async (id: number, date: string, precision: string) => {
       if ((await c.query("SELECT 1 FROM release_events WHERE game_id = $1", [id])).rowCount === 0) {
-        await c.query(
+        const ev = await c.query(
           `INSERT INTO release_events (game_id, platform_id, region_id, release_date, period_start, precision, release_stage, status, source, sequence)
-           VALUES ($1, $2, $3, $4, $4, $5, 'full', 'scheduled', 'igdb', 2)`,
+           VALUES ($1, $2, $3, $4, $4, $5, 'full', 'scheduled', 'igdb', 2) RETURNING id`,
           [id, ps5Id, ww, date, precision],
+        );
+        // 直接 insert 沒走寫入路徑：預先計算的代表上市列（release_picks，平台頁「全部遊戲」用）要自己補（這裡只有一列，代表列就是它）
+        await c.query(
+          `INSERT INTO release_picks (game_id, platform_id, release_stage, release_event_id, release_date, precision)
+           VALUES ($1, $2, 'full', $3, $4, $5) ON CONFLICT DO NOTHING`,
+          [id, ps5Id, ev.rows[0].id, date, precision],
         );
       }
     };

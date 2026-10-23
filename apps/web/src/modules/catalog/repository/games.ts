@@ -1,6 +1,7 @@
 import { asc, eq, inArray, sql } from "drizzle-orm";
 import { getDb, type DbOrTx } from "@/kernel/db/client";
 import type { Game, GameInput } from "../domain/entities";
+import { releaseGroupKey } from "../domain/game-group-keys";
 import { games } from "../schema";
 
 export async function getGameBySlug(slug: string, db: DbOrTx = getDb()): Promise<Game | null> {
@@ -15,10 +16,15 @@ export async function getGameByIgdbId(igdbId: number, db: DbOrTx = getDb()): Pro
 
 /** 以 igdbId 為自然鍵 upsert；只覆寫 input 有給的欄位。 */
 export async function upsertGame(input: GameInput, db: DbOrTx = getDb()): Promise<Game> {
+  // 預先計算的日期分組鍵跟著首發日期／精度走（只在 input 有給其中之一時重算）
+  const withGroup =
+    "firstReleaseDate" in input || "firstReleasePrecision" in input
+      ? { ...input, releaseGroup: releaseGroupKey(input.firstReleaseDate ?? null, input.firstReleasePrecision ?? null) }
+      : input;
   const [row] = await db
     .insert(games)
-    .values(input)
-    .onConflictDoUpdate({ target: games.igdbId, set: { ...input, updatedAt: new Date() } })
+    .values(withGroup)
+    .onConflictDoUpdate({ target: games.igdbId, set: { ...withGroup, updatedAt: new Date() } })
     .returning();
   return row;
 }

@@ -10,6 +10,7 @@ import { getGameGroupPage, getGameGroups, platformColumnRanks } from "@/modules/
 import { GAME_GROUPS_PER_PAGE, type GroupedBy } from "@/modules/catalog/domain/entities";
 import { groupOfGame, type GameCompanyRef } from "@/modules/catalog/domain/publisher-groups";
 import { buildSearchText } from "@/modules/catalog/domain/search-text";
+import { backfillGameGroupsBatch } from "@/modules/catalog/repository/game-groups";
 import { companies, gameCompanies, gamePlatforms, games, platforms } from "@/modules/catalog/schema";
 import { listPlatforms } from "@/modules/catalog/use-cases/read";
 
@@ -96,6 +97,12 @@ describe.skipIf(!enabled)("瀏覽頁分組檢視（整合）", () => {
     await addGame("Aug", { pop: 50, date: "2036-08-05", precision: "day", platforms: ["gz58-pc"] });
     // 30 款同月，用來測「顯示更多」
     for (let i = 1; i <= 30; i++) await addGame(`Bulk ${String(i).padStart(2, "0")}`, { pop: 500 - i, date: "2036-09-20", precision: "day", platforms: ["gz58-pc"] });
+    // fixture 是直接 insert 的（沒走 syncIgdbGame），預先計算的分組鍵用回填函式補齊（同一份規則）
+    for (let after = 0; ; ) {
+      const r = await backfillGameGroupsBatch(after, 500);
+      if (r.lastId === null) break;
+      after = r.lastId;
+    }
   });
   afterAll(async () => {
     await closeDb();

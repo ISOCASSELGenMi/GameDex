@@ -1184,7 +1184,7 @@ body:lang(ja) {
   grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
   gap: 0 0.75rem;
 }
-.check {
+:is(.check, .check-grid > label) {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -1194,10 +1194,10 @@ body:lang(ja) {
   cursor: pointer;
   transition: background-color var(--dur-1) ease;
 }
-.check:hover {
+:is(.check, .check-grid > label):hover {
   background: var(--surface);
 }
-.check input {
+:is(.check, .check-grid > label) input {
   width: 1.125rem;
   height: 1.125rem;
   flex: none;
@@ -1207,10 +1207,10 @@ body:lang(ja) {
   .filter-panel[open] > .filter-form {
     animation: rise-in var(--dur-2) var(--ease-out) both;
   }
-  .check input {
+  :is(.check, .check-grid > label) input {
     transition: transform var(--dur-1) var(--ease-spring);
   }
-  .check input:active {
+  :is(.check, .check-grid > label) input:active {
     transform: scale(0.82);
   }
   .btn-primary,
@@ -1377,6 +1377,51 @@ button.sheet-entry:hover {
   flex: none;
   object-fit: cover;
   border-radius: var(--radius-sm);
+}
+/* 瀏覽頁卡片與熱度徽章：以 class 取代一長串 Tailwind 工具類別（每張卡的伺服器 HTML 與 RSC payload 各省約 400 bytes；效果與原本的工具類別相同） */
+.bc-item {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+.bc-info {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.bc-name {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.bc-meta {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: var(--muted);
+}
+.bc-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+.heat-full {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding-inline: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 600;
+  color: var(--warn);
+}
+.heat-ico {
+  display: inline-block;
+  flex-shrink: 0;
+  vertical-align: -0.125em;
 }
 .ext-link {
   display: inline-flex;

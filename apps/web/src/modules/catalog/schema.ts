@@ -14,6 +14,7 @@ import {
   pgTable,
   primaryKey,
   serial,
+  smallint,
   text,
   timestamp,
   unique,
@@ -37,6 +38,8 @@ import {
 import type { ReportProposed, ReportStatus, ReportTargetType, ReportType } from "./domain/entities/data-report";
 
 const tz = { withTimezone: true } as const;
+/** games 的「顯示名稱排序」表達式 index 涵蓋的語系；與 packages/i18n 的 AVAILABLE_LOCALES 一致（test/unit/z6-schema.test.ts 檢查）。 */
+export const DISPLAY_NAME_INDEX_LOCALES = ["zh-Hant", "en", "ja"] as const;
 const createdAt = () => timestamp("created_at", tz).defaultNow();
 const updatedAt = () => timestamp("updated_at", tz).defaultNow().$onUpdate(() => new Date());
 
@@ -115,6 +118,10 @@ export const games = pgTable(
     versionTitle: text("version_title"),
     storyline: text("storyline"),
     gameStatus: varchar("game_status", { length: 16 }),
+    /** 預先計算的分組鍵（domain/game-group-keys.ts releaseGroupKey）；寫入路徑 syncIgdbGame／backfill_game_groups 維護。 */
+    releaseGroup: varchar("release_group", { length: 8 }).notNull().default("tbd"),
+    /** 預先計算的廠商欄索引（domain/publisher-groups.ts publisherGroupIndexOfGame；-1＝other）。 */
+    publisherGroup: smallint("publisher_group").notNull().default(-1),
     popularityScore: integer("popularity_score").notNull().default(0), // 0~1000
     heatLevel: integer("heat_level").notNull().default(0), // 0~5，0＝不顯示
     displayNames: jsonb("display_names").$type<Record<string, string>>().default({}),
@@ -139,6 +146,80 @@ export const games = pgTable(
     index("games_search_text_trgm_idx").using("gin", sql`${t.searchText} gin_trgm_ops`),
     // 搜尋候選的「名稱完全相同」補進候選用（repository/game-suggest.ts）；text_pattern_ops 同時支援 = 與前綴 LIKE
     index("games_lower_name_prefix_idx").using("btree", sql`lower(${t.name}) text_pattern_ops`),
+    // /games 分組檢視（repository/browse-groups.ts）與平台頁「全部遊戲」（repository/platform-all.ts）：
+    // 第一欄放分組鍵、接著是組內排序鍵（熱度、名稱、id），後面的欄位只為了讓篩選條件與排序都能 index-only scan，不必讀 games 的寬資料列。
+    index("games_release_group_browse_idx").on(
+      t.releaseGroup,
+      t.popularityScore.desc(),
+      t.name,
+      t.id,
+      t.gameType,
+      t.gameStatus,
+      t.heatLevel,
+      t.firstReleaseDate,
+    ),
+    index("games_publisher_group_browse_idx").on(
+      t.publisherGroup,
+      t.popularityScore.desc(),
+      t.name,
+      t.id,
+      t.gameType,
+      t.gameStatus,
+      t.heatLevel,
+      t.firstReleaseDate,
+    ),
+    // 平台分組（依熱度）：沿熱度順序掃描並用 game_platforms 的 EXISTS 過濾，遇到足夠筆數就停（大平台尤其有效）
+    index("games_browse_pop_idx").on(
+      t.popularityScore.desc(),
+      t.name,
+      t.id,
+      t.gameType,
+      t.gameStatus,
+      t.heatLevel,
+      t.firstReleaseDate,
+    ),
+    // 平台分組（依名稱／首發日期）與平台頁「全部遊戲」的非熱度排序：平台分組的日期／名稱排序要靠它們（開發 DB 實測，沒有的話日期排序 5 秒）
+    index("games_browse_name_idx").on(
+      t.name,
+      t.id,
+      t.gameType,
+      t.gameStatus,
+      t.heatLevel,
+      t.firstReleaseDate,
+      t.popularityScore,
+    ),
+    index("games_browse_date_idx").on(
+      t.firstReleaseDate.asc().nullsLast(),
+      t.popularityScore.desc(),
+      t.id,
+      t.gameType,
+      t.gameStatus,
+      t.heatLevel,
+      t.name,
+    ),
+    // 平台頁「全部遊戲」依介面語言的顯示名稱排序（repository/platform-page.ts）：每個支援語系一個表達式 index（語系清單見 DISPLAY_NAME_INDEX_LOCALES；
+    // 新增語系要補 index，沒有時只是退回全平台排序、變慢）
+    ...DISPLAY_NAME_INDEX_LOCALES.map((locale) =>
+      index(`games_dname_${locale.toLowerCase().replace(/[^a-z0-9]+/g, "_")}_idx`).using(
+        "btree",
+        sql`(lower(COALESCE(NULLIF(${t.displayNames} ->> ${sql.raw(`'${locale}'`)}, ''), ${t.name})))`,
+        t.id,
+        t.gameType,
+        t.gameStatus,
+      ),
+    ),
+    // 以 id 查窄欄位用（join 其他表時代替讀 games 堆積資料表）
+    index("games_browse_cover_idx").on(
+      t.id,
+      t.gameType,
+      t.gameStatus,
+      t.heatLevel,
+      t.popularityScore,
+      t.firstReleaseDate,
+      t.firstReleasePrecision,
+      t.name,
+      t.displayNames,
+    ),
   ],
 );
 
@@ -176,6 +257,30 @@ export const releaseEvents = pgTable(
     index("release_events_region_date_idx").on(t.regionId, t.releaseDate),
     index("release_events_period_start_idx").on(t.periodStart),
     index("release_events_diff_key_idx").on(t.gameId, t.platformId, t.regionId, t.releaseStage), // 刻意非 unique
+  ],
+);
+
+/**
+ * 聚合規則「每個 (遊戲, 平台, 階段) 挑一筆代表上市列」的預先計算結果（預設地區偏好 WW、預設上市列篩選）。
+ * 平台頁「全部遊戲」只用它決定排序與分頁（repository/platform-all.ts），再對該頁的遊戲跑一次真正的聚合查詢取卡片。
+ * 挑選 SQL 與聚合規則是同一份（release-aggregate.ts buildReleasePicksQuery）；寫入路徑 applyReleaseDiffPlan／upsertReleaseEvent
+ * 與 backfill_game_groups 維護（repository/release-picks.ts）。
+ */
+export const releasePicks = pgTable(
+  "release_picks",
+  {
+    gameId: integer("game_id").notNull().references(() => games.id, { onDelete: "cascade" }),
+    platformId: integer("platform_id").notNull().references(() => platforms.id),
+    releaseStage: releaseStageEnum("release_stage").notNull(),
+    releaseEventId: integer("release_event_id").notNull(),
+    releaseDate: date("release_date"),
+    precision: datePrecisionEnum("precision").notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.gameId, t.platformId, t.releaseStage] }),
+    // 平台頁「全部遊戲」依代表日期排序（日期未定排最後）
+    index("release_picks_platform_date_idx").on(t.platformId, t.releaseDate.desc().nullsLast(), t.gameId),
+    index("release_picks_platform_game_idx").on(t.platformId, t.gameId),
   ],
 );
 

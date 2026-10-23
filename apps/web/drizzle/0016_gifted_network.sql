@@ -1,0 +1,3 @@
+-- Z6B：加回 games_browse_name_idx／games_browse_date_idx（0015 拿掉，但開發 DB 實測平台分組依日期排序要 5 秒、依名稱 591 ms，沒有它們撐不住）
+CREATE INDEX "games_browse_name_idx" ON "games" USING btree ("name","id","game_type","game_status","heat_level","first_release_date","popularity_score");--> statement-breakpoint
+CREATE INDEX "games_browse_date_idx" ON "games" USING btree ("first_release_date","popularity_score" DESC NULLS LAST,"id","game_type","game_status","heat_level","name");
