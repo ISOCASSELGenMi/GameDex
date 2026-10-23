@@ -5,7 +5,7 @@
 import { inArray, sql } from "drizzle-orm";
 import { getDb, type DbOrTx } from "@/kernel/db/client";
 import type { FranchiseKind, LanguageRecord, TaxonomyRecord } from "../domain/entities";
-import { companies, franchises, genres, languages, themes } from "../schema";
+import { companies, franchises, gameEngines, gameModes, genres, languages, playerPerspectives, themes } from "../schema";
 
 /** 去重並依鍵排序：多個 transaction 同時 upsert 時加鎖順序一致，避免 deadlock。 */
 function uniqueBy<T>(items: readonly T[], key: (t: T) => string | number): T[] {
@@ -28,7 +28,13 @@ function resolveSlugs<T extends { igdbId: number; slug: string }>(
   });
 }
 
-type SlugTable = typeof genres | typeof themes | typeof companies;
+type SlugTable =
+  | typeof genres
+  | typeof themes
+  | typeof companies
+  | typeof gameModes
+  | typeof playerPerspectives
+  | typeof gameEngines;
 
 async function upsertSlugTable(
   table: SlugTable,
@@ -57,6 +63,18 @@ export function upsertGenres(items: readonly TaxonomyRecord[], db: DbOrTx = getD
 
 export function upsertThemes(items: readonly TaxonomyRecord[], db: DbOrTx = getDb()) {
   return upsertSlugTable(themes, items, db);
+}
+
+export function upsertGameModes(items: readonly TaxonomyRecord[], db: DbOrTx = getDb()) {
+  return upsertSlugTable(gameModes, items, db);
+}
+
+export function upsertPlayerPerspectives(items: readonly TaxonomyRecord[], db: DbOrTx = getDb()) {
+  return upsertSlugTable(playerPerspectives, items, db);
+}
+
+export function upsertGameEngines(items: readonly TaxonomyRecord[], db: DbOrTx = getDb()) {
+  return upsertSlugTable(gameEngines, items, db);
 }
 
 /** 公司的 slug 只在新增時決定，之後同步只更新名稱（避免網址變動）。 */

@@ -7,7 +7,13 @@ import { getSyncState, saveSyncProgress } from "@/kernel/db/sync-state";
 import type { DatePrecision, GameRecord, IsoDate } from "../../domain/entities";
 import { isEarlierSpan, type DesiredRelease } from "../../domain/release-diff";
 import type { GameDataProvider } from "../../providers/game-data-provider.interface";
-import { syncIgdbGame, type IgdbGameSyncInput, type IgdbGameSyncResult } from "../../repository/game-sync";
+import {
+  syncGameDetailFields,
+  syncIgdbGame,
+  type GameDetailFieldsInput,
+  type IgdbGameSyncInput,
+  type IgdbGameSyncResult,
+} from "../../repository/game-sync";
 import { listIgdbPlatformRefs } from "../../repository/platforms";
 import { listRegions } from "../../repository/regions";
 import { autoReleasePastEvents } from "../../repository/release-events";
@@ -15,8 +21,11 @@ import {
   franchiseKey,
   upsertCompanies,
   upsertFranchises,
+  upsertGameEngines,
+  upsertGameModes,
   upsertGenres,
   upsertLanguages,
+  upsertPlayerPerspectives,
   upsertThemes,
 } from "../../repository/taxonomies";
 
@@ -42,6 +51,8 @@ export interface GameBatchStats {
   releasesRestored: number;
   releasesUnchanged: number;
   releaseDuplicatesDropped: number;
+  /** detailOnly 模式：資料庫沒有這款（尚未同步）而略過的筆數。 */
+  notInDb: number;
   /** 上市日指向 platforms 表沒有的平台（sync_platforms 未跑或 IGDB 新平台）。 */
   unknownPlatformIgdbIds: number[];
 }
@@ -60,6 +71,7 @@ export function emptyBatchStats(): GameBatchStats {
     releasesRestored: 0,
     releasesUnchanged: 0,
     releaseDuplicatesDropped: 0,
+    notInDb: 0,
     unknownPlatformIgdbIds: [],
   };
 }
@@ -71,6 +83,11 @@ export interface WriteContext {
   log: Log;
   /** 回填傳 false：只 upsert，不標 removed（04 §回填）。 */
   markMissingRemoved?: boolean;
+  /**
+   * 只更新詳情補欄位（storyline、版本、遊戲人數、視角、引擎；backfill_detail_fields）：已存在的遊戲才處理，
+   * 不套用手機過濾（資料來自 detail 欄位集，沒有平台）、不碰其他欄位、不寫 change_feed。
+   */
+  detailOnly?: boolean;
   /** 每款寫入成功後呼叫（滾動校對統計 misses 用）。 */
   onWritten?: (record: GameRecord, result: IgdbGameSyncResult) => void;
 }
@@ -131,11 +148,60 @@ export function firstRelease(releases: readonly DesiredRelease[]): { date: IsoDa
   return best ? { date: best.releaseDate, precision: best.precision } : { date: null, precision: null };
 }
 
+const ids = (m: Map<number, number>, xs: ReadonlyArray<{ igdbId: number }>) =>
+  xs.map((x) => m.get(x.igdbId)).filter((x): x is number => x !== undefined);
+
+interface DetailLookups {
+  modes: Map<number, number>;
+  perspectives: Map<number, number>;
+  engines: Map<number, number>;
+}
+
+/** 詳情補欄位三個查找表的批次 upsert（增量同步、回填、detailOnly 共用）。 */
+async function upsertDetailLookups(records: readonly GameRecord[]): Promise<DetailLookups> {
+  const [modes, perspectives, engines] = await Promise.all([
+    upsertGameModes(records.flatMap((r) => r.gameModes)),
+    upsertPlayerPerspectives(records.flatMap((r) => r.playerPerspectives)),
+    upsertGameEngines(records.flatMap((r) => r.engines)),
+  ]);
+  return { modes, perspectives, engines };
+}
+
+function toDetailInput(r: GameRecord, l: DetailLookups): GameDetailFieldsInput {
+  return {
+    igdbId: r.igdbId,
+    storyline: r.storyline,
+    versionParentId: r.versionParentIgdbId,
+    versionTitle: r.versionTitle,
+    gameModeIds: ids(l.modes, r.gameModes),
+    playerPerspectiveIds: ids(l.perspectives, r.playerPerspectives),
+    engineIds: ids(l.engines, r.engines),
+  };
+}
+
+/** detailOnly：只寫詳情補欄位；單款失敗不中斷整批。 */
+async function writeDetailOnlyBatch(records: readonly GameRecord[], ctx: WriteContext, stats: GameBatchStats): Promise<void> {
+  stats.fetched += records.length;
+  if (records.length === 0) return;
+  const lookups = await upsertDetailLookups(records);
+  for (const r of records) {
+    try {
+      if (await syncGameDetailFields(toDetailInput(r, lookups))) stats.updated += 1;
+      else stats.notInDb += 1;
+    } catch (err) {
+      stats.failed += 1;
+      stats.failedIgdbIds.push(r.igdbId);
+      ctx.log("詳情欄位寫入失敗", { igdbId: r.igdbId, error: err instanceof Error ? err.message : String(err) });
+    }
+  }
+}
+
 /**
  * 寫入一批遊戲：先批次 upsert 查找表（類型、公司…），再逐款一個 transaction。
  * 單款失敗不中斷整批，計入 stats.failed。
  */
 export async function writeGameBatch(records: readonly GameRecord[], ctx: WriteContext, stats: GameBatchStats): Promise<void> {
+  if (ctx.detailOnly) return writeDetailOnlyBatch(records, ctx, stats);
   stats.fetched += records.length;
   const wanted = records.filter((r) => {
     if (!isMobileOnly(r, ctx)) return true;
@@ -144,6 +210,7 @@ export async function writeGameBatch(records: readonly GameRecord[], ctx: WriteC
   });
   if (wanted.length === 0) return;
 
+  const detailLookups = await upsertDetailLookups(wanted);
   const [genreIds, themeIds, companyIds, franchiseIds, languageIds] = await Promise.all([
     upsertGenres(wanted.flatMap((r) => r.genres)),
     upsertThemes(wanted.flatMap((r) => r.themes)),
@@ -151,8 +218,6 @@ export async function writeGameBatch(records: readonly GameRecord[], ctx: WriteC
     upsertFranchises(wanted.flatMap((r) => r.franchises)),
     upsertLanguages(wanted.flatMap((r) => r.languageSupports.map((l) => l.language))),
   ]);
-  const ids = (m: Map<number, number>, xs: ReadonlyArray<{ igdbId: number }>) =>
-    xs.map((x) => m.get(x.igdbId)).filter((x): x is number => x !== undefined);
 
   const unknown = new Set(stats.unknownPlatformIgdbIds);
   for (const r of wanted) {
@@ -173,6 +238,7 @@ export async function writeGameBatch(records: readonly GameRecord[], ctx: WriteC
       screenshotUrls: r.screenshotUrls,
       trailerUrl: r.trailerUrl,
       similarIgdbIds: r.similarIgdbIds,
+      detail: toDetailInput(r, detailLookups),
       platformIds: r.platformIgdbIds
         .map((id) => ctx.platforms.get(id))
         .filter((p): p is { id: number; kind: string } => !!p && p.kind !== "mobile")

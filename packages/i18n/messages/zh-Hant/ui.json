@@ -141,7 +141,45 @@
       "franchise": "同系列作品：{name}",
       "collection": "同合集作品：{name}"
     },
-    "downloadIcs": "下載 .ics"
+    "downloadIcs": "下載 .ics",
+    "about": {
+      "title": "關於本作",
+      "mainDevelopers": "主要開發商",
+      "publishers": "發行商",
+      "supportingDevelopers": "協力開發商",
+      "portingTag": "移植",
+      "genres": "類型",
+      "themes": "主題",
+      "gameModes": "遊戲人數",
+      "playerPerspectives": "玩家視角",
+      "collection": "系列",
+      "franchise": "品牌",
+      "engines": "遊戲引擎",
+      "story": "故事",
+      "storyOriginal": "原文（English）",
+      "localizedTitles": "各語言標題",
+      "alternativeTitles": "其他稱呼"
+    },
+    "edition": {
+      "label": "其他版本",
+      "seeMore": "查看另外 {count} 個版本",
+      "hide": "收合相關內容",
+      "partOf": "這是《{name}》的{type}",
+      "editionOf": "這是《{name}》的 {title}",
+      "goToParent": "前往《{name}》",
+      "genericVersion": "版本"
+    },
+    "related": {
+      "title": "相關內容",
+      "more": "還有 {count} 款",
+      "groupTitle": "{group}（{count}）"
+    },
+    "trailer": {
+      "watch": "觀看預告片"
+    },
+    "release": {
+      "inDays": "（{relative}）"
+    }
   },
   "footer": {
     "dataAttribution": "Data from IGDB.com",

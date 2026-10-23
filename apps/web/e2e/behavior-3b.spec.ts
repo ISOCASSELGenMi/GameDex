@@ -187,8 +187,9 @@ test.describe("系列頁：franchise 與 collection 同 slug", () => {
 
   test("詳情頁：同時屬於系列與合集時，兩段分別連到 franchise 與 ?kind=collection", async ({ page }) => {
     await page.goto("/en/games/e2e-twin-both");
-    await expect(page.locator(`a[href="/en/franchises/${twin.slug}"]`)).toHaveCount(1);
-    await expect(page.locator(`a[href="/en/franchises/${twin.slug}?kind=collection"]`)).toHaveCount(1);
+    // 各 2 個：About 區的欄位一個、「同系列／同合集作品」區塊的「查看全部」一個
+    await expect(page.locator(`a[href="/en/franchises/${twin.slug}"]`)).toHaveCount(2);
+    await expect(page.locator(`a[href="/en/franchises/${twin.slug}?kind=collection"]`)).toHaveCount(2);
   });
 });
 

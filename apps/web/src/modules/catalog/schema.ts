@@ -111,6 +111,9 @@ export const games = pgTable(
     firstReleasePrecision: datePrecisionEnum("first_release_precision"),
     gameType: varchar("game_type", { length: 32 }).default("main_game"),
     parentGameId: integer("parent_game_id"), // 刻意不設 FK（本體可能尚未同步）
+    versionParentId: integer("version_parent_id"), // IGDB version_parent；刻意不設 FK，同 parent_game_id
+    versionTitle: text("version_title"),
+    storyline: text("storyline"),
     gameStatus: varchar("game_status", { length: 16 }),
     popularityScore: integer("popularity_score").notNull().default(0), // 0~1000
     heatLevel: integer("heat_level").notNull().default(0), // 0~5，0＝不顯示
@@ -128,6 +131,9 @@ export const games = pgTable(
   (t) => [
     index("games_name_idx").on(t.name),
     index("games_parent_game_idx").on(t.parentGameId),
+    // 詳情頁「相關內容」：parent_game_id = 本作 再依 game_type 分組
+    index("games_parent_type_idx").on(t.parentGameId, t.gameType),
+    index("games_version_parent_idx").on(t.versionParentId),
     index("games_type_popularity_idx").on(t.gameType, t.popularityScore.desc()),
     index("games_first_release_date_idx").on(t.firstReleaseDate),
     index("games_search_text_trgm_idx").using("gin", sql`${t.searchText} gin_trgm_ops`),
@@ -346,6 +352,54 @@ export const gameThemes = pgTable(
     themeId: integer("theme_id").notNull().references(() => themes.id),
   },
   (t) => [primaryKey({ columns: [t.gameId, t.themeId] }), index("game_themes_theme_game_idx").on(t.themeId, t.gameId)],
+);
+
+export const gameModes = pgTable("game_modes", {
+  id: serial("id").primaryKey(),
+  igdbId: integer("igdb_id").notNull().unique(),
+  name: varchar("name", { length: 100 }).notNull(),
+  slug: varchar("slug", { length: 100 }).notNull().unique(),
+});
+
+export const gameGameModes = pgTable(
+  "game_game_modes",
+  {
+    gameId: integer("game_id").notNull().references(() => games.id, { onDelete: "cascade" }),
+    gameModeId: integer("game_mode_id").notNull().references(() => gameModes.id),
+  },
+  (t) => [primaryKey({ columns: [t.gameId, t.gameModeId] }), index("game_game_modes_game_mode_game_idx").on(t.gameModeId, t.gameId)],
+);
+
+export const playerPerspectives = pgTable("player_perspectives", {
+  id: serial("id").primaryKey(),
+  igdbId: integer("igdb_id").notNull().unique(),
+  name: varchar("name", { length: 100 }).notNull(),
+  slug: varchar("slug", { length: 100 }).notNull().unique(),
+});
+
+export const gamePlayerPerspectives = pgTable(
+  "game_player_perspectives",
+  {
+    gameId: integer("game_id").notNull().references(() => games.id, { onDelete: "cascade" }),
+    playerPerspectiveId: integer("player_perspective_id").notNull().references(() => playerPerspectives.id),
+  },
+  (t) => [primaryKey({ columns: [t.gameId, t.playerPerspectiveId] }), index("game_player_perspectives_player_perspective_game_idx").on(t.playerPerspectiveId, t.gameId)],
+);
+
+export const gameEngines = pgTable("game_engines", {
+  id: serial("id").primaryKey(),
+  igdbId: integer("igdb_id").notNull().unique(),
+  name: varchar("name", { length: 100 }).notNull(),
+  slug: varchar("slug", { length: 100 }).notNull().unique(),
+});
+
+export const gameGameEngines = pgTable(
+  "game_game_engines",
+  {
+    gameId: integer("game_id").notNull().references(() => games.id, { onDelete: "cascade" }),
+    gameEngineId: integer("game_engine_id").notNull().references(() => gameEngines.id),
+  },
+  (t) => [primaryKey({ columns: [t.gameId, t.gameEngineId] }), index("game_game_engines_game_engine_game_idx").on(t.gameEngineId, t.gameId)],
 );
 
 export const gameLocalizations = pgTable(

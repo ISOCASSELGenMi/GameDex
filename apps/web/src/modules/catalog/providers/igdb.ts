@@ -341,6 +341,12 @@ interface IgdbGame {
   franchises?: IgdbNamed[];
   collections?: IgdbNamed[];
   similar_games?: number[];
+  storyline?: string;
+  version_parent?: number;
+  version_title?: string;
+  game_modes?: IgdbNamed[];
+  player_perspectives?: IgdbNamed[];
+  game_engines?: IgdbNamed[];
   websites?: RawWebsite[];
   external_games?: RawExternalGame[];
 }
@@ -350,6 +356,15 @@ interface IgdbGame {
  * 與規格的差異：genres／themes 多取 slug（我方表 slug 必填）；platforms 只取 id；
  * 不取 release_dates.human（標籤由我方產生）、age_ratings（對照表 ❓，Phase 3b）、hypes（熱度另案）。
  */
+/** 詳情頁補欄位（GameDex 第二輪 Z4）；GAME_FIELDS 帶全部，backfill_detail_fields 只取這幾個。 */
+const DETAIL_FIELD_LIST = [
+  "storyline", "version_parent", "version_title",
+  "game_modes.name", "game_modes.slug",
+  "player_perspectives.name", "player_perspectives.slug",
+  "game_engines.name", "game_engines.slug",
+];
+export const GAME_DETAIL_FIELDS = DETAIL_FIELD_LIST.join(",");
+
 export const GAME_FIELDS = [
   "name", "slug", "summary", "cover.image_id", "updated_at",
   "genres.name", "genres.slug", "themes.name", "themes.slug",
@@ -370,6 +385,7 @@ export const GAME_FIELDS = [
   "similar_games",
   "websites.url", "websites.type",
   "external_games.url", "external_games.external_game_source", "external_games.uid",
+  ...DETAIL_FIELD_LIST,
 ].join(",");
 
 /** 🧪 單款展開最多約 22 筆；超過記警告（不停止）。 */
@@ -502,6 +518,12 @@ export function toGameRecord(g: IgdbGame, warn: Warn = defaultWarn): GameRecord 
     links,
     steamAppId: steamAppIdOf(g.external_games ?? []),
     similarIgdbIds: [...new Set(g.similar_games ?? [])],
+    storyline: blankToNull(g.storyline),
+    versionParentIgdbId: g.version_parent ?? null,
+    versionTitle: blankToNull(g.version_title),
+    gameModes: uniqueById(g.game_modes).map((x) => toTaxonomy(x, "game-mode")),
+    playerPerspectives: uniqueById(g.player_perspectives).map((x) => toTaxonomy(x, "perspective")),
+    engines: uniqueById(g.game_engines).map((x) => toTaxonomy(x, "engine")),
   };
 }
 
@@ -595,7 +617,7 @@ export class IgdbProvider implements GameDataProvider, ExternalHypeSource {
     if (q.ids && q.ids.length === 0) return [];
     const limit = Math.min(Math.max(1, Math.trunc(q.limit)), IGDB_PAGE_SIZE);
     const where = buildGamesWhere(q);
-    const body = `fields ${GAME_FIELDS};${where ? ` where ${where};` : ""} sort id asc; limit ${limit};`;
+    const body = `fields ${q.fieldSet === "detail" ? GAME_DETAIL_FIELDS : GAME_FIELDS};${where ? ` where ${where};` : ""} sort id asc; limit ${limit};`;
     const rows = await this.client.query<IgdbGame>("games", body);
     return rows.map((g) => toGameRecord(g, this.warnOnce));
   }

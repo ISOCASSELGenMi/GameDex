@@ -45,6 +45,15 @@ export interface GameRecord {
   /** Steam AppID（external_games.uid）；寫進 external_ids。 */
   steamAppId: string | null;
   similarIgdbIds: number[];
+  /** IGDB storyline（英文原文）。 */
+  storyline: string | null;
+  /** 本作是哪一款的版本（version_parent，來源 id）；本體可能尚未同步。 */
+  versionParentIgdbId: number | null;
+  /** version_title（例如 "Nintendo Switch 2 Edition"）。 */
+  versionTitle: string | null;
+  gameModes: TaxonomyRecord[];
+  playerPerspectives: TaxonomyRecord[];
+  engines: TaxonomyRecord[];
 }
 
 export interface GameReleaseDateRecord extends ReleaseDateSpan {
@@ -113,5 +122,7 @@ export interface FetchGamesQuery {
   firstReleaseMissingWithDates?: boolean;
   /** 只取這些遊戲類型（白名單）。 */
   gameTypes?: readonly GameType[];
+  /** "detail"＝只取詳情補欄位（storyline、版本、人數、視角、引擎；backfill_detail_fields 用）；預設完整欄位。 */
+  fieldSet?: "full" | "detail";
   limit: number;
 }

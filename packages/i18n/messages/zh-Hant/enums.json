@@ -124,5 +124,48 @@
     "interface": "介面",
     "subtitles": "字幕",
     "audio": "語音"
+  },
+  "relatedGroup": {
+    "editions": "其他版本",
+    "expanded_games": "加強版",
+    "dlcs": "DLC",
+    "expansions": "擴充內容",
+    "standalone_expansions": "獨立擴充",
+    "remakes": "重製版",
+    "remasters": "高解析度重製版",
+    "ports": "移植版",
+    "bundles": "合輯",
+    "episodes": "章節與季度",
+    "packs": "內容包與更新"
+  },
+  "localizedTitleRegion": {
+    "ja": "日本",
+    "ko": "韓國",
+    "zh-Hant": "台灣／香港",
+    "zh-Hans": "中國",
+    "en": "英語圈",
+    "de": "德國",
+    "fr": "法國",
+    "es": "西班牙",
+    "it": "義大利",
+    "pt": "葡萄牙／巴西",
+    "ru": "俄羅斯"
+  },
+  "gameMode": {
+    "single-player": "單人",
+    "multiplayer": "多人",
+    "co-operative": "合作",
+    "split-screen": "分割畫面",
+    "massively-multiplayer-online-mmo": "大型多人線上（MMO）",
+    "battle-royale": "大逃殺"
+  },
+  "playerPerspective": {
+    "first-person": "第一人稱",
+    "third-person": "第三人稱",
+    "bird-view-slash-isometric": "俯視／等角",
+    "side-view": "橫向視角",
+    "text": "文字",
+    "auditory": "聽覺",
+    "virtual-reality": "虛擬實境（VR）"
   }
 }

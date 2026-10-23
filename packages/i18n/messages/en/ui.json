@@ -141,7 +141,45 @@
       "franchise": "In the {name} franchise",
       "collection": "In the {name} series"
     },
-    "downloadIcs": "Download .ics"
+    "downloadIcs": "Download .ics",
+    "about": {
+      "title": "About this game",
+      "mainDevelopers": "Main developers",
+      "publishers": "Publishers",
+      "supportingDevelopers": "Supporting developers",
+      "portingTag": "port",
+      "genres": "Genres",
+      "themes": "Themes",
+      "gameModes": "Game modes",
+      "playerPerspectives": "Player perspectives",
+      "collection": "Series",
+      "franchise": "Franchises",
+      "engines": "Game engines",
+      "story": "Story",
+      "storyOriginal": "Original text (English)",
+      "localizedTitles": "Localized titles",
+      "alternativeTitles": "Alternative titles"
+    },
+    "edition": {
+      "label": "Editions",
+      "seeMore": "See {count} more editions of this game",
+      "hide": "Hide related content",
+      "partOf": "Part of {name}: {type}",
+      "editionOf": "This is the {title} of {name}",
+      "goToParent": "Go to {name}",
+      "genericVersion": "edition"
+    },
+    "related": {
+      "title": "Related content",
+      "more": "{count} more",
+      "groupTitle": "{group} ({count})"
+    },
+    "trailer": {
+      "watch": "Watch trailer"
+    },
+    "release": {
+      "inDays": "({relative})"
+    }
   },
   "footer": {
     "dataAttribution": "Data from IGDB.com",

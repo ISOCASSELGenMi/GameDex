@@ -22,16 +22,30 @@ import {
   gameCompanies,
   gameExternalLinks,
   gameFranchises,
+  gameGameEngines,
+  gameGameModes,
   gameGenres,
   gameLanguageSupports,
   gameLocalizations,
   gamePlatforms,
+  gamePlayerPerspectives,
   gameThemes,
   games,
   ratings,
 } from "../schema";
 import { upsertRating } from "./ratings";
 import { applyReleaseDiffPlan, listIgdbReleaseRows, type ReleaseDiffApplyStats } from "./release-events";
+
+/** 詳情頁補欄位（storyline、版本、遊戲人數、視角、引擎）；關聯 id 由 Use Case 先對應成我方 id。 */
+export interface GameDetailFieldsInput {
+  igdbId: number;
+  storyline: string | null;
+  versionParentId: number | null;
+  versionTitle: string | null;
+  gameModeIds: number[];
+  playerPerspectiveIds: number[];
+  engineIds: number[];
+}
 
 export interface IgdbGameSyncInput {
   igdbId: number;
@@ -49,6 +63,7 @@ export interface IgdbGameSyncInput {
   screenshotUrls: string[];
   trailerUrl: string | null;
   similarIgdbIds: number[];
+  detail: GameDetailFieldsInput;
   platformIds: number[];
   genreIds: number[];
   themeIds: number[];
@@ -112,6 +127,9 @@ export async function syncIgdbGame(
       screenshotUrls: input.screenshotUrls,
       trailerUrl: input.trailerUrl,
       similarIgdbIds: uniq(input.similarIgdbIds),
+      storyline: input.detail.storyline,
+      versionParentId: input.detail.versionParentId,
+      versionTitle: input.detail.versionTitle,
       lastFullSyncAt: new Date(),
     };
     const [row] = await tx
@@ -133,6 +151,8 @@ export async function syncIgdbGame(
     await tx.delete(gameThemes).where(eq(gameThemes.gameId, gameId));
     const themeRows = uniq(input.themeIds).map((themeId) => ({ gameId, themeId }));
     if (themeRows.length > 0) await tx.insert(gameThemes).values(themeRows);
+
+    await replaceDetailRelations(tx, gameId, input.detail);
 
     await tx.delete(gameFranchises).where(eq(gameFranchises.gameId, gameId));
     const franchiseRows = uniq(input.franchiseIds).map((franchiseId) => ({ gameId, franchiseId }));
@@ -189,6 +209,56 @@ export async function syncIgdbGame(
       },
     };
   });
+}
+
+/** 遊戲人數／玩家視角／引擎三個中介表整組取代（純 IGDB，沒有 source 欄位）。 */
+async function replaceDetailRelations(tx: DbOrTx, gameId: number, d: GameDetailFieldsInput): Promise<void> {
+  await tx.delete(gameGameModes).where(eq(gameGameModes.gameId, gameId));
+  const modes = uniq(d.gameModeIds).map((gameModeId) => ({ gameId, gameModeId }));
+  if (modes.length > 0) await tx.insert(gameGameModes).values(modes);
+
+  await tx.delete(gamePlayerPerspectives).where(eq(gamePlayerPerspectives.gameId, gameId));
+  const perspectives = uniq(d.playerPerspectiveIds).map((playerPerspectiveId) => ({ gameId, playerPerspectiveId }));
+  if (perspectives.length > 0) await tx.insert(gamePlayerPerspectives).values(perspectives);
+
+  await tx.delete(gameGameEngines).where(eq(gameGameEngines.gameId, gameId));
+  const engines = uniq(d.engineIds).map((gameEngineId) => ({ gameId, gameEngineId }));
+  if (engines.length > 0) await tx.insert(gameGameEngines).values(engines);
+}
+
+/**
+ * 只更新詳情補欄位（backfill_detail_fields）：已存在的遊戲才處理，不碰其他欄位、不寫 change_feed、不動 updatedAt／lastFullSyncAt。
+ * 與 syncIgdbGame 共用 replaceDetailRelations（同一份寫入邏輯）。
+ * @returns 遊戲不在資料庫（尚未同步）時 false
+ */
+export async function syncGameDetailFields(d: GameDetailFieldsInput, db: DbOrTx = getDb()): Promise<boolean> {
+  return db.transaction(async (tx) => {
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(${GAME_WRITE_LOCK_SPACE}::int, ${d.igdbId}::int)`);
+    const rows = await tx
+      .update(games)
+      .set({
+        storyline: d.storyline,
+        versionParentId: d.versionParentId,
+        versionTitle: d.versionTitle,
+        updatedAt: games.updatedAt, // 明確保留（欄位有 $onUpdate 預設，不明寫會被改成現在）
+      })
+      .where(eq(games.igdbId, d.igdbId))
+      .returning({ id: games.id });
+    if (rows.length === 0) return false;
+    await replaceDetailRelations(tx, rows[0].id, d);
+    return true;
+  });
+}
+
+/** 依 igdb_id 升冪取下一批已存在遊戲的 igdb_id（回填游標用）。 */
+export async function listGameIgdbIdsAfter(afterId: number, limit: number, db: DbOrTx = getDb()): Promise<number[]> {
+  const rows = await db
+    .select({ igdbId: games.igdbId })
+    .from(games)
+    .where(sql`${games.igdbId} > ${afterId}`)
+    .orderBy(games.igdbId)
+    .limit(limit);
+  return rows.map((r) => r.igdbId);
 }
 
 /**

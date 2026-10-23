@@ -43,6 +43,7 @@ import resetTestDatabase from "../../test/integration/global-setup";
 import { FIXTURE, FIXTURE_3B, FIXTURE_4, FIXTURE_HOME } from "./fixture-data";
 import { seedZ2a } from "./seed-z2a";
 import { seedZ2b } from "./seed-z2b";
+import { seedZ4b } from "./seed-z4b";
 
 
 type Precision = "day" | "month" | "quarter" | "year" | "tbd";
@@ -313,6 +314,9 @@ export async function seedE2eDatabase(): Promise<void> {
 
     // ── GameDex 第 2 輪 Z2B：評分排名的 IGDB／玩家平均分數（掛在時間軸 fixture 的遊戲上）──
     await seedZ2b(db);
+
+    // ── GameDex 第 2 輪 Z4B：遊戲詳情頁補資訊（版本、DLC、本地化標題、模式、視角、引擎、故事）──
+    await seedZ4b(db, region, platform);
   } finally {
     await closeDb();
   }

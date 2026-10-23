@@ -64,6 +64,16 @@ export function parseWeekParam(value: string): string | null {
   return isoWeekOf(start) === value ? start : null;
 }
 
+/**
+ * 網址明確指定的那一週（星期一）：`week` 合法 → 該週；否則 `at` 合法 → 該日所在週；都沒有 → null（= 今天所在週）。
+ * 伺服器（resolveWeekStart）與 client 同步網址共用這一份規則。
+ */
+export function explicitWeekStart(week: string | null | undefined, at: string | null | undefined): string | null {
+  const fromWeek = week ? parseWeekParam(week) : null;
+  if (fromWeek) return fromWeek;
+  return at ? weekStartOf(at) : null;
+}
+
 /** 一週的七天（從 start 起）。 */
 export function weekDays(start: string): string[] {
   const out: string[] = [];

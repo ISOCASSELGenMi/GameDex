@@ -201,7 +201,8 @@ test.describe("詳情頁", () => {
       await expect(a).toHaveAttribute("rel", /noopener/);
     }
     await expect(page.locator("#sec-similar").locator("xpath=..")).toContainText("Similar Quest");
-    await expect(page.locator("#sec-dlc").locator("xpath=..")).toContainText("Frost Expansion");
+    // DLC／資料片改由「相關內容」區顯示（Z4B；舊的 #sec-dlc 已移除）
+    await expect(page.locator("#related")).toContainText("Frost Expansion");
     await expect(page.locator("[id^=sec-franchise-]").first().locator("xpath=..")).toContainText("Aurora Prequel");
     // 英文簡介標 lang
     await expect(page.locator('[lang="en"]', { hasText: "northern lights" })).toHaveCount(1);

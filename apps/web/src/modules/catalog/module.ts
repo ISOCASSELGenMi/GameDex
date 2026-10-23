@@ -3,6 +3,7 @@ import type { ModuleManifestBase } from "@/kernel/modules/types";
 import type { GameFilterProvider, PopularitySignal, RatingColumn } from "./domain/entities";
 import { getCatalogExtensions } from "./extensions";
 import { getIgdbProvider } from "./providers/igdb";
+import { backfillDetailFields, parseDetailBackfillArgs } from "./use-cases/sync/backfill-detail-fields";
 import { backfillGames, parseBackfillArgs } from "./use-cases/sync/backfill-games";
 import { checkDictionaryDrift } from "./use-cases/sync/dictionary-drift";
 import { clearOldReporterIpHashes } from "./use-cases/reports/cleanup-report-ips";
@@ -40,7 +41,8 @@ export const catalogModule: ModuleManifest = {
     "release_events", "release_date_history", "ratings", "score_snapshots", "external_ids",
     "external_match_attempts", "external_id_rejections", "companies", "game_companies", "franchises",
     "game_franchises", "game_similar_games", "game_external_links", "events", "event_series", "event_games",
-    "genres", "themes", "game_genres", "game_themes", "game_localizations", "languages",
+    "genres", "themes", "game_genres", "game_themes",
+    "game_modes", "player_perspectives", "game_engines", "game_game_modes", "game_player_perspectives", "game_game_engines", "game_localizations", "languages",
     "game_language_supports", "change_feed", "game_popularity_signals", "data_reports",
   ],
   // 頻率見 04 §排程任務
@@ -55,6 +57,14 @@ export const catalogModule: ModuleManifest = {
           lookbackYears: env.BACKFILL_LOOKBACK_YEARS,
           ...parseBackfillArgs(ctx.args),
         });
+      },
+    },
+    {
+      // 手動：npm run job -- backfill_detail_fields [--max-batches N] [--restart]。只為已存在的遊戲補詳情新欄位（storyline、版本、人數、視角、引擎）
+      name: "backfill_detail_fields",
+      lockMode: "session",
+      run: async (ctx) => {
+        await backfillDetailFields(getIgdbProvider({ maxReqPerSec: getCoreEnv().BACKFILL_MAX_REQ_PER_SEC }), ctx, parseDetailBackfillArgs(ctx.args));
       },
     },
     {

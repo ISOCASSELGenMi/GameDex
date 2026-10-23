@@ -242,7 +242,8 @@ export interface TaxonomyItem {
   name: string;
 }
 
-export interface GameDetail {
+/** 詳情的既有欄位；完整的 GameDetail（含 extra）見 game-detail-model.ts（避免與 game-detail-extra.ts 循環 import）。 */
+export interface GameDetailBase {
   gameId: number;
   igdbId: number;
   slug: string;

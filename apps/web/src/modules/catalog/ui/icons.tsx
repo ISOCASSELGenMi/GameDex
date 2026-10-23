@@ -117,6 +117,15 @@ export function WarningIcon(props: IconProps): ReactElement {
   );
 }
 
+/** 播放（預告片）。 */
+export function PlayIcon(props: IconProps): ReactElement {
+  return (
+    <Svg {...props}>
+      <path d="M4 2.5v11l9.5-5.5L4 2.5Z" />
+    </Svg>
+  );
+}
+
 /** 外部連結。 */
 export function ExternalIcon(props: IconProps): ReactElement {
   return (

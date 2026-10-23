@@ -121,7 +121,7 @@ function initialCursor(tier: BackfillTier, startedAt: Date, lookbackYears: numbe
   return tier === 1 ? { ...base, firstReleaseFrom: lookbackFrom(startedAt, lookbackYears).toISOString() } : base;
 }
 
-function addStats(total: GameBatchStats, b: GameBatchStats): GameBatchStats {
+export function addStats(total: GameBatchStats, b: GameBatchStats): GameBatchStats {
   const out = { ...total };
   for (const k of Object.keys(b) as Array<keyof GameBatchStats>) {
     if (typeof b[k] === "number") (out[k] as number) = ((total[k] as number) ?? 0) + (b[k] as number);

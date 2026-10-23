@@ -14,6 +14,10 @@ import {
   type GameCompanyCredit,
   type GameCompanyRole,
   type GameDetail,
+  type GameDetailExtra,
+  type RelatedGroup,
+  type RelatedGroupKey,
+  RELATED_GROUP_KEYS,
   type GameFranchiseGroup,
   type GameLink,
   type GameLinkType,
@@ -31,6 +35,7 @@ import {
   type TaxonomyItem,
   buildLanguageSupport,
 } from "../domain/entities";
+import { RELATED_GROUP_BY_GAME_TYPE, RELATED_GROUP_LIMIT } from "../domain/related-groups";
 import { EVENT_COLUMNS, toCalendarEvent, type EventRow } from "./calendar-events";
 import { readLanguageSupportEntries } from "./language-support";
 import { pgArray, toIso, withReadTimeout, type ReadOptions } from "./read-tx";
@@ -100,6 +105,17 @@ interface GameRow extends SummaryRow {
   game_status: string | null;
   heat_level: number;
   parent_game_id: number | null;
+  storyline: string | null;
+  version_parent_id: number | null;
+  version_title: string | null;
+  alternative_names: Array<{ name?: string; comment?: string | null }> | null;
+}
+
+type TaxDim = "genre" | "theme" | "mode" | "perspective" | "engine" | "localized";
+
+interface RelatedRow extends SummaryRow {
+  grp: RelatedGroupKey;
+  total: string | number;
 }
 
 interface ReleaseRow extends Record<string, unknown> {
@@ -146,7 +162,8 @@ async function readDetail(tx: DbOrTx, q: GameDetailQuery): Promise<GameDetail | 
   const { locale } = q;
   const gameRes = await tx.execute<GameRow>(sql`
     SELECT ${summaryColumns("g", locale)}, g.igdb_id, g.summary, g.screenshot_urls, g.trailer_url,
-      g.age_rating_label, g.game_status, g.heat_level, g.parent_game_id
+      g.age_rating_label, g.game_status, g.heat_level, g.parent_game_id,
+      g.storyline, g.version_parent_id, g.version_title, g.alternative_names
     FROM games g WHERE g.slug = ${q.slug} LIMIT 1
   `);
   const g = gameRes.rows[0];
@@ -161,10 +178,19 @@ async function readDetail(tx: DbOrTx, q: GameDetailQuery): Promise<GameDetail | 
     ORDER BY pl.name, pl.id
   `);
 
-  const taxRes = await tx.execute<{ dim: "genre" | "theme"; slug: string; name: string }>(sql`
+  // 分類與詳情補資訊（遊戲人數、視角、引擎、各語言標題；localized 的 slug 欄放 locale_code）合成一次查詢，省去往返
+  const taxRes = await tx.execute<{ dim: TaxDim; slug: string; name: string }>(sql`
     SELECT 'genre' AS dim, x.slug, x.name FROM game_genres gx JOIN genres x ON x.id = gx.genre_id WHERE gx.game_id = ${id}
     UNION ALL
     SELECT 'theme' AS dim, x.slug, x.name FROM game_themes gx JOIN themes x ON x.id = gx.theme_id WHERE gx.game_id = ${id}
+    UNION ALL
+    SELECT 'mode' AS dim, x.slug, x.name FROM game_game_modes gx JOIN game_modes x ON x.id = gx.game_mode_id WHERE gx.game_id = ${id}
+    UNION ALL
+    SELECT 'perspective' AS dim, x.slug, x.name FROM game_player_perspectives gx JOIN player_perspectives x ON x.id = gx.player_perspective_id WHERE gx.game_id = ${id}
+    UNION ALL
+    SELECT 'engine' AS dim, x.slug, x.name FROM game_game_engines gx JOIN game_engines x ON x.id = gx.game_engine_id WHERE gx.game_id = ${id}
+    UNION ALL
+    SELECT 'localized' AS dim, l.locale_code AS slug, l.name FROM game_localizations l WHERE l.game_id = ${id}
     ORDER BY 1, 3
   `);
 
@@ -237,13 +263,36 @@ async function readDetail(tx: DbOrTx, q: GameDetailQuery): Promise<GameDetail | 
     LIMIT ${q.similarLimit ?? 12}
   `);
 
-  const dlcRes = await tx.execute<SummaryRow>(sql`
-    SELECT ${summaryColumns("d", locale)}
-    FROM games d
-    WHERE d.parent_game_id = ${g.igdb_id} AND d.id <> ${id}
-    ORDER BY d.first_release_date ASC NULLS LAST, d.name ASC, d.id ASC
-    LIMIT ${q.dlcLimit ?? 50}
+  // 相關內容：editions（version_parent）＋依 parent_game 反查的各類型；每組在 SQL 內排名取前 RELATED_GROUP_LIMIT 款，total 為實際總數
+  const groupTypes = Object.keys(RELATED_GROUP_BY_GAME_TYPE);
+  const groupNames = groupTypes.map((t) => RELATED_GROUP_BY_GAME_TYPE[t as keyof typeof RELATED_GROUP_BY_GAME_TYPE]!);
+  const relatedRes = await tx.execute<RelatedRow>(sql`
+    SELECT ${summaryColumns("q", locale)}, q.grp, q.total
+    FROM (
+      SELECT u.*, COUNT(*) OVER (PARTITION BY u.grp) AS total,
+        ROW_NUMBER() OVER (PARTITION BY u.grp ORDER BY u.first_release_date ASC NULLS LAST, u.name ASC, u.id ASC) AS rn
+      FROM (
+        SELECT d.id, d.slug, d.name, d.display_names, d.cover_url, d.first_release_date, d.first_release_precision,
+          d.game_type, d.popularity_score, 'editions'::text AS grp
+        FROM games d WHERE d.version_parent_id = ${g.igdb_id} AND d.id <> ${id}
+        UNION ALL
+        SELECT d.id, d.slug, d.name, d.display_names, d.cover_url, d.first_release_date, d.first_release_precision,
+          d.game_type, d.popularity_score, m.grp
+        FROM games d
+        JOIN unnest(${pgArray(groupTypes)}::text[], ${pgArray(groupNames)}::text[]) AS m(t, grp) ON m.t = COALESCE(d.game_type, 'main_game')
+        WHERE d.parent_game_id = ${g.igdb_id} AND d.id <> ${id} AND d.version_parent_id IS DISTINCT FROM ${g.igdb_id}
+      ) u
+    ) q
+    WHERE q.rn <= ${RELATED_GROUP_LIMIT}
+    ORDER BY q.grp, q.rn
   `);
+
+  const versionParentRes =
+    g.version_parent_id == null
+      ? { rows: [] as SummaryRow[] }
+      : await tx.execute<SummaryRow>(sql`
+          SELECT ${summaryColumns("p", locale)} FROM games p WHERE p.igdb_id = ${g.version_parent_id} LIMIT 1
+        `);
 
   const eventRes = await tx.execute<EventRow>(sql`
     SELECT ${EVENT_COLUMNS}
@@ -264,9 +313,40 @@ async function readDetail(tx: DbOrTx, q: GameDetailQuery): Promise<GameDetail | 
     ORDER BY r.id
   `);
 
-  const taxonomy = (dim: "genre" | "theme"): TaxonomyItem[] =>
+  const taxonomy = (dim: TaxDim): TaxonomyItem[] =>
     taxRes.rows.filter((r) => r.dim === dim).map((r) => ({ slug: r.slug, name: r.name }));
   const companies = groupCompanies(companyRes.rows);
+  const related = groupRelated(relatedRes.rows, q.resolveImage);
+  const extra: GameDetailExtra = {
+    storyline: g.storyline,
+    gameModes: taxonomy("mode"),
+    playerPerspectives: taxonomy("perspective"),
+    engines: taxonomy("engine"),
+    localizedTitles: taxRes.rows
+      .filter((r) => r.dim === "localized")
+      .map((r) => ({ localeCode: r.slug, name: r.name }))
+      .sort((a, b) => (a.localeCode < b.localeCode ? -1 : a.localeCode > b.localeCode ? 1 : 0)),
+    alternativeTitles: (g.alternative_names ?? [])
+      .filter((a) => typeof a?.name === "string" && a.name !== "")
+      .map((a) => ({ name: a.name as string, comment: a.comment ?? null })),
+    edition: {
+      versionTitle: g.version_title,
+      versionParent: versionParentRes.rows[0] ? toSummary(versionParentRes.rows[0], q.resolveImage) : null,
+    },
+    related: related.map((grp) => ({ ...grp, games: grp.games.slice(0, RELATED_GROUP_LIMIT) })),
+    relatedTotal: related.reduce((n, grp) => n + grp.total, 0),
+  };
+  // 舊欄位 dlcs：除 editions 外各組合併（同一份分組查詢，每組最多 RELATED_GROUP_LIMIT），依首發日期
+  const dlcs = related
+    .filter((grp) => grp.key !== "editions")
+    .flatMap((grp) => grp.games)
+    .sort(
+      (a, b) =>
+        compareNullableDate(a.firstReleaseDate, b.firstReleaseDate) ||
+        a.originalName.localeCompare(b.originalName) ||
+        a.gameId - b.gameId,
+    )
+    .slice(0, q.dlcLimit ?? 50);
 
   return {
     gameId: id,
@@ -300,7 +380,7 @@ async function readDetail(tx: DbOrTx, q: GameDetailQuery): Promise<GameDetail | 
     parent: parentRes.rows[0] ? toSummary(parentRes.rows[0], q.resolveImage) : null,
     franchises: groupFranchises(franchiseRes.rows, q.resolveImage),
     similarGames: similarRes.rows.map((r) => toSummary(r, q.resolveImage)),
-    dlcs: dlcRes.rows.map((r) => toSummary(r, q.resolveImage)),
+    dlcs,
     upcomingEvents: eventRes.rows.map((r) => toCalendarEvent(r, q.resolveImage)),
     languageSupport: buildLanguageSupport(languageEntries, locale),
     ratings: ratingRes.rows.map((r) => ({
@@ -312,6 +392,7 @@ async function readDetail(tx: DbOrTx, q: GameDetailQuery): Promise<GameDetail | 
       platformId: r.platform_id,
       sourceUrl: r.source_url,
     })),
+    extra,
   };
 }
 
@@ -430,6 +511,17 @@ export function sortLinks(links: readonly GameLink[]): GameLink[] {
       a.categoryLabel.localeCompare(b.categoryLabel) ||
       a.url.localeCompare(b.url),
   );
+}
+
+/** 依 RELATED_GROUP_KEYS 順序，只留有內容的組；rows 已依組內順序排好，total 為實際總數。 */
+export function groupRelated(rows: readonly RelatedRow[], resolveImage: ImageResolver): (RelatedGroup & { games: GameSummary[] })[] {
+  const map = new Map<RelatedGroupKey, RelatedGroup>();
+  for (const r of rows) {
+    const grp = map.get(r.grp) ?? { key: r.grp, games: [], total: Number(r.total) };
+    grp.games.push(toSummary(r, resolveImage));
+    map.set(r.grp, grp);
+  }
+  return RELATED_GROUP_KEYS.flatMap((k) => (map.has(k) ? [map.get(k)!] : []));
 }
 
 function groupFranchises(

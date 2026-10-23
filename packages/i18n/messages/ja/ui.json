@@ -141,7 +141,45 @@
       "franchise": "同じシリーズの作品：{name}",
       "collection": "同じコレクションの作品：{name}"
     },
-    "downloadIcs": ".ics をダウンロード"
+    "downloadIcs": ".ics をダウンロード",
+    "about": {
+      "title": "この作品について",
+      "mainDevelopers": "メイン開発",
+      "publishers": "パブリッシャー",
+      "supportingDevelopers": "協力開発",
+      "portingTag": "移植",
+      "genres": "ジャンル",
+      "themes": "テーマ",
+      "gameModes": "プレイ人数",
+      "playerPerspectives": "視点",
+      "collection": "シリーズ",
+      "franchise": "フランチャイズ",
+      "engines": "ゲームエンジン",
+      "story": "ストーリー",
+      "storyOriginal": "原文（English）",
+      "localizedTitles": "各地域のタイトル",
+      "alternativeTitles": "別名"
+    },
+    "edition": {
+      "label": "その他のエディション",
+      "seeMore": "ほかの{count}件のエディションを見る",
+      "hide": "関連コンテンツを閉じる",
+      "partOf": "『{name}』の{type}です",
+      "editionOf": "『{name}』の {title} です",
+      "goToParent": "『{name}』へ",
+      "genericVersion": "エディション"
+    },
+    "related": {
+      "title": "関連コンテンツ",
+      "more": "ほか{count}件",
+      "groupTitle": "{group}（{count}）"
+    },
+    "trailer": {
+      "watch": "トレーラーを見る"
+    },
+    "release": {
+      "inDays": "（{relative}）"
+    }
   },
   "footer": {
     "dataAttribution": "Data from IGDB.com",
