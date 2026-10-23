@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## GameDex 第二輪（2026-10-23 寫回；repo 副本先改，Project 正本待使用者匯入）
+
+- 06：路由表新增 `/ratings`、`/games?by=`、平台頁 `section=all`，註明沒有 `/releases`；§首頁（最新上市查看更多連時間軸 30 天前所在週、熱門分頁兩組同時 SSR）；§導覽與 header 改為已實作的 Holodex 式（依區塊切換品牌名、導覽／主題／語言／帳號四個下拉、搜尋候選 combobox、窄螢幕搜尋圖示）；§月曆新增遊戲／活動開關 `?show=`；§活動時間單行＋時區已實作；新增 §全部遊戲與分組檢視、§評分排名、§平台頁的「全部遊戲」、§互動背景、彩蛋與隱藏主題；§遊戲詳情頁重寫（公司三欄、About 資訊格、相關內容與版本標註）；新增 §已知限制；篩選表 `show` 與後置維度更新。
+- 07：新增 `GET /api/v1/games/suggest`、`/games/group`、`/ratings/ranking`、`/auth/public-config`、`GET|POST /me/unlocks`；`calendar/day` 的 `show` 語意；`account/summary` 追蹤數只算遊戲；匯出 JSON 加 `unlocks`；註明舊 `/api/timeline*` 與 `/releases/column` 已刪除。
+- 03：`score_provider` 加 `site_players`（玩家平均複製進 ratings）；`games` 加 `storyline`、`version_parent_id`、`version_title` 與索引 `games_parent_type_idx`、`games_version_parent_idx`、`games_lower_name_prefix_idx`；新增 `game_modes`、`player_perspectives`、`game_engines` 與三張關聯表；accounts 新增 `user_unlocks`＋`unlock_type`；索引總表與表歸屬同步（migration 0012～0014）。
+- 04：`GAME_FIELDS` 新增 9 個詳情欄位；新增 §詳情欄位回填 `backfill_detail_fields`（實測 634 批、16.5 分、0 失敗）與 §顯示名稱重算 `recompute_display_names`；排程任務表加三列（含 accounts 的 `publish_player_ratings`）。
+- 02、05：manifest 加 `ratingColumns` 擴充點；05 註明 `site_players` 只給評分排名頁。
+- 09：玩家平均寫進 `ratings`（`publish_player_ratings`）；新增 §解鎖紀錄、收藏與成就（聯集同步、成就判定、帳號頁區塊、匯出與刪除）；摘要追蹤數只算遊戲。
+- 15：新增 GameDex 第二輪待辦（效能與預算）。
+- 90：新增 D87。
+- `docs/design/easter-eggs.md`、`publisher-groups.md` 已於實作時更新，不屬規格章節。
+
 ## v2.1（2026-10-15，Phase 4 實作後同步；repo 副本先改，Project 正本待使用者匯入）
 
 - 05 `normalizeTitle`：先移除 `™®©` 再 NFKC、NFKC 後才轉小寫（原範例 NFKC 會把 ™ 轉成 "TM"）。

@@ -194,4 +194,4 @@
 - [ ] 偶發失敗：`accounts-w7b-u.spec.ts:271`（時間軸追蹤按鈕批次查詢）整套負載重時逾時，Z2、Z3 各一次（2026-10-23 新增）
 - [x] 第二輪 Z4（2026-10-23，`ab514f1`；npm test 1256、test:a11y 892 過）：詳情頁補資訊（公司分三欄、Theme、Game Modes、Player Perspectives、引擎、各語言標題、其他稱呼、Storyline、Editions 與相關內容分組）；migration 0014 已套開發 DB，`backfill_detail_fields` 已跑完（634 批、16.5 分、0 失敗；storyline 31,208 款、遊戲人數 315,710 筆、引擎 89,153 筆）（2026-10-23）
 - [x] 修正時間軸 client 不合法 week 被退回今天的 bug（e2e x2:48 偶發失敗的原因）（2026-10-23）
-- [ ] 第二輪收尾：spec 寫回（06、07、03、04、09、90）、開 PR `feat/gamedex-v2` → main（2026-10-23 新增）
+- [x] 第二輪收尾：spec 寫回（02、03、04、05、06、07、09、15、90、CHANGELOG；D87）、開 PR `feat/gamedex-v2` → main（2026-10-23）
