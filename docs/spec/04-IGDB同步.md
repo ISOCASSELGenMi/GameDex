@@ -223,6 +223,15 @@ WHERE status IN ('scheduled', 'delayed') AND precision = 'day' AND release_date 
 
 `games.display_names` 只在同步時計算（06 §遊戲名稱解析鏈），名稱規則改動後舊資料不會自動更新。手動任務：`npm run job -- recompute_display_names [--batch-size N]`（預設 1,000；`lockMode: "session"`、無 cron）。依 id 遞增掃全庫，用與同步相同的 `resolveDisplayNames` 重算，**只更新與現值不同的列、只寫 `display_names`**（不碰 `search_text`、`updated_at`、`change_feed`，不打 IGDB）；每批一個 transaction，結束 log 掃描／更新／移除 zh-Hant 的數量；冪等。2026-10-18 以同一邏輯的腳本對開發 DB 重算過一次（1,693 款補上 zh-Hant）；任務本身尚未在開發 DB 執行過。
 
+### 分組欄與代表上市列 `backfill_game_groups`（Z6）
+
+`games.release_group`、`games.publisher_group` 與 `release_picks`（03）都是預先計算的資料，由寫入路徑在同一個 transaction 內維護：
+- `upsertGame`／`syncIgdbGame` 寫入首發日期或精度時重算 `release_group`；`syncIgdbGame` 寫完公司後重算 `publisher_group`。
+- `applyReleaseDiffPlan`（有新增或更新時）與 `upsertReleaseEvent` 呼叫 `refreshReleasePicks`，重算該遊戲的代表上市列。
+- 直接寫 `release_events`、繞過上面兩個路徑的程式要自己補 `release_picks`。
+
+全庫補值用手動任務：`npm run job -- backfill_game_groups [--max-batches N] [--batch-size N] [--restart]`（`lockMode: "session"`、無 cron、不打 IGDB，但 catalog 模組啟動時仍檢查 IGDB 環境變數）。依 id 遞增分批，進度存在 `sync_state`，可續跑，結束時對 `games` 與 `release_picks` 跑 VACUUM ANALYZE。migration 0015 之後必須跑一次；跑完之前 `/games?by=date｜publisher` 會把所有遊戲歸成一組，平台頁「全部遊戲」會偵測到回填未完成，自動退回即時聚合。2026-10-24 在開發 DB 實測：316,955 款、317 批、408 秒，更新 239,208 款，`release_picks` 寫入 416,375 列。
+
 ## 平台同步
 
 每日一次，整表重抓 `platforms`、`platform_families` 與平台版本上市日（`platform_versions` → `platform_release_dates`，同平台同地區取最早）。`platform_type` 轉 `platformKind`，未知 → `other`。`source='manual'` 不覆蓋。
@@ -290,6 +299,7 @@ interface GameDataProvider {
 | `backfill_games` | 手動 | session |
 | `backfill_detail_fields`（詳情欄位回填） | 手動 | session |
 | `recompute_display_names` | 手動 | session |
+| `backfill_game_groups`（分組欄與代表上市列，migration 0015 後跑一次） | 手動 | session |
 | `publish_player_ratings`（`accounts`，09） | 每小時第 27 分 | session |
 | `refresh_popularity` | 每小時／每日（03 §熱度） | tx |
 | `check_external_links`（失效連結） | 每週 | tx |
