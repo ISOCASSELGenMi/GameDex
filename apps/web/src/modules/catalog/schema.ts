@@ -178,6 +178,25 @@ export const games = pgTable(
       t.heatLevel,
       t.firstReleaseDate,
     ),
+    // 平台分組（依名稱／首發日期）與平台頁「全部遊戲」的非熱度排序：平台分組的日期／名稱排序要靠它們（開發 DB 實測，沒有的話日期排序 5 秒）
+    index("games_browse_name_idx").on(
+      t.name,
+      t.id,
+      t.gameType,
+      t.gameStatus,
+      t.heatLevel,
+      t.firstReleaseDate,
+      t.popularityScore,
+    ),
+    index("games_browse_date_idx").on(
+      t.firstReleaseDate.asc().nullsLast(),
+      t.popularityScore.desc(),
+      t.id,
+      t.gameType,
+      t.gameStatus,
+      t.heatLevel,
+      t.name,
+    ),
     // 平台頁「全部遊戲」依介面語言的顯示名稱排序（repository/platform-page.ts）：每個支援語系一個表達式 index（語系清單見 DISPLAY_NAME_INDEX_LOCALES；
     // 新增語系要補 index，沒有時只是退回全平台排序、變慢）
     ...DISPLAY_NAME_INDEX_LOCALES.map((locale) =>
