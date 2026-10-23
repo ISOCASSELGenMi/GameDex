@@ -191,7 +191,7 @@
 - [x] 開發 DB 重算 `display_names`：1,693 款補上 zh-Hant（例：王國之淚），未移除任何既有中文名；全庫 zh-Hant 218 → 1,911（2026-10-18）
 - [x] Z1 加做（2026-10-22 完成；`recompute_display_names` 尚未在開發 DB 執行）：搜尋候選名單（所有搜尋框共用 combobox 元件）；`recompute_display_names` 任務（規則改動時全庫重算，只動 display_names，不打 IGDB）（2026-10-18 新增）
 - [x] 第二輪 Z3（2026-10-23，`7d8f251`；npm test 1227、test:a11y 871 過／1 偶發失敗，單跑 51/51 過）：互動背景（只在內容欄兩側）、彩蛋 1～8、9 個隱藏主題、`user_unlocks` 跨裝置同步、帳號頁收藏與成就；migration 0013 已套開發 DB（2026-10-23）
-- [ ] 偶發失敗：`accounts-w7b-u.spec.ts:271`（時間軸追蹤按鈕批次查詢）整套負載重時逾時，Z2、Z3 各一次（2026-10-23 新增）
+- [x] 偶發失敗：`accounts-w7b-u.spec.ts:271`（時間軸追蹤按鈕批次查詢）整套負載重時失敗，Z2、Z3 各一次（2026-10-23 新增；2026-10-24 修）。根因：不是逾時也不是批次查詢競爭，而是 axe target-size 誤報——點追蹤鈕時 Playwright 把頁面捲到 scrollY≈269，頁首的「我的遊戲」連結被捲到 sticky 標頭底下（rect y=-4），axe 判定部分被遮住；捲動量隨載入時序變，負載重時才出現。修法：axe 前 `scrollTo(0,0)`。壓力重現（8 顆 CPU 燒滿、`--repeat-each=24 --workers=8`）修前 4、1、1/24 失敗，修後 48/48 通過
 - [x] 第二輪 Z4（2026-10-23，`ab514f1`；npm test 1256、test:a11y 892 過）：詳情頁補資訊（公司分三欄、Theme、Game Modes、Player Perspectives、引擎、各語言標題、其他稱呼、Storyline、Editions 與相關內容分組）；migration 0014 已套開發 DB，`backfill_detail_fields` 已跑完（634 批、16.5 分、0 失敗；storyline 31,208 款、遊戲人數 315,710 筆、引擎 89,153 筆）（2026-10-23）
 - [x] 修正時間軸 client 不合法 week 被退回今天的 bug（e2e x2:48 偶發失敗的原因）（2026-10-23）
 - [x] 第二輪收尾：spec 寫回（02、03、04、05、06、07、09、15、90、CHANGELOG；D87）、開 PR `feat/gamedex-v2` → main（2026-10-23）

@@ -286,6 +286,9 @@ test.describe("時間軸卡片的追蹤按鈕（D83）", () => {
     await expect(btn).toHaveAttribute("aria-pressed", "true");
     await expect(page.locator("[data-card-follow-status]")).toContainText(/\S/);
     expect(await btn.evaluate((e) => (e as HTMLElement).getBoundingClientRect().height)).toBeGreaterThanOrEqual(44);
+    // 點按鈕時 Playwright 會把按鈕捲進視窗，捲動量隨載入時序而變；頁面上方的連結（例如「我的遊戲」）被捲到 sticky 標頭底下時，
+    // axe 的 target-size 會判定「部分被遮住」而誤報。先捲回頂端，讓 axe 量到的版面是確定的。
+    await page.evaluate(() => window.scrollTo(0, 0));
     await expectNoA11yViolations(page, "時間軸 卡片追蹤按鈕");
 
     await page.locator("a[data-week-nav=next]").click();
