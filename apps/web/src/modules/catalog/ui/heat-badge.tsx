@@ -41,7 +41,7 @@ export function HeatSprite({ id }: { id: string }): ReactElement {
 
 function FlameIcon({ spriteId }: { spriteId?: string }): ReactElement {
   return (
-    <svg aria-hidden="true" focusable="false" viewBox="0 0 16 16" width="1em" height="1em" className="inline-block shrink-0 align-[-0.125em]" fill="currentColor">
+    <svg aria-hidden="true" focusable="false" viewBox="0 0 16 16" width="1em" height="1em" className="heat-ico" fill="currentColor">
       {spriteId ? <use href={`#${spriteId}`} /> : <path d={FLAME_PATH} />}
     </svg>
   );
@@ -78,12 +78,7 @@ export function HeatBadge({ level, label, compact = false, className, spriteId }
   return (
     <span
       data-heat={v}
-      className={[
-        "inline-flex items-center gap-1 rounded-full border border-[var(--border)] px-2 text-sm font-semibold text-[var(--warn)]",
-        className,
-      ]
-        .filter(Boolean)
-        .join(" ")}
+      className={["heat-full", className].filter(Boolean).join(" ")}
     >
       <FlameIcon spriteId={spriteId} />
       <span>{label}</span>

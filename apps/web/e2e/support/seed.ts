@@ -18,6 +18,7 @@
 import { eq, sql } from "drizzle-orm";
 import { closeDb, getDb } from "@/kernel/db/client";
 import { buildSearchText } from "@/modules/catalog/domain/search-text";
+import { backfillGameGroups } from "@/modules/catalog/use-cases/sync/backfill-game-groups";
 import {
   companies,
   eventGames,
@@ -317,6 +318,8 @@ export async function seedE2eDatabase(): Promise<void> {
 
     // ── GameDex 第 2 輪 Z4B：遊戲詳情頁補資訊（版本、DLC、本地化標題、模式、視角、引擎、故事）──
     await seedZ4b(db, region, platform);
+    // fixture 都是直接 insert（沒走同步寫入路徑）：預先計算的分組鍵與 release_picks 用正式的回填任務補齊（與線上同一份規則；完成後平台頁才會用 release_picks）
+    await backfillGameGroups({ startedAt: new Date(), log: () => {} }, { restart: true });
   } finally {
     await closeDb();
   }

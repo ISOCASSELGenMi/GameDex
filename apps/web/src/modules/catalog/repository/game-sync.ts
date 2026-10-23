@@ -16,6 +16,7 @@ import type {
 } from "../domain/entities";
 import { planReleaseEventDiff, type DesiredRelease } from "../domain/release-diff";
 import { resolveDisplayNames } from "../domain/display-names";
+import { releaseGroupKey } from "../domain/game-group-keys";
 import { buildSearchText } from "../domain/search-text";
 import {
   externalIds,
@@ -33,6 +34,7 @@ import {
   games,
   ratings,
 } from "../schema";
+import { computePublisherGroups } from "./game-groups";
 import { upsertRating } from "./ratings";
 import { applyReleaseDiffPlan, listIgdbReleaseRows, type ReleaseDiffApplyStats } from "./release-events";
 
@@ -120,6 +122,7 @@ export async function syncIgdbGame(
       coverUrl: input.coverUrl,
       firstReleaseDate: input.firstReleaseDate,
       firstReleasePrecision: input.firstReleasePrecision,
+      releaseGroup: releaseGroupKey(input.firstReleaseDate, input.firstReleasePrecision),
       gameType: input.gameType,
       gameStatus: input.gameStatus,
       parentGameId: input.parentGameId,
@@ -194,7 +197,9 @@ export async function syncIgdbGame(
       .where(eq(gameLocalizations.gameId, gameId));
     const displayNames = resolveDisplayNames(locs, input.alternativeNames);
     const searchText = buildSearchText([input.name, ...input.alternativeNames.map((a) => a.name), ...locs.map((l) => l.name)]);
-    await tx.update(games).set({ displayNames, searchText }).where(eq(games.id, gameId));
+    // 預先計算的廠商欄（games.publisher_group）；日期組 release_group 已隨本體 upsert 寫入
+    const publisherGroup = (await computePublisherGroups(tx, [gameId])).get(gameId) ?? -1;
+    await tx.update(games).set({ displayNames, searchText, publisherGroup }).where(eq(games.id, gameId));
 
     return {
       gameId,

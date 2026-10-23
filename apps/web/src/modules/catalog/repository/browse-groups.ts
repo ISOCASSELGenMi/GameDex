@@ -2,14 +2,15 @@
  * 遊戲瀏覽頁分組檢視（`/games?by=date|platform|publisher`）的查詢。**篩選條件與瀏覽共用 buildBrowseConditions**（不另寫一套），
  * 分組只是在同一批遊戲上多算一個「組 key」：
  *
- * - date：組＝首發年月（日／月精度 `YYYY-MM`、季精度 `YYYY-Qn`、年精度 `YYYY`、日期未定 `tbd`）。組序：依首發日期（sort=release_date 由舊到新，
- *   其餘由新到舊），`tbd` 永遠最後。
+ * - date：組＝games.release_group（預先計算：首發年月 `YYYY-MM`、季精度 `YYYY-Qn`、年精度 `YYYY`、日期未定 `tbd`；規則在
+ *   domain/game-group-keys.ts，由寫入路徑與 backfill_game_groups 維護）。組序：依首發日期（sort=release_date 由舊到新，其餘由新到舊），`tbd` 永遠最後。
  * - platform：組＝平台 slug（不含 mobile；一款遊戲出現在它每個平台的組）。組序由 Use Case 傳入（平台總覽的分組與排序）。
- * - publisher：組＝廠商欄索引（domain/publisher-groups.ts 的規則寫成 SQL：開發商優先、發行商次之、都不在名單歸 other＝-1；
- *   多個欄位並列取欄位順序最後者）。id 清單只存在 domain 常數，這裡用 unnest 產生對照表；不預先計算、不加欄位。
+ * - publisher：組＝games.publisher_group（預先計算的廠商欄索引，規則在 domain/publisher-groups.ts publisherGroupIndexOfGame；-1＝other）。
+ *   欄位順序＝名單順序，other 最後。
  *
- * 兩段查詢：(1) 組清單與每組總數（GROUP BY，分頁取一頁的組）；(2) 只針對這些組取每組前 N 張（window function 算組內名次，
- * 組 key 條件推進 base，不掃其他組）。組內排序＝瀏覽的排序（sort），並以 id 作最後的平手條件，讓「顯示更多」的分頁穩定。
+ * 兩段查詢：(1) 組清單與每組總數（GROUP BY，分頁取一頁的組；date／publisher 走分組 index 的 index-only scan）；
+ * (2) 只針對這些組，每組一個 LATERAL 依排序鍵取 [offset, offset+limit)（popularity 排序時 index 已排好，LIMIT 提早結束）。
+ * 組內排序＝瀏覽的排序（sort），並以 id 作最後的平手條件，讓「顯示更多」的分頁穩定。
  */
 import { sql, type SQL } from "drizzle-orm";
 import type {
@@ -22,7 +23,8 @@ import type {
   PlatformKind,
   ResolvedReleaseFilter,
 } from "../domain/entities";
-import { OTHER_PUBLISHER_KEY, PUBLISHER_COLUMN_KEYS, publisherColumnKeyOfIndex, publisherGroupSqlMap, type PublisherColumnKey } from "../domain/publisher-groups";
+import { TBD_RELEASE_GROUP } from "../domain/game-group-keys";
+import { OTHER_PUBLISHER_KEY, PUBLISHER_COLUMN_KEYS, publisherColumnKeyOfIndex, type PublisherColumnKey } from "../domain/publisher-groups";
 import { browseCardColumns, browseRowToCard, buildBrowseConditions, type BrowseRow } from "./browse";
 import { pgArray, withReadTimeout, type ReadOptions } from "./read-tx";
 
@@ -59,6 +61,8 @@ export interface ReadGameGroupPageInput extends GameGroupFilter {
 
 interface GroupRow extends Record<string, unknown> {
   gkey: string;
+  /** by=platform：平台 id（卡片查詢用）。 */
+  gid?: number | null;
   total: number;
   gname: string | null;
   gkind: PlatformKind | null;
@@ -66,19 +70,10 @@ interface GroupRow extends Record<string, unknown> {
 
 interface CardRow extends BrowseRow {
   gkey: string;
-  total: number;
   rn: number;
 }
 
-/** 日期組 key 的 SQL 運算式（games 別名 g）。 */
-const DATE_KEY_SQL = sql`CASE
-  WHEN g.first_release_date IS NULL OR g.first_release_precision IS NULL OR g.first_release_precision = 'tbd' THEN 'tbd'
-  WHEN g.first_release_precision = 'year' THEN to_char(g.first_release_date, 'YYYY')
-  WHEN g.first_release_precision = 'quarter' THEN to_char(g.first_release_date, 'YYYY') || '-Q' || to_char(g.first_release_date, 'Q')
-  ELSE to_char(g.first_release_date, 'YYYY-MM') END`;
-const DATE_VALUE_SQL = sql`CASE WHEN g.first_release_date IS NULL OR g.first_release_precision IS NULL OR g.first_release_precision = 'tbd' THEN NULL ELSE g.first_release_date END`;
-
-/** 廠商欄 key → SQL 的欄位索引字串（other＝"-1"）；不是合法 key 回 null。 */
+/** 廠商欄 key → SQL 的欄位索引（other＝-1）；不是合法 key 回 null。 */
 export function publisherKeyToIndex(key: string): number | null {
   const i = PUBLISHER_COLUMN_KEYS.indexOf(key as PublisherColumnKey);
   if (i < 0) return null;
@@ -87,109 +82,111 @@ export function publisherKeyToIndex(key: string): number | null {
 
 /** 日期組 key 的格式（YYYY-MM、YYYY-Qn、YYYY、tbd）。 */
 export function isDateGroupKey(key: string): boolean {
-  return key === "tbd" || /^\d{4}(?:-(?:0[1-9]|1[0-2]|Q[1-4]))?$/.test(key);
+  return key === TBD_RELEASE_GROUP || /^\d{4}(?:-(?:0[1-9]|1[0-2]|Q[1-4]))?$/.test(key);
 }
 
-interface BaseParts {
-  /** WITH 的前置 CTE（逗號結尾）；沒有為空。 */
-  pre: SQL;
-  /** base CTE 的本體：id, gkey, gdate, gname, gkind, popularity_score, name, rdate。 */
-  base: SQL;
+/**
+ * 一個組的遊戲來源（FROM games g ＋ 條件）。date／publisher 是預先計算的欄位（release_group、publisher_group），同一組的遊戲在
+ * index（games_release_group_browse_idx、games_publisher_group_browse_idx）上相鄰，且組內排序鍵（熱度、名稱、id）與篩選用欄位都在 index 裡；
+ * platform 以 game_platforms 的 EXISTS 過濾，並用熱度排序的 index（games_browse_pop_idx）依序掃描、遇到足夠筆數就停。
+ * 平台 id 由呼叫端先查好、當成參數傳入，讓規劃器看得到實際平台大小（大平台沿熱度 index 掃、小平台直接從 game_platforms 取）。
+ */
+function groupSource(by: GroupedBy, key: string, platformId: number | null | undefined): SQL[] {
+  if (by === "date") return [sql`g.release_group = ${key}`];
+  if (by === "publisher") return [sql`g.publisher_group = ${Number(key)}`];
+  const platform = platformId != null ? sql`${platformId}` : sql`(SELECT id FROM platforms WHERE slug = ${key} AND kind <> 'mobile')`;
+  return [sql`EXISTS (SELECT 1 FROM game_platforms gpg WHERE gpg.game_id = g.id AND gpg.platform_id = ${platform})`];
 }
 
-function baseParts(by: GroupedBy, q: GameGroupFilter, keys?: readonly string[]): BaseParts {
-  const conds = buildBrowseConditions(q);
-  const common = sql`g.id, g.popularity_score, g.name, g.first_release_date AS rdate`;
-  if (by === "date") {
-    const where = keys ? [...conds, sql`(${DATE_KEY_SQL}) = ANY(${pgArray(keys)}::text[])`] : conds;
-    return {
-      pre: sql``,
-      base: sql`SELECT ${common}, (${DATE_KEY_SQL}) AS gkey, (${DATE_VALUE_SQL}) AS gdate, NULL::text AS gname, NULL::text AS gkind
-        FROM games g WHERE ${sql.join(where, sql` AND `)}`,
-    };
-  }
-  if (by === "platform") {
-    const where = [...conds, sql`plg.kind <> 'mobile'`, ...(keys ? [sql`plg.slug = ANY(${pgArray(keys)}::text[])`] : [])];
-    return {
-      pre: sql``,
-      base: sql`SELECT ${common}, plg.slug AS gkey, NULL::date AS gdate, plg.name AS gname, plg.kind::text AS gkind
-        FROM games g JOIN game_platforms gpg ON gpg.game_id = g.id JOIN platforms plg ON plg.id = gpg.platform_id
-        WHERE ${sql.join(where, sql` AND `)}`,
-    };
-  }
-  const { igdbIds, groupIdx } = publisherGroupSqlMap();
-  const gkey = sql`COALESCE(mp.idx, -1)::text`;
-  const where = keys ? [...conds, sql`${gkey} = ANY(${pgArray(keys)}::text[])`] : conds;
-  return {
-    // 先由對照表找出名單內的公司，再反查它們的遊戲（只掃名單公司的 game_companies，不是每款遊戲都做一次 lateral）
-    pre: sql`mapped AS (
-      SELECT gc.game_id,
-        COALESCE(MAX(m.idx) FILTER (WHERE gc.role = 'developer'), MAX(m.idx) FILTER (WHERE gc.role = 'publisher')) AS idx
-      FROM unnest(${pgArray(igdbIds)}::int[], ${pgArray(groupIdx)}::int[]) AS m(igdb_id, idx)
-      JOIN companies co ON co.igdb_id = m.igdb_id
-      JOIN game_companies gc ON gc.company_id = co.id AND gc.role IN ('developer', 'publisher')
-      GROUP BY gc.game_id
-    ),`,
-    base: sql`SELECT ${common}, ${gkey} AS gkey, NULL::date AS gdate, NULL::text AS gname, NULL::text AS gkind
-      FROM games g LEFT JOIN mapped mp ON mp.game_id = g.id WHERE ${sql.join(where, sql` AND `)}`,
-  };
-}
-
-function cardOrder(sort: BrowseSort, a: string): SQL {
+function cardOrder(sort: BrowseSort, a: string, dateCol: string): SQL {
   const c = (col: string) => sql.raw(`${a}.${col}`);
   return sort === "name"
     ? sql`${c("name")} ASC, ${c("id")} ASC`
     : sort === "release_date"
-      ? sql`${c("rdate")} ASC NULLS LAST, ${c("popularity_score")} DESC, ${c("id")} ASC`
-      : sql`${c("popularity_score")} DESC, ${c("name")} ASC, ${c("id")} ASC`;
+      ? sql`${c(dateCol)} ASC NULLS LAST, ${c("popularity_score")} DESC NULLS LAST, ${c("id")} ASC`
+      : sql`${c("popularity_score")} DESC NULLS LAST, ${c("name")} ASC, ${c("id")} ASC`;
 }
 
-/** 組清單查詢（匯出供效能量測與單元測試用）。 */
+/** 組清單查詢（匯出供效能量測與單元測試用）：一頁的組＋每組符合條件的總數。 */
 export function buildGroupListQuery(input: Omit<ReadGameGroupsInput, "resolveImage" | "perGroup">): SQL {
-  const { pre, base } = baseParts(input.by, input);
-  let order: SQL;
+  const conds = buildBrowseConditions(input);
+  const page = sql`LIMIT ${Math.max(0, Math.floor(input.groupLimit)) + 1} OFFSET ${Math.max(0, Math.floor(input.groupOffset))}`;
   if (input.by === "date") {
     const dir = input.sort === "release_date" ? sql`ASC` : sql`DESC`;
-    order = sql`min(gdate) ${dir} NULLS LAST, gkey ${dir}`;
-  } else if (input.by === "platform") {
-    order = sql`COALESCE(array_position(${pgArray([...(input.platformOrder ?? [])])}::text[], gkey), 100000), gkey`;
-  } else {
-    order = sql`(gkey = '-1') ASC, gkey::int ASC`;
+    return sql`
+      SELECT g.release_group AS gkey, count(*)::int AS total, NULL::text AS gname, NULL::text AS gkind
+      FROM games g WHERE ${sql.join(conds, sql` AND `)}
+      GROUP BY g.release_group
+      ORDER BY min(g.first_release_date) FILTER (WHERE g.release_group <> ${TBD_RELEASE_GROUP}) ${dir} NULLS LAST, g.release_group ${dir}
+      ${page}
+    `;
+  }
+  if (input.by === "platform") {
+    const rank = sql`COALESCE(array_position(${pgArray([...(input.platformOrder ?? [])])}::text[], plg.slug), 100000)`;
+    // 先用整數 platform_id 分組（hash aggregate），再 join 平台資料；對 slug 字串分組排序在 30 萬列上要排序 1~2 秒
+    return sql`
+      WITH t AS (
+        SELECT gpg.platform_id AS pid, count(*)::int AS total
+        FROM games g JOIN game_platforms gpg ON gpg.game_id = g.id
+        WHERE ${sql.join(conds, sql` AND `)}
+        GROUP BY gpg.platform_id
+      )
+      SELECT plg.slug AS gkey, plg.id AS gid, t.total, plg.name AS gname, plg.kind::text AS gkind
+      FROM t JOIN platforms plg ON plg.id = t.pid
+      WHERE plg.kind <> 'mobile'
+      ORDER BY ${rank}, plg.slug
+      ${page}
+    `;
   }
   return sql`
-    WITH ${pre} base AS (${base})
-    SELECT gkey, count(*)::int AS total, max(gname) AS gname, max(gkind) AS gkind
-    FROM base
-    GROUP BY gkey
-    ORDER BY ${order}
-    LIMIT ${Math.max(0, Math.floor(input.groupLimit)) + 1} OFFSET ${Math.max(0, Math.floor(input.groupOffset))}
+    SELECT g.publisher_group::text AS gkey, count(*)::int AS total, NULL::text AS gname, NULL::text AS gkind
+    FROM games g WHERE ${sql.join(conds, sql` AND `)}
+    GROUP BY g.publisher_group
+    ORDER BY (g.publisher_group = -1) ASC, g.publisher_group ASC
+    ${page}
   `;
 }
 
-/** 組內卡片查詢（匯出供效能量測與單元測試用）。keys 為 SQL 用的組 key（廠商欄是索引字串）。 */
+/**
+ * 某幾組各自 [offset, offset+limit) 的卡片（匯出供效能量測與單元測試用）。keys 為 SQL 用的組 key（廠商欄是索引字串）；
+ * by=platform 時 platformIds 與 keys 一一對應（沒給就在 SQL 內用 slug 查）。
+ */
 export function buildGroupCardsQuery(
-  q: GameGroupFilter & { by: GroupedBy; keys: readonly string[]; offset: number; limit: number },
+  q: GameGroupFilter & { by: GroupedBy; keys: readonly string[]; platformIds?: readonly number[]; offset: number; limit: number },
 ): SQL {
-  const { pre, base } = baseParts(q.by, q, q.keys);
+  const conds = buildBrowseConditions(q);
   const offset = Math.max(0, Math.floor(q.offset));
   const limit = Math.max(0, Math.floor(q.limit));
-  // base 只掃一次（MATERIALIZED）：先算每組總數，再對每組各取 [offset, offset+limit) 的 top-N（比對整組做 window 排序便宜）
+  // 每組一個子查詢（UNION ALL，各自帶實際的組 key 規劃）：用組的 index 依排序鍵取 [offset, offset+limit)（熱度排序時 index 已排好，
+  // LIMIT 提早結束）；不掃其他組、不對整組排序
+  const perKey = q.keys.map(
+    (key, i) => sql`(
+      SELECT ${key}::text AS gkey, g.id, g.popularity_score, g.name, g.first_release_date AS rdate
+      FROM games g
+      WHERE ${sql.join([...groupSource(q.by, key, q.platformIds?.[i]), ...conds], sql` AND `)}
+      ORDER BY ${cardOrder(q.sort, "g", "first_release_date")}
+      OFFSET ${offset} LIMIT ${limit}
+    )`,
+  );
   return sql`
-    WITH ${pre} base AS MATERIALIZED (${base}),
-    tot AS (SELECT gkey, count(*)::int AS total FROM base GROUP BY gkey),
-    picked AS (
-      SELECT t.gkey, t.total, p.id,
-        row_number() OVER (PARTITION BY t.gkey ORDER BY ${cardOrder(q.sort, "p")})::int AS rn
-      FROM tot t
-      CROSS JOIN LATERAL (
-        SELECT b.id, b.popularity_score, b.name, b.rdate FROM base b WHERE b.gkey = t.gkey
-        ORDER BY ${cardOrder(q.sort, "b")} OFFSET ${offset} LIMIT ${limit}
-      ) p
+    WITH picked AS (
+      SELECT u.gkey, u.id, row_number() OVER (PARTITION BY u.gkey ORDER BY ${cardOrder(q.sort, "u", "rdate")})::int AS rn
+      FROM (${sql.join(perKey, sql` UNION ALL `)}) u
     )
-    SELECT r.gkey, r.total, r.rn, ${browseCardColumns(q.locale)}
+    SELECT r.gkey, r.rn, ${browseCardColumns(q.locale)}
     FROM picked r JOIN games g ON g.id = r.id
     ORDER BY r.gkey, r.rn
   `;
+}
+
+/** 單一組符合條件的總數（「顯示更多」API 用；組清單查詢已經有總數）。 */
+export function buildGroupCountQuery(q: GameGroupFilter & { by: GroupedBy; key: string; platformId?: number | null }): SQL {
+  const conds = buildBrowseConditions(q);
+  return sql`SELECT count(*)::int AS total FROM games g WHERE ${sql.join([...groupSource(q.by, q.key, q.platformId), ...conds], sql` AND `)}`;
+}
+
+function platformIdsOf(by: GroupedBy, rows: readonly GroupRow[]): { platformIds?: number[] } {
+  return by === "platform" && rows.every((r) => r.gid != null) ? { platformIds: rows.map((r) => r.gid as number) } : {};
 }
 
 function sqlKey(by: GroupedBy, key: string): string | null {
@@ -210,8 +207,8 @@ function groupsFromRows(by: GroupedBy, rows: readonly CardRow[], meta: ReadonlyM
     const key = displayKey(by, r.gkey);
     let group = groups.get(key);
     if (!group) {
-      group = { key, total: r.total, cards: [] };
       const m = meta.get(r.gkey);
+      group = { key, total: m?.total ?? 0, cards: [] };
       if (by === "platform" && m?.gname && m.gkind) group.platform = { slug: key, name: m.gname, kind: m.gkind };
       groups.set(key, group);
     }
@@ -230,7 +227,7 @@ export async function readGameGroups(input: ReadGameGroupsInput, opts: ReadOptio
   if (pageRows.length === 0) return { groups: [], hasMoreGroups };
   const meta = new Map(pageRows.map((r) => [r.gkey, r]));
   const cards = await withReadTimeout(
-    (tx) => tx.execute<CardRow>(buildGroupCardsQuery({ ...input, keys: pageRows.map((r) => r.gkey), offset: 0, limit: input.perGroup })),
+    (tx) => tx.execute<CardRow>(buildGroupCardsQuery({ ...input, keys: pageRows.map((r) => r.gkey), ...platformIdsOf(input.by, pageRows), offset: 0, limit: input.perGroup })),
     opts,
   );
   const byKey = groupsFromRows(input.by, cards.rows, meta, input.resolveImage);
@@ -247,9 +244,19 @@ export async function readGameGroups(input: ReadGameGroupsInput, opts: ReadOptio
 export async function readGameGroupPage(input: ReadGameGroupPageInput, opts: ReadOptions = {}): Promise<GameGroup | null> {
   const key = sqlKey(input.by, input.key);
   if (key === null) return null;
-  const res = await withReadTimeout(
-    (tx) => tx.execute<CardRow>(buildGroupCardsQuery({ ...input, keys: [key] })),
-    opts,
-  );
-  return groupsFromRows(input.by, res.rows, new Map(), input.resolveImage).get(input.key) ?? null;
+  const { cards, total } = await withReadTimeout(async (tx) => {
+    let platformId: number | null | undefined;
+    if (input.by === "platform") {
+      const p = await tx.execute<{ id: number }>(sql`SELECT id FROM platforms WHERE slug = ${key} AND kind <> 'mobile'`);
+      platformId = p.rows[0]?.id ?? null;
+      if (platformId === null) return { cards: { rows: [] as CardRow[] }, total: 0 };
+    }
+    const platformIds = platformId != null ? { platformIds: [platformId] } : {};
+    const cards = await tx.execute<CardRow>(buildGroupCardsQuery({ ...input, keys: [key], ...platformIds }));
+    if (cards.rows.length === 0) return { cards, total: 0 };
+    const count = await tx.execute<{ total: number }>(buildGroupCountQuery({ ...input, key, platformId }));
+    return { cards, total: count.rows[0]?.total ?? 0 };
+  }, opts);
+  if (cards.rows.length === 0) return null;
+  return groupsFromRows(input.by, cards.rows, new Map([[key, { gkey: key, total, gname: null, gkind: null }]]), input.resolveImage).get(input.key) ?? null;
 }

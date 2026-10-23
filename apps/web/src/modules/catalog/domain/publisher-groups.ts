@@ -520,9 +520,19 @@ function pickGroup(refs: readonly GameCompanyRef[], role: "developer" | "publish
  * 艾爾登法環（開發 FromSoftware、發行萬代南夢宮）→ fromsoftware。
  */
 export function groupOfGame(companies: readonly GameCompanyRef[]): PublisherColumnKey {
-  const index = pickGroup(companies, "developer") ?? pickGroup(companies, "publisher");
-  return index === null ? OTHER_PUBLISHER_KEY : PUBLISHER_GROUPS[index]!.key;
+  return publisherColumnKeyOfIndex(publisherGroupIndexOfGame(companies));
 }
+
+/**
+ * 一款遊戲歸哪一欄，以欄位索引表示（PUBLISHER_GROUPS 的位置；{@link OTHER_PUBLISHER_INDEX}＝other）。
+ * 同一份規則：寫入路徑（games.publisher_group，syncIgdbGame／回填）用這個，不另寫第二份。
+ */
+export function publisherGroupIndexOfGame(companies: readonly GameCompanyRef[]): number {
+  return pickGroup(companies, "developer") ?? pickGroup(companies, "publisher") ?? OTHER_PUBLISHER_INDEX;
+}
+
+/** games.publisher_group 的 other（名單以外）。 */
+export const OTHER_PUBLISHER_INDEX = -1;
 
 /** 欄位索引（SQL 算出來的 group_idx；null 或負數＝other）→ key。 */
 export function publisherColumnKeyOfIndex(index: number | null): PublisherColumnKey {
