@@ -129,7 +129,7 @@ export interface PlatformPageQuery {
 
 interface PlatformGameRow extends SummaryRow {
   game_status: string | null;
-  rep_date: IsoDate;
+  rep_date: IsoDate | null;
   rep_precision: DatePrecision;
   rep_stage: ReleaseStage;
 }
@@ -162,26 +162,38 @@ async function readPlatformPage(
   `);
 
   const upcoming = q.section === "upcoming";
+  const all = q.section === "all";
   const recentDays = Math.max(1, Math.floor(q.recentDays ?? 90));
-  // 代表日期的寬範圍：month 精度的代表日是當月 1 日，往前多 31 天才不會漏掉「本月未定日」；
+  // upcoming／recent：代表日期的寬範圍：month 精度的代表日是當月 1 日，往前多 31 天才不會漏掉「本月未定日」；
   // 是否 upcoming／released 由聚合的 releaseStates 以期間結束日判斷（與月曆、時間軸同一份規則）。
+  // all：不限日期、不限上市狀態，日期未定（tbd）的列也納入（排最後）。
   const cards = buildAggregateCardsQuery({
-    from: upcoming ? addDays(q.today, -31) : addDays(q.today, -(recentDays + 31)),
-    to: upcoming ? null : q.today,
-    filter: { ...q.filter, platformIds: [p.id], releaseStates: [upcoming ? "upcoming" : "released"] },
+    from: all ? null : upcoming ? addDays(q.today, -31) : addDays(q.today, -(recentDays + 31)),
+    to: all || upcoming ? null : q.today,
+    ...(all ? { precisions: ["day", "month", "quarter", "year", "tbd"] as DatePrecision[] } : {}),
+    filter: {
+      ...q.filter,
+      platformIds: [p.id],
+      releaseStates: all ? undefined : [upcoming ? "upcoming" : "released"],
+    },
     regionPref: q.regionPref,
     locale: q.locale,
     today: q.today,
   });
   // recent 只列期間結束日在今天前 recentDays 天內的（quarter／year 的代表日已是期間最後一天）
-  const recentCond = upcoming
-    ? sql``
-    : sql`WHERE ${periodEndSql(sql`c.precision`, sql`c.release_date::date`)} >= (${q.today}::date - ${recentDays}::int)`;
+  const recentCond =
+    upcoming || all
+      ? sql``
+      : sql`WHERE ${periodEndSql(sql`c.precision`, sql`c.release_date::date`)} >= (${q.today}::date - ${recentDays}::int)`;
   const dateDir = upcoming ? sql`ASC` : sql`DESC`;
+  // 日期未定（只有 all 會出現）一律排最後
+  const dateKey = sql`c.release_date ${dateDir} NULLS LAST`;
   const outerOrder =
     q.sort === "popularity"
-      ? sql`g.popularity_score DESC, c.release_date ${dateDir}, g.name ASC, g.id ASC, c.release_stage ASC`
-      : sql`c.release_date ${dateDir}, g.popularity_score DESC, g.name ASC, g.id ASC, c.release_stage ASC`;
+      ? sql`g.popularity_score DESC, ${dateKey}, g.name ASC, g.id ASC, c.release_stage ASC`
+      : q.sort === "name"
+        ? sql`lower(COALESCE(NULLIF(g.display_names ->> ${q.locale}, ''), g.name)) ASC, g.id ASC, c.release_stage ASC`
+        : sql`${dateKey}, g.popularity_score DESC, g.name ASC, g.id ASC, c.release_stage ASC`;
 
   const gamesRes = await tx.execute<PlatformGameRow>(sql`
     SELECT ${summaryColumns("g", q.locale)}, g.game_status,

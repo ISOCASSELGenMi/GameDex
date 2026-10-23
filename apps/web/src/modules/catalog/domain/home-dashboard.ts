@@ -9,6 +9,8 @@ export const HOME_UPCOMING_DAYS = 30;
 export const HOME_RECENT_DAYS = 30;
 export const HOME_SECTION_LIMIT = 12;
 export const HOME_EVENT_LIMIT = 6;
+/** 首頁近期活動：進行中＋今天起這麼多天內開始的活動（D86）。 */
+export const HOME_EVENT_DAYS = 30;
 export const HOME_TRENDING_LIMIT = 12;
 export const HOME_CARD_PLATFORM_LIMIT = 3;
 

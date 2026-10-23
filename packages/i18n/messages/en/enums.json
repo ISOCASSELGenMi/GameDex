@@ -124,5 +124,48 @@
     "interface": "Interface",
     "subtitles": "Subtitles",
     "audio": "Audio"
+  },
+  "relatedGroup": {
+    "editions": "Editions",
+    "expanded_games": "Expanded games",
+    "dlcs": "DLCs",
+    "expansions": "Expansions",
+    "standalone_expansions": "Standalone expansions",
+    "remakes": "Remakes",
+    "remasters": "Remasters",
+    "ports": "Ports",
+    "bundles": "Bundles",
+    "episodes": "Episodes & seasons",
+    "packs": "Packs & updates"
+  },
+  "localizedTitleRegion": {
+    "ja": "Japan",
+    "ko": "Korea",
+    "zh-Hant": "Taiwan / Hong Kong",
+    "zh-Hans": "China",
+    "en": "English-speaking regions",
+    "de": "Germany",
+    "fr": "France",
+    "es": "Spain",
+    "it": "Italy",
+    "pt": "Portugal / Brazil",
+    "ru": "Russia"
+  },
+  "gameMode": {
+    "single-player": "Single player",
+    "multiplayer": "Multiplayer",
+    "co-operative": "Co-operative",
+    "split-screen": "Split screen",
+    "massively-multiplayer-online-mmo": "Massively multiplayer online (MMO)",
+    "battle-royale": "Battle royale"
+  },
+  "playerPerspective": {
+    "first-person": "First person",
+    "third-person": "Third person",
+    "bird-view-slash-isometric": "Bird view / isometric",
+    "side-view": "Side view",
+    "text": "Text",
+    "auditory": "Auditory",
+    "virtual-reality": "Virtual reality"
   }
 }

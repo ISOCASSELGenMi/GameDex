@@ -8,9 +8,9 @@ import { usePathname } from "next/navigation";
 import type { ReactElement } from "react";
 import { LanguageMenu, type LanguageMenuItem } from "./language-menu";
 
-export function FollowingLanguageMenu({ items, label }: { items: readonly LanguageMenuItem[]; label: string }): ReactElement {
+export function FollowingLanguageMenu({ items, label, triggerLabel }: { items: readonly LanguageMenuItem[]; label: string; triggerLabel: string }): ReactElement {
   const pathname = usePathname();
   const rest = pathname.replace(/^\/[^/]+/, "");
   const followed = rest ? items.map((item) => ({ ...item, href: `/${item.locale}${rest}` })) : items;
-  return <LanguageMenu items={followed} label={label} />;
+  return <LanguageMenu items={followed} label={label} triggerLabel={triggerLabel} />;
 }

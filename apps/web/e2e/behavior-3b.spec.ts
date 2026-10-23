@@ -4,72 +4,75 @@
  * 不靠固定 sleep：一律等元素／文字／水合標記。
  */
 import type { Locator, Page } from "@playwright/test";
-import { FIXTURE, FIXTURE_3B, LOCALES, expect, msg, test, type TestLocale } from "./support/helpers";
+import { FIXTURE, FIXTURE_3B, LOCALES, expect, headerMenu, msg, openMainNav, test } from "./support/helpers";
 
 const MOBILE = { width: 375, height: 812 };
-const mainNav = (page: Page, locale: TestLocale) => page.getByRole("navigation", { name: msg(locale, "a11y.mainNavigation") });
 
 // ── 導覽列 ─────────────────────────────────────────────────────────────
 
-test.describe("導覽列", () => {
+test.describe("導覽列（header 的導覽下拉）", () => {
   for (const locale of LOCALES) {
-    test(`六個入口都在、連到對應頁、當前頁 aria-current（${locale}）`, async ({ page }) => {
+    test(`八個入口都在、連到對應頁、當前頁 aria-current（${locale}）`, async ({ page }) => {
       await page.goto(`/${locale}/calendar/${FIXTURE.month}`);
       const items: [string, RegExp][] = [
+        ["ui.nav.home", new RegExp(`/${locale}$`)],
         ["ui.nav.calendar", /\/calendar/],
         ["ui.nav.timeline", /\/timeline/],
         ["ui.nav.trending", /\/trending/],
         ["ui.nav.games", /\/games$/],
         ["ui.nav.platforms", /\/platforms$/],
         ["ui.nav.events", /\/events$/],
+        ["ui.nav.ratings", /\/ratings/],
       ];
-      await expect(mainNav(page, locale).getByRole("link")).toHaveCount(items.length);
-      await expect(mainNav(page, locale).getByRole("link", { name: msg(locale, "ui.nav.calendar") })).toHaveAttribute("aria-current", "page");
+      let nav = await openMainNav(page, locale);
+      await expect(nav.getByRole("link")).toHaveCount(items.length);
+      await expect(nav.getByRole("link", { name: msg(locale, "ui.nav.calendar") })).toHaveAttribute("aria-current", "page");
       for (const [key, url] of items) {
-        await mainNav(page, locale).getByRole("link", { name: msg(locale, key) }).click();
+        await nav.getByRole("link", { name: msg(locale, key) }).click();
         await expect(page).toHaveURL(url);
         await expect(page.locator("main h1").first()).toBeVisible();
-        await expect(mainNav(page, locale).getByRole("link", { name: msg(locale, key) })).toHaveAttribute("aria-current", "page");
-        await expect(mainNav(page, locale).locator('[aria-current="page"]')).toHaveCount(1);
+        nav = await openMainNav(page, locale);
+        await expect(nav.getByRole("link", { name: msg(locale, key) })).toHaveAttribute("aria-current", "page");
+        await expect(nav.locator('[aria-current="page"]')).toHaveCount(1);
       }
     });
 
-    test(`純鍵盤可達：聚焦「遊戲／平台／活動」並用 Enter 開啟（${locale}）`, async ({ page }) => {
+    test(`純鍵盤可達：展開導覽、方向鍵移到「遊戲／平台／活動」並用 Enter 開啟（${locale}）`, async ({ page }) => {
       await page.goto(`/${locale}/timeline`);
       for (const [key, url] of [
         ["ui.nav.games", /\/games$/],
         ["ui.nav.platforms", /\/platforms$/],
         ["ui.nav.events", /\/events$/],
       ] as const) {
-        const link = mainNav(page, locale).getByRole("link", { name: msg(locale, key) });
-        await link.focus();
+        const { root, trigger } = headerMenu(page, "nav");
+        await expect(root).toHaveAttribute("data-ready", "true");
+        await trigger.focus();
+        await page.keyboard.press("ArrowDown");
+        const link = page.getByRole("navigation", { name: msg(locale, "a11y.mainNavigation") }).getByRole("link", { name: msg(locale, key) });
+        for (let i = 0; i < 8 && !(await link.evaluate((el) => el === document.activeElement)); i++) await page.keyboard.press("ArrowDown");
         await expect(link).toBeFocused();
         await page.keyboard.press("Enter");
         await expect(page).toHaveURL(url);
-        await expect(mainNav(page, locale).getByRole("link", { name: msg(locale, key) })).toHaveAttribute("aria-current", "page");
+        const nav = await openMainNav(page, locale);
+        await expect(nav.getByRole("link", { name: msg(locale, key) })).toHaveAttribute("aria-current", "page");
       }
     });
   }
 
   test("實體詳情頁（平台頁、活動詳情）的對應導覽項有 aria-current；遊戲詳情頁的「遊戲」沒有", async ({ page }) => {
     await page.goto("/en/platforms/e2e-ps5");
-    await expect(mainNav(page, "en").getByRole("link", { name: msg("en", "ui.nav.platforms") })).toHaveAttribute("aria-current", "page");
+    await expect((await openMainNav(page, "en")).getByRole("link", { name: msg("en", "ui.nav.platforms") })).toHaveAttribute("aria-current", "page");
     await page.goto(`/en/events/${FIXTURE_3B.events.showcase.slug}`);
-    await expect(mainNav(page, "en").getByRole("link", { name: msg("en", "ui.nav.events") })).toHaveAttribute("aria-current", "page");
+    await expect((await openMainNav(page, "en")).getByRole("link", { name: msg("en", "ui.nav.events") })).toHaveAttribute("aria-current", "page");
     await page.goto(`/en/games/${FIXTURE.hero.slug}`);
-    await expect(mainNav(page, "en").getByRole("link", { name: msg("en", "ui.nav.games") })).not.toHaveAttribute("aria-current", "page");
+    await expect((await openMainNav(page, "en")).getByRole("link", { name: msg("en", "ui.nav.games") })).not.toHaveAttribute("aria-current", "page");
   });
 
-  test("手機 375 寬：六個入口都完整在視窗內、觸控目標 >= 44px、頁面不水平捲動", async ({ page }) => {
+  test("手機 375 寬：八個入口都完整在視窗內、觸控目標 >= 44px、頁面不水平捲動", async ({ page }) => {
     await page.setViewportSize(MOBILE);
     await page.goto("/en/games");
-    // < 768px 時導覽收在選單裡：等水合（按鈕出現）後打開，再檢查六個入口
-    const toggle = page.locator("[data-menu-toggle]");
-    await expect(toggle).toBeVisible();
-    await toggle.click();
-    await expect(toggle).toHaveAttribute("aria-expanded", "true");
-    const links = mainNav(page, "en").getByRole("link");
-    await expect(links).toHaveCount(6);
+    const links = (await openMainNav(page, "en")).getByRole("link");
+    await expect(links).toHaveCount(8);
     await expect(links.first()).toBeVisible();
     for (const link of await links.all()) {
       const box = await link.boundingBox();
@@ -119,7 +122,7 @@ test.describe("瀏覽 /games", () => {
 
   test("搜尋：輸入後按 Enter 送出 → 網址帶 q、只剩符合的遊戲、有可移除的條件 chip", async ({ page }) => {
     await page.goto("/en/games");
-    const box = page.locator('form[role="search"] input[name="q"]');
+    const box = page.locator('#browse-search');
     await box.fill(FIXTURE_3B.searchTerm);
     await box.press("Enter");
     await expect(page).toHaveURL(new RegExp(`q=${FIXTURE_3B.searchTerm}`));
@@ -184,8 +187,9 @@ test.describe("系列頁：franchise 與 collection 同 slug", () => {
 
   test("詳情頁：同時屬於系列與合集時，兩段分別連到 franchise 與 ?kind=collection", async ({ page }) => {
     await page.goto("/en/games/e2e-twin-both");
-    await expect(page.locator(`a[href="/en/franchises/${twin.slug}"]`)).toHaveCount(1);
-    await expect(page.locator(`a[href="/en/franchises/${twin.slug}?kind=collection"]`)).toHaveCount(1);
+    // 各 2 個：About 區的欄位一個、「同系列／同合集作品」區塊的「查看全部」一個
+    await expect(page.locator(`a[href="/en/franchises/${twin.slug}"]`)).toHaveCount(2);
+    await expect(page.locator(`a[href="/en/franchises/${twin.slug}?kind=collection"]`)).toHaveCount(2);
   });
 });
 
@@ -213,7 +217,8 @@ test.describe("活動", () => {
 
   test("預設列出未來的活動，不含已結束與時間未定；類型與時間範圍可切換", async ({ page }) => {
     await page.goto("/en/events");
-    await expect(list(page)).toHaveCount(2);
+    // 2036 年的兩場＋首頁近期活動的三場 fixture（FIXTURE_HOME.events，kind other；時間相對 seed 當下，所以也在 upcoming）
+    await expect(list(page).filter({ hasText: /Home Event/ })).toHaveCount(3);
     await expect(page.getByText(E.showcase.name)).toBeVisible();
     await expect(page.getByText(E.expo.name)).toBeVisible();
     await expect(page.getByText(E.past.name)).toHaveCount(0);

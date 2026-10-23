@@ -15,11 +15,12 @@ export function enabledModules(env: EnvLike = process.env): ModuleManifest[] {
   return ALL.filter((m) => m.kind === "core" || isModuleEnabled(m.name, env));
 }
 
-/** 已啟用模組提供給 catalog 的擴充點（PopularitySignal、GameFilterProvider）。純函式，供測試。 */
+/** 已啟用模組提供給 catalog 的擴充點（PopularitySignal、GameFilterProvider、RatingColumn）。純函式，供測試。 */
 export function collectCatalogExtensions(modules: readonly ModuleManifest[]): CatalogExtensionSet {
   return {
     popularitySignals: modules.flatMap((m) => m.popularitySignals ?? []),
     gameFilters: modules.flatMap((m) => m.gameFilters ?? []),
+    ratingColumns: modules.flatMap((m) => m.ratingColumns ?? []),
   };
 }
 

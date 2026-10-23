@@ -23,7 +23,7 @@
 - ✅ Phase 0 環境、✅ Phase 1 kernel／catalog schema／lint:arch／core-only CI（2026-10-12）
 - ✅ **Phase 2a IGDB 同步**（2026-10-13）：sync_platforms、sync_games（每小時增量）、Tier 1 回填，真實資料已寫入本機 DB
 - ✅ **Phase 2b**（2026-10-13）：resolve_relations、Tier 2 回填（真實資料已跑完）、sync_events、rolling_refresh、字典漂移偵測
-- GitHub：private repo `ISOCASSELGenMi/SoK-GameDB`（remote `origin`）
+- GitHub：**public repo `ISOCASSELGenMi/GameDex`**（remote `origin`；2026-10-23 起，作者 email 已改寫為 noreply，本 repo 的 `user.email` 設為 noreply，不要改回個人信箱）。舊 private repo `ISOCASSELGenMi/SoK-GameDB` 保留當備份（remote `private`），下面 PR #1～#17 指的是舊 repo
 - ✅ **Phase 3a 網站**（2026-10-13，分支 `feat/phase3a`）：月曆＋詳情＋聚合＋基本篩選＋i18n（zh-Hant、en）＋test:a11y
   - **接手先讀 `docs/handoff/2026-10-13-phase3a-done.md`**（3a 程式地圖、已定案判斷、待使用者處理、地雷）；資料量／排程／Phase 2 程式地圖仍見 `2026-10-13-phase3.md`
 - ✅ **Phase 3b 完成**（2026-10-14，分支 `feat/phase3b`，尚未合併 main）：時間軸、完整篩選、瀏覽、平台／公司／系列／活動頁、熱度與熱門榜、語言支援、test:a11y 195；**接手先讀 `docs/handoff/2026-10-14-phase3b-done.md`**（待決、地雷、下一步）
@@ -32,7 +32,7 @@
 - ✅ **Phase 4 完成**（2026-10-15，分支 `feat/phase4`）：評分顯示（selectRatings、訪客來源選擇）、標題比對、資料更正回報＋admin `/internal/reports`；**接手先讀 `docs/handoff/2026-10-15-phase4-done.md`**
 - ✅ PR `#3`（`feat/phase4` → main）2026-10-15 已合併
 - ✅ **Phase 5 iCal 完成**（2026-10-16，分支 `feat/phase5`）：公開 feed、訂閱頁、Google／Apple 原型實測通過；**接手先讀 `docs/handoff/2026-10-16-phase5-done.md`**
-- ✅ PR `#4`（phase5）、`#5`（phase9-prep：Docker／Caddy／備份／心跳告警）、`#6`（Phase 7 第 1 波）2026-10-16 合併；`#7`～`#13`（Phase 7 第 3、5、6、7 波、D82、D83、spec 寫回）2026-10-17 合併；**開發 DB 已套到 migration 0011**
+- ✅ PR `#4`（phase5）、`#5`（phase9-prep：Docker／Caddy／備份／心跳告警）、`#6`（Phase 7 第 1 波）2026-10-16 合併；`#7`～`#13`（Phase 7 第 3、5、6、7 波、D82、D83、spec 寫回）2026-10-17 合併；**開發 DB 已套到 migration 0014**，詳情欄位已回填（2026-10-23）
 - 🚧 **Phase 7 帳號**（Better Auth，D76～D83；worktree `.local/wt/phase7`，任務書與報告在 `.local/agents/7/`）：第 1、3、5、6、7 波＋D83 完成；第 2 波（社群登入）等 OAuth app、第 4 波（Xbox）依賴第 2 波、7.5 寄信服務等使用者選服務商；**接手先讀 `docs/handoff/2026-10-17-phase7-progress.md`**；進度見 `docs/checklist.md`
 - ⏭ Phase 9（見 spec 15）
   - 任務註冊在 `catalog/module.ts` 的 `jobs`；長任務用 `lockMode: "session"`；遊戲寫入一律經 `writeGameBatch`

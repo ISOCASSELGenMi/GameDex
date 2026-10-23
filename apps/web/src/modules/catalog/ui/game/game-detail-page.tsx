@@ -14,10 +14,10 @@ import { joinList } from "../calendar/view-model";
 import { safeDecode } from "../entities/view-model";
 import { safeExternalUrl } from "../external-url";
 import { followerCountLabel, HeatBadge, heatBadgeLabel, RisingMark } from "../heat-badge";
-import { EventIcon, ExternalIcon, StageIcon, StatusIcon, WarningIcon } from "../icons";
+import { EventIcon, ExternalIcon, PlayIcon, StageIcon, StatusIcon, WarningIcon } from "../icons";
 import { eventKindLabel, genreLabel, getTranslator, regionLabel, stageLabel, statusLabel } from "../labels";
 import { PageShell } from "../layout/page-shell";
-import { companyHref, eventHref, franchiseHref, gameHref, icalFeedPath, platformHref } from "../links";
+import { eventHref, franchiseHref, gameHref, icalFeedPath, platformHref } from "../links";
 import { CATALOG_TAG, STATIC_SHELL_SLUG } from "../seo/cache-tags";
 import { breadcrumbJsonLd, gameJsonLd } from "../seo/json-ld";
 import { JsonLdScript } from "../seo/json-ld-script";
@@ -26,7 +26,12 @@ import { rethrowForPage, timeoutMarkerOrRethrow, unwrapCachedForPage, type Cache
 import { gameNameLang } from "../name-lang";
 import { releaseHistoryText } from "../release-history";
 import { reportHref } from "../report/links";
+import { utcToday } from "../../domain/utc-date";
+import { AboutSection } from "./about-section";
+import { editionNotice, editionNoticeParts, relativeReleaseText } from "./detail-view";
+import { ExpandToggle } from "./expand-toggle";
 import { LanguageSupportBody } from "./language-support";
+import { RELATED_ID, RELATED_TITLE_ID, RelatedSection } from "./related-section";
 import { RatingsSection } from "./ratings-section";
 
 export interface GameDetailSlots {
@@ -70,6 +75,16 @@ async function readGameDetailCached(slug: string, locale: Locale): Promise<GameD
     cacheLife("catalogMiss");
   }
   return game;
+}
+
+/**
+ * 「今天」（UTC）：上市日期的相對時間用。prerender 時不能直接 new Date()（不穩定值），所以放進 use cache，
+ * 與詳情頁同一個快取週期（最多差一個 catalogDetail 週期，相對時間只到「天／月／年」精度，可接受）。
+ */
+async function readTodayCached(): Promise<string> {
+  "use cache";
+  cacheLife("catalogDetail");
+  return utcToday();
 }
 
 /** generateMetadata 與頁面共用（React cache：同一請求只呼叫一次）；找不到回 null。 */
@@ -234,7 +249,11 @@ export async function GameDetailPage({ locale, supportedLocales, slug, slots }: 
   };
   const ratingConfig = getRatingDisplayConfig();
   const jsonLdCtx = { origin: siteOrigin(), locale, ratingConfig };
-  const roleText = (roles: readonly string[]) => joinList(locale, roles.map((r) => t.t(`enums.gameCompanyRole.${r}`)));
+  const franchises = dedupeFranchises(game.franchises);
+  const notice = editionNotice(game);
+  const noticeParts = editionNoticeParts(t, notice);
+  const relative = relativeReleaseText(game.firstReleaseDate, game.firstReleasePrecision, await readTodayCached(), locale);
+  const trailerHref = safeExternalUrl(game.trailerUrl);
 
   return (
     <PageShell locale={locale} supportedLocales={supportedLocales} path={`/games/${game.slug}`}>
@@ -247,20 +266,7 @@ export async function GameDetailPage({ locale, supportedLocales, slug, slots }: 
       />
       <article className="detail">
         <div className="detail-head">
-          {game.cover ? (
-            <Image
-              className="detail-cover"
-              src={game.cover.medium}
-              alt={game.name}
-              width={264}
-              height={374}
-              sizes="(min-width: 768px) 264px, 50vw"
-              // 未知來源（resized=false）不在 images.remotePatterns 內：不經最佳化器、原樣載入
-              unoptimized={!game.cover.resized}
-              priority
-            />
-          ) : null}
-          <div className="flex min-w-0 flex-col gap-2">
+          <div className="detail-title flex min-w-0 flex-col gap-2">
             <h1 className="text-3xl font-bold" lang={gameNameLang(game.name, game.name === game.originalName, locale)}>
               {game.name}
             </h1>
@@ -271,15 +277,71 @@ export async function GameDetailPage({ locale, supportedLocales, slug, slots }: 
                 <span lang="en">{game.originalName}</span>
               </p>
             ) : null}
-            <p className="flex flex-wrap gap-2 text-sm">
+            <p className="flex flex-wrap items-center gap-2 text-sm">
               <span className="chip">{t.t(`enums.gameType.${game.gameType}`)}</span>
               {game.gameStatus ? <span className="chip">{t.t(`enums.gameStatus.${game.gameStatus}`)}</span> : null}
               <HeatBadge level={game.heatLevel} label={heatBadgeLabel(t, game.heatLevel)} />
+            </p>
+            <p data-release-line="">
+              <span className="font-semibold">
+                {t.t("ui.game.sections.releaseDates")}
+                {t.t("ui.common.colon")}
+              </span>
+              {formatReleaseLabel(game.firstReleaseDate, game.firstReleasePrecision ?? "tbd", locale)}
+              {relative ? <span className="text-[var(--muted)]"> {t.t("ui.game.release.inDays", { relative })}</span> : null}
             </p>
             {game.followerCount || game.rising ? (
               <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm" data-heat-follow="">
                 {followerCountLabel(t, locale, game.followerCount) ? <span data-follower-count="">{followerCountLabel(t, locale, game.followerCount)}</span> : null}
                 {game.rising ? <RisingMark label={t.t("ui.heat.rising")} /> : null}
+              </p>
+            ) : null}
+          </div>
+
+          <div className="detail-media">
+            {game.cover ? (
+              <Image
+                className="detail-cover"
+                src={game.cover.medium}
+                alt={game.name}
+                width={264}
+                height={374}
+                sizes="(min-width: 768px) 264px, 50vw"
+                // 未知來源（resized=false）不在 images.remotePatterns 內：不經最佳化器、原樣載入
+                unoptimized={!game.cover.resized}
+                priority
+              />
+            ) : null}
+            {trailerHref ? (
+              <a className="detail-trailer" href={trailerHref} target="_blank" rel="noopener noreferrer" data-trailer="">
+                {game.screenshots[0] ? (
+                  <Image
+                    className="detail-trailer-img"
+                    src={game.screenshots[0].medium}
+                    alt=""
+                    width={889}
+                    height={500}
+                    sizes="(min-width: 1024px) 640px, 100vw"
+                    unoptimized={!game.screenshots[0].resized}
+                  />
+                ) : null}
+                <span className="detail-trailer-label">
+                  <PlayIcon />
+                  {t.t("ui.game.trailer.watch")}
+                  <ExternalIcon />
+                  <span className="sr-only">{t.t("a11y.externalLink")}</span>
+                </span>
+              </a>
+            ) : null}
+          </div>
+
+          <div className="detail-facts flex min-w-0 flex-col gap-2">
+            {game.genres.length > 0 ? (
+              <p>
+                <span className="font-semibold">{t.t("ui.game.sections.genres")}
+                  {t.t("ui.common.colon")}
+                </span>
+                {joinList(locale, game.genres.map((g) => genreLabel(t, g.slug, g.name)))}
               </p>
             ) : null}
             {game.platforms.length > 0 ? (
@@ -295,24 +357,44 @@ export async function GameDetailPage({ locale, supportedLocales, slug, slots }: 
                 ))}
               </p>
             ) : null}
-            {game.genres.length > 0 ? (
-              <p>
-                <span className="font-semibold">{t.t("ui.game.sections.genres")}
-                  {t.t("ui.common.colon")}
-                </span>
-                {joinList(locale, game.genres.map((g) => genreLabel(t, g.slug, g.name)))}
-              </p>
+            {notice.kind !== "none" || game.extra.relatedTotal > 0 ? (
+              <div data-editions="">
+                {noticeParts && notice.kind !== "none" ? (
+                  <p data-edition-notice={notice.kind}>
+                    {noticeParts.before}
+                    <a className="link" href={gameHref(locale, notice.parent.slug)} lang={gameNameLang(notice.parent.name, notice.parent.name === notice.parent.originalName, locale)}>
+                      {notice.parent.name}
+                    </a>
+                    {noticeParts.after}
+                  </p>
+                ) : null}
+                {game.extra.relatedTotal > 0 ? (
+                  <p>
+                    <span className="font-semibold">
+                      {t.t("ui.game.edition.label")}
+                      {t.t("ui.common.colon")}
+                    </span>
+                    <ExpandToggle
+                      targetId={RELATED_ID}
+                      kind="panel"
+                      focusId={RELATED_TITLE_ID}
+                      labelClosed={t.t("ui.game.edition.seeMore", { count: game.extra.relatedTotal })}
+                      labelOpen={t.t("ui.game.edition.hide")}
+                      className="expand-btn expand-btn-inline"
+                    />
+                  </p>
+                ) : null}
+              </div>
             ) : null}
             {game.ageRatingLabel ? <p>{t.t("ui.game.ageRating", { label: game.ageRatingLabel })}</p> : null}
-            {game.parent ? (
-              <p>
-                <span className="font-semibold">{t.t("ui.game.parent")}
-                  {t.t("ui.common.colon")}
-                </span>
-                <a className="link" href={gameHref(locale, game.parent.slug)}>
-                  {game.parent.name}
-                </a>
-              </p>
+            {game.summary ? (
+              <div data-overview="">
+                <p className="text-sm text-[var(--muted)]">{t.t("ui.game.originalText")}</p>
+                <p id="game-summary" lang="en" className="rm whitespace-pre-line" data-open="true">
+                  {game.summary}
+                </p>
+                <ExpandToggle targetId="game-summary" kind="clamp" labelClosed={t.t("ui.common.showMore")} labelOpen={t.t("ui.common.showLess")} />
+              </div>
             ) : null}
             <p>
               <a className="link inline-flex min-h-11 items-center" href={icalFeedPath(locale, "game", game.slug)} download data-action="download-ics">
@@ -324,14 +406,9 @@ export async function GameDetailPage({ locale, supportedLocales, slug, slots }: 
           </div>
         </div>
 
-        {game.summary ? (
-          <Section id="sec-overview" title={t.t("ui.game.sections.overview")}>
-            <p className="text-sm text-[var(--muted)]">{t.t("ui.game.originalText")}</p>
-            <p lang="en" className="whitespace-pre-line">
-              {game.summary}
-            </p>
-          </Section>
-        ) : null}
+        <RelatedSection extra={game.extra} locale={locale} t={t} />
+
+        <AboutSection game={game} franchises={franchises} locale={locale} t={t} />
 
         <RatingsSection ratings={game.ratings} config={ratingConfig} locale={locale} t={t} />
 
@@ -378,21 +455,6 @@ export async function GameDetailPage({ locale, supportedLocales, slug, slots }: 
           </p>
         </Section>
 
-        {game.developers.length > 0 || game.publishers.length > 0 || game.companies.length > 0 ? (
-          <Section id="sec-companies" title={t.t("ui.game.sections.companies")}>
-            <ul className="flex flex-col gap-1">
-              {game.companies.map((c) => (
-                <li key={c.slug}>
-                  <a className="link font-medium" href={companyHref(locale, c.slug)}>
-                    {c.name}
-                  </a>{" "}
-                  <span className="text-sm text-[var(--muted)]">{roleText(c.roles)}</span>
-                </li>
-              ))}
-            </ul>
-          </Section>
-        ) : null}
-
         {safeLinks.length > 0 ? (
           <Section id="sec-links" title={t.t("ui.game.sections.links")}>
             <ul className="flex flex-wrap gap-2">
@@ -414,7 +476,7 @@ export async function GameDetailPage({ locale, supportedLocales, slug, slots }: 
           </Section>
         ) : null}
 
-        {dedupeFranchises(game.franchises).map((f) => (
+        {franchises.map((f) => (
           <Section key={`${f.kind}:${f.slug}`} id={`sec-${f.kind}-${f.slug}`} title={t.t(`ui.game.franchiseTitle.${f.kind}`, { name: f.name })}>
             {f.games.length > 0 ? <SummaryList games={f.games} locale={locale} /> : <p>{t.t("ui.common.noData")}</p>}
             <p className="mt-2">
@@ -428,12 +490,6 @@ export async function GameDetailPage({ locale, supportedLocales, slug, slots }: 
         {game.similarGames.length > 0 ? (
           <Section id="sec-similar" title={t.t("ui.game.sections.similar")}>
             <SummaryList games={game.similarGames} locale={locale} />
-          </Section>
-        ) : null}
-
-        {game.dlcs.length > 0 ? (
-          <Section id="sec-dlc" title={t.t("ui.game.sections.dlc")}>
-            <SummaryList games={game.dlcs} locale={locale} />
           </Section>
         ) : null}
 

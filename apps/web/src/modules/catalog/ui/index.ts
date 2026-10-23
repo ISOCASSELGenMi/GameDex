@@ -13,13 +13,18 @@ export { listGenreChoices, type GenreChoice } from "./genre-choices";
 
 // Phase 3b（I）：時間軸、熱門榜（薄路由與 route handler 用）
 export { TimelineViewPage, timelineTitle } from "./timeline/timeline-page";
-export { timelineChunkResponse, timelineGroupResponse, timelineHistoryResponse } from "./timeline/api";
 export { timelineWeekResponse, TIMELINE_WEEK_CACHE_CONTROL } from "./timeline/week-api";
 export { calendarDayResponse, CALENDAR_DAY_CACHE_CONTROL } from "./calendar/day-api";
 export { TrendingViewPage, trendingTitle } from "./trending/trending-page";
 
 // Phase 3b（J1）：遊戲瀏覽／搜尋
 export { GamesBrowsePage, gamesTitle } from "./browse/browse-page";
+
+// GameDex 第 2 輪（Z2B）：月曆開關換頁的 View Transition 標記（根版面 <head> 的 inline script）
+export { TOGGLE_TRANSITION_SCRIPT } from "./calendar/toggle-transition";
+// GameDex 第 2 輪（Z2B）：評分排名
+export { RatingsPage, ratingsTitle } from "./ratings/ratings-page";
+export { ratingsRankingResponse, RATINGS_RANKING_CACHE_CONTROL } from "./ratings/ranking-api";
 
 // Phase 3b（J2）：平台／公司／系列／活動頁
 export type { EntityActionsRenderer, EntityActionsTarget } from "./entities/shared";
@@ -42,3 +47,6 @@ export { SubscribeClientsSection } from "./subscribe/clients-section";
 
 // Phase 9 準備：法務與說明頁（資料來源、隱私權、服務條款、聯絡）
 export { ABOUT_PAGES, ABOUT_DRAFT_DATE, AboutPageView, aboutTitle, isAboutPage, type AboutPage } from "./about/about-pages";
+
+// GameDex 第 2 輪（Z2A）：瀏覽頁分組檢視的「顯示更多」API
+export { gameGroupResponse, GAME_GROUP_CACHE_CONTROL } from "./browse/groups/groups-api";

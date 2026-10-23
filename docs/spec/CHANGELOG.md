@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## GameDex 第二輪（2026-10-23 寫回；repo 副本先改，Project 正本待使用者匯入）
+
+- 06：路由表新增 `/ratings`、`/games?by=`、平台頁 `section=all`，註明沒有 `/releases`；§首頁（最新上市查看更多連時間軸 30 天前所在週、熱門分頁兩組同時 SSR）；§導覽與 header 改為已實作的 Holodex 式（依區塊切換品牌名、導覽／主題／語言／帳號四個下拉、搜尋候選 combobox、窄螢幕搜尋圖示）；§月曆新增遊戲／活動開關 `?show=`；§活動時間單行＋時區已實作；新增 §全部遊戲與分組檢視、§評分排名、§平台頁的「全部遊戲」、§互動背景、彩蛋與隱藏主題；§遊戲詳情頁重寫（公司三欄、About 資訊格、相關內容與版本標註）；新增 §已知限制；篩選表 `show` 與後置維度更新。
+- 07：新增 `GET /api/v1/games/suggest`、`/games/group`、`/ratings/ranking`、`/auth/public-config`、`GET|POST /me/unlocks`；`calendar/day` 的 `show` 語意；`account/summary` 追蹤數只算遊戲；匯出 JSON 加 `unlocks`；註明舊 `/api/timeline*` 與 `/releases/column` 已刪除。
+- 03：`score_provider` 加 `site_players`（玩家平均複製進 ratings）；`games` 加 `storyline`、`version_parent_id`、`version_title` 與索引 `games_parent_type_idx`、`games_version_parent_idx`、`games_lower_name_prefix_idx`；新增 `game_modes`、`player_perspectives`、`game_engines` 與三張關聯表；accounts 新增 `user_unlocks`＋`unlock_type`；索引總表與表歸屬同步（migration 0012～0014）。
+- 04：`GAME_FIELDS` 新增 9 個詳情欄位；新增 §詳情欄位回填 `backfill_detail_fields`（實測 634 批、16.5 分、0 失敗）與 §顯示名稱重算 `recompute_display_names`；排程任務表加三列（含 accounts 的 `publish_player_ratings`）。
+- 02、05：manifest 加 `ratingColumns` 擴充點；05 註明 `site_players` 只給評分排名頁。
+- 09：玩家平均寫進 `ratings`（`publish_player_ratings`）；新增 §解鎖紀錄、收藏與成就（聯集同步、成就判定、帳號頁區塊、匯出與刪除）；摘要追蹤數只算遊戲。
+- 15：新增 GameDex 第二輪待辦（效能與預算）。
+- 90：新增 D87。
+- `docs/design/easter-eggs.md`、`publisher-groups.md` 已於實作時更新，不屬規格章節。
+
 ## v2.1（2026-10-15，Phase 4 實作後同步；repo 副本先改，Project 正本待使用者匯入）
 
 - 05 `normalizeTitle`：先移除 `™®©` 再 NFKC、NFKC 後才轉小寫（原範例 NFKC 會把 ™ 轉成 "TM"）。
@@ -12,6 +24,7 @@
 - 90：新增 D74、D75。
 - 03、07、09、16、90（Phase 7 Better Auth，2026-10-16）：users／connected_accounts 改為 Better Auth 對應（email NOT NULL＋placeholder、email_verified boolean、provider varchar、密碼併入 connected_accounts、刪 password_credentials、新增 sessions／auth_verifications、auth_tokens 縮小）；07 認證端點改為 BA 原生路徑；16 新增 ACCOUNTS_SIGNUP_ENABLED、MICROSOFT_*；90 新增 D77～D81。
 - 08、90（Phase 5 原型實測，2026-10-16）：Google 抓取間隔、Apple 手動重新抓取、聚合 UID 換地區不重複（D26 成立）、兩個客戶端都不依賴 SEQUENCE、TENTATIVE 無視覺差異、取消在 Google 移除／Apple 刪除線。
+- 06、90（GameDex 第一輪待決，2026-10-18 寫回）：06 §首頁近期活動限進行中＋30 天內、近期熱門分頁切換即將上市／已上市，帳號總覽追蹤數只算遊戲；90 新增 D86。
 - 06、07、16、90（GameDex 第一輪改版，2026-10-18 寫回）：06 路由表加首頁、月曆與時間軸新網址、帳號殼與 Steam 分頁，新增 §首頁、§導覽與 header，重寫 §月曆（一日一格一款、day API）與 §時間軸（週視圖），活動時間改本地時區，平台分組 hybrid 雙掛；07 新增 `calendar/day`、`timeline/week`、`account/summary`；16 新增 `ORG_HOME_URL`、`ORG_NAME`；90 新增 D84（第一輪）、D85（第二輪決定）。
 - 02、06、07（Phase 7 第 5～7 波與 D83，2026-10-17）：02 slot 清單加 `entity.actions`、`subscribe.private`；06 路由表改為實際的 `/account/*`（lists、plays、follows、games、calendar、settings、privacy、deleted）與公開清單 `/lists/[id]`、`/lists/s/[token]`；07 補 lists、play-records（含 platform、stats）、me/games、player-ratings、follows（state、count）、calendar feeds、account（刪除重新驗證、匯出、偏好）、imports 手動指定與 games/search，connections 改由 Better Auth 端點提供，停權者寫入 403。
 - 03、07、09、16、90（Phase 7 第 3 波 Steam，2026-10-17）：`owned_games` 的 `matched_game_id` FK 為 ON DELETE SET NULL（手寫於 migration）、`imported_at` NOT NULL、新增兩個索引、比對狀態語意；07 Steam plugin 發起改 POST 回 `{url}` 與錯誤碼、`POST|GET /api/v1/imports/{provider}` 的狀態碼與回應；09 比對流程（`after()`＋`match_owned_games`）、冷卻、匯入時重比找不到的列、消失的遊戲保留；16 `STEAM_WEB_API_KEY` 改選填；90 新增 D82。

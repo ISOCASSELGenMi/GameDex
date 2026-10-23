@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addDays, isoWeekOf, parseWeekParam, weekDays, weekStartOf } from "@/modules/catalog/ui/timeline/week";
+import { addDays, explicitWeekStart, isoWeekOf, parseWeekParam, weekDays, weekStartOf } from "@/modules/catalog/ui/timeline/week";
 import { resolveWeekStart } from "@/modules/catalog/ui/timeline/week-server";
 
 describe("時間軸週的純函式（ISO 週，週一起算，UTC）", () => {
@@ -50,5 +50,24 @@ describe("時間軸週的純函式（ISO 週，週一起算，UTC）", () => {
     expect(resolveWeekStart({ week: "bad", at: "2037-03-10" }, today)).toBe("2037-03-09");
     expect(resolveWeekStart({ week: null, at: "2037-02-30" }, today)).toBe("2026-10-19");
     expect(resolveWeekStart({}, today)).toBe("2026-10-19");
+  });
+});
+
+describe("explicitWeekStart（client 同步網址與伺服器共用）", () => {
+  it("week 不合法＋at 合法 → at 所在週", () => {
+    expect(explicitWeekStart("garbage", "2037-03-02")).toBe("2037-03-02");
+    expect(explicitWeekStart("garbage", "2037-03-05")).toBe("2037-03-02");
+  });
+  it("week 合法 → 該週（優先於 at）", () => {
+    expect(explicitWeekStart("2037-W10", null)).toBe("2037-03-02");
+    expect(explicitWeekStart("2037-W10", "2026-01-01")).toBe("2037-03-02");
+  });
+  it("兩者皆無 → null", () => {
+    expect(explicitWeekStart(null, null)).toBeNull();
+    expect(explicitWeekStart(undefined, "")).toBeNull();
+  });
+  it("week 不合法且無 at（或 at 也不合法）→ null，不觸發載入", () => {
+    expect(explicitWeekStart("garbage", null)).toBeNull();
+    expect(explicitWeekStart("2037-W99", "2037-02-30")).toBeNull();
   });
 });

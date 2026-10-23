@@ -4,6 +4,9 @@ export { catalogModule, type ModuleManifest, type CatalogExtensions } from "./mo
 export { getGameBySlug, getGameByIgdbId, upsertGame } from "./repository/games";
 export { getReleaseEventsByMonth, upsertReleaseEvent } from "./repository/release-events";
 export { getRatingsByGame, upsertRating } from "./repository/ratings";
+// GameDex 第 2 輪（Z2B）：accounts 的排程任務把玩家平均寫進 ratings（評分排名頁的 players 欄）
+export { publishSitePlayerRatings, type SitePlayerRatingInput } from "./use-cases/site-player-ratings";
+export { SITE_PLAYERS_PROVIDER, SITE_PLAYERS_SCORE_TYPE } from "./repository/ratings";
 export { listRegions, getRegionByCode } from "./repository/regions";
 
 // ── 讀取（Phase 3a：月曆、詳情、篩選）─────────────────────────────────

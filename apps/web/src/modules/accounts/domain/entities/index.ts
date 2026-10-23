@@ -12,3 +12,4 @@ export * from "./follows";
 export * from "./calendar-feeds";
 export * from "./account-self";
 export * from "./account-export-csv";
+export * from "./unlocks";

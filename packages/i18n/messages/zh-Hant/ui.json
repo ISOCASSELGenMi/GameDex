@@ -1,7 +1,8 @@
 {
   "site": {
     "name": "遊戲圖鑑 GameDex",
-    "tagline": "遊戲上市月曆與資料庫"
+    "tagline": "遊戲上市月曆與資料庫",
+    "shortName": "GameDex"
   },
   "org": {
     "backTo": "回到 {name}"
@@ -12,7 +13,9 @@
     "games": "遊戲",
     "platforms": "平台",
     "events": "活動",
-    "trending": "熱門榜"
+    "trending": "熱門榜",
+    "home": "首頁",
+    "ratings": "評分排名"
   },
   "language": {
     "menuLabel": "語言",
@@ -65,12 +68,17 @@
     "dayListTitle": "{date} 的上市與活動",
     "backToList": "回到當天清單",
     "timeTbd": "時間未定",
-    "timesInUtc": "活動時間依你的時區顯示，下方小字為 UTC",
+    "timesInUtc": "活動時間依你的時區顯示",
     "monthNavigation": "切換月份",
     "noItemsThisMonth": "這個月沒有上市或活動資料",
     "undatedGroupTitle": "{group}：{label}",
     "dayLoadError": "無法載入當天的其他遊戲，請稍後再試。",
-    "dayRetry": "重試"
+    "dayRetry": "重試",
+    "switchGames": "遊戲",
+    "switchEvents": "活動",
+    "showLegend": "顯示內容",
+    "showAtLeastOne": "至少要顯示一種內容，所以最後一個開著的開關不能關閉。",
+    "noEvents": "這個月沒有符合條件的活動"
   },
   "game": {
     "sections": {
@@ -126,14 +134,52 @@
     "historyChange": "{from} → {to}",
     "historyChangedAt": "{date} 更新",
     "noReleaseDates": "尚無上市日資料",
-    "timesInUtc": "活動時間依你的時區顯示，下方小字為 UTC",
+    "timesInUtc": "活動時間依你的時區顯示",
     "ageRating": "年齡分級：{label}",
     "historyEntry": "{change}（{date}）",
     "franchiseTitle": {
       "franchise": "同系列作品：{name}",
       "collection": "同合集作品：{name}"
     },
-    "downloadIcs": "下載 .ics"
+    "downloadIcs": "下載 .ics",
+    "about": {
+      "title": "關於本作",
+      "mainDevelopers": "主要開發商",
+      "publishers": "發行商",
+      "supportingDevelopers": "協力開發商",
+      "portingTag": "移植",
+      "genres": "類型",
+      "themes": "主題",
+      "gameModes": "遊戲人數",
+      "playerPerspectives": "玩家視角",
+      "collection": "系列",
+      "franchise": "品牌",
+      "engines": "遊戲引擎",
+      "story": "故事",
+      "storyOriginal": "原文（English）",
+      "localizedTitles": "各語言標題",
+      "alternativeTitles": "其他稱呼"
+    },
+    "edition": {
+      "label": "其他版本",
+      "seeMore": "查看另外 {count} 個版本",
+      "hide": "收合相關內容",
+      "partOf": "這是《{name}》的{type}",
+      "editionOf": "這是《{name}》的 {title}",
+      "goToParent": "前往《{name}》",
+      "genericVersion": "版本"
+    },
+    "related": {
+      "title": "相關內容",
+      "more": "還有 {count} 款",
+      "groupTitle": "{group}（{count}）"
+    },
+    "trailer": {
+      "watch": "觀看預告片"
+    },
+    "release": {
+      "inDays": "（{relative}）"
+    }
   },
   "footer": {
     "dataAttribution": "Data from IGDB.com",
@@ -245,7 +291,26 @@
     "otherPage": "這一頁沒有結果。",
     "viewAll": "查看全部",
     "viewAllFranchise": "查看「{name}」的全部作品",
-    "viewCompany": "查看「{name}」的作品"
+    "viewCompany": "查看「{name}」的作品",
+    "groupBy": "分組檢視",
+    "by": {
+      "none": "不分組",
+      "date": "依日期",
+      "platform": "依平台",
+      "publisher": "依廠商"
+    },
+    "groupCount": "{count} 款",
+    "groupsRange": "顯示第 {from}–{to} 組",
+    "groupsLabel": "分組的遊戲",
+    "groupMore": "顯示更多（還有 {count} 款）",
+    "groupLoading": "載入中…",
+    "groupLoadError": "載入失敗，請稍後再試",
+    "groupLoaded": "已載入 {count} 款",
+    "groupNote": {
+      "date": "依首發日期分組，順序跟隨排序方式（依日期由舊到新，其餘由新到舊），日期未定的在最後。每組先顯示一部分。",
+      "platform": "依平台分組（不含行動平台），一款遊戲會出現在它的每個平台組。每組先顯示一部分。",
+      "publisher": "廠商分組只列主要大廠，其餘歸「獨立／其他」；一款遊戲只放一組，開發商優先。每組先顯示一部分。"
+    }
   },
   "langSupport": {
     "language": "語言",
@@ -281,6 +346,10 @@
     "recentHint": "最近 90 天在此平台上市的遊戲。",
     "emptyUpcoming": "此平台目前沒有即將上市的遊戲",
     "emptyRecent": "此平台近期沒有新上市的遊戲",
+    "all": "全部遊戲",
+    "sortName": "名稱",
+    "allHint": "此平台上所有已知的遊戲（含已上市、即將上市與日期未定），預設由新到舊，日期未定的排在最後。",
+    "emptyAll": "此平台目前沒有任何遊戲",
     "subscribeFeed": "訂閱此平台的行事曆"
   },
   "companies": {
@@ -305,7 +374,7 @@
   },
   "events": {
     "title": "活動",
-    "timesInUtc": "活動時間依你的時區顯示，下方小字為 UTC",
+    "timesInUtc": "活動時間依你的時區顯示",
     "scopeLabel": "時間範圍",
     "kindLabel": "活動類型",
     "scope": {
@@ -503,11 +572,98 @@
     "events": {
       "title": "近期活動",
       "hint": "即將舉行與進行中的活動",
-      "empty": "目前沒有即將舉行的活動。"
+      "empty": "目前沒有即將舉行的活動。",
+      "hintWindow": "進行中，或 {days} 天內開始的活動",
+      "emptyWindow": "目前沒有進行中或 {days} 天內開始的活動。"
     },
     "trending": {
       "title": "近期熱門",
       "empty": "目前沒有熱門遊戲。"
+    }
+  },
+  "theme": {
+    "menuLabel": "主題",
+    "system": "系統",
+    "light": "亮色",
+    "dark": "暗色",
+    "deepBlue": "深海藍",
+    "emerald": "翡翠綠",
+    "crimson": "赤紅",
+    "eightBit": "8-bit",
+    "gold": "圖鑑完成金",
+    "standbyPurple": "待機暗紫",
+    "arcadeNeon": "街機霓虹",
+    "nightOwl": "夜貓子",
+    "coding": "Coding"
+  },
+  "search": {
+    "label": "搜尋遊戲",
+    "placeholder": "搜尋遊戲",
+    "submit": "搜尋",
+    "open": "開啟搜尋",
+    "close": "關閉搜尋",
+    "listLabel": "搜尋建議",
+    "viewAll": "查看全部結果",
+    "empty": "找不到符合的遊戲",
+    "count": "{n} 筆建議",
+    "error": "暫時無法載入建議",
+    "siteLabel": "網站搜尋"
+  },
+  "ratings": {
+    "title": "評分排名",
+    "intro": "依 IGDB 專業評論分數與站內玩家平均排名。點選欄位標題可改變排序，再點一次切換升降冪。",
+    "col": {
+      "igdb": "IGDB 分數",
+      "players": "站內玩家平均"
+    },
+    "count": {
+      "critics": "{count} 則評論",
+      "players": "{count} 位玩家"
+    },
+    "rank": "名次",
+    "game": "遊戲",
+    "noScore": "尚無評分",
+    "caption": "遊戲評分排名",
+    "regionLabel": "評分排名表（可左右捲動）",
+    "status": "共 {total} 款，依「{column}」{direction}排序",
+    "dirDesc": "降冪",
+    "dirAsc": "升冪",
+    "loadError": "無法載入排名，請稍後再試。",
+    "empty": "沒有符合最低票數與篩選條件的遊戲。",
+    "loaded": "已再載入 {n} 款",
+    "rankUp": "名次上升 {n} 名（原第 {prev} 名）",
+    "rankDown": "名次下降 {n} 名（原第 {prev} 名）",
+    "sortLegend": "排序",
+    "sortHint": "也可以直接點表格的欄位標題。名次永遠依分數由高到低計算。",
+    "sortBy": "排序依據",
+    "direction": "方向",
+    "minVotesLegend": "最低票數",
+    "minVotesLabel": "「{column}」至少要有幾筆",
+    "minVotesHint": "只列出「{column}」的評分人數達到這個數字的遊戲，避免只有少數人評分的遊戲衝上榜首。留空使用預設值 {default}。",
+    "note": "名次依排序欄位的分數由高到低計算，同分同名次；名次升降是相對於上一個排序欄位。排序欄位預設只列出評分人數至少 {default} 的遊戲，可在篩選中調整。"
+  },
+  "egg": {
+    "unlockedTheme": "已解鎖主題",
+    "unlockedCollectible": "收集到",
+    "unlockedAchievement": "達成成就",
+    "apply": "立即套用",
+    "close": "關閉",
+    "collectible": {
+      "cartridge": "卡匣",
+      "floppy": "磁片",
+      "cd": "CD",
+      "dvd": "DVD",
+      "bluray": "藍光",
+      "memoryCard": "記憶卡",
+      "gameCard": "遊戲卡帶",
+      "cloud": "雲端"
+    },
+    "achievement": {
+      "viewed50Games": "看過 50 款遊戲",
+      "firstIcalSubscribe": "第一次訂閱行事曆",
+      "firstFollow": "第一次追蹤",
+      "firstList": "第一次建立清單",
+      "allAchievements": "全成就"
     }
   }
 }

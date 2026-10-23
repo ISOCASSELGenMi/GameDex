@@ -173,3 +173,26 @@
 - [ ] 第 2 波：Discord／Google／Twitch／Microsoft 社群登入（需使用者申請 OAuth app，建議正式網域定了再申請）
 - [ ] 第 4 波 Xbox 匯入（依賴第 2 波 Microsoft 登入）
 - [ ] Phase 7.5 寄信服務（正式開放註冊前必須完成）
+
+### GameDex 改版（D84／D85）
+- [x] 第一輪：首頁儀表板、`/calendar`、帳號殼、月曆一格一款、時間軸週視圖、手機收合選單（PR #15，2026-10-17 合併）；spec 寫回（PR #16）
+- [x] 第一輪待決定案（2026-10-18）：
+  - 首頁「近期活動」只列 30 天內的活動；熱門區納入已上市的遊戲
+  - 帳號摘要的「追蹤」數只算遊戲
+  - 月曆未定日超過 24 款時不給預覽卡，可接受；Firefox 換月沒有轉場動畫，可接受
+  - 時間軸不顯示日期未定的遊戲，維持
+- [x] 實作第一輪定案（現況已查，三項都要改；併入第二輪 Z1）（2026-10-18 新增；2026-10-22 Z1B 完成）：
+  - 近期活動：現在 `listEvents({scope:"upcoming"})` 沒有時間上限 → 改為「進行中＋今天起 30 天內開始」
+  - 熱門區：現在只取 `group:"upcoming"` → 改為「即將上市／已上市」分頁切換，各自排名，預設即將上市
+  - 追蹤數：現在 `countFollowsOfUser` 算全部類型 → 只算遊戲
+- [x] 第二輪 Z1（2026-10-22，`1fa7ffc`；npm test 1071、test:a11y 728 過）：Holodex 式 header、活動時間單行＋時區、刪舊 `/api/timeline/*`、手機選單對齊（10/22 用量重置後開工）
+- [x] 第二輪 Z2（2026-10-23，`33d5304`；npm test 1159、test:a11y 815 過）：/games 分組檢視（日期／平台／廠商）、刪 /releases、header 依頁切換品牌名、評分排名頁 /ratings、月曆遊戲／活動開關、平台頁全部遊戲；migration 0012 已套開發 DB（2026-10-23）
+- [ ] Z2 待決：/games 分組查詢 0.43～1.24 秒、平台頁 PC 全部遊戲冷查詢 1.5～1.9 秒（目標 < 500ms，需預先計算或頁數上限）；/games 不分組頁 HTML 239 KB（第一輪就超過 200 KB）；評分排名頁篩選只列常用平台（為壓 HTML）；Next 16.4.0 被標示有已知安全漏洞，建置第一次會停下提示（2026-10-23 新增）
+- [x] 開發 DB 重算 `display_names`：1,693 款補上 zh-Hant（例：王國之淚），未移除任何既有中文名；全庫 zh-Hant 218 → 1,911（2026-10-18）
+- [x] Z1 加做（2026-10-22 完成；`recompute_display_names` 尚未在開發 DB 執行）：搜尋候選名單（所有搜尋框共用 combobox 元件）；`recompute_display_names` 任務（規則改動時全庫重算，只動 display_names，不打 IGDB）（2026-10-18 新增）
+- [x] 第二輪 Z3（2026-10-23，`7d8f251`；npm test 1227、test:a11y 871 過／1 偶發失敗，單跑 51/51 過）：互動背景（只在內容欄兩側）、彩蛋 1～8、9 個隱藏主題、`user_unlocks` 跨裝置同步、帳號頁收藏與成就；migration 0013 已套開發 DB（2026-10-23）
+- [ ] 偶發失敗：`accounts-w7b-u.spec.ts:271`（時間軸追蹤按鈕批次查詢）整套負載重時逾時，Z2、Z3 各一次（2026-10-23 新增）
+- [x] 第二輪 Z4（2026-10-23，`ab514f1`；npm test 1256、test:a11y 892 過）：詳情頁補資訊（公司分三欄、Theme、Game Modes、Player Perspectives、引擎、各語言標題、其他稱呼、Storyline、Editions 與相關內容分組）；migration 0014 已套開發 DB，`backfill_detail_fields` 已跑完（634 批、16.5 分、0 失敗；storyline 31,208 款、遊戲人數 315,710 筆、引擎 89,153 筆）（2026-10-23）
+- [x] 修正時間軸 client 不合法 week 被退回今天的 bug（e2e x2:48 偶發失敗的原因）（2026-10-23）
+- [x] 第二輪收尾：spec 寫回（02、03、04、05、06、07、09、15、90、CHANGELOG；D87）、開 PR `feat/gamedex-v2` → main（2026-10-23）
+- [x] 改用公開 repo `ISOCASSELGenMi/GameDex`（舊 private repo Actions 額度用完；歷史作者 email 改寫為 noreply 後推入新 repo；舊 repo 保留為 remote `private`）（2026-10-23）

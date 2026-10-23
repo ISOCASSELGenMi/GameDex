@@ -20,6 +20,7 @@ import { CardActionHost } from "../card-action-host";
 import { ChevronIcon, StageIcon, StatusIcon, WarningIcon } from "../icons";
 import { DAY_DOTS_MAX } from "../calendar/day-cell";
 import { fillTemplate as fill, useDayCards } from "../calendar/use-day-cards";
+import { explicitWeekStart, isoWeekOf } from "./week";
 import type {
   TimelineWeekData,
   TimelineWeekLabels,
@@ -71,11 +72,13 @@ export function TimelineWeek({
       setBusy(true);
       setFailed(false);
       try {
-        const qs = target.week
-          ? `&week=${encodeURIComponent(target.week)}`
-          : target.at
-            ? `&at=${encodeURIComponent(target.at)}`
-            : "";
+        const qs = [
+          target.week ? `week=${encodeURIComponent(target.week)}` : "",
+          target.at ? `at=${encodeURIComponent(target.at)}` : "",
+        ]
+          .filter(Boolean)
+          .map((p) => `&${p}`)
+          .join("");
         const res = await fetch(`${weekApiBase}${qs}`, {
           headers: { Accept: "application/json" },
         });
@@ -108,11 +111,14 @@ export function TimelineWeek({
   // 依目前網址同步（上一頁／下一頁，或從別頁回到 pushState 過的網址時，伺服器送來的是最初那一週）
   const syncFromLocation = useCallback(() => {
     const params = new URLSearchParams(window.location.search);
-    const week = params.get("week");
-    if (week && week !== current.current.week)
-      void load({ week }, { push: false, fallbackHref: window.location.href });
-    else if (!week && !params.get("at") && !current.current.todayInWeek)
-      void load({}, { push: false, fallbackHref: window.location.href });
+    // 與伺服器同一份規則：網址代表哪一週（week 合法 → at → 今天）；不合法的值不會觸發載入
+    const target = explicitWeekStart(params.get("week"), params.get("at"));
+    const how = { push: false, fallbackHref: window.location.href };
+    if (target) {
+      const week = isoWeekOf(target);
+      if (week && target !== current.current.start)
+        void load({ week, at: target }, how);
+    } else if (!current.current.todayInWeek) void load({}, how);
   }, [load]);
 
   useEffect(() => {

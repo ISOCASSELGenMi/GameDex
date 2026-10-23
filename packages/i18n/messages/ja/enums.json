@@ -124,5 +124,48 @@
     "interface": "インターフェース",
     "subtitles": "字幕",
     "audio": "音声"
+  },
+  "relatedGroup": {
+    "editions": "エディション",
+    "expanded_games": "拡張版",
+    "dlcs": "DLC",
+    "expansions": "拡張コンテンツ",
+    "standalone_expansions": "単独拡張",
+    "remakes": "リメイク",
+    "remasters": "リマスター",
+    "ports": "移植版",
+    "bundles": "バンドル",
+    "episodes": "エピソード／シーズン",
+    "packs": "パック／アップデート"
+  },
+  "localizedTitleRegion": {
+    "ja": "日本",
+    "ko": "韓国",
+    "zh-Hant": "台湾・香港",
+    "zh-Hans": "中国",
+    "en": "英語圏",
+    "de": "ドイツ",
+    "fr": "フランス",
+    "es": "スペイン",
+    "it": "イタリア",
+    "pt": "ポルトガル・ブラジル",
+    "ru": "ロシア"
+  },
+  "gameMode": {
+    "single-player": "シングルプレイ",
+    "multiplayer": "マルチプレイ",
+    "co-operative": "協力プレイ",
+    "split-screen": "画面分割",
+    "massively-multiplayer-online-mmo": "大規模オンライン（MMO）",
+    "battle-royale": "バトルロイヤル"
+  },
+  "playerPerspective": {
+    "first-person": "一人称視点",
+    "third-person": "三人称視点",
+    "bird-view-slash-isometric": "俯瞰／アイソメトリック",
+    "side-view": "横視点",
+    "text": "テキスト",
+    "auditory": "音声",
+    "virtual-reality": "VR"
   }
 }

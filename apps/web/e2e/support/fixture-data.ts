@@ -62,7 +62,7 @@ export const FIXTURE_4 = {
 
 /**
  * GameDex 第 2 段（首頁儀表板）：日期相對於 seed 當天（UTC），所以只放天數偏移。
- * 即將上市＝今天起 30 天內（day 精度）、最新上市＝過去 30 天內。近期活動沿用既有 fixture 的即將舉行活動（首頁的活動區不設時間上限，只取最近的 6 筆）。
+ * 即將上市＝今天起 30 天內（day 精度）、最新上市＝過去 30 天內。近期活動見 events（進行中＋30 天內開始）；既有 fixture 的 2036 年活動不在首頁時間窗內。
  */
 export const FIXTURE_HOME = {
   upcoming: [
@@ -73,4 +73,12 @@ export const FIXTURE_HOME = {
     { slug: "e2e-home-rc-1", name: "Home Recent One", offset: -4 },
     { slug: "e2e-home-rc-2", name: "Home Recent Two", offset: -20 },
   ],
+  /** 熱門榜「已上市」群（上市超過 30 天、有熱度）。 */
+  released: [{ slug: "e2e-home-old", name: "Home Old Hit", offset: -90 }],
+  /** 近期活動（D86）：進行中＋30 天內開始；far（+45 天）不在窗內。時間相對 seed 當下。 */
+  events: {
+    ongoing: { slug: "e2e-home-ev-ongoing", name: "Home Event Ongoing" },
+    soon: { slug: "e2e-home-ev-soon", name: "Home Event Soon", offsetDays: 10 },
+    far: { slug: "e2e-home-ev-far", name: "Home Event Far", offsetDays: 45 },
+  },
 } as const;

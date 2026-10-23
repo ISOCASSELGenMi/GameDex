@@ -4,11 +4,19 @@
  */
 import type { ReactElement, ReactNode } from "react";
 import type { Locale } from "@sok/i18n";
+import { EggLayer, type EggLabels } from "@/kernel/ui/eggs/egg-layer";
+import { UNLOCK_ACHIEVEMENT_KEYS, UNLOCK_COLLECTIBLE_KEYS } from "@/kernel/ui/unlocks";
+import { THEME_OPTIONS } from "@/kernel/ui/theme";
 import { getTranslator } from "../labels";
 import { localeHref } from "../links";
 import { ErrorStringsProvider, type ErrorStrings } from "./error-view";
 import { HeaderRightProvider } from "./header-right";
 import { PageShell, SiteFooter, SkipLink } from "./page-shell";
+
+/** `memory-card` → `memoryCard`；`viewed-50-games` → `viewed50Games`（字典 key 用 camelCase）。 */
+function camel(key: string): string {
+  return key.replace(/-(w)/g, (_, c: string) => c.toUpperCase());
+}
 
 export function LocaleBody({ locale, headerRight, children }: { locale: Locale; headerRight?: ReactNode; children: ReactNode }): ReactElement {
   const t = getTranslator(locale);
@@ -22,9 +30,20 @@ export function LocaleBody({ locale, headerRight, children }: { locale: Locale; 
     clearFilters: t.t("filters.clearAll"),
     calendarHref: localeHref(locale, "/calendar"),
   };
+  const eggLabels: EggLabels = {
+    unlockedTheme: t.t("ui.egg.unlockedTheme"),
+    unlockedCollectible: t.t("ui.egg.unlockedCollectible"),
+    unlockedAchievement: t.t("ui.egg.unlockedAchievement"),
+    apply: t.t("ui.egg.apply"),
+    close: t.t("ui.egg.close"),
+    themes: Object.fromEntries(THEME_OPTIONS.filter((o) => o.locked).map((o) => [o.id, t.t(`ui.theme.${o.labelKey}`)])),
+    collectibles: Object.fromEntries(UNLOCK_COLLECTIBLE_KEYS.map((k) => [k, t.t(`ui.egg.collectible.${camel(k)}`)])),
+    achievements: Object.fromEntries(UNLOCK_ACHIEVEMENT_KEYS.map((k) => [k, t.t(`ui.egg.achievement.${camel(k)}`)])),
+  };
   return (
     <>
       <SkipLink locale={locale} />
+      <EggLayer labels={eggLabels} />
       <ErrorStringsProvider value={errorStrings}>
         <HeaderRightProvider value={headerRight ?? null}>
           <div className="flex min-h-screen flex-col">

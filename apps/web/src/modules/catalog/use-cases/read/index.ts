@@ -14,7 +14,6 @@ export { getEventDetail, type GetEventDetailInput } from "./get-event-detail";
 // Phase 3b（F）：熱門榜
 export { getTrending, TRENDING_DEFAULT_LIMIT, TRENDING_MAX_LIMIT, type GetTrendingInput } from "./get-trending";
 // Phase 3b（G）：時間軸、瀏覽／搜尋
-export { getTimeline, expandTimelineGroup, getReleaseDateHistory, type GetTimelineInput, type ExpandTimelineGroupInput } from "./get-timeline";
 export { browseGames, type BrowseGamesInput } from "./browse-games";
 // Phase 3.5：sitemap
 export { getSitemapCounts, listSitemapEntries, listSitemapSmall, type ListSitemapShardInput } from "./sitemap";
@@ -28,3 +27,15 @@ export { getHomeDashboard, type GetHomeDashboardInput } from "./get-home-dashboa
 export { getCalendarDay, type GetCalendarDayInput, type CalendarDay } from "./get-calendar-day";
 // GameDex 第 3 段（X2）：時間軸一週
 export { getTimelineWeek, type GetTimelineWeekInput, type TimelineWeek, type TimelineWeekDay } from "./get-timeline-week";
+// GameDex 第 2 輪（Z2B）：評分排名
+export { getRatingsRanking, getRatingColumns, type GetRatingsRankingInput } from "./get-ratings-ranking";
+// GameDex 第 2 輪（Z2A）：瀏覽頁分組檢視（依日期／平台／廠商）
+export {
+  getGameGroups,
+  getGameGroupPage,
+  platformColumnRanks,
+  isGroupKey,
+  type GetGameGroupsInput,
+  type GetGameGroupPageInput,
+  type GameGroups,
+} from "./get-game-groups";

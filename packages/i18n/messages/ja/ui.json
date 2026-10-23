@@ -1,7 +1,8 @@
 {
   "site": {
     "name": "ゲーム図鑑 GameDex",
-    "tagline": "ゲーム発売カレンダー＆データベース"
+    "tagline": "ゲーム発売カレンダー＆データベース",
+    "shortName": "GameDex"
   },
   "org": {
     "backTo": "{name} に戻る"
@@ -12,7 +13,9 @@
     "games": "ゲーム",
     "platforms": "プラットフォーム",
     "events": "イベント",
-    "trending": "注目ランキング"
+    "trending": "注目ランキング",
+    "home": "ホーム",
+    "ratings": "評価ランキング"
   },
   "language": {
     "menuLabel": "言語",
@@ -65,12 +68,17 @@
     "dayListTitle": "{date}の発売とイベント",
     "backToList": "その日のリストに戻る",
     "timeTbd": "時刻未定",
-    "timesInUtc": "イベント時刻はお使いのタイムゾーンで表示し、下に小さくUTCを添えています",
+    "timesInUtc": "イベント時刻はお使いのタイムゾーンで表示しています",
     "monthNavigation": "月を切り替え",
     "noItemsThisMonth": "今月は発売・イベントのデータがありません",
     "undatedGroupTitle": "{group}：{label}",
     "dayLoadError": "この日のほかのゲームを読み込めませんでした。しばらくしてからもう一度お試しください。",
-    "dayRetry": "再試行"
+    "dayRetry": "再試行",
+    "switchGames": "ゲーム",
+    "switchEvents": "イベント",
+    "showLegend": "表示する内容",
+    "showAtLeastOne": "少なくとも 1 種類は表示する必要があるため、最後にオンになっているスイッチはオフにできません。",
+    "noEvents": "今月は条件に合うイベントがありません"
   },
   "game": {
     "sections": {
@@ -126,14 +134,52 @@
     "historyChange": "{from} → {to}",
     "historyChangedAt": "{date}に更新",
     "noReleaseDates": "発売日のデータはまだありません",
-    "timesInUtc": "イベント時刻はお使いのタイムゾーンで表示し、下に小さくUTCを添えています",
+    "timesInUtc": "イベント時刻はお使いのタイムゾーンで表示しています",
     "ageRating": "年齢区分：{label}",
     "historyEntry": "{change}（{date}）",
     "franchiseTitle": {
       "franchise": "同じシリーズの作品：{name}",
       "collection": "同じコレクションの作品：{name}"
     },
-    "downloadIcs": ".ics をダウンロード"
+    "downloadIcs": ".ics をダウンロード",
+    "about": {
+      "title": "この作品について",
+      "mainDevelopers": "メイン開発",
+      "publishers": "パブリッシャー",
+      "supportingDevelopers": "協力開発",
+      "portingTag": "移植",
+      "genres": "ジャンル",
+      "themes": "テーマ",
+      "gameModes": "プレイ人数",
+      "playerPerspectives": "視点",
+      "collection": "シリーズ",
+      "franchise": "フランチャイズ",
+      "engines": "ゲームエンジン",
+      "story": "ストーリー",
+      "storyOriginal": "原文（English）",
+      "localizedTitles": "各地域のタイトル",
+      "alternativeTitles": "別名"
+    },
+    "edition": {
+      "label": "その他のエディション",
+      "seeMore": "ほかの{count}件のエディションを見る",
+      "hide": "関連コンテンツを閉じる",
+      "partOf": "『{name}』の{type}です",
+      "editionOf": "『{name}』の {title} です",
+      "goToParent": "『{name}』へ",
+      "genericVersion": "エディション"
+    },
+    "related": {
+      "title": "関連コンテンツ",
+      "more": "ほか{count}件",
+      "groupTitle": "{group}（{count}）"
+    },
+    "trailer": {
+      "watch": "トレーラーを見る"
+    },
+    "release": {
+      "inDays": "（{relative}）"
+    }
   },
   "footer": {
     "dataAttribution": "Data from IGDB.com",
@@ -245,7 +291,26 @@
     "otherPage": "このページには結果がありません。",
     "viewAll": "すべて見る",
     "viewAllFranchise": "「{name}」の全作品を見る",
-    "viewCompany": "「{name}」の作品を見る"
+    "viewCompany": "「{name}」の作品を見る",
+    "groupBy": "グループ表示",
+    "by": {
+      "none": "グループなし",
+      "date": "日付別",
+      "platform": "プラットフォーム別",
+      "publisher": "メーカー別"
+    },
+    "groupCount": "{count} 本",
+    "groupsRange": "グループ {from}–{to} を表示",
+    "groupsLabel": "グループ別のゲーム",
+    "groupMore": "さらに表示（残り {count} 本）",
+    "groupLoading": "読み込み中…",
+    "groupLoadError": "読み込めませんでした。しばらくしてからもう一度お試しください。",
+    "groupLoaded": "{count} 本を読み込みました",
+    "groupNote": {
+      "date": "初回発売日でグループ化します。並び順は選択した並べ替えに従います（発売日順は古い順、それ以外は新しい順）。日付未定は最後です。各グループはまず一部を表示します。",
+      "platform": "プラットフォーム別（モバイルを除く）。1 本のゲームは、対応する各プラットフォームのグループに表示されます。各グループはまず一部を表示します。",
+      "publisher": "主要メーカーのみ個別のグループにし、それ以外は「インディー・その他」です。1 本のゲームは 1 グループにのみ入り、開発元を優先します。各グループはまず一部を表示します。"
+    }
   },
   "langSupport": {
     "language": "言語",
@@ -281,6 +346,10 @@
     "recentHint": "直近90日以内にこのプラットフォームで発売されたゲームです。",
     "emptyUpcoming": "このプラットフォームには発売予定のゲームがありません",
     "emptyRecent": "このプラットフォームには最近発売されたゲームがありません",
+    "all": "すべてのゲーム",
+    "sortName": "名前",
+    "allHint": "このプラットフォームで把握しているすべてのゲーム（発売済み・発売予定・日付未定）です。既定は新しい順で、日付未定は最後に並びます。",
+    "emptyAll": "このプラットフォームにはまだゲームがありません",
     "subscribeFeed": "このプラットフォームのカレンダーを購読"
   },
   "companies": {
@@ -305,7 +374,7 @@
   },
   "events": {
     "title": "イベント",
-    "timesInUtc": "イベント時刻はお使いのタイムゾーンで表示し、下に小さくUTCを添えています",
+    "timesInUtc": "イベント時刻はお使いのタイムゾーンで表示しています",
     "scopeLabel": "期間",
     "kindLabel": "イベントの種類",
     "scope": {
@@ -503,11 +572,98 @@
     "events": {
       "title": "近日のイベント",
       "hint": "開催予定と開催中のイベント",
-      "empty": "開催予定のイベントはありません。"
+      "empty": "開催予定のイベントはありません。",
+      "hintWindow": "開催中、または {days} 日以内に始まるイベント",
+      "emptyWindow": "開催中または {days} 日以内に始まるイベントはありません。"
     },
     "trending": {
       "title": "注目ゲーム",
       "empty": "注目のゲームはありません。"
+    }
+  },
+  "theme": {
+    "menuLabel": "テーマ",
+    "system": "システム",
+    "light": "ライト",
+    "dark": "ダーク",
+    "deepBlue": "ディープブルー",
+    "emerald": "エメラルド",
+    "crimson": "クリムゾン",
+    "eightBit": "8ビット",
+    "gold": "コンプリートゴールド",
+    "standbyPurple": "スタンバイ パープル",
+    "arcadeNeon": "アーケードネオン",
+    "nightOwl": "夜ふかし",
+    "coding": "Coding"
+  },
+  "search": {
+    "label": "ゲームを検索",
+    "placeholder": "ゲームを検索",
+    "submit": "検索",
+    "open": "検索を開く",
+    "close": "検索を閉じる",
+    "listLabel": "検索候補",
+    "viewAll": "すべての結果を見る",
+    "empty": "一致するゲームがありません",
+    "count": "候補 {n} 件",
+    "error": "候補を読み込めませんでした",
+    "siteLabel": "サイト内検索"
+  },
+  "ratings": {
+    "title": "評価ランキング",
+    "intro": "IGDB の専門家スコアとサイト内プレイヤー平均でゲームを順位付けします。列見出しを選ぶとその列で並べ替え、もう一度選ぶと昇順・降順が切り替わります。",
+    "col": {
+      "igdb": "IGDB スコア",
+      "players": "プレイヤー平均"
+    },
+    "count": {
+      "critics": "{count} 件のレビュー",
+      "players": "{count} 人"
+    },
+    "rank": "順位",
+    "game": "ゲーム",
+    "noScore": "評価なし",
+    "caption": "ゲーム評価ランキング",
+    "regionLabel": "評価ランキング表（横にスクロールできます）",
+    "status": "{total} 件、「{column}」{direction}で並べ替え",
+    "dirDesc": "降順",
+    "dirAsc": "昇順",
+    "loadError": "ランキングを読み込めませんでした。しばらくしてからもう一度お試しください。",
+    "empty": "最低票数と絞り込み条件に合うゲームがありません。",
+    "loaded": "さらに {n} 件を読み込みました",
+    "rankUp": "{n} 位上昇（前回 {prev} 位）",
+    "rankDown": "{n} 位下降（前回 {prev} 位）",
+    "sortLegend": "並べ替え",
+    "sortHint": "表の列見出しを選んでも並べ替えられます。順位は常にスコアの高い順で数えます。",
+    "sortBy": "並べ替えの基準",
+    "direction": "順序",
+    "minVotesLegend": "最低票数",
+    "minVotesLabel": "「{column}」の最低件数",
+    "minVotesHint": "「{column}」の評価数がこの数に達したゲームだけを表示します。評価が数件のゲームが上位に来るのを防ぎます。空欄なら既定値 {default} を使います。",
+    "note": "順位は並べ替えた列のスコアが高い順に数え、同点は同順位です。順位の増減は直前に並べ替えていた列との比較です。並べ替えた列は既定で評価数が {default} 件以上のゲームだけを表示します（絞り込みで変更できます）。"
+  },
+  "egg": {
+    "unlockedTheme": "テーマを解放",
+    "unlockedCollectible": "入手",
+    "unlockedAchievement": "実績を解除",
+    "apply": "今すぐ適用",
+    "close": "閉じる",
+    "collectible": {
+      "cartridge": "カートリッジ",
+      "floppy": "フロッピーディスク",
+      "cd": "CD",
+      "dvd": "DVD",
+      "bluray": "ブルーレイ",
+      "memoryCard": "メモリーカード",
+      "gameCard": "ゲームカード",
+      "cloud": "クラウド"
+    },
+    "achievement": {
+      "viewed50Games": "ゲーム詳細を50本閲覧",
+      "firstIcalSubscribe": "初めてカレンダーを購読",
+      "firstFollow": "初めてのフォロー",
+      "firstList": "初めてのリスト作成",
+      "allAchievements": "全実績"
     }
   }
 }

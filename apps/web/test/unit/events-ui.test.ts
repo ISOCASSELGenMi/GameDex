@@ -72,26 +72,35 @@ describe("活動狀態與連結", () => {
   });
 });
 
-describe("活動時間依時區（formatEventTimeText）", () => {
+describe("活動時間依時區（formatEventTimeText）：單行本地時間＋時區縮寫", () => {
   const start = "2026-06-05T17:00:00.000Z";
-  it("三語：主行依指定時區，UTC 與其他時區結果不同", () => {
+  it("三語各自的格式，東八區標 GMT+8", () => {
+    expect(formatEventTimeText(start, null, "zh-Hant", "Asia/Taipei").start).toBe("2026/06/06 01:00 GMT+8");
+    expect(formatEventTimeText(start, null, "ja", "Asia/Taipei").start).toBe("2026/06/06 01:00 GMT+8");
+    expect(formatEventTimeText(start, null, "en", "Asia/Taipei").start).toMatch(/^Jun 6, 2026,? 1:00\s?AM GMT\+8$/);
+  });
+  it("其他時區：偏移含分鐘與負號；UTC 標 UTC（不是 GMT）", () => {
+    expect(formatEventTimeText(start, null, "en", "America/Los_Angeles").start).toMatch(/^Jun 5, 2026,? 10:00\s?AM GMT-7$/);
+    expect(formatEventTimeText(start, null, "zh-Hant", "Asia/Kolkata").start).toBe("2026/06/05 22:30 GMT+5:30");
     for (const locale of ["zh-Hant", "en", "ja"] as const) {
-      const taipei = formatEventTimeText(start, null, locale, "Asia/Taipei").start;
-      const utc = formatEventTimeText(start, null, locale, "UTC").start;
-      expect(taipei, locale).not.toBe(utc);
-      expect(utc, locale).toContain("UTC");
+      expect(formatEventTimeText(start, null, locale, "UTC").start, locale).toMatch(/UTC$/);
+      expect(formatEventTimeText(start, null, locale, "Asia/Taipei").start, locale).not.toBe(formatEventTimeText(start, null, locale, "UTC").start);
     }
-    expect(formatEventTimeText(start, null, "en", "Asia/Taipei").start).toMatch(/Jun 6, 2026.*1:00\s?AM/);
-    expect(formatEventTimeText(start, null, "en", "America/Los_Angeles").start).toMatch(/Jun 5, 2026.*10:00\s?AM/);
+  });
+  it("午夜是 00:00（24 小時制不出現 24:00）", () => {
+    expect(formatEventTimeText("2026-06-05T16:00:00.000Z", null, "zh-Hant", "Asia/Taipei").start).toBe("2026/06/06 00:00 GMT+8");
   });
   it("跨日：UTC 同一天的區間，在東八區變成跨日 → 結束要帶日期；反之亦然", () => {
     const end = "2026-06-05T18:30:00.000Z"; // UTC 同一天
     const utc = formatEventTimeText(start, end, "en", "UTC");
     expect(utc.end).not.toMatch(/Jun/);
+    expect(utc.end).toMatch(/UTC$/);
+    expect(formatEventTimeText(start, end, "zh-Hant", "UTC").end).toBe("18:30 UTC");
     const lateStart = "2026-06-05T15:30:00.000Z";
     const lateEnd = "2026-06-05T16:30:00.000Z"; // Taipei 23:30 → 00:30 隔天
     const taipei = formatEventTimeText(lateStart, lateEnd, "en", "Asia/Taipei");
     expect(taipei.end).toMatch(/Jun 6/);
+    expect(formatEventTimeText(lateStart, lateEnd, "zh-Hant", "Asia/Taipei").end).toBe("2026/06/06 00:30 GMT+8");
   });
   it("結束等於開始或沒有結束 → end 為 null；不合法時區退回 UTC；不合法時間原樣", () => {
     expect(formatEventTimeText(start, start, "en", "UTC").end).toBeNull();

@@ -1,17 +1,11 @@
 /**
- * Phase 3b（G）整合：時間軸（分組、每組前 N 筆、展開、雙向 cursor、上市狀態、改期紀錄）與瀏覽／搜尋。
+ * Phase 3b（G）整合：瀏覽／搜尋（舊時間軸 API 與其 use case 已於 D85 刪除，時間軸改為週視圖，見 timeline-week-x2.test.ts）。
  * igdbId 用 57xxxx；日期用 2037 年；所有遊戲都掛 genre `g57-tag`，查詢以它隔離其他測試檔的資料。
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { closeDb, getDb } from "@/kernel/db/client";
 import {
   browseGames,
-  expandTimelineGroup,
-  getReleaseDateHistory,
-  getTimeline,
-  type ReleaseCard,
-  type ReleaseFilter,
-  type TimelinePage,
 } from "@/modules/catalog";
 import { buildSearchText } from "@/modules/catalog/domain/search-text";
 import {
@@ -116,11 +110,7 @@ async function addGame(
   return g!.id;
 }
 
-const TAG: ReleaseFilter = { genreSlugs: ["g57-tag"] };
-const allCards = (p: TimelinePage): ReleaseCard[] => p.groups.flatMap((g) => g.cards);
-const idsOf = (cards: ReleaseCard[]) => cards.map((c) => c.gameId);
-
-describe.skipIf(!enabled)("時間軸與瀏覽（整合）", () => {
+describe.skipIf(!enabled)("瀏覽與搜尋（整合）", () => {
   beforeAll(async () => {
     const db = getDb();
     for (const r of await db.select().from(regions)) R[r.code] = r.id;
@@ -189,131 +179,6 @@ describe.skipIf(!enabled)("時間軸與瀏覽（整合）", () => {
 
   afterAll(async () => {
     await closeDb();
-  });
-
-  const tl = (extra: Partial<Parameters<typeof getTimeline>[0]> = {}) =>
-    getTimeline({ locale: "en", filter: TAG, at: "2037-01-01", now: new Date("2037-03-15T00:00:00Z"), ...extra });
-
-  it("分組：同 periodStart 時 year → quarter → month → day；月份區段；tbd 在最後", async () => {
-    const page = await tl({ limit: 200 });
-    const keys = page.groups.map((g) => g.key);
-    expect(keys.slice(0, 5)).toEqual(["year:2037-01-01", "quarter:2037-01-01", "month:2037-01-01", "day:2037-01-01", "day:2037-02-01"]);
-    expect(keys.at(-1)).toBe("tbd");
-    expect(page.groups[0]!.month).toBe("2037-01");
-    expect(page.anchor).toBe("2037-01-01");
-    expect(page.today).toBe("2037-03-15");
-    expect(page.nextCursor).toBeNull();
-    // 傳聞預設隱藏
-    expect(idsOf(allCards(page))).not.toContain(gid[570401]);
-  });
-
-  it("每組前 10 筆（熱度高到低）＋hiddenCount；展開取其餘", async () => {
-    const page = await tl({ limit: 200 });
-    const feb = page.groups.find((g) => g.key === "day:2037-02-01")!;
-    expect(feb.cards).toHaveLength(10);
-    expect(feb.totalCount).toBe(12);
-    expect(feb.hiddenCount).toBe(2);
-    expect(feb.cards.map((c) => c.popularityScore)).toEqual([111, 110, 109, 108, 107, 106, 105, 104, 103, 102]);
-    const more = await expandTimelineGroup({ groupKey: "day:2037-02-01", filter: TAG, locale: "en" });
-    expect(more.cards.map((c) => c.popularityScore)).toEqual([101, 100]);
-    expect(more.totalCount).toBe(12);
-    expect(more.nextOffset).toBeNull();
-    const all = await expandTimelineGroup({ groupKey: "day:2037-02-01", filter: TAG, locale: "en", offset: 0, limit: 5 });
-    expect(all.cards).toHaveLength(5);
-    expect(all.nextOffset).toBe(5);
-    expect((await expandTimelineGroup({ groupKey: "nope", filter: TAG, locale: "en" })).cards).toEqual([]);
-  });
-
-  it("cursor 往後逐頁＝一次取完；往前回到前一段；壞 cursor 從起點開始", async () => {
-    const full = idsOf(allCards(await tl({ limit: 200 })));
-    const seen: number[] = [];
-    let page = await tl({ limit: 4 });
-    const pages: TimelinePage[] = [page];
-    seen.push(...idsOf(allCards(page)));
-    for (let i = 0; i < 20 && page.nextCursor; i++) {
-      page = await tl({ limit: 4, cursor: page.nextCursor });
-      pages.push(page);
-      seen.push(...idsOf(allCards(page)));
-    }
-    expect(page.nextCursor).toBeNull();
-    expect(seen).toEqual(full);
-
-    // 第 3 頁的 prevCursor → 第 2 頁
-    const back = await tl({ limit: 4, cursor: pages[2]!.prevCursor });
-    expect(idsOf(allCards(back))).toEqual(idsOf(allCards(pages[1]!)));
-    expect(back.anchor).toBeNull();
-
-    // 從 2037-02-01 起，往前一頁含 2037-01-01 的組
-    const mid = await tl({ at: "2037-02-01", limit: 3 });
-    expect(mid.groups[0]!.key).toBe("day:2037-02-01");
-    expect(mid.prevCursor).not.toBeNull();
-    const before = await tl({ cursor: mid.prevCursor, limit: 200 });
-    expect(before.groups.map((g) => g.key)).toEqual(["year:2037-01-01", "quarter:2037-01-01", "month:2037-01-01", "day:2037-01-01"]);
-
-    const bad = await tl({ cursor: "garbage", limit: 200 });
-    expect(idsOf(allCards(bad))).toEqual(full);
-  });
-
-  it("低-2：不存在的日期（day:2026-02-31、at=2026-02-31）不丟 PG 錯誤", async () => {
-    const g = await expandTimelineGroup({ groupKey: "day:2026-02-31", filter: TAG, locale: "en" });
-    expect(g.cards).toEqual([]);
-    const page = await tl({ at: "2026-02-31", limit: 5 });
-    expect(page).toBeTruthy();
-  });
-
-  it("上市狀態：upcoming／released／delayed（today＝2037-03-15）", async () => {
-    const ids = async (releaseStates: string[]) => idsOf(allCards(await tl({ filter: { ...TAG, releaseStates }, limit: 200 })));
-    const delayed = await ids(["delayed"]);
-    expect(delayed).toEqual([gid[570200]]);
-    const released = await ids(["released"]);
-    expect(released).toContain(gid[570202]);
-    expect(released).toContain(gid[570004]); // 2037-01-01 已過
-    expect(released).not.toContain(gid[570203]); // 月精度 3 月尚未結束
-    const upcoming = await ids(["upcoming"]);
-    expect(upcoming).toContain(gid[570203]);
-    expect(upcoming).toContain(gid[570300]);
-    expect(upcoming).toContain(gid[570400]); // tbd
-    expect(upcoming).toContain(gid[570001]); // 2037 年精度
-    expect(upcoming).not.toContain(gid[570202]);
-  });
-
-  it("改期紀錄：hasDateHistory 與歷次日期", async () => {
-    const cards = allCards(await tl({ limit: 200 }));
-    const c = cards.find((x) => x.gameId === gid[570200])!;
-    expect(c.hasDateHistory).toBe(true);
-    expect(cards.find((x) => x.gameId === gid[570004])!.hasDateHistory).toBe(false);
-    const hist = await getReleaseDateHistory(c.releaseEventIds);
-    expect(hist).toEqual([
-      {
-        releaseEventId: evIds[570200]![0],
-        changes: [expect.objectContaining({ oldDate: "2037-02-10", newDate: "2037-03-10", oldPrecision: "day", newPrecision: "day" })],
-      },
-    ]);
-    expect(await getReleaseDateHistory([])).toEqual([]);
-    // 低-1：超出 PG integer 範圍的 id 被濾掉，不丟 22003
-    expect(await getReleaseDateHistory([99999999999, 2147483648])).toEqual([]);
-    expect((await getReleaseDateHistory([...c.releaseEventIds, 99999999999])).length).toBe(1);
-  });
-
-  it("主題、熱度、公司、系列（同 slug 的 franchise＋collection）、平台、傳聞", async () => {
-    const one = async (filter: ReleaseFilter) => idsOf(allCards(await tl({ filter: { ...TAG, ...filter }, limit: 200 })));
-    expect(await one({ themeSlugs: ["g57-horror"] })).toEqual([gid[570300]]);
-    expect(await one({ minHeat: 4 })).toEqual([gid[570300]]);
-    expect(await one({ companySlugs: ["g57-capcom"] })).toEqual([gid[570300]]);
-    expect(await one({ franchiseSlugs: ["g57-series"] })).toEqual([gid[570300]]);
-    expect(await one({ platformSlugs: ["g57-ps"] })).toEqual([gid[570300]]);
-    expect(await one({ includeRumored: true })).toContain(gid[570401]);
-    const r = await tl({ filter: { ...TAG, themeSlugs: ["nope"] }, regionPref: "XX", limit: 1 });
-    expect(r.ignored).toEqual(expect.arrayContaining([{ dimension: "theme", slug: "nope" }, { dimension: "region", slug: "XX" }]));
-  });
-
-  it("地區偏好影響聚合；from／to 限制範圍且不含 tbd", async () => {
-    const date = async (regionPref: string) =>
-      allCards(await tl({ regionPref, limit: 200 })).find((c) => c.gameId === gid[570301])!.date;
-    expect(await date("WW")).toBe("2037-05-20");
-    expect(await date("JP")).toBe("2037-05-10");
-    const ranged = await tl({ from: "2037-03-01", to: "2037-03-31", at: "2037-01-01", limit: 200 });
-    expect(ranged.groups.map((g) => g.key)).toEqual(["month:2037-03-01", "day:2037-03-01", "day:2037-03-10", "day:2037-03-11"]);
   });
 
   it("瀏覽：排序、年份、公司／系列、狀態、分頁", async () => {

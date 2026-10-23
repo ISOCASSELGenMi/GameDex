@@ -22,10 +22,27 @@ export function heatBadgeLabel(t: Translator, level: number | null | undefined):
   return t.t("ui.heat.label", { level: v, max: HEAT_LEVEL_MAX });
 }
 
-function FlameIcon(): ReactElement {
+const FLAME_PATH =
+  "M8.6 1c.4 2.1-.4 3.3-1.3 4.4C6.4 6.5 5.5 7.5 5.8 9.3c-.9-.4-1.4-1.2-1.5-2.2C3.5 8 3 9.2 3 10.5 3 13 5.2 15 8 15s5-2 5-4.6c0-2.3-1.2-3.6-2.3-4.8C9.7 4.5 8.8 3.4 8.6 1Zm-.4 7.6c.2 1.1.9 1.6 1.4 2.2.4.4.7.9.7 1.5 0 1-.9 1.7-2.1 1.7S6.1 13.3 6.1 12.3c0-.9.5-1.4 1-1.9.5-.5 1-1 1.1-1.8Z";
+
+/**
+ * 一頁有很多徽章時（首頁 48 張卡）：頁面放一份 <HeatSprite id>，徽章傳 spriteId 改用 <use> 參照，
+ * 每個徽章省下約 600 bytes（伺服器 HTML 與 RSC payload 各一份）。
+ */
+export function HeatSprite({ id }: { id: string }): ReactElement {
+  return (
+    <svg aria-hidden="true" focusable="false" width="0" height="0" className="absolute">
+      <symbol id={id} viewBox="0 0 16 16">
+        <path d={FLAME_PATH} />
+      </symbol>
+    </svg>
+  );
+}
+
+function FlameIcon({ spriteId }: { spriteId?: string }): ReactElement {
   return (
     <svg aria-hidden="true" focusable="false" viewBox="0 0 16 16" width="1em" height="1em" className="inline-block shrink-0 align-[-0.125em]" fill="currentColor">
-      <path d="M8.6 1c.4 2.1-.4 3.3-1.3 4.4C6.4 6.5 5.5 7.5 5.8 9.3c-.9-.4-1.4-1.2-1.5-2.2C3.5 8 3 9.2 3 10.5 3 13 5.2 15 8 15s5-2 5-4.6c0-2.3-1.2-3.6-2.3-4.8C9.7 4.5 8.8 3.4 8.6 1Zm-.4 7.6c.2 1.1.9 1.6 1.4 2.2.4.4.7.9.7 1.5 0 1-.9 1.7-2.1 1.7S6.1 13.3 6.1 12.3c0-.9.5-1.4 1-1.9.5-.5 1-1 1.1-1.8Z" />
+      {spriteId ? <use href={`#${spriteId}`} /> : <path d={FLAME_PATH} />}
     </svg>
   );
 }
@@ -37,9 +54,11 @@ export interface HeatBadgeProps {
   /** 精簡（只顯示圖示＋數字；可及名稱仍是完整文字）。 */
   compact?: boolean;
   className?: string;
+  /** 頁面有 <HeatSprite id> 時傳入其 id，火焰圖示改用 <use> 參照（省 HTML 大小）。 */
+  spriteId?: string;
 }
 
-export function HeatBadge({ level, label, compact = false, className }: HeatBadgeProps): ReactElement | null {
+export function HeatBadge({ level, label, compact = false, className, spriteId }: HeatBadgeProps): ReactElement | null {
   if (!hasHeatBadge(level) || !label) return null;
   const v = Math.min(HEAT_LEVEL_MAX, Math.floor(level));
   if (compact) {
@@ -51,7 +70,7 @@ export function HeatBadge({ level, label, compact = false, className }: HeatBadg
         data-heat={v}
         className={["inline-flex items-center gap-px text-xs font-bold text-[var(--warn)]", className].filter(Boolean).join(" ")}
       >
-        <FlameIcon />
+        <FlameIcon spriteId={spriteId} />
         <span aria-hidden="true">{v}</span>
       </span>
     );
@@ -66,7 +85,7 @@ export function HeatBadge({ level, label, compact = false, className }: HeatBadg
         .filter(Boolean)
         .join(" ")}
     >
-      <FlameIcon />
+      <FlameIcon spriteId={spriteId} />
       <span>{label}</span>
     </span>
   );

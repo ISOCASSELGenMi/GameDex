@@ -4,6 +4,8 @@
  * - 共用篩選面板（遊戲層級維度）；已套用條件的 chip；空結果列出條件可逐一移除
  * - 分頁：上一頁／下一頁（不算總數）；offset ≤ BROWSE_OFFSET_MAX，頁面說明此限制
  * - 結果筆數：role="status" 的 live region
+ * - 分組檢視 `?by=date|platform|publisher`（預設 none＝上面的清單）：同一批遊戲（受搜尋與篩選限制）分成幾組，一頁 GAME_GROUPS_PER_PAGE 組（`page` 翻組），
+ *   每組先送 GAME_GROUP_INITIAL 張卡，其餘「顯示更多」按需從 /api/v1/games/group 載入
  */
 import Form from "next/form";
 import Image from "next/image";
@@ -11,7 +13,7 @@ import { connection } from "next/server";
 import type { ReactElement } from "react";
 import { FILTER_QUERY_MAX_LENGTH, filterSpecToQueryString, parseFilterSpec, type FilterSearchInput } from "@sok/api-contract";
 import { formatNumber, formatReleaseLabel, type Locale, type Translator } from "@sok/i18n";
-import { BROWSE_OFFSET_MAX, BROWSE_PAGE_SIZE, type BrowseGameCard } from "../../domain/entities";
+import { BROWSE_OFFSET_MAX, BROWSE_PAGE_SIZE, GAME_GROUP_BYS, type BrowseGameCard, type GameGroupBy } from "../../domain/entities";
 import { browseGames } from "../../use-cases/read";
 import { loadFilterOptions } from "../calendar/filter-options";
 import { collectFilterNotices, filterSpecToReadQuery, withoutIgnored } from "../filter-mapping";
@@ -25,6 +27,8 @@ import { gameHref, gamesBrowseHref, localeHref } from "../links";
 import { gameNameLang } from "../name-lang";
 import { PageNav } from "../page-nav";
 import { rethrowForPage } from "../page-errors";
+import { searchBoxLabels } from "../search/labels";
+import { SearchCombobox } from "../search/search-combobox";
 import {
   BROWSE_FILTER_FIELDS,
   BROWSE_SORT_OPTIONS,
@@ -35,6 +39,9 @@ import {
   parseBrowsePage,
   yearFieldValues,
 } from "./view-model";
+import { GroupCardList, GroupSwitch, GroupsProvider } from "./groups/groups-client";
+import { groupApiBase, loadGameGroups, type GroupView } from "./groups/groups-server";
+import { groupPagination, groupRange, isGrouped, parseGameGroupBy, parseGroupPage } from "./groups/params";
 
 export type SearchParamsRecord = Readonly<Record<string, string | string[] | undefined>>;
 
@@ -90,28 +97,46 @@ function GameCard({ game, locale, t }: { game: BrowseGameCard; locale: Locale; t
   );
 }
 
+function GroupSection({ group, countText }: { group: GroupView; countText: string }): ReactElement {
+  const headingId = `rc-h-${group.key}`;
+  return (
+    <section aria-labelledby={headingId} className="rc-group" data-rc-group={group.key}>
+      <h2 id={headingId} className="rc-group-title">
+        <span>{group.title}</span>
+        <span className="rc-count">{countText}</span>
+      </h2>
+      <GroupCardList groupKey={group.key} total={group.total} cards={group.cards} />
+    </section>
+  );
+}
+
 export async function GamesBrowsePage({ locale, supportedLocales, searchParams, slots }: GamesBrowsePageProps): Promise<ReactElement> {
   await connection();
   const t = getTranslator(locale);
-  const pageNo = parseBrowsePage(first(searchParams.page));
+  const by: GameGroupBy = parseGameGroupBy(first(searchParams.by));
+  const grouped = isGrouped(by);
+  const pageNo = grouped ? parseGroupPage(first(searchParams.page)) : parseBrowsePage(first(searchParams.page));
   const parsed = parseFilterSpec(searchParams as FilterSearchInput);
   const pageParams = new Set<string>(PAGE_FILTER_PARAMS.browse);
   const pageSpec = filterSpecForPage(parsed.filter, "browse");
   const query = filterSpecToReadQuery(pageSpec);
 
-  let result, options;
+  let result, groupsResult, options;
   try {
-    [result, options] = await Promise.all([
-      browseGames({
-        filter: query.filter,
-        yearFrom: query.yearFrom,
-        yearTo: query.yearTo,
-        q: query.q,
-        sort: query.sort,
-        offset: browseOffset(pageNo),
-        limit: BROWSE_PAGE_SIZE,
-        locale,
-      }),
+    [result, groupsResult, options] = await Promise.all([
+      grouped
+        ? Promise.resolve(null)
+        : browseGames({
+            filter: query.filter,
+            yearFrom: query.yearFrom,
+            yearTo: query.yearTo,
+            q: query.q,
+            sort: query.sort,
+            offset: browseOffset(pageNo),
+            limit: BROWSE_PAGE_SIZE,
+            locale,
+          }),
+      grouped ? loadGameGroups({ locale, spec: pageSpec, by, page: pageNo }, t) : Promise.resolve(null),
       loadFilterOptions(locale),
     ]);
   } catch (err) {
@@ -119,16 +144,21 @@ export async function GamesBrowsePage({ locale, supportedLocales, searchParams, 
   }
   const notices = collectFilterNotices(
     parsed.issues.filter((i) => pageParams.has(i.param)),
-    result.ignored,
+    result?.ignored ?? groupsResult?.ignored ?? [],
   );
   const spec = withoutIgnored(pageSpec, notices);
   const basePath = localeHref(locale, "/games");
-  const chips = appliedChips(spec, basePath, makeFilterLabeler(t, options));
+  const extraQuery = grouped ? `by=${by}` : "";
+  const chips = appliedChips(spec, basePath, makeFilterLabeler(t, options), extraQuery);
+  const clearHref = localeHref(locale, "/games", extraQuery);
+  const games = result?.games ?? [];
+  const groups = groupsResult?.groups ?? [];
   const sort = spec.sort ?? "popularity";
   const years = yearFieldValues(spec);
-  const range = browseRange(result.offset, result.games.length);
-  const pager = browsePagination(pageNo, result.hasMore);
-  const shellQuery = [filterSpecToQueryString(spec), pageNo > 1 ? `page=${pageNo}` : ""].filter(Boolean).join("&");
+  const range = result ? browseRange(result.offset, result.games.length) : null;
+  const pager = result ? browsePagination(pageNo, result.hasMore) : groupPagination(pageNo, groupsResult?.hasMoreGroups ?? false);
+  const groupsText = groupRange(pageNo, groups.length);
+  const shellQuery = [filterSpecToQueryString(spec), extraQuery, pageNo > 1 ? `page=${pageNo}` : ""].filter(Boolean).join("&");
   const panelHidden: Record<string, string | undefined> = {
     q: spec.q,
     sort: spec.sort,
@@ -136,6 +166,11 @@ export async function GamesBrowsePage({ locale, supportedLocales, searchParams, 
     yearTo: years.to || undefined,
   };
   const hidden = hiddenFilterFields(spec, ["q", "sort", "year", "yearFrom", "yearTo"]);
+  if (grouped) {
+    hidden.push({ name: "by", value: by });
+    panelHidden.by = by;
+  }
+  const groupLabels = Object.fromEntries(GAME_GROUP_BYS.map((v) => [v, t.t(`ui.games.by.${v}`)])) as Record<GameGroupBy, string>;
 
   return (
     <PageShell locale={locale} supportedLocales={supportedLocales} path="/games" query={shellQuery}>
@@ -147,17 +182,20 @@ export async function GamesBrowsePage({ locale, supportedLocales, searchParams, 
           <input key={`${h.name}:${h.value}`} type="hidden" name={h.name} value={h.value} />
         ))}
         <div className="flex flex-wrap items-end gap-3">
-          <label className="flex min-w-[14rem] flex-1 flex-col gap-1">
-            <span className="font-bold">{t.t("ui.games.searchLabel")}</span>
-            <input
-              type="search"
-              name="q"
+          <div className="flex min-w-[14rem] flex-1 flex-col gap-1">
+            <label htmlFor="browse-search" className="font-bold">
+              {t.t("ui.games.searchLabel")}
+            </label>
+            <SearchCombobox
+              locale={locale}
+              id="browse-search"
               defaultValue={spec.q ?? ""}
               maxLength={FILTER_QUERY_MAX_LENGTH}
               placeholder={t.t("ui.games.searchPlaceholder")}
-              className={inputClass}
+              labels={searchBoxLabels(t)}
+              inputClassName={`${inputClass} w-full`}
             />
-          </label>
+          </div>
           <label className="flex flex-col gap-1">
             <span className="font-bold">{t.t("ui.games.sortLabel")}</span>
             <select name="sort" defaultValue={sort} aria-describedby="browse-sort-note" className={inputClass}>
@@ -195,46 +233,82 @@ export async function GamesBrowsePage({ locale, supportedLocales, searchParams, 
 
       <div className="cal-tools">
         <FilterNotices notices={notices} t={t} />
-        <AppliedFilterChips chips={chips} t={t} clearHref={basePath} />
-        <FilterPanel locale={locale} t={t} options={options} spec={spec} action={basePath} fields={BROWSE_FILTER_FIELDS} hidden={panelHidden} clearHref={basePath} />
+        <AppliedFilterChips chips={chips} t={t} clearHref={clearHref} />
+        <FilterPanel locale={locale} t={t} options={options} spec={spec} action={basePath} fields={BROWSE_FILTER_FIELDS} hidden={panelHidden} clearHref={clearHref} />
         {slots?.filterLinks}
+        <div className="rc-nav">
+          <GroupSwitch
+            legend={t.t("ui.games.groupBy")}
+            name="by"
+            current={by}
+            items={GAME_GROUP_BYS.map((value) => ({ value, label: groupLabels[value], href: gamesBrowseHref(locale, spec, 1, value) }))}
+          />
+          <noscript>
+            <ul className="rc-noscript">
+              {GAME_GROUP_BYS.map((value) => (
+                <li key={value}>
+                  <a className="link" href={gamesBrowseHref(locale, spec, 1, value)} aria-current={value === by ? "true" : undefined}>
+                    {groupLabels[value]}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </noscript>
+        </div>
         <p role="status" className="text-sm text-[var(--muted)]">
-          {range
-            ? t.t("ui.games.resultsRange", { from: formatNumber(range.from, locale), to: formatNumber(range.to, locale) })
-            : t.t("filters.resultsCount", { count: formatNumber(0, locale) })}
+          {grouped
+            ? groupsText
+              ? t.t("ui.games.groupsRange", { from: formatNumber(groupsText.from, locale), to: formatNumber(groupsText.to, locale) })
+              : t.t("filters.resultsCount", { count: formatNumber(0, locale) })
+            : range
+              ? t.t("ui.games.resultsRange", { from: formatNumber(range.from, locale), to: formatNumber(range.to, locale) })
+              : t.t("filters.resultsCount", { count: formatNumber(0, locale) })}
         </p>
+        {grouped ? <p className="fieldset-sub">{t.t(`ui.games.groupNote.${by}`)}</p> : null}
       </div>
 
-      {result.games.length === 0 ? (
+      {(grouped ? groups.length : games.length) === 0 ? (
         <>
-          <EmptyFilterResult chips={chips} t={t} clearHref={basePath} emptyText={pageNo > 1 ? t.t("ui.games.otherPage") : t.t("ui.games.empty")} />
+          <EmptyFilterResult chips={chips} t={t} clearHref={clearHref} emptyText={pageNo > 1 ? t.t("ui.games.otherPage") : t.t("ui.games.empty")} />
           {pageNo > 1 ? (
             <p className="mt-2">
-              <a className="link" href={gamesBrowseHref(locale, spec)}>
+              <a className="link" href={gamesBrowseHref(locale, spec, 1, by)}>
                 {t.t("ui.games.backToFirst")}
               </a>
             </p>
           ) : null}
         </>
+      ) : grouped ? (
+        <GroupsProvider
+          key={`${by}|${pageNo}|${filterSpecToQueryString(spec)}`}
+          endpoint={groupApiBase(locale, by, spec)}
+          labels={{ more: t.t("ui.games.groupMore"), loading: t.t("ui.games.groupLoading"), error: t.t("ui.games.groupLoadError"), loaded: t.t("ui.games.groupLoaded") }}
+        >
+          <div className="rc-groups" role="group" aria-label={t.t("ui.games.groupsLabel")}>
+            {groups.map((g) => (
+              <GroupSection key={g.key} group={g} countText={t.t("ui.games.groupCount", { count: formatNumber(g.total, locale) })} />
+            ))}
+          </div>
+        </GroupsProvider>
       ) : (
         <ul className="mt-4 grid list-none grid-cols-1 gap-2 p-0 md:grid-cols-2 xl:grid-cols-3" aria-label={t.t("ui.games.listLabel")}>
-          {result.games.map((g) => (
+          {games.map((g) => (
             <GameCard key={g.gameId} game={g} locale={locale} t={t} />
           ))}
         </ul>
       )}
 
-      {pageNo > 1 || result.hasMore ? (
+      {pageNo > 1 || pager.next || pager.limitReached ? (
         <PageNav
           label={t.t("ui.games.pagination")}
-          prevHref={pager.prev ? gamesBrowseHref(locale, spec, pager.prev) : null}
-          nextHref={pager.next ? gamesBrowseHref(locale, spec, pager.next) : null}
+          prevHref={pager.prev ? gamesBrowseHref(locale, spec, pager.prev, by) : null}
+          nextHref={pager.next ? gamesBrowseHref(locale, spec, pager.next, by) : null}
           prevText={t.t("ui.games.prevPage")}
           nextText={t.t("ui.games.nextPage")}
           pageText={t.t("ui.games.page", { page: pageNo })}
         >
           {pager.limitReached ? <p className="mt-2 text-sm font-semibold">{t.t("ui.games.limitReached", { max: formatNumber(BROWSE_OFFSET_MAX, locale) })}</p> : null}
-          <p className="mt-2 text-sm text-[var(--muted)]">{t.t("ui.games.depthNote", { max: formatNumber(BROWSE_OFFSET_MAX, locale) })}</p>
+          {grouped ? null : <p className="mt-2 text-sm text-[var(--muted)]">{t.t("ui.games.depthNote", { max: formatNumber(BROWSE_OFFSET_MAX, locale) })}</p>}
         </PageNav>
       ) : null}
     </PageShell>

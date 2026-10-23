@@ -1,9 +1,12 @@
 "use client";
 /**
- * 語言選單（06 §多語系）：一般 <a> 連結，不需要 JS 也能切換；有 JS 時點選順便以 sendBeacon
+ * 語言下拉（06 §多語系）：一般 <a> 連結，不需要 JS 也能切換；有 JS 時點選順便以 sendBeacon
  * 呼叫 POST /api/locale 寫入偏好 Cookie（下次從無前綴入口進站時使用）。一般頁面回應不寫 Cookie。
+ * 外殼是共用的 Dropdown（header 的導覽、主題、語言、帳號共用同一個）。
  */
 import type { ReactElement } from "react";
+import { Dropdown } from "@/kernel/ui/dropdown";
+import { GlobeIcon } from "@/kernel/ui/header-icons";
 
 export interface LanguageMenuItem {
   locale: string;
@@ -24,30 +27,30 @@ function rememberLocale(locale: string): void {
   }
 }
 
-export function LanguageMenu({ items, label }: { items: readonly LanguageMenuItem[]; label: string }): ReactElement {
+/** items 的連結；`label` 是 <nav> 的名稱，`triggerLabel` 是下拉按鈕的名稱。 */
+export function LanguageMenu({ items, label, triggerLabel }: { items: readonly LanguageMenuItem[]; label: string; triggerLabel: string }): ReactElement {
   return (
-    <nav aria-label={label}>
-      <ul className="flex items-center gap-1 text-sm">
-        {items.map((item) => (
-          <li key={item.locale}>
-            <a
-              href={item.href}
-              hrefLang={item.locale}
-              lang={item.locale}
-              aria-current={item.current ? "true" : undefined}
-              className={[
-                "inline-flex min-h-11 min-w-11 items-center justify-center rounded-md px-3",
-                item.current ? "bg-[var(--surface-strong)] font-semibold" : "link-quiet",
-              ].join(" ")}
-              onClick={() => {
-                if (!item.current) rememberLocale(item.locale);
-              }}
-            >
-              {item.label}
-            </a>
-          </li>
-        ))}
-      </ul>
-    </nav>
+    <Dropdown name="language" label={triggerLabel} icon={<GlobeIcon />} align="end">
+      <nav aria-label={label}>
+        <ul className="dd-list">
+          {items.map((item) => (
+            <li key={item.locale}>
+              <a
+                href={item.href}
+                hrefLang={item.locale}
+                lang={item.locale}
+                aria-current={item.current ? "true" : undefined}
+                className="dd-item"
+                onClick={() => {
+                  if (!item.current) rememberLocale(item.locale);
+                }}
+              >
+                {item.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </Dropdown>
   );
 }

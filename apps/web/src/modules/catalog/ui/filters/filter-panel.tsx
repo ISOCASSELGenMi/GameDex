@@ -6,7 +6,7 @@
  * - 面板外框：桌機 <details>、手機底部抽屜（FilterDrawer）
  */
 import Form from "next/form";
-import type { ReactElement } from "react";
+import type { ReactElement, ReactNode } from "react";
 import { FILTER_MAX_VALUES, countFilterValues, hasFilterValue, type FilterDimension, type FilterSpec } from "@sok/api-contract";
 import type { Locale, Translator } from "@sok/i18n";
 import type { FilterOptions } from "../../domain/entities";
@@ -41,7 +41,6 @@ export const CALENDAR_FILTER_FIELDS: readonly FilterField[] = [
   "status",
   "region",
   "minHeat",
-  "show",
   "rumored",
 ];
 export const TIMELINE_FILTER_FIELDS: readonly FilterField[] = [
@@ -200,13 +199,20 @@ export interface FilterPanelProps {
   hidden?: Readonly<Record<string, string | undefined>>;
   /** 「全部清除」連結；預設＝action。 */
   clearHref?: string;
+  /** 套用按鈕前的額外欄位（評分排名頁的排序、最低票數、年份）；欄位自己的 name 會一起送出。 */
+  extraFields?: ReactNode;
+  /**
+   * 平台只列「常用」（已勾選的其他平台仍保留）。其他平台清單約 190 個核取方塊，伺服器元件的內容會同時出現在 HTML 與
+   * 客戶端元件的 flight 資料裡（各約 100 KB）；評分排名頁用它把整頁 HTML 壓在 200 KB 內（平台類型與網址參數仍可篩任何平台）。
+   */
+  commonPlatformsOnly?: boolean;
 }
 
-export function FilterPanel({ locale, t, options, spec, action, fields, hidden, clearHref }: FilterPanelProps): ReactElement {
+export function FilterPanel({ locale, t, options, spec, action, fields, hidden, clearHref, extraFields, commonPlatformsOnly }: FilterPanelProps): ReactElement {
   const count = countFilterValues(spec);
   const summary = count > 0 ? t.t("filters.titleWithCount", { count }) : t.t("filters.title");
   const common = options.platforms.filter((p) => p.isCommon);
-  const others = options.platforms.filter((p) => !p.isCommon);
+  const others = options.platforms.filter((p) => !p.isCommon && (!commonPlatformsOnly || hasFilterValue(spec, "platform", p.slug)));
   const othersChecked = others.some((p) => hasFilterValue(spec, "platform", p.slug));
   const list = (values: readonly string[], label: (v: string) => string) => joinList(locale, values.map(label));
 
@@ -380,6 +386,7 @@ export function FilterPanel({ locale, t, options, spec, action, fields, hidden, 
               return null;
           }
         })}
+        {extraFields}
         <div className="flex flex-wrap gap-3">
           <button type="submit" className="btn-primary">
             {t.t("filters.apply")}

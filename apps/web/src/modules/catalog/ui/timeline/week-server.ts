@@ -2,7 +2,7 @@
  * 時間軸（週）的資料載入（伺服器端）：頁面與 route handler 共用，只有這裡呼叫 Use Case 並轉成畫面資料。
  * 篩選與月曆共用 FilterSpec；`from`／`to`（日期範圍）對「一週」沒有意義，這裡一律略過。
  */
-import { filterSpecToQueryString, isValidIsoDate, type FilterSpec } from "@sok/api-contract";
+import { filterSpecToQueryString, type FilterSpec } from "@sok/api-contract";
 import { formatIsoDate, type Locale, type Translator } from "@sok/i18n";
 import type { IgnoredFilterValue, IsoDate } from "../../domain/entities";
 import { getTimelineWeek } from "../../use-cases/read";
@@ -12,7 +12,7 @@ import { filterSpecForPage } from "../filters/filter-labels";
 import { getTranslator } from "../labels";
 import { localeHref } from "../links";
 import type { TimelineWeekData, WeekDayData, WeekNavLink } from "./week-types";
-import { addDays, isoWeekOf, parseWeekParam, weekStartOf } from "./week";
+import { addDays, explicitWeekStart, isoWeekOf, weekStartOf } from "./week";
 
 export interface TimelineWeekQuery {
   locale: Locale;
@@ -56,13 +56,7 @@ function navLink(locale: Locale, query: string, start: string | null, kind: "pre
 
 /** 決定要顯示哪一週（星期一的日期）：`week` → `at` 所在週 → 今天所在週。 */
 export function resolveWeekStart(q: Pick<TimelineWeekQuery, "week" | "at">, today: IsoDate): string {
-  const fromWeek = q.week ? parseWeekParam(q.week) : null;
-  if (fromWeek) return fromWeek;
-  if (q.at && isValidIsoDate(q.at)) {
-    const s = weekStartOf(q.at);
-    if (s) return s;
-  }
-  return weekStartOf(today) ?? today;
+  return explicitWeekStart(q.week, q.at) ?? weekStartOf(today) ?? today;
 }
 
 export async function loadTimelineWeek(q: TimelineWeekQuery): Promise<{ data: TimelineWeekData; ignored: IgnoredFilterValue[] }> {

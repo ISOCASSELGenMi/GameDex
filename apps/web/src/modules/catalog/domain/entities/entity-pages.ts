@@ -77,20 +77,24 @@ export interface PlatformInfo extends PlatformListItem {
  * upcoming＝未標為已上市且結束日 ≥ 今天；recent＝已上市（status released 或結束日 < 今天）、代表日期 ≤ 今天，
  * 且結束日在今天前 recentDays 天內。
  */
-export type PlatformGamesSection = "upcoming" | "recent";
-export const PLATFORM_GAMES_SECTIONS: readonly PlatformGamesSection[] = ["upcoming", "recent"];
+export type PlatformGamesSection = "upcoming" | "recent" | "all";
+export const PLATFORM_GAMES_SECTIONS: readonly PlatformGamesSection[] = ["upcoming", "recent", "all"];
 
-/** date＝upcoming 舊到新／recent 新到舊（同日依熱度）；popularity＝popularityScore 高到低（同分依日期）。 */
-export type PlatformGamesSort = "date" | "popularity";
-export const PLATFORM_GAMES_SORTS: readonly PlatformGamesSort[] = ["date", "popularity"];
+/**
+ * date＝upcoming 舊到新／recent、all 新到舊（同日依熱度；all 的日期未定者排最後）；
+ * popularity＝popularityScore 高到低（同分依日期）；name＝顯示名稱 A→Z。
+ * all 區段（該平台過往與未來所有上市列，不限天數與上市狀態）預設用 date（新到舊）。
+ */
+export type PlatformGamesSort = "date" | "popularity" | "name";
+export const PLATFORM_GAMES_SORTS: readonly PlatformGamesSort[] = ["date", "popularity", "name"];
 
 /**
  * 平台頁的一筆：聚合規則（地區偏好、manual 優先…，與月曆相同）挑出的「該平台」代表上市列，一筆＝(遊戲, 階段)；
  * 同一款遊戲在此平台有多個可見階段（例如搶先體驗＋正式版）時會有多筆。日期不是 games.firstReleaseDate。
  */
 export interface PlatformGameItem extends GameListItem {
-  /** 該平台、該階段的代表日期（month 精度＝當月 1 日；quarter／year＝期間最後一天）。 */
-  date: IsoDate;
+  /** 該平台、該階段的代表日期（month 精度＝當月 1 日；quarter／year＝期間最後一天）；all 區段日期未定者為 null。 */
+  date: IsoDate | null;
   precision: DatePrecision;
   stage: ReleaseStage;
 }

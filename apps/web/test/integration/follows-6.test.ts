@@ -594,7 +594,7 @@ describe.skipIf(!enabled)("accounts 第 6 波：追蹤、熱度訊號、我的�
       expect(on.popularitySignals.map((s) => s.name)).toEqual(["site_follows", "site_follows_7d"]);
       expect(on.gameFilters.map((f) => f.dimension)).toEqual(["mine"]);
       const off = collectCatalogExtensions(enabledModules({ MODULES: "none" }));
-      expect(off).toEqual({ popularitySignals: [], gameFilters: [] });
+      expect(off).toEqual({ popularitySignals: [], gameFilters: [], ratingColumns: [] });
     });
 
     it("GET /me/games?mine=followed：遊戲卡片＋最近的上市日（未來最早 → 日期未定 → 過去）；no-store", async () => {

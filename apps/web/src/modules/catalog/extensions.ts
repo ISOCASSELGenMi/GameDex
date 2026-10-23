@@ -1,22 +1,28 @@
 /**
- * catalog 的執行期擴充點（02 §Manifest 與擴充點）：已啟用的可選模組提供的 PopularitySignal、GameFilterProvider。
+ * catalog 的執行期擴充點（02 §Manifest 與擴充點）：已啟用的可選模組提供的 PopularitySignal、GameFilterProvider、RatingColumn。
  * catalog 不 import 可選模組；由 `modules/registry.ts` 在載入時呼叫 `setCatalogExtensions()` 注入。
  * 放在 globalThis：Next 的 instrumentation（排程）與各 route 是不同的 bundle，要共用同一份。
  * 沒有注入（模組全停用、或測試沒設）＝沒有任何提供者，行為與擴充點不存在時完全相同。
  */
-import type { GameFilterProvider, PopularitySignal } from "./domain/entities";
+import type { GameFilterProvider, PopularitySignal, RatingColumn } from "./domain/entities";
 
 export interface CatalogExtensionSet {
   popularitySignals: readonly PopularitySignal[];
   gameFilters: readonly GameFilterProvider[];
+  /** 評分排名頁的額外分數欄（accounts 的玩家平均、日後 metacritic 的 Metascore／Userscore）。 */
+  ratingColumns: readonly RatingColumn[];
 }
 
-const EMPTY: CatalogExtensionSet = { popularitySignals: [], gameFilters: [] };
+const EMPTY: CatalogExtensionSet = { popularitySignals: [], gameFilters: [], ratingColumns: [] };
 
 const g = globalThis as typeof globalThis & { __sokCatalogExtensions?: CatalogExtensionSet };
 
 export function setCatalogExtensions(ext: Partial<CatalogExtensionSet>): void {
-  g.__sokCatalogExtensions = { popularitySignals: ext.popularitySignals ?? [], gameFilters: ext.gameFilters ?? [] };
+  g.__sokCatalogExtensions = {
+    popularitySignals: ext.popularitySignals ?? [],
+    gameFilters: ext.gameFilters ?? [],
+    ratingColumns: ext.ratingColumns ?? [],
+  };
 }
 
 export function getCatalogExtensions(): CatalogExtensionSet {

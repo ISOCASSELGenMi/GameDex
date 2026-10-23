@@ -132,14 +132,50 @@ export interface EventTimeText {
   end: string | null;
 }
 
-const TIME_ONLY: Intl.DateTimeFormatOptions = { hour: "numeric", minute: "2-digit", timeZoneName: "short" };
-
 function dayKeyInZone(d: Date, timeZone: string): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
 }
 
+/** 時區縮寫：UTC 顯示「UTC」，其他一律「GMT+8」這種偏移（與語系無關，使用者最容易對照）。 */
+function zoneLabel(d: Date, zone: string): string {
+  const name = zone === "UTC" ? "short" : "shortOffset";
+  return new Intl.DateTimeFormat("en-US", { timeZone: zone, timeZoneName: name }).formatToParts(d).find((p) => p.type === "timeZoneName")?.value ?? zone;
+}
+
 /**
- * 活動時間（開始，選填結束）依 `timeZone` 格式化——活動時間顯示的唯一實作。
+ * 單行活動時間（本地時間＋時區縮寫）。zh-Hant、ja：`2026/10/24 03:00 GMT+8`（24 小時制）；en：`Oct 24, 2026, 3:00 AM GMT+8`。
+ * timeOnly＝只要時間（結束與開始同一天時用）。
+ */
+function formatEventInstant(iso: string, locale: Locale, zone: string, timeOnly: boolean): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  const tz = zoneLabel(d, zone);
+  if (locale === "en") {
+    const base = new Intl.DateTimeFormat("en-US", {
+      timeZone: zone,
+      ...(timeOnly ? {} : { year: "numeric", month: "short", day: "numeric" }),
+      hour: "numeric",
+      minute: "2-digit",
+    }).format(d);
+    return `${base} ${tz}`;
+  }
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: zone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(d);
+  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "";
+  const time = `${get("hour")}:${get("minute")}`;
+  return timeOnly ? `${time} ${tz}` : `${get("year")}/${get("month")}/${get("day")} ${time} ${tz}`;
+}
+
+/**
+ * 活動時間（開始，選填結束）依 `timeZone` 格式化——活動時間顯示的唯一實作。只輸出一行本地時間，後面標註時區縮寫
+ * （例如 `2026/10/24 03:00 GMT+8`），不再另外補 UTC。
  * 結束與開始在**該時區**同一天 → 結束只顯示時間（所以同一場活動換時區後，是否跨日可能不同）。
  * 時區不合法（Intl 丟 RangeError）→ 退回 UTC。不合法的時間字串原樣回傳。
  */
@@ -150,10 +186,10 @@ export function formatEventTimeText(startIso: string, endIso: string | null, loc
   } catch {
     zone = "UTC";
   }
-  const start = formatDateTime(startIso, locale, zone);
+  const start = formatEventInstant(startIso, locale, zone, false);
   const s = new Date(startIso);
   const e = endIso ? new Date(endIso) : null;
   if (!e || Number.isNaN(e.getTime()) || Number.isNaN(s.getTime()) || e.getTime() === s.getTime()) return { start, end: null };
   const sameDay = dayKeyInZone(s, zone) === dayKeyInZone(e, zone);
-  return { start, end: formatDateTime(endIso as string, locale, zone, sameDay ? TIME_ONLY : undefined) };
+  return { start, end: formatEventInstant(endIso as string, locale, zone, sameDay) };
 }

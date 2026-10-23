@@ -17,7 +17,7 @@ import { genreLabel, platformKindLabel, regionLabel, stageLabel } from "../label
 import { withQuery } from "../links";
 
 /** 使用 FilterSpec 的頁面。 */
-export type FilterPage = "calendar" | "timeline" | "trending" | "browse";
+export type FilterPage = "calendar" | "timeline" | "trending" | "browse" | "ratings";
 
 /**
  * 各頁適用的參數（spec 06 §篩選 表格）。不適用的參數在該頁靜默略過（不顯示 chip、不帶進連結）。
@@ -30,6 +30,8 @@ export const PAGE_FILTER_PARAMS: Readonly<Record<FilterPage, readonly FilterPara
   calendar: ["platform", "platformKind", "genre", "theme", "type", "stage", "status", "region", "minHeat", "show", "rumored", "company", "franchise"],
   timeline: ["platform", "platformKind", "genre", "theme", "type", "stage", "status", "region", "from", "to", "minHeat", "rumored", "company", "franchise"],
   trending: ["platform", "platformKind", "genre"],
+  // 評分排名（Z2B）：遊戲層級維度＋首發年份。`sort` 不在內（那一頁的 sort 是評分欄位 id，不是 FilterSort）；dir／minVotes／page 不屬於 FilterSpec
+  ratings: ["platform", "platformKind", "genre", "theme", "type", "status", "year", "yearFrom", "yearTo", "company", "franchise"],
   browse: [
     "platform",
     "platformKind",

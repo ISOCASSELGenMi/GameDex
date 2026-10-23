@@ -50,17 +50,32 @@ export interface FilterReadQuery {
   q?: string;
   /** 瀏覽排序；預設 popularity。 */
   sort: FilterSort;
-  /** 月曆／時間軸：顯示上市、活動；`show` 未給＝兩者都顯示。 */
-  show: { releases: boolean; events: boolean };
+  /** 月曆：顯示遊戲上市、活動；`show` 未給＝只顯示遊戲（GameDex 第 2 輪：活動預設關閉，開關在月曆上方）。 */
+  show: ShowSet;
+}
+
+/** 月曆「遊戲／活動」兩個顯示開關的狀態。 */
+export interface ShowSet {
+  releases: boolean;
+  events: boolean;
+}
+
+/** `show` 未給的預設：只開遊戲。網址上不寫預設值。 */
+export const DEFAULT_SHOW: ShowSet = { releases: true, events: false };
+
+/**
+ * FilterSpec 的 `show` → 開關狀態（月曆頁、day API 共用的唯一實作）。
+ * 未給（或給的全是無效值，已被 parse 丟掉）＝預設；兩個都關不可能出現（沒有 releases 也沒有 events 的值不存在）。
+ */
+export function showFromSpec(spec: Pick<FilterSpec, "show">): ShowSet {
+  if (!spec.show?.length) return { ...DEFAULT_SHOW };
+  return { releases: spec.show.includes("releases"), events: spec.show.includes("events") };
 }
 
 export function filterSpecToReadQuery(spec: FilterSpec): FilterReadQuery {
   let yearFrom = spec.year ?? spec.yearFrom;
   let yearTo = spec.year ?? spec.yearTo;
   if (yearFrom !== undefined && yearTo !== undefined && yearFrom > yearTo) [yearFrom, yearTo] = [yearTo, yearFrom];
-  const show = spec.show?.length
-    ? { releases: spec.show.includes("releases"), events: spec.show.includes("events") }
-    : { releases: true, events: true };
   return {
     filter: filterSpecToReleaseFilter(spec),
     ...(spec.region ? { regionPref: spec.region } : {}),
@@ -70,7 +85,7 @@ export function filterSpecToReadQuery(spec: FilterSpec): FilterReadQuery {
     ...(yearTo !== undefined ? { yearTo } : {}),
     ...(spec.q ? { q: spec.q } : {}),
     sort: spec.sort ?? "popularity",
-    show,
+    show: showFromSpec(spec),
   };
 }
 

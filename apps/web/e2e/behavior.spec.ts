@@ -2,7 +2,7 @@
  * 行為（06 §月曆、§篩選、§多語系、§SEO 與快取；14 §前端；15 Phase 3a 完成標準）。
  * 一律以固定月份網址進入（fixture 2036-05），不依賴「今天」。
  */
-import { FIXTURE, calendarUrl, expect, gameUrl, msg, test, waitForCalendarReady } from "./support/helpers";
+import { FIXTURE, calendarUrl, expect, gameUrl, msg, openHeaderMenu, test, waitForCalendarReady } from "./support/helpers";
 
 const MOBILE = { width: 375, height: 812 };
 const grid = ".cal-grid";
@@ -65,7 +65,7 @@ test.describe("月曆", () => {
   });
 
   test("階段、延期、來源待確認以圖示＋文字顯示（不只靠顏色）；活動有圖示＋文字", async ({ page }) => {
-    await page.goto(calendarUrl("zh-Hant", FIXTURE.month));
+    await page.goto(calendarUrl("zh-Hant", FIXTURE.month, "show=events,releases")); // 月曆預設不顯示活動（Z2B）：要看活動需明確打開
     await waitForCalendarReady(page);
     // 搶先體驗（Busy Day Game 03，第三款）
     const busy = page.locator(cellOf(FIXTURE.busyDay));
@@ -172,6 +172,7 @@ test.describe("多語系與快取標頭", () => {
     const q = `platform=${FIXTURE.platformPs5}`;
     await page.goto(calendarUrl("zh-Hant", FIXTURE.month, q));
     await expect(page.locator("html")).toHaveAttribute("lang", "zh-Hant");
+    await openHeaderMenu(page, "language");
     const menu = page.getByRole("navigation", { name: msg("zh-Hant", "a11y.languageMenu") });
     const en = menu.locator('a[hreflang="en"]');
     await expect(en).toHaveAttribute("href", calendarUrl("en", FIXTURE.month, q));
@@ -180,6 +181,7 @@ test.describe("多語系與快取標頭", () => {
 
     await page.goto(gameUrl("en", FIXTURE.hero.slug));
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
+    await openHeaderMenu(page, "language");
     await expect(page.getByRole("navigation", { name: msg("en", "a11y.languageMenu") }).locator('a[hreflang="zh-Hant"]')).toHaveAttribute(
       "href",
       gameUrl("zh-Hant", FIXTURE.hero.slug),
@@ -199,7 +201,8 @@ test.describe("詳情頁", () => {
       await expect(a).toHaveAttribute("rel", /noopener/);
     }
     await expect(page.locator("#sec-similar").locator("xpath=..")).toContainText("Similar Quest");
-    await expect(page.locator("#sec-dlc").locator("xpath=..")).toContainText("Frost Expansion");
+    // DLC／資料片改由「相關內容」區顯示（Z4B；舊的 #sec-dlc 已移除）
+    await expect(page.locator("#related")).toContainText("Frost Expansion");
     await expect(page.locator("[id^=sec-franchise-]").first().locator("xpath=..")).toContainText("Aurora Prequel");
     // 英文簡介標 lang
     await expect(page.locator('[lang="en"]', { hasText: "northern lights" })).toHaveCount(1);

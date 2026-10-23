@@ -4,6 +4,7 @@
  */
 import { connection } from "next/server";
 import { notFound } from "next/navigation";
+import { cacheLife } from "next/cache";
 import { cache, type ReactElement } from "react";
 import { formatIsoDate, formatReleaseLabel, type Locale, type Translator } from "@sok/i18n";
 import type { PlatformListItem, PlatformPage } from "../../domain/entities";
@@ -13,7 +14,7 @@ import { getTranslator, platformKindLabel, regionLabel } from "../labels";
 import { PageShell } from "../layout/page-shell";
 import { platformHref, platformsHref, subscribeHref } from "../links";
 import { reportHref } from "../report/links";
-import { rethrowForPage } from "../page-errors";
+import { rethrowForPage, timeoutMarkerOrRethrow, unwrapCachedForPage, type CachedTimeout } from "../page-errors";
 import { EntityActions, EntityGameList, EntityLogo, LinkTabs, Pager, type EntityActionsRenderer } from "./shared";
 import {
   firstParam,
@@ -105,12 +106,41 @@ export async function PlatformsOverviewPage({
 
 // ── 平台頁 ──────────────────────────────────────────────────────────────
 
+/**
+ * 「全部遊戲」區段要對該平台所有上市列套聚合規則（PC 約 18 萬款，開發 DB 約 1.3 秒），
+ * 結果 15 分鐘內共用（熱度每小時才重算；上市列由每小時同步寫入）。upcoming／recent 查詢範圍小，不快取。
+ */
+async function readPlatformAllCached(
+  slug: string,
+  locale: string,
+  sort: string,
+  limit: number,
+  offset: number,
+): Promise<PlatformPage | null | CachedTimeout> {
+  "use cache";
+  try {
+    const res = await getPlatformPage({ slug, locale, section: "all", sort, limit, offset });
+    if (res) cacheLife({ stale: 300, revalidate: 900, expire: 3600 });
+    else cacheLife("seconds");
+    return res;
+  } catch (err) {
+    // 逾時要在快取邊界內攔下（見 page-errors.ts）；其他錯誤原樣丟出
+    const marker = timeoutMarkerOrRethrow(err);
+    cacheLife("seconds");
+    return marker;
+  }
+}
+
 /** generateMetadata 與頁面共用（React cache：同一請求只查一次）。 */
 export const loadPlatformPage = cache(
   async (slug: string, locale: Locale, section: string, sort: string, page: number): Promise<PlatformPage | null> => {
     await connection();
     try {
-      return await getPlatformPage({ slug: safeDecode(slug), locale, section, sort, ...pagingForPage(page) });
+      const paging = pagingForPage(page);
+      if (section === "all") {
+        return unwrapCachedForPage(await readPlatformAllCached(safeDecode(slug), locale, sort, paging.limit, paging.offset));
+      }
+      return await getPlatformPage({ slug: safeDecode(slug), locale, section, sort, ...paging });
     } catch (err) {
       rethrowForPage(err);
     }
@@ -237,6 +267,7 @@ export async function PlatformDetailPage({
           items={[
             { key: "upcoming", href: hrefFor(1, { section: "upcoming" }), text: t.t("ui.platforms.upcoming"), current: section === "upcoming" },
             { key: "recent", href: hrefFor(1, { section: "recent" }), text: t.t("ui.platforms.recent"), current: section === "recent" },
+            { key: "all", href: hrefFor(1, { section: "all" }), text: t.t("ui.platforms.all"), current: section === "all" },
           ]}
         />
         <LinkTabs
@@ -244,16 +275,19 @@ export async function PlatformDetailPage({
           items={[
             { key: "date", href: hrefFor(1, { sort: "date" }), text: t.t("ui.platforms.sortDate"), current: sort === "date" },
             { key: "popularity", href: hrefFor(1, { sort: "popularity" }), text: t.t("ui.platforms.sortPopularity"), current: sort === "popularity" },
+            { key: "name", href: hrefFor(1, { sort: "name" }), text: t.t("ui.platforms.sortName"), current: sort === "name" },
           ]}
         />
         <p className="mt-2 text-sm text-[var(--muted)]">
-          {section === "recent" ? t.t("ui.platforms.recentHint") : t.t("ui.platforms.upcomingHint")}
+          {section === "all" ? t.t("ui.platforms.allHint") : section === "recent" ? t.t("ui.platforms.recentHint") : t.t("ui.platforms.upcomingHint")}
         </p>
         <p role="status" className="mt-1 text-sm text-[var(--muted)]">
           {t.t("ui.entities.shownOnPage", { count: data.games.items.length })}
         </p>
         {data.games.items.length === 0 ? (
-          <p className="mt-4">{section === "recent" ? t.t("ui.platforms.emptyRecent") : t.t("ui.platforms.emptyUpcoming")}</p>
+          <p className="mt-4">
+            {section === "all" ? t.t("ui.platforms.emptyAll") : section === "recent" ? t.t("ui.platforms.emptyRecent") : t.t("ui.platforms.emptyUpcoming")}
+          </p>
         ) : (
           <EntityGameList items={data.games.items} locale={locale} t={t} />
         )}

@@ -22,6 +22,9 @@ fields
   genres.name, themes.name,
   aggregated_rating, aggregated_rating_count,
   game_type, game_status, parent_game, hypes,
+  storyline, version_parent, version_title,
+  game_modes.name, game_modes.slug, player_perspectives.name, player_perspectives.slug,
+  game_engines.name, game_engines.slug,
   screenshots.image_id, videos.video_id,
   alternative_names.name, alternative_names.comment,
   age_ratings.*, game_localizations.*,
@@ -53,6 +56,8 @@ limit 500;
 **相似遊戲、活動關聯**：只存原始 id（`games.similarIgdbIds`、`events.gameIgdbIds`），再批次解析（03 §相似遊戲）。
 
 **媒體**：截圖取前 6 張、影片取第一支。
+
+**詳情頁補充欄位**（第二輪，03 §詳情頁補充欄位）：`storyline`（字串）→ `games.storyline`；`version_parent`（整數 IGDB id）、`version_title`（字串）→ `games.version_parent_id`／`version_title`；`game_modes`、`player_perspectives`、`game_engines` 展開 `name`／`slug` → 各自的分類表 upsert（以 `igdb_id`）與關聯表整組取代（寫入邏輯唯一在 `replaceDetailRelations`，完整同步與只更新模式共用）。部分遊戲沒有 `game_engines`、`storyline`，視為空。這些欄位**不寫 `change_feed`**，也不推進 `updated_at`／`last_full_sync_at`（只更新模式見 §詳情欄位回填）。增量同步、既有回填與滾動校對的 `GAME_FIELDS` 都自動帶新欄位。
 
 **在地化名稱**：`alternative_names` 用於**搜尋**（寫進 `searchText`）；顯示名稱的解析鏈見 06 §多語系。
 
@@ -204,6 +209,20 @@ WHERE status IN ('scheduled', 'delayed') AND precision = 'day' AND release_date 
 - 以一次性 container 執行（`docker compose run --rm`，不對外開 5432），先備份。
 - 手機平台（`platformKind='mobile'`）的上市日不寫入 `release_events`；只上手機的遊戲不收（P35）。
 
+### 詳情欄位回填 `backfill_detail_fields`
+
+新欄位上線時資料庫裡已有約 31.7 萬款遊戲，不能等增量同步慢慢補，所以有一個**只補這 9 個欄位**的手動任務（Z4，2026-10-23）：
+
+- 執行：`npm run job -- backfill_detail_fields [--max-batches N] [--restart]`；`lockMode: "session"`、手動、無 cron；速率沿用 `BACKFILL_MAX_REQ_PER_SEC`（預設 2）。
+- 分批：依 `games.igdb_id` 升冪、每批 500 款：`SELECT igdb_id FROM games WHERE igdb_id > {cursor} ORDER BY igdb_id LIMIT 500` → `fetchGames({ ids, fieldSet: "detail", limit: 500 })`（`where id = (...)`，只取 `GAME_DETAIL_FIELDS`）→ `writeGameBatch(..., { detailOnly: true })`。來源沒回的 id 略過；資料庫沒有的遊戲不會被請求。`detailOnly` 沒有另開寫入路徑，也不套用手機平台過濾（既有遊戲在首次寫入時已過濾，且此欄位集不含平台）。
+- 只更新模式（`syncGameDetailFields`）：只寫上述欄位與三個關聯表；`updated_at` 與 `last_full_sync_at` 保持不變（`updated_at` 有 `$onUpdate`，所以明確寫回自身值），不寫 `change_feed`。
+- 續跑：進度存 `sync_state[igdb_backfill_detail].cursor`（JSON `{ afterId, done, startedAt }`），`meta.totals` 累計；每批寫完才推進，中斷後再執行即從 cursor 續跑；`--restart` 從頭；`--max-batches` 分段。單款失敗記在 `meta.totals.failedIgdbIds`（上限 500），有失敗時任務結尾丟錯，但 cursor 已推進。
+- **實測**（開發 DB，2026-10-23）：316,955 款 → 634 批，16.5 分鐘，0 失敗；結果 storyline 31,208 款、遊戲人數關聯 315,710 筆、引擎關聯 89,153 筆。瓶頸在資料庫寫入（每款一個 transaction），不是速率限制。事前估計 20～45 分鐘，實際較快。
+
+### 顯示名稱重算 `recompute_display_names`
+
+`games.display_names` 只在同步時計算（06 §遊戲名稱解析鏈），名稱規則改動後舊資料不會自動更新。手動任務：`npm run job -- recompute_display_names [--batch-size N]`（預設 1,000；`lockMode: "session"`、無 cron）。依 id 遞增掃全庫，用與同步相同的 `resolveDisplayNames` 重算，**只更新與現值不同的列、只寫 `display_names`**（不碰 `search_text`、`updated_at`、`change_feed`，不打 IGDB）；每批一個 transaction，結束 log 掃描／更新／移除 zh-Hant 的數量；冪等。2026-10-18 以同一邏輯的腳本對開發 DB 重算過一次（1,693 款補上 zh-Hant）；任務本身尚未在開發 DB 執行過。
+
 ## 平台同步
 
 每日一次，整表重抓 `platforms`、`platform_families` 與平台版本上市日（`platform_versions` → `platform_release_dates`，同平台同地區取最早）。`platform_type` 轉 `platformKind`，未知 → `other`。`source='manual'` 不覆蓋。
@@ -269,6 +288,9 @@ interface GameDataProvider {
 | `resolve_relations`（相似遊戲、活動關聯） | 每日＋回填每批後 | tx |
 | `rolling_refresh` | 每晚 | session |
 | `backfill_games` | 手動 | session |
+| `backfill_detail_fields`（詳情欄位回填） | 手動 | session |
+| `recompute_display_names` | 手動 | session |
+| `publish_player_ratings`（`accounts`，09） | 每小時第 27 分 | session |
 | `refresh_popularity` | 每小時／每日（03 §熱度） | tx |
 | `check_external_links`（失效連結） | 每週 | tx |
 

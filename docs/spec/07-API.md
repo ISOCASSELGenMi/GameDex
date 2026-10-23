@@ -21,14 +21,35 @@ GET  /api/v1/events/{slug}
 GET  /api/v1/platforms | /platforms/{slug} | /companies/{slug} | /franchises/{slug}
 GET  /api/v1/search?q=                    全站搜尋（遊戲、平台、公司、系列、活動）
 GET  /api/v1/calendar/day?date=YYYY-MM-DD&locale=&<篩選>   月曆／時間軸同日其他款（按需載入；同一套篩選與聚合）；
+                                          `show`（篩選之一）不含 releases 時不查遊戲，回 { date, total: 0, cards: [] }；200 { date, total, cards }（單日上限 500 張）；
+                                          400 invalid_locale｜invalid_date、503 timeout；
                                           Cache-Control: public, max-age=60, s-maxage=300, stale-while-revalidate=300
 GET  /api/v1/timeline/week?locale=&week=YYYY-Www&at=&<篩選>   週時間軸資料；400 invalid_locale、503 timeout；快取同上
+GET  /api/v1/games/suggest?q=&locale=&limit=1..10   搜尋框候選（公開）；沒帶 q → 400 { code: "q_required" }，空白 q → { items: [] }，
+                                          逾時 503 { code: "unavailable" }；limit 預設 8、最多 10；locale 不合法時忽略；
+                                          200 { items: [{ slug, name（依 locale）, originalName, coverUrl, year, platforms[] }] }；
+                                          排序：名稱完全相同 → 開頭符合 → 熱度（候選池為符合者中熱度前 120 筆＋完全同名者）；
+                                          平台依名稱排序最多 3 個、不含 mobile；查詢經 tokenizeForSearch（06 §瀏覽與搜尋）；
+                                          Cache-Control: public, max-age=30, s-maxage=60
+GET  /api/v1/games/group?locale=&by=date|platform|publisher&key=&offset=&limit=&<篩選，含 q、sort、year>
+                                          /games 分組檢視某一組的接續卡片（「顯示更多」按需載入）；key：date＝YYYY-MM｜YYYY-Qn｜YYYY｜tbd、
+                                          platform＝平台 slug、publisher＝廠商欄 key（06、docs/design/publisher-groups.md）；
+                                          offset 預設 0、limit 預設 24、最多 60；200 { key, total, cards[] }；
+                                          400 { error: invalid_locale｜invalid_by（缺少、none 或未知）｜invalid_key｜invalid_paging }、503 { error: "timeout" }；
+                                          篩選與頁面共用 buildBrowseConditions；Cache-Control: public, max-age=60, s-maxage=300, stale-while-revalidate=300
+GET  /api/v1/ratings/ranking?locale=&<篩選>&sort=<欄位 id>&dir=asc|desc&minVotes=0..100000&page=1..20&prev=<上一個排序欄>&chunk=1
+                                          評分排名頁切換排序／載入更多（06 §評分排名）；sort 未知或模組停用 → 預設欄 igdb；minVotes 省略＝該欄預設；
+                                          page 預設累計前 page 頁（每頁 50），chunk=1 只回第 page 頁；有 prev 時每列帶 prevRank；
+                                          200 RatingsRankingResponse；400 { error: "invalid_locale" }、503 { error: "timeout" }；
+                                          Cache-Control: public, max-age=60, s-maxage=300, stale-while-revalidate=300
 POST /api/v1/reports                      資料更正回報（允許匿名，rate limit＋人機驗證，12）
 ```
 
 **帳號（accounts）**
 
 ```
+GET  /api/v1/auth/public-config          { signupEnabled, socialProviders[] }（公開，不含 secret；header 帳號下拉決定是否顯示「註冊」用，
+                                         因頁面預渲染不能烤進 ACCOUNTS_SIGNUP_ENABLED）；Cache-Control: public, max-age=300；非 GET 回 404
 /api/v1/auth/*                           Better Auth 提供（basePath /api/v1/auth，D81），不在 OpenAPI：
                                          sign-up/email、sign-in/email、sign-out、verify-email、request-password-reset、reset-password、
                                          sign-in/social、callback/{provider}（discord|google|twitch|twitter|microsoft）、get-session；
@@ -45,7 +66,16 @@ GET    /api/v1/account/export?format=json|csv[&part=profile|lists|list_games|pla
                                          JSON 單檔；CSV 每段一檔（UTF-8 BOM、CRLF、防公式注入）。不含密碼雜湊、任何 token、feed token、
                                          shareToken；含 role、handle、emailVerified（placeholder 信箱標 emailIsPlaceholder）。
                                          attachment、no-store；每人每小時 12 次
-GET    /api/v1/account/summary           帳號頁摘要 { lists, playRecords, follows }（本人；401；停權 403；no-store）
+GET    /api/v1/account/summary           帳號頁摘要 { lists, playRecords, follows }（本人；401；停權 403；no-store）；follows 只算 targetType=game（D86）
+GET    /api/v1/me/unlocks                本人的解鎖紀錄 { unlocks: [{ type: theme｜collectible｜achievement, key, at(ISO UTC) }] }（依 type、key 排序）。
+                                         副作用：先把帳號資料判定的成就（first-follow、first-list、first-ical-subscribe）寫入 user_unlocks，
+                                         所以視同寫入：401 未登入、停權者 403 account_suspended；no-store
+POST   /api/v1/me/unlocks                body { unlocks: [{ type, key, at }] }，最多 100 筆（超過 400 validation_failed fields { unlocks: too_many }；
+                                         缺欄位或非陣列 400 { unlocks: required }）。檢查順序：Origin 403 invalid_origin → 401 → 停權 403 account_suspended →
+                                         限流 429 rate_limited（每人每小時 300 次，Retry-After）。未知 type／key、壞時間的項目靜默丟棄；去重取較早；
+                                         at 超過現在 5 分鐘夾成現在；寫入冪等（unlocked_at 取 LEAST）。all-achievements 只有前置四項
+                                         （viewed-50-games、first-ical-subscribe、first-follow、first-list）都在帳號時才接受。
+                                         200 回合併後完整清單（同 GET）；其他方法 405；no-store
 GET|PATCH /api/v1/account/preferences     displayName、locale、timezone（IANA）、preferredRegion、scoreProviders、preferredPlatformIds、
                                          defaultListVisibility、defaultReviewVisibility；PATCH 回 { preferences, changed }；每人每小時 120 次
 （綁定／解除／列出登入方式不另設 /account/connections：由 Better Auth 的 list-accounts、unlink-account、link-social 與
@@ -94,6 +124,8 @@ GET              /api/v1/imports/{provider}/games/{ownedGameId}/candidates   比
 GET              /api/v1/games/search?q=   遊戲搜尋（catalog，公開 s-maxage=60），手動指定時用
 
 停權者（users.suspendedAt）：可登入，但所有新增／修改內容的端點回 403 account_suspended；匯出與刪除帳號照常（D83）。
+資料匯出 JSON 頂層新增 `unlocks: [{ type, key, at }]`（exportVersion 仍為 1，純新增欄位；CSV 不加分段）；刪除帳號時 `user_unlocks` 隨 FK cascade 刪除。
+
 以上帳號端點一律 no-store（另註公開快取者除外）；寫入要求 Origin 受信任（403 invalid_origin）；錯誤格式 { code }，
 欄位錯誤 400 { code: "validation_failed", fields }。
 ```
@@ -130,6 +162,8 @@ GET    /api/v1/discord-guilds/{guildId}/announcements/next   依伺服器篩選�
 網站的「建立 Discord 活動」按鈕由網站後端直接呼叫 Discord REST API（10），不經 Bot。
 
 模組停用時，其端點經 `guardModule` 回 404。
+
+**已刪除**：舊時間軸端點 `GET /api/timeline`、`/api/timeline/group`、`/api/timeline/history`（D85 決定、2026-10-22 刪除，現回 404），連同其 use case、repository 與 cursor 分頁；時間軸只剩 `GET /api/v1/timeline/week` 與 `calendar/day`。第二輪曾短暫存在的 `GET /api/v1/releases/column` 也已刪除（D87）。
 
 ## 分頁
 

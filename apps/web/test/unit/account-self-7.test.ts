@@ -199,6 +199,7 @@ const SAMPLE: AccountExport = {
     { provider: "steam", externalGameId: "10", externalTitle: "Title", status: "matched", matchedGameId: 9, matchedGameSlug: "g9", matchedGameName: "Game 9", matchConfidencePct: 100, matchMethod: "auto", importedAt: "2026-10-06T00:00:00.000Z" },
   ],
   privateCalendar: null,
+  unlocks: [],
 };
 
 describe("exportCsvPart", () => {
