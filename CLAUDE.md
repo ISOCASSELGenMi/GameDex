@@ -23,7 +23,7 @@
 - ✅ Phase 0 環境、✅ Phase 1 kernel／catalog schema／lint:arch／core-only CI（2026-10-12）
 - ✅ **Phase 2a IGDB 同步**（2026-10-13）：sync_platforms、sync_games（每小時增量）、Tier 1 回填，真實資料已寫入本機 DB
 - ✅ **Phase 2b**（2026-10-13）：resolve_relations、Tier 2 回填（真實資料已跑完）、sync_events、rolling_refresh、字典漂移偵測
-- GitHub：private repo `ISOCASSELGenMi/SoK-GameDB`（remote `origin`）
+- GitHub：**public repo `ISOCASSELGenMi/GameDex`**（remote `origin`；2026-10-23 起，作者 email 已改寫為 noreply，本 repo 的 `user.email` 設為 noreply，不要改回個人信箱）。舊 private repo `ISOCASSELGenMi/SoK-GameDB` 保留當備份（remote `private`），下面 PR #1～#17 指的是舊 repo
 - ✅ **Phase 3a 網站**（2026-10-13，分支 `feat/phase3a`）：月曆＋詳情＋聚合＋基本篩選＋i18n（zh-Hant、en）＋test:a11y
   - **接手先讀 `docs/handoff/2026-10-13-phase3a-done.md`**（3a 程式地圖、已定案判斷、待使用者處理、地雷）；資料量／排程／Phase 2 程式地圖仍見 `2026-10-13-phase3.md`
 - ✅ **Phase 3b 完成**（2026-10-14，分支 `feat/phase3b`，尚未合併 main）：時間軸、完整篩選、瀏覽、平台／公司／系列／活動頁、熱度與熱門榜、語言支援、test:a11y 195；**接手先讀 `docs/handoff/2026-10-14-phase3b-done.md`**（待決、地雷、下一步）
