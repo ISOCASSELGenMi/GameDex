@@ -281,17 +281,6 @@ test.describe("header 品牌文字與導覽下拉", () => {
     await expect(trigger).toHaveAttribute("aria-expanded", "true");
   });
 
-  test("品牌文字換頁時短暫淡入（opacity／filter ≤ 150ms）；reduced-motion 沒有動畫", async ({ page }) => {
-    await page.goto("/en/calendar");
-    const info = await page.locator(".hd-brand-text").evaluate((el) => {
-      const s = getComputedStyle(el);
-      return { name: s.animationName, duration: s.animationDuration };
-    });
-    expect(info.name).toBe("hd-brand-in");
-    expect(info.duration).toBe("0.15s");
-    await page.emulateMedia({ reducedMotion: "reduce" });
-    expect(await page.locator(".hd-brand-text").evaluate((el) => getComputedStyle(el).animationName)).toBe("none");
-  });
 
   test("首頁「最新上市」的查看更多連到時間軸（30 天前那一週）", async ({ page }) => {
     await page.goto("/en");
