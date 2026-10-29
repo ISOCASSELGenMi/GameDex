@@ -192,6 +192,7 @@
 - [x] 月曆頁未定日摺起來的組只送熱度最高的前 24 款＋「查看全部 N 款」連到 `/games?by=date&year=…`（保留篩選）；2026-12 由 711 KB 降到約 196 KB（2026-10-29，分支 `perf/calendar-undated-fold`）
 - [ ] 待決：月曆 2026-08／2026-09／2027-01 仍約 252～264 KB（≤ 24 款的月精度組以完整卡片展開所致）；建議把展開成完整卡片的門檻從 24 降到約 12（2026-10-29 新增）
 - [x] 第二輪 Z6 效能（2026-10-24，PR `ISOCASSELGenMi/GameDex#3`，`perf/z2-queries`；npm test 1271、單元 928、test:a11y 892 過）：預先計算 `games.release_group`／`publisher_group` 與 `release_picks`；migration 0015、0016 已套開發 DB，`backfill_game_groups` 已跑完（408 秒）；開發 DB 實測分組最慢 391 ms、平台頁全部遊戲最慢 308 ms，/games HTML 166～173 KB；spec 寫回 03、04、06、16、90、CHANGELOG
+- [x] 搜尋候選兩段式（2026-10-29，分支 `perf/search-candidates`，未推送）：≤ 3 字元查詢先在熱度前 3000 筆找、找滿 120 筆才用、不足退回全表；開發 DB `the` 467→10 ms、`z` 265→6 ms、`ド` 237→5 ms，中密度與稀有字不變；無 migration；新增 `game-suggest-two-stage` 整合測試；spec 06／07／CHANGELOG 已同步
 - [x] GameDex#1（第二輪 Z1～Z4）、#2（Next 16.4.1 安全修補）合併到 main（2026-10-24）
 - [x] GameDex#3（Z6）合併到 main；修偶發失敗的 PR 開立、交接檔 `docs/handoff/2026-10-24-gamedex-z6-done.md`；開發暫停等使用者重開（2026-10-24）
 - [x] 開發 DB 重算 `display_names`：1,693 款補上 zh-Hant（例：王國之淚），未移除任何既有中文名；全庫 zh-Hant 218 → 1,911（2026-10-18）

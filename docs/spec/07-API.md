@@ -28,7 +28,7 @@ GET  /api/v1/timeline/week?locale=&week=YYYY-Www&at=&<篩選>   週時間軸資�
 GET  /api/v1/games/suggest?q=&locale=&limit=1..10   搜尋框候選（公開）；沒帶 q → 400 { code: "q_required" }，空白 q → { items: [] }，
                                           逾時 503 { code: "unavailable" }；limit 預設 8、最多 10；locale 不合法時忽略；
                                           200 { items: [{ slug, name（依 locale）, originalName, coverUrl, year, platforms[] }] }；
-                                          排序：名稱完全相同 → 開頭符合 → 熱度（候選池為符合者中熱度前 120 筆＋完全同名者）；
+                                          排序：名稱完全相同 → 開頭符合 → 熱度（候選池為符合者中熱度前 120 筆＋完全同名者；≤ 3 字元的短字先在熱度前 3000 筆內找、找滿才用，見 06 §已知限制）；
                                           平台依名稱排序最多 3 個、不含 mobile；查詢經 tokenizeForSearch（06 §瀏覽與搜尋）；
                                           Cache-Control: public, max-age=30, s-maxage=60
 GET  /api/v1/games/group?locale=&by=date|platform|publisher&key=&offset=&limit=&<篩選，含 q、sort、year>
