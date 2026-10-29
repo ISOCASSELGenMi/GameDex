@@ -200,3 +200,6 @@
 - [x] 修正時間軸 client 不合法 week 被退回今天的 bug（e2e x2:48 偶發失敗的原因）（2026-10-23）
 - [x] 第二輪收尾：spec 寫回（02、03、04、05、06、07、09、15、90、CHANGELOG；D87）、開 PR `feat/gamedex-v2` → main（2026-10-23）
 - [x] 改用公開 repo `ISOCASSELGenMi/GameDex`（舊 private repo Actions 額度用完；歷史作者 email 改寫為 noreply 後推入新 repo；舊 repo 保留為 remote `private`）（2026-10-23）
+- [x] e2e 不依賴實際時間（2026-10-29，`fix/e2e-clock`）：根因是夜貓子彩蛋在本地 02:00～03:59 掛載時自動解鎖 `night-owl` 主題，UTC 02:00～03:59 整套 e2e 有 9 項穩定失敗（eggs-z3a 7、gamedex-redesign-z1a 1、ratings-z2b 1；CI 同樣）。a11y-3b／a11y.spec 的桌機 axe 失敗是同一根因（夜貓子 toast 淡入中被 axe 量到低對比，重試後 toast 已消失所以偶發過）。修法：共用 `test` 加自動套用的 `fixedClock`（落在該時段時 init script 把 `Date` 位移到同日 01:00，其餘時間不動；`clock.install` 會假造計時器、使帳號分頁切換等測試失敗，故不用）；新增 `e2e/clock-e.spec.ts` 鎖定；產品行為不變
+- [ ] 待辦（2026-10-29 新增）：夜貓子／彩蛋 toast 淡入過程中文字對比不足（axe 量到 `.egg-toast-kind` 3.82、`button[data-egg-apply]` 2.95，低於 4.5）；真實使用者在淡入那幾百毫秒看到偏淡的字，可讓 toast 從不透明度 0.6 以上開始淡入，或淡入完成後才套用文字色
+- [ ] 偶發失敗觀察（2026-10-29 新增）：`behavior-3b.spec.ts:94`（/games 分頁：下一頁 → 上一頁兩頁不重疊）在整套中失敗過 1 次（回傳 1 筆而非 26 筆），單檔重複 192 次全過，疑似換頁後 hydration 前就取樣的競爭，再出現時再查
