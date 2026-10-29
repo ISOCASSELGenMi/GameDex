@@ -192,7 +192,6 @@ export async function RatingsPage({ locale, supportedLocales, searchParams }: Ra
           fields={RATINGS_FILTER_FIELDS}
           clearHref={basePath}
           extraFields={extraFields}
-          commonPlatformsOnly
         />
       </div>
 
