@@ -108,7 +108,8 @@
 - [x] W3C：時間軸稀疏條件視窗上限＋部分結果（實測 2026-10-14：status=delayed 往前 6.4 s→1.3 s、status=upcoming 往前 2.3 s→0.76 s；單次最多 4 段、單段 ≤ 896 天；回應 nextPartial／prevPartial＋「繼續找」）
 - [ ] 待決（W3C）：掃描上限常數是否調整；partial 時篩選後可能要多按一次「繼續找」才確認到盡頭（2026-10-14 新增）
 - [ ] 待決（W3B）：/games 預設 sort 是否從網址省略；無效 group key 回 200 空結果或 400；四份頁碼解析合併；use-cases 4 處自算 UTC 今天；分頁 aria-current 移出 li（需同步改 e2e）；repository 引用 api-contract 的 isValidIsoDate（可移到 domain）（2026-10-14 新增）
-- [ ] CI：Actions Node 20 淘汰警告、ubuntu-latest 2026-10-19 起改 Ubuntu 26（2026-10-14 新增）
+- [x] CI：Actions Node 20 淘汰警告（2026-10-29：checkout／setup-node／upload-artifact 升到 v7，皆 node24；CI 尚未在 GitHub 實跑驗證，待推送後看 CI）；ubuntu-latest 改 Ubuntu 26 的風險待確認，未改 runner（字型較寬可能造成版面溢出，未驗證）（2026-10-14 新增）
+- [x] 2026-10-29 清理：eslint 忽略 `.next-e2e-*/**`（apps/web/eslint.config.mjs）；移除已合併 worktree `.local/wt/flaky`（`perf/z2-queries` 的 `.local/wt/phase7` 因有未提交的 `.claude/handoff/` 保留）
 - [x] 在開發 DB 跑 `refresh_popularity --scope all`（2026-10-13，149 秒；heat 5＝2,731、4＝10,766、3＝28,293、2＝67,624、1＝155,134、0＝50,058）
 - [x] 驗收：全部檢查全綠＋spec 15 Phase 3 完成標準（3b 範圍）；commit；交接文件（2026-10-14，`docs/handoff/2026-10-14-phase3b-done.md`；3c 硬體世代時間軸未做，spec 標可後延）
 - [x] PR `ISOCASSELGenMi/SoK-GameDB#1`（feat/phase3b → main，含 3a）2026-10-14 使用者合併（merge commit `be43a6e`）

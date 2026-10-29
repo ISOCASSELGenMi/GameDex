@@ -75,3 +75,4 @@ npm -w apps/web run test:a11y   # Playwright＋axe；本機一律 PW_CHANNEL=chr
 - TypeScript 鎖 6.0.3（dependency-cruiser 需 < 7），不要升級。
 - npm 11 預設不跑 postinstall；新套件需要時用 `npm approve-scripts <pkg>`。
 - 新 migration：改 schema 後 `npm run db:generate`，檢查產生的 SQL 再 commit。
+- eslint 已忽略 `apps/web/.next-e2e-*/**`（自訂 `E2E_DIST_DIR` 的建置產物），不必另外排除。
