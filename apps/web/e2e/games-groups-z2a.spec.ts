@@ -257,7 +257,7 @@ test.describe("header 品牌文字與導覽下拉", () => {
 
   test("品牌文字在伺服器 HTML 裡（不靠 JS、可快取）", async ({ request }) => {
     const html = await (await request.get("/en/calendar")).text();
-    expect(html).toMatch(/data-site-brand[^>]*>\s*<span[^>]*>GameCalendar<\/span>/);
+    expect(html).toMatch(/data-site-brand="" aria-label="GameCalendar"[^>]*>[\s\S]{0,200}?<span class="hd-brand-final">GameCalendar<\/span>/);
   });
 
   test("三語相同（品牌名不翻譯），<title> 不變", async ({ page }) => {

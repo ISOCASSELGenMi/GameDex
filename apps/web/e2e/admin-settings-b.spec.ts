@@ -69,7 +69,7 @@ test.describe("後台設定與同步監控", () => {
       await expect(page.getByText("需修改環境變數並重啟").first()).toBeVisible();
       await expect(page.locator('[data-module="catalog"]')).toHaveAttribute("data-enabled", "true");
       await expect(page.locator('[data-module="accounts"]')).toHaveAttribute("data-enabled", "true");
-      await expect(page.locator('[data-module="metacritic"]')).toHaveCount(0); // 關閉時 registry 不收這個模組
+      await expect(page.locator('[data-module="metacritic"]')).toHaveAttribute("data-enabled", "false"); // 列出但停用（registry 不收它的任務與排名欄）
       await expect(page.locator("[data-mc-env]")).toHaveAttribute("data-mc-env", "off");
       await expect(page.locator("[data-mc-effective]")).toHaveAttribute("data-mc-effective", "off");
       // 模組列表是唯讀：表格內沒有任何表單控制項
@@ -91,7 +91,7 @@ test.describe("後台設定與同步監控", () => {
       const again = page.locator('[data-settings-group="ratings"]');
       await expect(again.getByLabel("第 1 順位")).toHaveValue("igdb");
       await expect(again.getByLabel("顯示 Userscore（玩家評分）")).not.toBeChecked();
-      await expect(again.getByLabel("顯示 Metascore（媒體評分）")).not.toBeChecked();
+      await expect(again.getByLabel("顯示 Metascore（媒體評分）")).toBeChecked();
       await expect(again.getByText("目前來源：後台設定").first()).toBeVisible();
       const history = page.locator("[data-settings-history] tbody tr");
       await expect(history.filter({ hasText: E2E_ADMIN_USER }).first()).toBeVisible(); // 操作者是 Basic auth 的使用者名稱
@@ -132,14 +132,16 @@ test.describe("後台設定與同步監控", () => {
 });
 
 test.describe("Metacritic 預設關閉", () => {
-  test("/internal/matches 404；瀏覽公開頁面時瀏覽器對 metacritic.com 的請求數為 0；評分排名頁沒有 Metacritic 欄", async ({ browser }) => {
+  test("/internal/matches 沒有內容（模組停用）；瀏覽公開頁面時瀏覽器對 metacritic.com 的請求數為 0；評分排名頁沒有 Metacritic 欄", async ({ browser }) => {
     await withAdmin(browser, async (page) => {
       const hits: string[] = [];
       page.on("request", (r) => {
         if (/metacritic\.com/i.test(r.url())) hits.push(r.url());
       });
-      const res = await page.goto("/internal/matches");
-      expect(res?.status()).toBe(404);
+      await page.goto("/internal/matches");
+      // notFound() 在串流頁面可能已送出 200 狀態，所以看內容：沒有覆核頁、也沒有覆核導覽項
+      await expect(page.getByRole("heading", { name: "Metacritic 比對覆核" })).toHaveCount(0);
+      await expect(page.locator("[data-matches]")).toHaveCount(0);
       await page.goto("/en/ratings");
       await expect(page.getByRole("columnheader").first()).toBeVisible();
       await expect(page.getByRole("columnheader", { name: /Metascore|Userscore/ })).toHaveCount(0);
