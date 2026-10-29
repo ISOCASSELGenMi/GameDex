@@ -32,10 +32,11 @@
 - ✅ **Phase 4 完成**（2026-10-15，分支 `feat/phase4`）：評分顯示（selectRatings、訪客來源選擇）、標題比對、資料更正回報＋admin `/internal/reports`；**接手先讀 `docs/handoff/2026-10-15-phase4-done.md`**
 - ✅ PR `#3`（`feat/phase4` → main）2026-10-15 已合併
 - ✅ **Phase 5 iCal 完成**（2026-10-16，分支 `feat/phase5`）：公開 feed、訂閱頁、Google／Apple 原型實測通過；**接手先讀 `docs/handoff/2026-10-16-phase5-done.md`**
-- ✅ PR `#4`（phase5）、`#5`（phase9-prep：Docker／Caddy／備份／心跳告警）、`#6`（Phase 7 第 1 波）2026-10-16 合併；`#7`～`#13`（Phase 7 第 3、5、6、7 波、D82、D83、spec 寫回）2026-10-17 合併；**開發 DB 已套到 migration 0016**，詳情欄位與分組欄（`backfill_game_groups`）已回填（2026-10-24）
-- 🚧 **Phase 7 帳號**（Better Auth，D76～D83；worktree `.local/wt/phase7`，任務書與報告在 `.local/agents/7/`）：第 1、3、5、6、7 波＋D83 完成；第 2 波（社群登入）等 OAuth app、第 4 波（Xbox）依賴第 2 波、7.5 寄信服務等使用者選服務商；**接手先讀 `docs/handoff/2026-10-17-phase7-progress.md`**；進度見 `docs/checklist.md`
+- ✅ PR `#4`（phase5）、`#5`（phase9-prep：Docker／Caddy／備份／心跳告警）、`#6`（Phase 7 第 1 波）2026-10-16 合併；`#7`～`#13`（Phase 7 第 3、5、6、7 波、D82、D83、spec 寫回）2026-10-17 合併；**開發 DB 已套到 migration 0017**（2026-10-29），詳情欄位與分組欄（`backfill_game_groups`）已回填；`backfill_company_positions` 尚未跑（等使用者、需 IGDB 金鑰）
+- 🚧 **Phase 7 帳號**（Better Auth，D76～D83；任務書與報告在 `.local/agents/7/`；worktree 已清掉）：第 1、3、5、6、7 波＋D83 完成；第 2 波（社群登入）等 OAuth app、第 4 波（Xbox）依賴第 2 波、7.5 寄信服務等使用者選服務商；**接手先讀 `docs/handoff/2026-10-17-phase7-progress.md`**；進度見 `docs/checklist.md`
 - ✅ **GameDex 第一輪**（PR 舊 #15、#16）與**第二輪 Z1～Z4**（2026-10-22～23，PR `ISOCASSELGenMi/GameDex#1`）：header 依頁切換品牌名、搜尋候選、/games 分組、評分排名、彩蛋與隱藏主題、詳情頁補資訊；舊交接 `docs/handoff/2026-10-23-gamedex-v2.md`
-- ✅ **GameDex Z6 效能、Next 16.4.1、偶發失敗修正**（2026-10-24，GameDex `#2`～`#4` 已合併）：**接手先讀 `docs/handoff/2026-10-24-gamedex-z6-done.md`**（剩餘任務清單、需要使用者處理的事、地雷）。**開發暫停中，等使用者說繼續再動工**
+- ✅ **GameDex Z6 效能、Next 16.4.1、偶發失敗修正**（2026-10-24，GameDex `#2`～`#4` 已合併）：舊交接 `docs/handoff/2026-10-24-gamedex-z6-done.md`
+- ✅ **GameDex 第三輪**（2026-10-29，GameDex `#5`～`#10` 已合併）：小清理、e2e 時鐘修正、全站 HTML 瘦身、搜尋候選兩段式、月曆未定日只送前 24 款、分組細節 D88（廠商取 IGDB 第一個、日期分組從當月起算）：**接手先讀 `docs/handoff/2026-10-29-gamedex-round3-done.md`**（剩餘任務、需要使用者處理的事、地雷）。**開發暫停中，等使用者說繼續再動工**
 - ⏭ Phase 9（見 spec 15）
   - 任務註冊在 `catalog/module.ts` 的 `jobs`；長任務用 `lockMode: "session"`；遊戲寫入一律經 `writeGameBatch`
 
@@ -77,3 +78,5 @@ npm -w apps/web run test:a11y   # Playwright＋axe；本機一律 PW_CHANNEL=chr
 - 新 migration：改 schema 後 `npm run db:generate`，檢查產生的 SQL 再 commit。
 - eslint 已忽略 `apps/web/.next-e2e-*/**`（自訂 `E2E_DIST_DIR` 的建置產物），不必另外排除。
 - e2e 的時間由共用 fixture（`e2e/support/helpers.ts` 的 `fixedClock`）處理：實際時間落在 UTC 02:00～03:59 時，瀏覽器的 `Date` 退回同日 01:00（夜貓子彩蛋會在此時段自動解鎖 night-owl 主題，讓整套測試依幾點跑而失敗）；不要改用 `clock.install`（假造計時器會讓客戶端導覽測試失敗）；要指定時間的測試用 `page.clock.setFixedTime` 覆蓋。
+- PR 驗收通過（自己重跑提交前必過並讀 diff）且 CI 全綠就直接合併，使用者常設授權，不用再問；動開發 DB、破壞性操作、改 spec 既定決定仍要問。推送前 spec 與 checklist 要先更新（全域規則）。
+- 整合測試的固定 igdb id 號段不可與其他測試重疊（撞唯一鍵）；新增測試前先 `grep` 確認號段沒人用。並行 PR 都會改 `docs/spec/CHANGELOG.md`、`docs/checklist.md`：依序合併，每次把 main 合進下一個並兩邊都保留。

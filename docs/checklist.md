@@ -192,10 +192,10 @@
 - [x] 月曆頁未定日摺起來的組只送熱度最高的前 24 款＋「查看全部 N 款」連到 `/games?by=date&year=…`（保留篩選）；2026-12 由 711 KB 降到約 196 KB（2026-10-29，分支 `perf/calendar-undated-fold`）
 - [ ] 待決：月曆 2026-08／2026-09／2027-01 仍約 252～264 KB（≤ 24 款的月精度組以完整卡片展開所致）；建議把展開成完整卡片的門檻從 24 降到約 12（2026-10-29 新增）
 - [x] 第二輪 Z6 效能（2026-10-24，PR `ISOCASSELGenMi/GameDex#3`，`perf/z2-queries`；npm test 1271、單元 928、test:a11y 892 過）：預先計算 `games.release_group`／`publisher_group` 與 `release_picks`；migration 0015、0016 已套開發 DB，`backfill_game_groups` 已跑完（408 秒）；開發 DB 實測分組最慢 391 ms、平台頁全部遊戲最慢 308 ms，/games HTML 166～173 KB；spec 寫回 03、04、06、16、90、CHANGELOG
-- [x] 分組細節 D88（2026-10-29，分支 `feat/group-details`）：廠商取 IGDB 第一個（`game_companies.igdb_position`、migration 0017、`backfill_company_positions`）、日期組預設從當月往未來再往過去（涵蓋當月的季／年組算當月）
+- [x] 分組細節 D88（2026-10-29，PR GameDex#10 已合併）：廠商取 IGDB 第一個（`game_companies.igdb_position`、migration 0017、`backfill_company_positions`）、日期組預設從當月往未來再往過去（涵蓋當月的季／年組算當月）
 - [x] migration 0017 已套到開發 DB（2026-10-29，使用者批准；`game_companies.igdb_position` 可為空，323,454 筆目前全為 NULL）
 - [ ] 待使用者決定：何時用 IGDB 金鑰跑 `backfill_company_positions`（會打 IGDB 重抓約 32 萬款的公司順序；跑完廠商分組才會變成「取 IGDB 第一個」）
-- [x] 搜尋候選兩段式（2026-10-29，分支 `perf/search-candidates`，未推送）：≤ 3 字元查詢先在熱度前 3000 筆找、找滿 120 筆才用、不足退回全表；開發 DB `the` 467→10 ms、`z` 265→6 ms、`ド` 237→5 ms，中密度與稀有字不變；無 migration；新增 `game-suggest-two-stage` 整合測試；spec 06／07／CHANGELOG 已同步
+- [x] 搜尋候選兩段式（2026-10-29，PR GameDex#8 已合併）：≤ 3 字元查詢先在熱度前 3000 筆找、找滿 120 筆才用、不足退回全表；開發 DB `the` 467→10 ms、`z` 265→6 ms、`ド` 237→5 ms，中密度與稀有字不變；無 migration；新增 `game-suggest-two-stage` 整合測試；spec 06／07／CHANGELOG 已同步
 - [x] GameDex#1（第二輪 Z1～Z4）、#2（Next 16.4.1 安全修補）合併到 main（2026-10-24）
 - [x] GameDex#3（Z6）合併到 main；修偶發失敗的 PR 開立、交接檔 `docs/handoff/2026-10-24-gamedex-z6-done.md`；開發暫停等使用者重開（2026-10-24）
 - [x] 開發 DB 重算 `display_names`：1,693 款補上 zh-Hant（例：王國之淚），未移除任何既有中文名；全庫 zh-Hant 218 → 1,911（2026-10-18）
@@ -210,3 +210,4 @@
 - [x] e2e 不依賴實際時間（2026-10-29，`fix/e2e-clock`）：根因是夜貓子彩蛋在本地 02:00～03:59 掛載時自動解鎖 `night-owl` 主題，UTC 02:00～03:59 整套 e2e 有 9 項穩定失敗（eggs-z3a 7、gamedex-redesign-z1a 1、ratings-z2b 1；CI 同樣）。a11y-3b／a11y.spec 的桌機 axe 失敗是同一根因（夜貓子 toast 淡入中被 axe 量到低對比，重試後 toast 已消失所以偶發過）。修法：共用 `test` 加自動套用的 `fixedClock`（落在該時段時 init script 把 `Date` 位移到同日 01:00，其餘時間不動；`clock.install` 會假造計時器、使帳號分頁切換等測試失敗，故不用）；新增 `e2e/clock-e.spec.ts` 鎖定；產品行為不變
 - [ ] 待辦（2026-10-29 新增）：夜貓子／彩蛋 toast 淡入過程中文字對比不足（axe 量到 `.egg-toast-kind` 3.82、`button[data-egg-apply]` 2.95，低於 4.5）；真實使用者在淡入那幾百毫秒看到偏淡的字，可讓 toast 從不透明度 0.6 以上開始淡入，或淡入完成後才套用文字色
 - [ ] 偶發失敗觀察（2026-10-29 新增）：`behavior-3b.spec.ts:94`（/games 分頁：下一頁 → 上一頁兩頁不重疊）在整套中失敗過 1 次（回傳 1 筆而非 26 筆），單檔重複 192 次全過，疑似換頁後 hydration 前就取樣的競爭，再出現時再查
+- [x] 第三輪（2026-10-29）全部合併到 main，CI 全綠自動合併：#5 小清理（eslint 忽略 `.next-e2e-*`、actions 升 v7）、#6 e2e 時鐘修正、#7 全站 HTML 瘦身、#8 搜尋候選兩段式、#9 月曆未定日只送前 24 款、#10 分組細節 D88；使用者常設授權「CI 全綠就合併，不用再問」（動開發 DB 與破壞性操作仍要問）；交接檔 `docs/handoff/2026-10-29-gamedex-round3-done.md`；開發暫停等使用者說繼續
