@@ -101,6 +101,15 @@ describe("groupOfGame（歸屬函式）", () => {
     expect(groupOfGame([dev(CAPCOM), dev(FROMSOFT)])).toBe("fromsoftware");
     expect(groupOfGame([dev(FROMSOFT), dev(CAPCOM)])).toBe("fromsoftware");
   });
+  it("D88：同角色取 IGDB 第一個（順序 0 勝過 1）；有順序的勝過 NULL 的；角色優先順序不變", () => {
+    expect(groupOfGame([dev(FROMSOFT, 0), dev(CAPCOM, 1)])).toBe("fromsoftware");
+    expect(groupOfGame([dev(CAPCOM, 0), dev(FROMSOFT, 1)])).toBe("capcom");
+    expect(groupOfGame([dev(CAPCOM), dev(FROMSOFT, 3)])).toBe("fromsoftware");
+    // 開發商（順序 5）仍勝過發行商（順序 0）
+    expect(groupOfGame([pub(NINTENDO, 0), dev(CAPCOM, 5)])).toBe("capcom");
+    // 發行商之間同樣取第一個
+    expect(groupOfGame([dev(999999, 0), pub(NINTENDO, 2), pub(248, 1)])).toBe("bandai-namco");
+  });
 });
 
 describe("分組檢視參數", () => {
@@ -174,8 +183,14 @@ describe("組查詢的 SQL 組裝", () => {
   const dialect = new PgDialect();
   const base = { filter: { gameTypes: ["main_game"], stages: ["full"], statuses: ["scheduled"], includeRumored: false, includeRemoved: true } as const, sort: "popularity" as const, locale: "en", today: "2026-10-23" as const };
   const sqlOf = (q: Parameters<PgDialect["sqlToQuery"]>[0]) => dialect.sqlToQuery(q);
-  it("組清單：日期組讀預先計算的 release_group，日期未定排最後、sort=release_date 由舊到新", () => {
-    const desc = sqlOf(buildGroupListQuery({ ...base, by: "date", groupOffset: 0, groupLimit: 6 })).sql;
+  it("組清單：日期組讀預先計算的 release_group；預設（熱度）＝當月起往未來、再往過去、tbd 最後（D88）；sort=release_date 由舊到新、sort=name 由新到舊", () => {
+    const pop = sqlOf(buildGroupListQuery({ ...base, by: "date", groupOffset: 0, groupLimit: 6 }));
+    expect(pop.sql).toContain("GROUP BY g.release_group");
+    expect(pop.sql).toMatch(/ORDER BY \(g\.release_group = \$\d+\) ASC,/);
+    expect(pop.sql).toMatch(/ELSE g\.release_group/);
+    expect(pop.sql).not.toContain("min(g.first_release_date)");
+    expect(pop.params).toContain("2026-10"); // 當月來自 today
+    const desc = sqlOf(buildGroupListQuery({ ...base, by: "date", sort: "name", groupOffset: 0, groupLimit: 6 })).sql;
     expect(desc).toContain("GROUP BY g.release_group");
     expect(desc).toMatch(/FILTER \(WHERE g\.release_group <> \$\d+\) DESC NULLS LAST/);
     expect(desc).not.toContain("to_char");

@@ -83,9 +83,9 @@ test.describe("分組檢視：三種分組的內容", () => {
     await page.goto(`${URL_ALL}&by=date`);
     expect(await groupKeys(page)).toEqual([...F.dateGroups]);
     const headings = await page.locator("section[data-rc-group] h2").allInnerTexts();
-    expect(headings[0]).toContain("2037");
+    expect(headings[0]).toContain("September 2036");
     expect(headings[1]).toMatch(/Q4|4/);
-    expect(headings[2]).toContain("September 2036");
+    expect(headings[2]).toContain("2037");
     // 第一個區塊有標題（section aria-labelledby）
     const first = section(page, "2036-09");
     await expect(first).toHaveAttribute("aria-labelledby", "rc-h-2036-09");

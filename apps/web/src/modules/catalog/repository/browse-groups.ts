@@ -3,7 +3,7 @@
  * 分組只是在同一批遊戲上多算一個「組 key」：
  *
  * - date：組＝games.release_group（預先計算：首發年月 `YYYY-MM`、季精度 `YYYY-Qn`、年精度 `YYYY`、日期未定 `tbd`；規則在
- *   domain/game-group-keys.ts，由寫入路徑與 backfill_game_groups 維護）。組序：依首發日期（sort=release_date 由舊到新，其餘由新到舊），`tbd` 永遠最後。
+ *   domain/game-group-keys.ts，由寫入路徑與 backfill_game_groups 維護）。組序：sort=popularity（預設）＝當月起往未來由近到遠（涵蓋當月的季/年組算當月）→ 往過去由新到舊（依結束月）→ `tbd`（D88）；sort=release_date 由舊到新；sort=name 由新到舊；`tbd` 永遠最後。
  * - platform：組＝平台 slug（不含 mobile；一款遊戲出現在它每個平台的組）。組序由 Use Case 傳入（平台總覽的分組與排序）。
  * - publisher：組＝games.publisher_group（預先計算的廠商欄索引，規則在 domain/publisher-groups.ts publisherGroupIndexOfGame；-1＝other）。
  *   欄位順序＝名單順序，other 最後。
@@ -98,6 +98,26 @@ function groupSource(by: GroupedBy, key: string, platformId: number | null | und
   return [sql`EXISTS (SELECT 1 FROM game_platforms gpg WHERE gpg.game_id = g.id AND gpg.platform_id = ${platform})`];
 }
 
+/** release_group（YYYY-MM、YYYY-Qn、YYYY）→ 期間起始月 `YYYY-MM` 的 SQL 運算式（tbd 回 'tbd'，呼叫端另外排最後）。 */
+function releaseGroupStartMonthSql(col: string): SQL {
+  const c = sql.raw(col);
+  return sql`(CASE
+    WHEN ${c} ~ '^[0-9]{4}-Q[1-4]$' THEN substr(${c}, 1, 4) || '-' || lpad((((substr(${c}, 7, 1))::int - 1) * 3 + 1)::text, 2, '0')
+    WHEN ${c} ~ '^[0-9]{4}$' THEN ${c} || '-01'
+    ELSE ${c}
+  END)`;
+}
+
+/** release_group → 期間結束月 `YYYY-MM`（月＝自己、季＝該季最後一個月、年＝12 月）。 */
+function releaseGroupEndMonthSql(col: string): SQL {
+  const c = sql.raw(col);
+  return sql`(CASE
+    WHEN ${c} ~ '^[0-9]{4}-Q[1-4]$' THEN substr(${c}, 1, 4) || '-' || lpad(((substr(${c}, 7, 1))::int * 3)::text, 2, '0')
+    WHEN ${c} ~ '^[0-9]{4}$' THEN ${c} || '-12'
+    ELSE ${c}
+  END)`;
+}
+
 function cardOrder(sort: BrowseSort, a: string, dateCol: string): SQL {
   const c = (col: string) => sql.raw(`${a}.${col}`);
   return sort === "name"
@@ -111,6 +131,27 @@ function cardOrder(sort: BrowseSort, a: string, dateCol: string): SQL {
 export function buildGroupListQuery(input: Omit<ReadGameGroupsInput, "resolveImage" | "perGroup">): SQL {
   const conds = buildBrowseConditions(input);
   const page = sql`LIMIT ${Math.max(0, Math.floor(input.groupLimit)) + 1} OFFSET ${Math.max(0, Math.floor(input.groupOffset))}`;
+  if (input.by === "date" && input.sort === "popularity") {
+    // 預設順序（D88）：當月起往未來由近到遠 → 再往過去由新到舊 → 日期未定最後。組的期間 [起始月, 結束月] 由 release_group 字串推得
+    // （月 YYYY-MM；季 YYYY-Qn；年 YYYY）。期間涵蓋當月的季／年組視為「當月」；完全在未來的依起始月排進未來段；完全在過去的依結束月排進過去段。
+    // 同一時間點的組，精度細的在前（月 → 季 → 年）。
+    const start = releaseGroupStartMonthSql("g.release_group");
+    const end = releaseGroupEndMonthSql("g.release_group");
+    const month = input.today.slice(0, 7);
+    const isPast = sql`(${end} < ${month}::text)`;
+    return sql`
+      SELECT g.release_group AS gkey, count(*)::int AS total, NULL::text AS gname, NULL::text AS gkind
+      FROM games g WHERE ${sql.join(conds, sql` AND `)}
+      GROUP BY g.release_group
+      ORDER BY (g.release_group = ${TBD_RELEASE_GROUP}) ASC,
+        ${isPast} ASC,
+        CASE WHEN NOT ${isPast} THEN greatest(${start}, ${month}::text) END ASC,
+        CASE WHEN ${isPast} THEN ${end} END DESC,
+        (CASE WHEN g.release_group ~ '^[0-9]{4}-[0-9]{2}$' THEN 0 WHEN g.release_group ~ '^[0-9]{4}-Q' THEN 1 ELSE 2 END) ASC,
+        g.release_group ASC
+      ${page}
+    `;
+  }
   if (input.by === "date") {
     const dir = input.sort === "release_date" ? sql`ASC` : sql`DESC`;
     return sql`

@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## GameDex 分組細節 D88（2026-10-29 寫回；repo 副本先改，Project 正本待使用者匯入）
+
+- 03：`game_companies` 加 `igdb_position`（migration 0017，可為 NULL）；`publisher_group` 同角色取位置最小者，有 NULL 時退回舊規則。
+- 04：新增 §公司順序 `backfill_company_positions`（手動、可續跑、會打 IGDB）；排程任務表加一列。
+- 06：§全部遊戲與分組檢視——日期組預設（熱度）排序改為當月起往未來 → 往過去 → tbd，涵蓋當月的季／年組算當月；廠商歸屬取 IGDB 第一個。
+- 16：部署檢查清單加 migration 0017 與 `backfill_company_positions`。
+- 90：新增 D88。07 無 API 形狀變更。
+
 ## 月曆未定日只送前 24 款（2026-10-29 寫回；repo 副本先改，Project 正本待使用者匯入）
 
 - 06：§月曆 未定日區塊——摺起來的組（> 24 款）伺服器端只送熱度最高的前 24 款，加「查看全部 N 款」連到 `/games?by=date&year=<期間年>`（帶月曆篩選）；§已知限制 寫入實測（2026-12 711 → 196 KB），並記錄 2026-08／09、2027-01 仍略超 250 KB 的原因與建議。

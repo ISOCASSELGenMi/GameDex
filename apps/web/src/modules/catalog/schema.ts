@@ -392,6 +392,8 @@ export const gameCompanies = pgTable(
     gameId: integer("game_id").notNull().references(() => games.id, { onDelete: "cascade" }),
     companyId: integer("company_id").notNull().references(() => companies.id),
     role: gameCompanyRoleEnum("role").notNull(), // 同公司兼兩個角色就寫兩列
+    /** 該公司在 IGDB involved_companies 陣列的位置（0 起算）；同公司兼多角色的列相同。NULL＝舊資料（尚未回填），廠商分欄退回欄位順序平手。 */
+    igdbPosition: smallint("igdb_position"),
   },
   (t) => [
     primaryKey({ columns: [t.gameId, t.companyId, t.role] }),

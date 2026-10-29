@@ -1,0 +1,1 @@
+ALTER TABLE "game_companies" ADD COLUMN "igdb_position" smallint;

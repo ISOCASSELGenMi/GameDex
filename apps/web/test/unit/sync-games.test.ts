@@ -295,7 +295,7 @@ describe("IGDB 遊戲對照", () => {
     expect(rec.sourceUpdatedAt?.toISOString()).toBe("2026-10-11T13:28:14.000Z");
     expect(rec.screenshotUrls).toHaveLength(6);
     expect(rec.companies).toEqual([
-      { company: { igdbId: 29, name: "Rockstar Games", slug: "rockstar-games" }, roles: ["developer", "publisher"] },
+      { company: { igdbId: 29, name: "Rockstar Games", slug: "rockstar-games" }, roles: ["developer", "publisher"], position: 0 },
     ]);
     expect(rec.franchises.map((f) => [f.kind, f.igdbId])).toEqual([
       ["franchise", 493],

@@ -70,7 +70,8 @@ export interface IgdbGameSyncInput {
   genreIds: number[];
   themeIds: number[];
   franchiseIds: number[];
-  companies: Array<{ companyId: number; role: GameCompanyRole }>;
+  /** igdbPosition＝IGDB involved_companies 的位置（0 起算）；省略＝NULL。 */
+  companies: Array<{ companyId: number; role: GameCompanyRole; igdbPosition?: number | null }>;
   localizations: Array<{ localeCode: string; name: string; coverUrl: string | null }>;
   languageSupports: Array<{ languageId: number; supportType: LanguageSupportType }>;
   links: GameLinkRecord[];

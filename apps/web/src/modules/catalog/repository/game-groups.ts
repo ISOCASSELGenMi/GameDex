@@ -38,8 +38,8 @@ const LISTED_IGDB_COMPANY_IDS = publisherGroupSqlMap().igdbIds;
 export async function computePublisherGroups(db: DbOrTx, gameIds: readonly number[]): Promise<Map<number, number>> {
   const out = new Map<number, number>(gameIds.map((id) => [id, OTHER_PUBLISHER_INDEX]));
   if (gameIds.length === 0) return out;
-  const res = await db.execute<{ game_id: number; igdb_id: number; role: string }>(sql`
-    SELECT gc.game_id, c.igdb_id, gc.role::text AS role
+  const res = await db.execute<{ game_id: number; igdb_id: number; role: string; igdb_position: number | null }>(sql`
+    SELECT gc.game_id, c.igdb_id, gc.role::text AS role, gc.igdb_position
     FROM game_companies gc JOIN companies c ON c.id = gc.company_id
     WHERE gc.game_id = ANY(${pgArray(gameIds)}::int[])
       AND gc.role IN ('developer', 'publisher')
@@ -48,7 +48,7 @@ export async function computePublisherGroups(db: DbOrTx, gameIds: readonly numbe
   const refs = new Map<number, GameCompanyRef[]>();
   for (const r of res.rows) {
     const list = refs.get(r.game_id) ?? [];
-    list.push({ igdbId: r.igdb_id, role: r.role });
+    list.push(r.igdb_position === null ? { igdbId: r.igdb_id, role: r.role } : { igdbId: r.igdb_id, role: r.role, order: r.igdb_position });
     refs.set(r.game_id, list);
   }
   for (const [id, list] of refs) out.set(id, publisherGroupIndexOfGame(list));
@@ -89,6 +89,40 @@ export async function writeGameGroupColumns(db: DbOrTx, rows: readonly GameGroup
     WHERE g.id = v.id AND (g.release_group IS DISTINCT FROM v.rg OR g.publisher_group IS DISTINCT FROM v.pg::smallint)
   `);
   return res.rowCount ?? 0;
+}
+
+export interface CompanyPositionEntry {
+  igdbGameId: number;
+  igdbCompanyId: number;
+  position: number;
+}
+
+/**
+ * backfill_company_positions 的一批：把 IGDB 的公司順序寫進既有的 game_companies.igdb_position（只動值有變的列），
+ * 再重算這些遊戲的 publisher_group。一個 transaction；冪等。不寫 change_feed（衍生欄位，與 backfill_game_groups 相同）。
+ * @param igdbGameIds 本批涵蓋的遊戲（IGDB id）；entries 沒出現的公司列不動（維持 NULL）。
+ */
+export async function applyCompanyPositionsBatch(
+  entries: readonly CompanyPositionEntry[],
+  igdbGameIds: readonly number[],
+  db: DbOrTx = getDb(),
+): Promise<{ positionsUpdated: number; groupsUpdated: number }> {
+  return db.transaction(async (tx) => {
+    let positionsUpdated = 0;
+    if (entries.length > 0) {
+      const res = await tx.execute(sql`
+        UPDATE game_companies gc SET igdb_position = v.pos
+        FROM unnest(${pgArray(entries.map((e) => e.igdbGameId))}::int[], ${pgArray(entries.map((e) => e.igdbCompanyId))}::int[], ${pgArray(entries.map((e) => e.position))}::int[]) AS v(gid, cid, pos)
+        JOIN games g ON g.igdb_id = v.gid
+        JOIN companies c ON c.igdb_id = v.cid
+        WHERE gc.game_id = g.id AND gc.company_id = c.id AND gc.igdb_position IS DISTINCT FROM v.pos::smallint
+      `);
+      positionsUpdated = res.rowCount ?? 0;
+    }
+    const idRows = igdbGameIds.length === 0 ? [] : (await tx.execute<{ id: number }>(sql`SELECT id FROM games WHERE igdb_id = ANY(${pgArray(igdbGameIds)}::int[])`)).rows;
+    const groupsUpdated = await writeGameGroupColumns(tx, await computeGameGroupColumns(tx, idRows.map((r) => r.id)));
+    return { positionsUpdated, groupsUpdated };
+  });
 }
 
 /** 依 id 升冪的下一批遊戲 id（回填的游標分頁）。 */
