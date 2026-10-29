@@ -91,6 +91,8 @@ describe.skipIf(!enabled)("瀏覽頁分組檢視（整合）", () => {
     await addGame("Port", { pop: 60, date: "2036-10-03", precision: "day", platforms: ["gz58-pc"], credits: [{ igdb: 37, role: "porting" }] });
     await addGame("Quarter", { pop: 90, date: "2036-10-01", precision: "quarter", platforms: ["gz58-pc"] });
     await addGame("Year", { pop: 80, date: "2037-01-01", precision: "year", platforms: ["gz58-switch"] });
+    // 年精度、期間涵蓋當月（2036-09）：視為「當月」那一組參與排序（D88）
+    await addGame("ThisYear", { pop: 40, date: "2036-01-01", precision: "year", platforms: ["gz58-pc"] });
     await addGame("Undated", { pop: 70, date: null, precision: "tbd", platforms: [] });
     await addGame("Nov", { pop: 50, date: "2036-11-05", precision: "day", platforms: ["gz58-pc"] });
     await addGame("Dec", { pop: 50, date: "2036-12-05", precision: "day", platforms: ["gz58-pc"] });
@@ -109,13 +111,13 @@ describe.skipIf(!enabled)("瀏覽頁分組檢視（整合）", () => {
   });
 
   describe("依日期", () => {
-    it("預設（熱度排序，D88）：當月起往未來由近到遠（季、年依起始月）→ 往過去由新到舊 → 日期未定最後；一頁 6 組、後面還有", async () => {
+    it("預設（熱度排序，D88）：當月起往未來由近到遠（涵蓋當月的季／年組算當月，細精度在前；完全在未來依起始月）→ 往過去（依結束月）由新到舊 → 日期未定最後；一頁 6 組、後面還有", async () => {
       const r = await getGameGroups({ ...BASE, by: "date", now: NOW });
       expect(GAME_GROUPS_PER_PAGE).toBe(6);
-      expect(keysOf(r)).toEqual(["2036-09", "2036-10", "2036-Q4", "2036-11", "2036-12", "2037"]);
+      expect(keysOf(r)).toEqual(["2036-09", "2036", "2036-10", "2036-Q4", "2036-11", "2036-12"]);
       expect(r.hasMoreGroups).toBe(true);
       const p2 = await getGameGroups({ ...BASE, by: "date", page: 2, now: NOW });
-      expect(keysOf(p2)).toEqual(["2036-08", "tbd"]);
+      expect(keysOf(p2)).toEqual(["2037", "2036-08", "tbd"]);
       expect(p2.hasMoreGroups).toBe(false);
     });
 
@@ -124,7 +126,7 @@ describe.skipIf(!enabled)("瀏覽頁分組檢視（整合）", () => {
       const p1 = await getGameGroups({ ...BASE, by: "date", now: mid });
       const p2 = await getGameGroups({ ...BASE, by: "date", page: 2, now: mid });
       const all = [...keysOf(p1), ...keysOf(p2)];
-      expect(all).toEqual(["2036-11", "2036-12", "2037", "2036-10", "2036-Q4", "2036-09", "2036-08", "tbd"]);
+      expect(all).toEqual(["2036-11", "2036-Q4", "2036", "2036-12", "2037", "2036-10", "2036-09", "2036-08", "tbd"]);
       expect(keysOf(await getGameGroups({ ...BASE, by: "date", now: mid }))).toEqual(keysOf(p1));
     });
 
@@ -135,9 +137,9 @@ describe.skipIf(!enabled)("瀏覽頁分組檢視（整合）", () => {
 
     it("sort=release_date 由舊到新，日期未定仍在最後", async () => {
       const r = await getGameGroups({ ...BASE, by: "date", sort: "release_date", now: NOW });
-      expect(keysOf(r)).toEqual(["2036-08", "2036-09", "2036-Q4", "2036-10", "2036-11", "2036-12"]);
+      expect(keysOf(r)).toEqual(["2036", "2036-08", "2036-09", "2036-Q4", "2036-10", "2036-11"]);
       const p2 = await getGameGroups({ ...BASE, by: "date", sort: "release_date", page: 2, now: NOW });
-      expect(keysOf(p2)).toEqual(["2037", "tbd"]);
+      expect(keysOf(p2)).toEqual(["2036-12", "2037", "tbd"]);
     });
 
     it("每組總數正確、首屏只送 perGroup 張、組內依熱度", async () => {
@@ -180,7 +182,7 @@ describe.skipIf(!enabled)("瀏覽頁分組檢視（整合）", () => {
       const total = (key: string) => r.groups.find((g) => g.key === key)!.total;
       expect(total("gz58-ps5")).toBe(2);
       expect(total("gz58-switch")).toBe(2);
-      expect(total("gz58-pc")).toBe(37); // Elden、Indie、Port、Quarter、Nov／Dec／Aug、Bulk 30
+      expect(total("gz58-pc")).toBe(38); // Elden、Indie、Port、Quarter、ThisYear、Nov／Dec／Aug、Bulk 30
       expect(r.groups.find((g) => g.key === "gz58-ps5")!.platform).toMatchObject({ slug: "gz58-ps5", kind: "console" });
     });
 
@@ -201,7 +203,7 @@ describe.skipIf(!enabled)("瀏覽頁分組檢視（整合）", () => {
       expect(await members_("nintendo")).toEqual(["Gz58 Zelda"]);
       expect(await members_("capcom")).toEqual(["Gz58 Capcom"]);
       const other = r.groups.find((g) => g.key === "other")!;
-      expect(other.total).toBe(38); // Indie、Port、Quarter、Year、Undated、Nov／Dec／Aug、Bulk 30
+      expect(other.total).toBe(39); // Indie、Port、Quarter、Year、Undated、Nov／Dec／Aug、Bulk 30
     });
 
     it("SQL 與 domain 的 groupOfGame 對同一批 fixture 結果相同", async () => {

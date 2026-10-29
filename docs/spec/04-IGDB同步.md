@@ -232,6 +232,12 @@ WHERE status IN ('scheduled', 'delayed') AND precision = 'day' AND release_date 
 
 全庫補值用手動任務：`npm run job -- backfill_game_groups [--max-batches N] [--batch-size N] [--restart]`（`lockMode: "session"`、無 cron、不打 IGDB，但 catalog 模組啟動時仍檢查 IGDB 環境變數）。依 id 遞增分批，進度存在 `sync_state`，可續跑，結束時對 `games` 與 `release_picks` 跑 VACUUM ANALYZE。migration 0015 之後必須跑一次；跑完之前 `/games?by=date｜publisher` 會把所有遊戲歸成一組，平台頁「全部遊戲」會偵測到回填未完成，自動退回即時聚合。2026-10-24 在開發 DB 實測：316,955 款、317 批、408 秒，更新 239,208 款，`release_picks` 寫入 416,375 列。
 
+### 公司順序 `backfill_company_positions`（D88）
+
+`game_companies.igdb_position`（03）記錄公司在 IGDB `involved_companies` 陣列中的位置（0 起算）：`syncIgdbGame` 寫入公司時一併寫入，`publisher_group` 重算時同角色取位置最小者。migration 0017 前的既有列位置是 NULL，這時整款退回「名單欄位順序最後者」，所以未回填前行為與以前相同。
+
+全庫補值用手動任務：`npm run job -- backfill_company_positions [--max-batches N] [--restart]`（`lockMode: "session"`、無 cron、**會打 IGDB**，需要 IGDB 金鑰）。依 id 遞增，每批 500 款只抓 `involved_companies`，一個 transaction 內補位置並重算 `publisher_group`；進度存在 `sync_state`（`igdb_backfill_company_positions`），可續跑，`--restart` 從頭來；重跑冪等。
+
 ## 平台同步
 
 每日一次，整表重抓 `platforms`、`platform_families` 與平台版本上市日（`platform_versions` → `platform_release_dates`，同平台同地區取最早）。`platform_type` 轉 `platformKind`，未知 → `other`。`source='manual'` 不覆蓋。
@@ -300,6 +306,7 @@ interface GameDataProvider {
 | `backfill_detail_fields`（詳情欄位回填） | 手動 | session |
 | `recompute_display_names` | 手動 | session |
 | `backfill_game_groups`（分組欄與代表上市列，migration 0015 後跑一次） | 手動 | session |
+| `backfill_company_positions`（公司順序，migration 0017 後跑一次，打 IGDB） | 手動 | session |
 | `publish_player_ratings`（`accounts`，09） | 每小時第 27 分 | session |
 | `refresh_popularity` | 每小時／每日（03 §熱度） | tx |
 | `check_external_links`（失效連結） | 每週 | tx |

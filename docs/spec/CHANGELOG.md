@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## GameDex 分組細節 D88（2026-10-29 寫回；repo 副本先改，Project 正本待使用者匯入）
+
+- 03：`game_companies` 加 `igdb_position`（migration 0017，可為 NULL）；`publisher_group` 同角色取位置最小者，有 NULL 時退回舊規則。
+- 04：新增 §公司順序 `backfill_company_positions`（手動、可續跑、會打 IGDB）；排程任務表加一列。
+- 06：§全部遊戲與分組檢視——日期組預設（熱度）排序改為當月起往未來 → 往過去 → tbd，涵蓋當月的季／年組算當月；廠商歸屬取 IGDB 第一個。
+- 16：部署檢查清單加 migration 0017 與 `backfill_company_positions`。
+- 90：新增 D88。07 無 API 形狀變更。
+
 ## HTML 瘦身（2026-10-29 寫回；repo 副本先改，Project 正本待使用者匯入）
 
 - 06：§評分排名移除「篩選面板只列常用平台」，改列完整平台清單（HTML 166～173 KB）；§瀏覽與搜尋 HTML 預算加「大量清單用緊湊列」、2026-10-29 全站實測數字、鎖預算的測試與量測腳本；§已知限制劃掉評分排名／`/trending` 兩項，新增「月曆頁 HTML 隨月份差很大」（待使用者決定是否限制未定日清單顯示量）。

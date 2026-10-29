@@ -14,7 +14,7 @@
 
 使用者 2026-10-23 對照表疑義定案：上表「包含」欄補入 Sony／Sony Online Entertainment／Bungie → 索尼互動娛樂、Xbox Live Arcade／Production → Xbox、Codemasters → 美商藝電、Intelligent Systems → 任天堂、Taito → 史克威爾艾尼克斯。Crystal Dynamics、Eidos、Relic、Amplitude、Time Warner Interactive、Fire Falcom、Snkl Studio 不納入（獨立／其他）。
 
-IGDB 順序目前沒存進資料庫時的替代規則：多個開發商都在名單內，取名單欄位順序最後者（合開作品歸更具體的品牌）。
+同角色多家公司都在名單內時取 IGDB 列出的第一個（game_companies.igdb_position，D88）；舊資料位置是 NULL 時的替代規則：取名單欄位順序最後者（合開作品歸更具體的品牌）。
 
 | 欄位名稱 | 包含 | 代表作 |
 |---|---|---|
