@@ -64,6 +64,8 @@
       "year": "只確定年份"
     },
     "undatedEmpty": "本月沒有未定日的遊戲",
+
+    "undatedViewAll": "查看全部 {count} 款",
     "agendaTitle": "依日期列出",
     "dayListTitle": "{date} 的上市與活動",
     "backToList": "回到當天清單",

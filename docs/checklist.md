@@ -189,10 +189,13 @@
 - [x] 第二輪 Z1（2026-10-22，`1fa7ffc`；npm test 1071、test:a11y 728 過）：Holodex 式 header、活動時間單行＋時區、刪舊 `/api/timeline/*`、手機選單對齊（10/22 用量重置後開工）
 - [x] 第二輪 Z2（2026-10-23，`33d5304`；npm test 1159、test:a11y 815 過）：/games 分組檢視（日期／平台／廠商）、刪 /releases、header 依頁切換品牌名、評分排名頁 /ratings、月曆遊戲／活動開關、平台頁全部遊戲；migration 0012 已套開發 DB（2026-10-23）
 - [x] Z2 待決：評分排名頁篩選只列常用平台（為壓 HTML）（2026-10-23 新增；2026-10-29 已解決：`/trending` 改緊湊列＋共用 sprite 251→163 KB，`/ratings` 改列完整平台 168～173 KB；新增 `scripts/html-size.mjs`、`html-budget-a` 單元＋e2e）。同列的其他項目已處理：分組查詢、平台頁全部遊戲冷查詢、/games HTML 由 Z6 解決；Next 16.4.0 安全漏洞由 GameDex#2 升到 16.4.1 解決（2026-10-24）
-- [ ] 待決：月曆頁未定日大組讓 HTML 暴增（2026-12 約 711 KB、2026-09／2027-12 約 300 KB，預算約 250 KB）。建議限制未定日清單顯示量＋「查看全部」連到瀏覽頁（2026-10-29 新增）
+- [x] 月曆頁未定日摺起來的組只送熱度最高的前 24 款＋「查看全部 N 款」連到 `/games?by=date&year=…`（保留篩選）；2026-12 由 711 KB 降到約 196 KB（2026-10-29，分支 `perf/calendar-undated-fold`）
+- [ ] 待決：月曆 2026-08／2026-09／2027-01 仍約 252～264 KB（≤ 24 款的月精度組以完整卡片展開所致）；建議把展開成完整卡片的門檻從 24 降到約 12（2026-10-29 新增）
 - [x] 第二輪 Z6 效能（2026-10-24，PR `ISOCASSELGenMi/GameDex#3`，`perf/z2-queries`；npm test 1271、單元 928、test:a11y 892 過）：預先計算 `games.release_group`／`publisher_group` 與 `release_picks`；migration 0015、0016 已套開發 DB，`backfill_game_groups` 已跑完（408 秒）；開發 DB 實測分組最慢 391 ms、平台頁全部遊戲最慢 308 ms，/games HTML 166～173 KB；spec 寫回 03、04、06、16、90、CHANGELOG
-- [x] 分組細節 D88（2026-10-29，分支 `feat/group-details`，未推送）：廠商取 IGDB 第一個（`game_companies.igdb_position`、migration 0017、`backfill_company_positions`）、日期組預設從當月往未來再往過去（涵蓋當月的季／年組算當月）
-- [ ] 待使用者決定：migration 0017 與 `backfill_company_positions`（需 IGDB 金鑰）何時套到開發 DB（2026-10-29）
+- [x] 分組細節 D88（2026-10-29，分支 `feat/group-details`）：廠商取 IGDB 第一個（`game_companies.igdb_position`、migration 0017、`backfill_company_positions`）、日期組預設從當月往未來再往過去（涵蓋當月的季／年組算當月）
+- [x] migration 0017 已套到開發 DB（2026-10-29，使用者批准；`game_companies.igdb_position` 可為空，323,454 筆目前全為 NULL）
+- [ ] 待使用者決定：何時用 IGDB 金鑰跑 `backfill_company_positions`（會打 IGDB 重抓約 32 萬款的公司順序；跑完廠商分組才會變成「取 IGDB 第一個」）
+- [x] 搜尋候選兩段式（2026-10-29，分支 `perf/search-candidates`，未推送）：≤ 3 字元查詢先在熱度前 3000 筆找、找滿 120 筆才用、不足退回全表；開發 DB `the` 467→10 ms、`z` 265→6 ms、`ド` 237→5 ms，中密度與稀有字不變；無 migration；新增 `game-suggest-two-stage` 整合測試；spec 06／07／CHANGELOG 已同步
 - [x] GameDex#1（第二輪 Z1～Z4）、#2（Next 16.4.1 安全修補）合併到 main（2026-10-24）
 - [x] GameDex#3（Z6）合併到 main；修偶發失敗的 PR 開立、交接檔 `docs/handoff/2026-10-24-gamedex-z6-done.md`；開發暫停等使用者重開（2026-10-24）
 - [x] 開發 DB 重算 `display_names`：1,693 款補上 zh-Hant（例：王國之淚），未移除任何既有中文名；全庫 zh-Hant 218 → 1,911（2026-10-18）

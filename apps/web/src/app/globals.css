@@ -1084,6 +1084,9 @@ body:lang(ja) {
 .undated-group > .fold-list {
   padding-block: 0.5rem;
 }
+.undated-more {
+  padding-block: 0.25rem 0.75rem;
+}
 
 .empty-result {
   border: 1px solid var(--border);
