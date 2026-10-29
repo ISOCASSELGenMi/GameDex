@@ -108,7 +108,8 @@
 - [x] W3C：時間軸稀疏條件視窗上限＋部分結果（實測 2026-10-14：status=delayed 往前 6.4 s→1.3 s、status=upcoming 往前 2.3 s→0.76 s；單次最多 4 段、單段 ≤ 896 天；回應 nextPartial／prevPartial＋「繼續找」）
 - [ ] 待決（W3C）：掃描上限常數是否調整；partial 時篩選後可能要多按一次「繼續找」才確認到盡頭（2026-10-14 新增）
 - [ ] 待決（W3B）：/games 預設 sort 是否從網址省略；無效 group key 回 200 空結果或 400；四份頁碼解析合併；use-cases 4 處自算 UTC 今天；分頁 aria-current 移出 li（需同步改 e2e）；repository 引用 api-contract 的 isValidIsoDate（可移到 domain）（2026-10-14 新增）
-- [ ] CI：Actions Node 20 淘汰警告、ubuntu-latest 2026-10-19 起改 Ubuntu 26（2026-10-14 新增）
+- [x] CI：Actions Node 20 淘汰警告（2026-10-29：checkout／setup-node／upload-artifact 升到 v7，皆 node24；CI 尚未在 GitHub 實跑驗證，待推送後看 CI）；ubuntu-latest 改 Ubuntu 26 的風險待確認，未改 runner（字型較寬可能造成版面溢出，未驗證）（2026-10-14 新增）
+- [x] 2026-10-29 清理：eslint 忽略 `.next-e2e-*/**`（apps/web/eslint.config.mjs）；移除已合併 worktree `.local/wt/flaky`（`perf/z2-queries` 的 `.local/wt/phase7` 因有未提交的 `.claude/handoff/` 保留）
 - [x] 在開發 DB 跑 `refresh_popularity --scope all`（2026-10-13，149 秒；heat 5＝2,731、4＝10,766、3＝28,293、2＝67,624、1＝155,134、0＝50,058）
 - [x] 驗收：全部檢查全綠＋spec 15 Phase 3 完成標準（3b 範圍）；commit；交接文件（2026-10-14，`docs/handoff/2026-10-14-phase3b-done.md`；3c 硬體世代時間軸未做，spec 標可後延）
 - [x] PR `ISOCASSELGenMi/SoK-GameDB#1`（feat/phase3b → main，含 3a）2026-10-14 使用者合併（merge commit `be43a6e`）
@@ -187,7 +188,8 @@
   - 追蹤數：現在 `countFollowsOfUser` 算全部類型 → 只算遊戲
 - [x] 第二輪 Z1（2026-10-22，`1fa7ffc`；npm test 1071、test:a11y 728 過）：Holodex 式 header、活動時間單行＋時區、刪舊 `/api/timeline/*`、手機選單對齊（10/22 用量重置後開工）
 - [x] 第二輪 Z2（2026-10-23，`33d5304`；npm test 1159、test:a11y 815 過）：/games 分組檢視（日期／平台／廠商）、刪 /releases、header 依頁切換品牌名、評分排名頁 /ratings、月曆遊戲／活動開關、平台頁全部遊戲；migration 0012 已套開發 DB（2026-10-23）
-- [ ] Z2 待決：評分排名頁篩選只列常用平台（為壓 HTML）（2026-10-23 新增）。同列的其他項目已處理：分組查詢、平台頁全部遊戲冷查詢、/games HTML 由 Z6 解決；Next 16.4.0 安全漏洞由 GameDex#2 升到 16.4.1 解決（2026-10-24）
+- [x] Z2 待決：評分排名頁篩選只列常用平台（為壓 HTML）（2026-10-23 新增；2026-10-29 已解決：`/trending` 改緊湊列＋共用 sprite 251→163 KB，`/ratings` 改列完整平台 168～173 KB；新增 `scripts/html-size.mjs`、`html-budget-a` 單元＋e2e）。同列的其他項目已處理：分組查詢、平台頁全部遊戲冷查詢、/games HTML 由 Z6 解決；Next 16.4.0 安全漏洞由 GameDex#2 升到 16.4.1 解決（2026-10-24）
+- [ ] 待決：月曆頁未定日大組讓 HTML 暴增（2026-12 約 711 KB、2026-09／2027-12 約 300 KB，預算約 250 KB）。建議限制未定日清單顯示量＋「查看全部」連到瀏覽頁（2026-10-29 新增）
 - [x] 第二輪 Z6 效能（2026-10-24，PR `ISOCASSELGenMi/GameDex#3`，`perf/z2-queries`；npm test 1271、單元 928、test:a11y 892 過）：預先計算 `games.release_group`／`publisher_group` 與 `release_picks`；migration 0015、0016 已套開發 DB，`backfill_game_groups` 已跑完（408 秒）；開發 DB 實測分組最慢 391 ms、平台頁全部遊戲最慢 308 ms，/games HTML 166～173 KB；spec 寫回 03、04、06、16、90、CHANGELOG
 - [x] GameDex#1（第二輪 Z1～Z4）、#2（Next 16.4.1 安全修補）合併到 main（2026-10-24）
 - [x] GameDex#3（Z6）合併到 main；修偶發失敗的 PR 開立、交接檔 `docs/handoff/2026-10-24-gamedex-z6-done.md`；開發暫停等使用者重開（2026-10-24）
@@ -195,7 +197,11 @@
 - [x] Z1 加做（2026-10-22 完成；`recompute_display_names` 尚未在開發 DB 執行）：搜尋候選名單（所有搜尋框共用 combobox 元件）；`recompute_display_names` 任務（規則改動時全庫重算，只動 display_names，不打 IGDB）（2026-10-18 新增）
 - [x] 第二輪 Z3（2026-10-23，`7d8f251`；npm test 1227、test:a11y 871 過／1 偶發失敗，單跑 51/51 過）：互動背景（只在內容欄兩側）、彩蛋 1～8、9 個隱藏主題、`user_unlocks` 跨裝置同步、帳號頁收藏與成就；migration 0013 已套開發 DB（2026-10-23）
 - [x] 偶發失敗：`accounts-w7b-u.spec.ts:271`（時間軸追蹤按鈕批次查詢）整套負載重時失敗，Z2、Z3 各一次（2026-10-23 新增；2026-10-24 修）。根因：不是逾時也不是批次查詢競爭，而是 axe target-size 誤報——點追蹤鈕時 Playwright 把頁面捲到 scrollY≈269，頁首的「我的遊戲」連結被捲到 sticky 標頭底下（rect y=-4），axe 判定部分被遮住；捲動量隨載入時序變，負載重時才出現。修法：axe 前 `scrollTo(0,0)`。壓力重現（8 顆 CPU 燒滿、`--repeat-each=24 --workers=8`）修前 4、1、1/24 失敗，修後 48/48 通過
+- [x] 同類偶發失敗（2026-10-29 修）：`accounts-w7b-u.spec.ts:171`（月曆卡片追蹤按鈕）點按鈕後頁面被捲動，`span[aria-describedby="cal-show-hint"]` 被 sticky 標頭部分遮住，axe target-size 誤報；單檔重複 8 次失敗 1 次。修法同 :271：axe 前 `scrollTo(0,0)`；整個 spec 重複 12 輪（204 項）全過
 - [x] 第二輪 Z4（2026-10-23，`ab514f1`；npm test 1256、test:a11y 892 過）：詳情頁補資訊（公司分三欄、Theme、Game Modes、Player Perspectives、引擎、各語言標題、其他稱呼、Storyline、Editions 與相關內容分組）；migration 0014 已套開發 DB，`backfill_detail_fields` 已跑完（634 批、16.5 分、0 失敗；storyline 31,208 款、遊戲人數 315,710 筆、引擎 89,153 筆）（2026-10-23）
 - [x] 修正時間軸 client 不合法 week 被退回今天的 bug（e2e x2:48 偶發失敗的原因）（2026-10-23）
 - [x] 第二輪收尾：spec 寫回（02、03、04、05、06、07、09、15、90、CHANGELOG；D87）、開 PR `feat/gamedex-v2` → main（2026-10-23）
 - [x] 改用公開 repo `ISOCASSELGenMi/GameDex`（舊 private repo Actions 額度用完；歷史作者 email 改寫為 noreply 後推入新 repo；舊 repo 保留為 remote `private`）（2026-10-23）
+- [x] e2e 不依賴實際時間（2026-10-29，`fix/e2e-clock`）：根因是夜貓子彩蛋在本地 02:00～03:59 掛載時自動解鎖 `night-owl` 主題，UTC 02:00～03:59 整套 e2e 有 9 項穩定失敗（eggs-z3a 7、gamedex-redesign-z1a 1、ratings-z2b 1；CI 同樣）。a11y-3b／a11y.spec 的桌機 axe 失敗是同一根因（夜貓子 toast 淡入中被 axe 量到低對比，重試後 toast 已消失所以偶發過）。修法：共用 `test` 加自動套用的 `fixedClock`（落在該時段時 init script 把 `Date` 位移到同日 01:00，其餘時間不動；`clock.install` 會假造計時器、使帳號分頁切換等測試失敗，故不用）；新增 `e2e/clock-e.spec.ts` 鎖定；產品行為不變
+- [ ] 待辦（2026-10-29 新增）：夜貓子／彩蛋 toast 淡入過程中文字對比不足（axe 量到 `.egg-toast-kind` 3.82、`button[data-egg-apply]` 2.95，低於 4.5）；真實使用者在淡入那幾百毫秒看到偏淡的字，可讓 toast 從不透明度 0.6 以上開始淡入，或淡入完成後才套用文字色
+- [ ] 偶發失敗觀察（2026-10-29 新增）：`behavior-3b.spec.ts:94`（/games 分頁：下一頁 → 上一頁兩頁不重疊）在整套中失敗過 1 次（回傳 1 筆而非 26 筆），單檔重複 192 次全過，疑似換頁後 hydration 前就取樣的競爭，再出現時再查

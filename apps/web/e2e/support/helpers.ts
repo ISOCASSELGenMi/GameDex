@@ -4,7 +4,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test as base, type Locator, type Page } from "@playwright/test";
+import { expect, test as base, type BrowserContext, type Locator, type Page } from "@playwright/test";
 import { WEB_DIR } from "./env";
 
 export { FIXTURE, FIXTURE_3B, FIXTURE_4, FIXTURE_HOME } from "./fixture-data";
@@ -15,8 +15,60 @@ export const LOCALES: readonly TestLocale[] = ["zh-Hant", "en", "ja"];
 /** 1×1 透明 PNG。 */
 const PIXEL = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=", "base64");
 
-/** 所有測試：IGDB 圖片與 Next 圖片最佳化器的請求在瀏覽器端直接回 1×1 PNG（fixture 的封面 id 是假的，也不該連外）。 */
-export const test = base.extend<{ blockImages: void }>({
+/**
+ * 瀏覽器端的時刻：實際現在，但避開夜貓子彩蛋的時段（本地 02:00～03:59 掛載時自動解鎖 night-owl 主題）。
+ * 落在該時段就退回同一天的 UTC 01:00（最多落後 3 小時、日期不變），其餘時間不位移；之後照常流動。
+ * 不固定成單一時刻（例如 12:00）：瀏覽器時間與伺服器差太多，會讓 cookie／session 的過期判斷、
+ * 帳號相關測試出錯；位移越小越安全。
+ */
+export function browserTime(now: Date = new Date()): Date {
+  const h = now.getUTCHours();
+  if (h !== 2 && h !== 3) return new Date(now);
+  const d = new Date(now);
+  d.setUTCHours(1, 0, 0, 0);
+  return d;
+}
+
+/**
+ * 對一個 browser context 套用避開夜貓子時段的時刻：只在實際時間落在該時段時，把頁面的 `Date` 位移固定的差（時間照常流動）。
+ * 不用 `context.clock.install`：它會假造 setTimeout／rAF 等計時器，實測讓客戶端導覽的測試（帳號分頁切換等）失敗。
+ * 其餘時間不位移、什麼都不裝。要自己指定時間的測試，之後呼叫 `page.clock.setFixedTime` 覆蓋即可。
+ */
+export async function installFixedClock(context: BrowserContext): Promise<void> {
+  const now = new Date();
+  const offset = browserTime(now).getTime() - now.getTime();
+  if (offset === 0) return;
+  await context.addInitScript((off: number) => {
+    const Native = Date;
+    const Shifted: DateConstructor = new Proxy(Native, {
+      construct: (t, args, nt) => Reflect.construct(t, args.length ? args : [Native.now() + off], nt),
+      apply: () => new Shifted().toString(),
+      get: (t, k, r) => (k === "now" ? () => Native.now() + off : Reflect.get(t, k, r)),
+    });
+    window.Date = Shifted;
+  }, offset);
+}
+
+/**
+ * 所有測試：
+ * - IGDB 圖片與 Next 圖片最佳化器的請求在瀏覽器端直接回 1×1 PNG（fixture 的封面 id 是假的，也不該連外）。
+ * - 避開夜貓子時段的瀏覽器時刻（auto）：預設 context 與測試中以 `browser.newContext()` 另開的 JS 啟用 context 都套用。
+ */
+export const test = base.extend<{ blockImages: void; fixedClock: void }>({
+  fixedClock: [
+    async ({ browser, context }, use) => {
+      await installFixedClock(context);
+      const original = browser.newContext.bind(browser);
+      browser.newContext = (async (options?: Parameters<typeof original>[0]) => {
+        const ctx = await original(options);
+        if (options?.javaScriptEnabled !== false) await installFixedClock(ctx);
+        return ctx;
+      }) as typeof browser.newContext;
+      await use();
+      browser.newContext = original;
+    },
+    { auto: true },
+  ],
   blockImages: [
     async ({ page }, use) => {
       const fulfill = (route: Parameters<Parameters<Page["route"]>[1]>[0]) =>
