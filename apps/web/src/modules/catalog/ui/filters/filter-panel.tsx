@@ -218,18 +218,13 @@ export interface FilterPanelProps {
   clearHref?: string;
   /** 套用按鈕前的額外欄位（評分排名頁的排序、最低票數、年份）；欄位自己的 name 會一起送出。 */
   extraFields?: ReactNode;
-  /**
-   * 平台只列「常用」（已勾選的其他平台仍保留）。其他平台清單約 190 個核取方塊，伺服器元件的內容會同時出現在 HTML 與
-   * 客戶端元件的 flight 資料裡（各約 100 KB）；評分排名頁用它把整頁 HTML 壓在 200 KB 內（平台類型與網址參數仍可篩任何平台）。
-   */
-  commonPlatformsOnly?: boolean;
 }
 
-export function FilterPanel({ locale, t, options, spec, action, fields, hidden, clearHref, extraFields, commonPlatformsOnly }: FilterPanelProps): ReactElement {
+export function FilterPanel({ locale, t, options, spec, action, fields, hidden, clearHref, extraFields }: FilterPanelProps): ReactElement {
   const count = countFilterValues(spec);
   const summary = count > 0 ? t.t("filters.titleWithCount", { count }) : t.t("filters.title");
   const common = options.platforms.filter((p) => p.isCommon);
-  const others = options.platforms.filter((p) => !p.isCommon && (!commonPlatformsOnly || hasFilterValue(spec, "platform", p.slug)));
+  const others = options.platforms.filter((p) => !p.isCommon);
   const othersChecked = others.some((p) => hasFilterValue(spec, "platform", p.slug));
   const list = (values: readonly string[], label: (v: string) => string) => joinList(locale, values.map(label));
 

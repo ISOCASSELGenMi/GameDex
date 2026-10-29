@@ -198,6 +198,9 @@ test.describe("月曆卡片的追蹤按鈕（D83）", () => {
     const all = await page.locator(`button[aria-label="${label}"]`).evaluateAll((els) => els.map((e) => e.getAttribute("aria-pressed")));
     expect(all.length).toBeGreaterThanOrEqual(1);
     expect(new Set(all)).toEqual(new Set(["true"]));
+    // 點按鈕時 Playwright 會把按鈕捲進視窗，捲動量隨載入時序而變；頁面上方的元素被捲到 sticky 標頭底下時，
+    // axe 的 target-size 會判定「部分被遮住」而誤報（同 :271 時間軸那個測試）。先捲回頂端，讓 axe 量到的版面是確定的。
+    await page.evaluate(() => window.scrollTo(0, 0));
     await expectNoA11yViolations(page, "月曆 卡片追蹤按鈕");
 
     await page.reload();
