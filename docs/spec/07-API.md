@@ -34,6 +34,8 @@ GET  /api/v1/games/suggest?q=&locale=&limit=1..10   搜尋框候選（公開）�
 GET  /api/v1/games/group?locale=&by=date|platform|publisher&key=&offset=&limit=&<篩選，含 q、sort、year>
                                           /games 分組檢視某一組的接續卡片（「顯示更多」按需載入）；key：date＝YYYY-MM｜YYYY-Qn｜YYYY｜tbd、
                                           platform＝平台 slug、publisher＝廠商欄 key（06、docs/design/publisher-groups.md）；
+                                          組內順序固定＝首發日由新到舊（未定最後、同日依熱度；D89），`sort` 參數被忽略；組排序 gsort／gdir 與日期起算月 gfrom 只影響頁面的組序，這個 API 不吃（帶了也忽略）；
+                                          卡片資料多一個 `o`（標題原文；主標題＝原文時省略，06 §卡片大小一致）；
                                           offset 預設 0、limit 預設 24、最多 60；200 { key, total, cards[] }；
                                           400 { error: invalid_locale｜invalid_by（缺少、none 或未知）｜invalid_key｜invalid_paging }、503 { error: "timeout" }；
                                           篩選與頁面共用 buildBrowseConditions；Cache-Control: public, max-age=60, s-maxage=300, stale-while-revalidate=300

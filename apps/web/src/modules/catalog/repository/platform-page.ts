@@ -21,6 +21,7 @@ import type {
   PlatformKind,
   PlatformKindGroup,
   PlatformListItem,
+  PlatformOverviewOrder,
   PlatformStatus,
   ReleaseStage,
 } from "../domain/entities";
@@ -46,16 +47,33 @@ interface PlatformRow extends Record<string, unknown> {
   family_slug: string | null;
   family_name: string | null;
   recent: number;
+  first_release: IsoDate | null;
+  first_precision: DatePrecision | null;
 }
 
+// first_release／first_precision＝平台發售日：platform_release_dates 裡最早一筆有日期的（同日取地區 id 小的）
 const platformSelect = (today: IsoDate) => sql`
   SELECT pl.id, pl.slug, pl.name, pl.abbreviation, pl.kind, pl.generation, pl.status, pl.logo_url,
     pf.slug AS family_slug, pf.name AS family_name,
     COALESCE((
       SELECT count(*) FROM release_events r
       WHERE r.platform_id = pl.id AND r.release_date BETWEEN (${today}::date - 365) AND (${today}::date + 365)
-    ), 0)::int AS recent
-  FROM platforms pl LEFT JOIN platform_families pf ON pf.id = pl.family_id`;
+    ), 0)::int AS recent,
+    fr.release_date::text AS first_release, fr.precision::text AS first_precision
+  FROM platforms pl LEFT JOIN platform_families pf ON pf.id = pl.family_id
+  LEFT JOIN LATERAL (
+    SELECT d.release_date, d.precision FROM platform_release_dates d
+    WHERE d.platform_id = pl.id AND d.release_date IS NOT NULL
+    ORDER BY d.release_date ASC, d.region_id ASC LIMIT 1
+  ) fr ON true`;
+
+/** 日期比較：升冪 sign=1、降冪 sign=-1；沒有日期的永遠最後。 */
+function compareFirstRelease(a: IsoDate | null, b: IsoDate | null, sign: number): number {
+  if (a === b) return 0;
+  if (a === null) return 1;
+  if (b === null) return -1;
+  return (a < b ? -1 : 1) * sign;
+}
 
 function toListItem(r: PlatformRow, resolveImage: ImageResolver): PlatformListItem {
   return {
@@ -71,17 +89,24 @@ function toListItem(r: PlatformRow, resolveImage: ImageResolver): PlatformListIt
     logoUrl: r.logo_url,
     recentReleaseCount: r.recent,
     isCommon: isCommonPlatform(r.kind, r.recent),
+    firstReleaseDate: r.first_release,
+    firstReleasePrecision: r.first_precision,
   };
 }
 
-/** 組內排序：常用在前（依近期事件數多到少），其餘世代新到舊、名稱。 */
-export function groupPlatformsByKind(items: readonly PlatformListItem[]): PlatformKindGroup[] {
+/**
+ * 組內排序：預設常用在前（依近期事件數多到少），其餘世代新到舊、名稱。
+ * 指定 order（平台總覽的 `sort=release&dir=`）時改依平台發售日（沒有日期的永遠最後），平手再依上面的順序。
+ */
+export function groupPlatformsByKind(items: readonly PlatformListItem[], order?: PlatformOverviewOrder): PlatformKindGroup[] {
+  const sign = order?.dir === "asc" ? 1 : -1;
   return PLATFORM_OVERVIEW_KIND_ORDER.map((kind) => ({
     kind,
     platforms: items
       .filter((p) => platformGroupsFor(p.kind).includes(kind))
       .sort(
         (a, b) =>
+          (order ? compareFirstRelease(a.firstReleaseDate, b.firstReleaseDate, sign) : 0) ||
           Number(b.isCommon) - Number(a.isCommon) ||
           (a.isCommon ? b.recentReleaseCount - a.recentReleaseCount : 0) ||
           (b.generation ?? -1) - (a.generation ?? -1) ||
@@ -99,12 +124,13 @@ export async function listPlatformGroups(
   today: IsoDate,
   resolveImage: ImageResolver,
   opts: ReadOptions = {},
+  order?: PlatformOverviewOrder,
 ): Promise<PlatformKindGroup[]> {
   const res = await withReadTimeout(
     (tx) => tx.execute<PlatformRow>(sql`${platformSelect(today)} WHERE pl.kind <> 'mobile'`),
     opts,
   );
-  return groupPlatformsByKind(res.rows.map((r) => toListItem(r, resolveImage)));
+  return groupPlatformsByKind(res.rows.map((r) => toListItem(r, resolveImage)), order);
 }
 
 export interface PlatformPageQuery {

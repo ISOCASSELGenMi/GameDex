@@ -1383,8 +1383,18 @@ button.sheet-entry:hover {
 }
 /* 瀏覽頁卡片與熱度徽章：以 class 取代一長串 Tailwind 工具類別（每張卡的伺服器 HTML 與 RSC payload 各省約 400 bytes；效果與原本的工具類別相同） */
 .bc-item {
+  display: flex;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
+}
+/* 同一列的卡片等高：卡片本身撐滿格子（沒翻譯的卡片第二行 .bc-orig 是空的，但仍保留一行高度） */
+.bc-item > .summary-card {
+  flex: 1;
+  min-width: 0;
+  border-radius: inherit;
+}
+.bc-orig {
+  min-height: 1.25rem;
 }
 .bc-info {
   display: flex;
@@ -2628,6 +2638,72 @@ a.card:hover {
     background: var(--surface-strong);
   }
 }
+/* 組排序（依平台／廠商）：分段連結；跳月（依日期）：往前看的連結＋年／月下拉 */
+.rc-order {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1.25rem;
+}
+.rc-order-group {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+}
+.rc-order-label {
+  margin-inline-end: 0.5rem;
+  font-weight: 700;
+}
+.rc-order-item {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--panel);
+  color: var(--foreground);
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    background-color var(--dur-1) ease,
+    border-color var(--dur-1) ease;
+}
+.rc-order-item[aria-current="true"] {
+  border-color: var(--link);
+  background: var(--link);
+  color: var(--on-link);
+}
+@media (hover: hover) and (pointer: fine) {
+  .rc-order-item:not([aria-current="true"]):hover {
+    border-color: var(--link);
+    background: var(--surface-strong);
+  }
+}
+.rc-datenav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem 1.25rem;
+}
+.rc-datejump {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.5rem 0.75rem;
+}
+.rc-datejump-select {
+  min-height: 44px;
+  padding: 0 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--background);
+  color: var(--foreground);
+}
+.rc-datenav-current {
+  margin: 0;
+}
 .rc-noscript {
   display: flex;
   flex-wrap: wrap;
@@ -2729,6 +2805,17 @@ a.card:hover {
   line-height: 1.2;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
+}
+/* 第二行：標題原文（沒翻譯時留空，高度固定一行，卡片大小一致） */
+.rc-orig {
+  display: block;
+  min-height: 1.25em;
+  overflow: hidden;
+  color: #e5e7eb;
+  font-size: 0.75rem;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .rc-meta {
   color: #e5e7eb;

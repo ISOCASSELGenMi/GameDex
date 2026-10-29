@@ -33,7 +33,7 @@ export { getRatingsRanking, getRatingColumns, type GetRatingsRankingInput } from
 export {
   getGameGroups,
   getGameGroupPage,
-  platformColumnRanks,
+  normalizeGroupOrder,
   isGroupKey,
   type GetGameGroupsInput,
   type GetGameGroupPageInput,

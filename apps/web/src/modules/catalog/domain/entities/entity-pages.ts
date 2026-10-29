@@ -47,6 +47,23 @@ export interface PlatformListItem extends PlatformChip {
   recentReleaseCount: number;
   /** 常用平台（與篩選面板同一規則 isCommonPlatform：近期事件 ≥ 200 且 kind 不是 other／mobile）。 */
   isCommon: boolean;
+  /** 平台發售日：platform_release_dates 裡最早一筆有日期的（各地區取最早）；全部沒有日期為 null。 */
+  firstReleaseDate: IsoDate | null;
+  firstReleasePrecision: DatePrecision | null;
+}
+
+/**
+ * 平台總覽的排序（`/platforms?sort=release&dir=asc|desc`）：release＝依平台發售日，沒有日期的平台永遠排最後；
+ * 預設 release／desc（新到舊）。組內平手依常用度（原本的組內順序）。
+ */
+export const PLATFORM_OVERVIEW_SORTS = ["release"] as const;
+export type PlatformOverviewSort = (typeof PLATFORM_OVERVIEW_SORTS)[number];
+export const PLATFORM_OVERVIEW_DIRS = ["asc", "desc"] as const;
+export type PlatformOverviewDir = (typeof PLATFORM_OVERVIEW_DIRS)[number];
+export const DEFAULT_PLATFORM_OVERVIEW_DIR: PlatformOverviewDir = "desc";
+export interface PlatformOverviewOrder {
+  sort: PlatformOverviewSort;
+  dir: PlatformOverviewDir;
 }
 
 /** 平台總覽的一組（同 kind）。組內：常用在前（依近期事件數），其餘世代新到舊、名稱。 */

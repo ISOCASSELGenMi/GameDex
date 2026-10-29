@@ -6,13 +6,12 @@
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { closeDb, getDb } from "@/kernel/db/client";
-import { getGameGroupPage, getGameGroups, platformColumnRanks } from "@/modules/catalog/use-cases/read";
+import { getGameGroupPage, getGameGroups } from "@/modules/catalog/use-cases/read";
 import { GAME_GROUPS_PER_PAGE, type GroupedBy } from "@/modules/catalog/domain/entities";
 import { groupOfGame, type GameCompanyRef } from "@/modules/catalog/domain/publisher-groups";
 import { buildSearchText } from "@/modules/catalog/domain/search-text";
 import { backfillGameGroupsBatch } from "@/modules/catalog/repository/game-groups";
 import { companies, gameCompanies, gamePlatforms, games, platforms } from "@/modules/catalog/schema";
-import { listPlatforms } from "@/modules/catalog/use-cases/read";
 
 const enabled = !!process.env.TEST_DATABASE_URL;
 
@@ -130,35 +129,49 @@ describe.skipIf(!enabled)("瀏覽頁分組檢視（整合）", () => {
       expect(keysOf(await getGameGroups({ ...BASE, by: "date", now: mid }))).toEqual(keysOf(p1));
     });
 
-    it("sort=name 維持由新到舊", async () => {
-      const r = await getGameGroups({ ...BASE, by: "date", sort: "name", now: NOW });
-      expect(keysOf(r)[0]).toBe("2037");
+    it("指定起算月（gfrom）：期間結束月 ≥ 起算月的組由舊到新（涵蓋起算月的季／年組算起算月，細精度在前），日期未定最後；更早的組不列", async () => {
+      const f = async (groupFrom: string, page = 1) => keysOf(await getGameGroups({ ...BASE, by: "date", groupFrom, page, now: NOW }));
+      expect(await f("2036-10")).toEqual(["2036-10", "2036-Q4", "2036", "2036-11", "2036-12", "2037"]);
+      expect(await f("2036-10", 2)).toEqual(["tbd"]);
+      expect(await f("2036-09")).toEqual(["2036-09", "2036", "2036-10", "2036-Q4", "2036-11", "2036-12"]);
+      expect(await f("2036-09", 2)).toEqual(["2037", "tbd"]);
+      expect(await f("2036-01")).toEqual(["2036", "2036-08", "2036-09", "2036-10", "2036-Q4", "2036-11"]);
+      expect(await f("2036-01", 2)).toEqual(["2036-12", "2037", "tbd"]);
+      expect(await f("2036-12")).toEqual(["2036-12", "2036-Q4", "2036", "2037", "tbd"]);
+      expect(await f("2040-01")).toEqual(["tbd"]);
+      const first = await getGameGroups({ ...BASE, by: "date", groupFrom: "2036-10", now: NOW });
+      expect(first.groupFrom).toBe("2036-10");
+      expect(first.hasMoreGroups).toBe(true);
     });
 
-    it("sort=release_date 由舊到新，日期未定仍在最後", async () => {
-      const r = await getGameGroups({ ...BASE, by: "date", sort: "release_date", now: NOW });
-      expect(keysOf(r)).toEqual(["2036", "2036-08", "2036-09", "2036-Q4", "2036-10", "2036-11"]);
-      const p2 = await getGameGroups({ ...BASE, by: "date", sort: "release_date", page: 2, now: NOW });
-      expect(keysOf(p2)).toEqual(["2036-12", "2037", "tbd"]);
+    it("起算月不合法、或依平台／廠商時：退回預設順序／被忽略", async () => {
+      const def = keysOf(await getGameGroups({ ...BASE, by: "date", now: NOW }));
+      expect(keysOf(await getGameGroups({ ...BASE, by: "date", groupFrom: "2036-13", now: NOW }))).toEqual(def);
+      expect(keysOf(await getGameGroups({ ...BASE, by: "date", groupFrom: null, now: NOW }))).toEqual(def);
+      const plat = await getGameGroups({ ...BASE, by: "platform", groupFrom: "2037-01", now: NOW });
+      expect(plat.groupFrom).toBeNull();
+      expect(keysOf(plat)).toEqual(keysOf(await getGameGroups({ ...BASE, by: "platform", now: NOW })));
     });
 
-    it("每組總數正確、首屏只送 perGroup 張、組內依熱度", async () => {
+    it("每組總數正確、首屏只送 perGroup 張、組內固定依發售日由新到舊（同日依熱度）", async () => {
       const r = await getGameGroups({ ...BASE, by: "date", page: 1, now: NOW });
       const sep = r.groups.find((g) => g.key === "2036-09")!;
       expect(sep.total).toBe(3 + 30);
       expect(sep.cards).toHaveLength(8);
-      expect(sep.cards.slice(0, 3).map((c) => c.name)).toEqual(["Gz58 Elden", "Gz58 Zelda", "Gz58 Bulk 01"]);
+      // 9/20 的 Bulk（熱度 499、498…）在 9/10 的 Elden／Zelda／Indie 前面
+      expect(sep.cards.slice(0, 3).map((c) => c.name)).toEqual(["Gz58 Bulk 01", "Gz58 Bulk 02", "Gz58 Bulk 03"]);
       expect(r.groups.find((g) => g.key === "2036-10")!.total).toBe(2);
     });
 
-    it("顯示更多：接續的卡片不重複、依同一排序", async () => {
+    it("顯示更多：接續的卡片不重複、依同一排序（發售日由新到舊）", async () => {
       const first = await getGameGroups({ ...BASE, by: "date", now: NOW });
       const shown = first.groups.find((g) => g.key === "2036-09")!.cards.map((c) => c.gameId);
       const more = await getGameGroupPage({ ...BASE, by: "date", key: "2036-09", offset: 8, limit: 24, now: NOW });
       expect(more!.total).toBe(33);
       expect(more!.cards).toHaveLength(24);
       expect(more!.cards.some((c) => shown.includes(c.gameId))).toBe(false);
-      expect(more!.cards[0]!.name).toBe("Gz58 Bulk 07");
+      expect(more!.cards[0]!.name).toBe("Gz58 Bulk 09");
+      expect(more!.cards.slice(-2).map((c) => c.name)).toEqual(["Gz58 Elden", "Gz58 Zelda"]);
       const rest = await getGameGroupPage({ ...BASE, by: "date", key: "2036-09", offset: 32, limit: 24, now: NOW });
       expect(rest!.cards.map((c) => c.name)).toEqual(["Gz58 Indie"]);
     });
@@ -170,15 +183,11 @@ describe.skipIf(!enabled)("瀏覽頁分組檢視（整合）", () => {
   });
 
   describe("依平台", () => {
-    it("依平台總覽的順序（主機在 PC 前），一款遊戲出現在它每個平台組；沒有平台的遊戲不出現", async () => {
+    it("預設組排序＝最新發售日（組內 max 首發日）由新到舊；一款遊戲出現在它每個平台組；沒有平台的遊戲不出現", async () => {
       const r = await getGameGroups({ ...BASE, by: "platform", now: NOW });
-      const ranks = platformColumnRanks(await listPlatforms({ locale: "zh-Hant" }));
-      const order = keysOf(r);
-      expect(order.sort()).toEqual(["gz58-pc", "gz58-ps5", "gz58-switch"]);
-      const sorted = keysOf(r);
-      expect(sorted.indexOf("gz58-ps5")).toBeLessThan(sorted.indexOf("gz58-pc"));
-      expect(sorted.indexOf("gz58-switch")).toBeLessThan(sorted.indexOf("gz58-pc"));
-      void ranks;
+      // switch 最新 2037-01-01（Year）、pc 2036-12-05（Dec）、ps5 2036-10-02（Capcom）
+      expect(keysOf(r)).toEqual(["gz58-switch", "gz58-pc", "gz58-ps5"]);
+      expect(r.groupOrder).toEqual({ sort: "latest", dir: "desc" });
       const total = (key: string) => r.groups.find((g) => g.key === key)!.total;
       expect(total("gz58-ps5")).toBe(2);
       expect(total("gz58-switch")).toBe(2);
@@ -186,24 +195,68 @@ describe.skipIf(!enabled)("瀏覽頁分組檢視（整合）", () => {
       expect(r.groups.find((g) => g.key === "gz58-ps5")!.platform).toMatchObject({ slug: "gz58-ps5", kind: "console" });
     });
 
-    it("組內依熱度；sort=release_date 組內依首發日期", async () => {
-      const pop = await getGameGroupPage({ ...BASE, by: "platform", key: "gz58-ps5", offset: 0, limit: 10 });
-      expect(pop!.cards.map((c) => c.name)).toEqual(["Gz58 Elden", "Gz58 Capcom"]);
-      const byDate = await getGameGroupPage({ ...BASE, by: "platform", key: "gz58-switch", offset: 0, limit: 10, sort: "release_date" });
-      expect(byDate!.cards.map((c) => c.name)).toEqual(["Gz58 Zelda", "Gz58 Year"]);
+    it("組排序：latest／count／name × asc／desc；沒給或不合法退回 latest／desc", async () => {
+      const order = async (groupSort: "latest" | "count" | "name", groupDir: "asc" | "desc") => keysOf(await getGameGroups({ ...BASE, by: "platform", groupSort, groupDir, now: NOW }));
+      expect(await order("latest", "asc")).toEqual(["gz58-ps5", "gz58-pc", "gz58-switch"]);
+      expect(await order("latest", "desc")).toEqual(["gz58-switch", "gz58-pc", "gz58-ps5"]);
+      // 遊戲數：pc 38、ps5 2、switch 2（平手依名稱）
+      expect(await order("count", "desc")).toEqual(["gz58-pc", "gz58-ps5", "gz58-switch"]);
+      expect(await order("count", "asc")).toEqual(["gz58-ps5", "gz58-switch", "gz58-pc"]);
+      expect(await order("name", "asc")).toEqual(["gz58-pc", "gz58-ps5", "gz58-switch"]);
+      expect(await order("name", "desc")).toEqual(["gz58-switch", "gz58-ps5", "gz58-pc"]);
+      const bad = await getGameGroups({ ...BASE, by: "platform", groupSort: "nope" as never, groupDir: "up" as never, now: NOW });
+      expect(bad.groupOrder).toEqual({ sort: "latest", dir: "desc" });
+      expect(keysOf(bad)).toEqual(["gz58-switch", "gz58-pc", "gz58-ps5"]);
+    });
+
+    it("組排序與分頁：排序後再切頁（每頁 6 組），翻頁串起來與完整排序一致", async () => {
+      const filtered = { ...BASE, by: "platform" as const, groupSort: "name" as const, groupDir: "asc" as const, now: NOW };
+      const p1 = await getGameGroups(filtered);
+      expect(p1.hasMoreGroups).toBe(false);
+      expect(keysOf(await getGameGroups({ ...filtered, page: 2 }))).toEqual([]);
+    });
+
+    it("組內固定依發售日由新到舊（同日依熱度），不論頁面的 sort", async () => {
+      const ps5 = await getGameGroupPage({ ...BASE, by: "platform", key: "gz58-ps5", offset: 0, limit: 10 });
+      expect(ps5!.cards.map((c) => c.name)).toEqual(["Gz58 Capcom", "Gz58 Elden"]);
+      const sw = await getGameGroupPage({ ...BASE, by: "platform", key: "gz58-switch", offset: 0, limit: 10 });
+      expect(sw!.cards.map((c) => c.name)).toEqual(["Gz58 Year", "Gz58 Zelda"]);
     });
   });
 
   describe("依廠商", () => {
     it("開發商優先；開發商不在名單才看發行商；porting 不算；其餘歸 other 且在最後", async () => {
-      const r = await getGameGroups({ ...BASE, by: "publisher", now: NOW });
-      expect(keysOf(r)).toEqual(["nintendo", "capcom", "fromsoftware", "other"]);
+      const r = await getGameGroups({ ...BASE, by: "publisher", groupSort: "name", groupDir: "asc", locale: "en", now: NOW });
+      expect(keysOf(r)).toEqual(["capcom", "fromsoftware", "nintendo", "other"]);
       const members_ = async (key: string) => (await getGameGroupPage({ ...BASE, by: "publisher", key, offset: 0, limit: 60 }))!.cards.map((c) => c.name);
       expect(await members_("fromsoftware")).toEqual(["Gz58 Elden"]);
       expect(await members_("nintendo")).toEqual(["Gz58 Zelda"]);
       expect(await members_("capcom")).toEqual(["Gz58 Capcom"]);
       const other = r.groups.find((g) => g.key === "other")!;
       expect(other.total).toBe(39); // Indie、Port、Quarter、Year、Undated、Nov／Dec／Aug、Bulk 30
+    });
+
+    it("組排序：預設最新發售日由新到舊；count／name 可升降冪；「獨立／其他」永遠最後；名稱依介面語系", async () => {
+      const order = async (groupSort: "latest" | "count" | "name", groupDir: "asc" | "desc", locale = "en") =>
+        keysOf(await getGameGroups({ ...BASE, by: "publisher", groupSort, groupDir, locale, now: NOW }));
+      // capcom 2036-10-02；fromsoftware、nintendo 都是 2036-09-10、各 1 款（平手依名稱：FromSoftware、Nintendo）
+      expect(keysOf(await getGameGroups({ ...BASE, by: "publisher", locale: "en", now: NOW }))).toEqual(["capcom", "fromsoftware", "nintendo", "other"]);
+      expect(await order("latest", "asc")).toEqual(["fromsoftware", "nintendo", "capcom", "other"]);
+      expect(await order("count", "desc")).toEqual(["capcom", "fromsoftware", "nintendo", "other"]);
+      expect(await order("count", "asc")).toEqual(["capcom", "fromsoftware", "nintendo", "other"]);
+      expect(await order("name", "desc")).toEqual(["nintendo", "fromsoftware", "capcom", "other"]);
+      // 名稱用介面語系的欄名：中文「卡普空」「任天堂」（FromSoftware（角川）以英文開頭，排序在中文前）
+      const zh = await order("name", "asc", "zh-Hant");
+      expect(zh.at(-1)).toBe("other");
+      expect(new Set(zh)).toEqual(new Set(["capcom", "fromsoftware", "nintendo", "other"]));
+    });
+
+    it("「獨立／其他」組內：沒有日期的遊戲排最後（發售日由新到舊，NULLS LAST）", async () => {
+      const other = await getGameGroupPage({ ...BASE, by: "publisher", key: "other", offset: 0, limit: 60 });
+      expect(other!.total).toBe(39);
+      expect(other!.cards).toHaveLength(39);
+      expect(other!.cards.at(-1)!.name).toBe("Gz58 Undated");
+      expect(other!.cards[0]!.name).toBe("Gz58 Year"); // 2037-01-01
     });
 
     it("SQL 與 domain 的 groupOfGame 對同一批 fixture 結果相同", async () => {

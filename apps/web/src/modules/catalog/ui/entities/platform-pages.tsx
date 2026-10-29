@@ -7,9 +7,9 @@ import { notFound } from "next/navigation";
 import { cacheLife } from "next/cache";
 import { cache, type ReactElement } from "react";
 import { formatIsoDate, formatReleaseLabel, type Locale, type Translator } from "@sok/i18n";
-import type { PlatformListItem, PlatformPage } from "../../domain/entities";
+import { PLATFORM_OVERVIEW_DIRS, type PlatformListItem, type PlatformPage } from "../../domain/entities";
 import { getPlatformPage } from "../../use-cases/read/get-platform-page";
-import { listPlatforms } from "../../use-cases/read/list-platforms";
+import { listPlatforms, normalizePlatformOverviewOrder } from "../../use-cases/read/list-platforms";
 import { getTranslator, platformKindLabel, regionLabel } from "../labels";
 import { PageShell } from "../layout/page-shell";
 import { platformHref, platformsHref, subscribeHref } from "../links";
@@ -38,6 +38,7 @@ function PlatformItemView({ p, locale, t }: { p: PlatformListItem; locale: Local
   const meta: string[] = [];
   if (p.family) meta.push(p.family.name);
   if (p.generation != null) meta.push(t.t("ui.platforms.generation", { generation: p.generation }));
+  if (p.firstReleaseDate) meta.push(t.t("ui.platforms.releasedOn", { date: formatReleaseLabel(p.firstReleaseDate, p.firstReleasePrecision ?? "day", locale) }));
   if (p.status !== "active") meta.push(t.t(`enums.platformStatus.${p.status}`));
   return (
     <li className="rounded-lg border border-[var(--border)] p-2" data-platform={p.slug}>
@@ -59,22 +60,42 @@ function PlatformItemView({ p, locale, t }: { p: PlatformListItem; locale: Local
 export async function PlatformsOverviewPage({
   locale,
   supportedLocales,
+  searchParams = {},
 }: {
   locale: Locale;
   supportedLocales: readonly Locale[];
+  /** `sort=release`（預設，唯一值）、`dir=asc|desc`（預設 desc）。 */
+  searchParams?: EntitySearchParams;
 }): Promise<ReactElement> {
   await connection();
   const t = getTranslator(locale);
+  const order = normalizePlatformOverviewOrder({ sort: firstParam(searchParams.sort), dir: firstParam(searchParams.dir) });
   let groups;
   try {
-    groups = await listPlatforms({ locale });
+    groups = await listPlatforms({ locale, order });
   } catch (err) {
     rethrowForPage(err);
   }
   return (
-    <PageShell locale={locale} supportedLocales={supportedLocales} path="/platforms">
+    <PageShell locale={locale} supportedLocales={supportedLocales} path="/platforms" query={order.dir === "asc" ? "dir=asc" : ""}>
       <h1 className="text-2xl font-bold">{t.t("ui.platforms.title")}</h1>
       <p className="mt-2 text-sm text-[var(--muted)]">{t.t("ui.platforms.note")}</p>
+      <div className="rc-order mt-3" data-platform-order="">
+        <nav className="rc-order-group" aria-label={t.t("ui.platforms.order.label")}>
+          <span className="rc-order-label">{t.t("ui.platforms.order.label")}</span>
+          {PLATFORM_OVERVIEW_DIRS.map((d) => (
+            <a
+              key={d}
+              className="rc-order-item"
+              href={platformsHref(locale, d)}
+              aria-current={order.dir === d ? "true" : undefined}
+              data-platform-dir={d}
+            >
+              {t.t(`ui.platforms.order.${d}`)}
+            </a>
+          ))}
+        </nav>
+      </div>
       {groups.length === 0 ? <p className="mt-4">{t.t("ui.platforms.empty")}</p> : null}
       {groups.map((g) => {
         const heading = t.t("ui.common.withCount", { label: platformKindLabel(t, g.kind), count: g.platforms.length });

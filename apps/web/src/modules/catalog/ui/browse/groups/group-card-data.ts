@@ -22,6 +22,7 @@ export function toGroupCard(game: BrowseGameCard, locale: Locale, t: Translator)
   };
   const lang = gameNameLang(game.name, game.name === game.originalName, locale);
   if (lang) out.nl = lang;
+  if (game.originalName !== game.name) out.o = game.originalName;
   if (game.cover) out.c = game.cover.medium;
   if (precision === "day" && game.firstReleaseDate) out.dt = game.firstReleaseDate;
   if (game.gameStatus === "rumored") out.t = t.t("enums.gameStatus.rumored");

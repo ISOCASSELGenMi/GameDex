@@ -14,11 +14,23 @@ import {
   publisherGroupOfCompany,
   publisherGroupSqlMap,
 } from "@/modules/catalog/domain/publisher-groups";
-import { GAME_GROUP_BYS, GAME_GROUP_MAX_PAGE, GAME_GROUPS_PER_PAGE } from "@/modules/catalog/domain/entities";
-import { buildGroupCardsQuery, buildGroupListQuery, isDateGroupKey, publisherKeyToIndex } from "@/modules/catalog/repository/browse-groups";
-import { isGroupKey, platformColumnRanks } from "@/modules/catalog/use-cases/read";
+import { GAME_GROUP_BYS, GAME_GROUP_MAX_PAGE, GAME_GROUPS_PER_PAGE, GROUP_MONTH_MIN, isGroupMonth, shiftGroupMonth } from "@/modules/catalog/domain/entities";
+import { buildGroupCardsQuery, buildGroupListQuery, isDateGroupKey, publisherKeyToIndex, sortGroupRows } from "@/modules/catalog/repository/browse-groups";
+import { isGroupKey, normalizeGroupOrder } from "@/modules/catalog/use-cases/read";
 import { dateGroupTitle } from "@/modules/catalog/ui/browse/groups/groups-server";
-import { groupPagination, groupRange, isGrouped, parseGameGroupBy, parseGroupPage } from "@/modules/catalog/ui/browse/groups/params";
+import { groupYearOptions } from "@/modules/catalog/ui/browse/groups/group-controls";
+import {
+  groupPagination,
+  groupQueryParts,
+  groupRange,
+  isGrouped,
+  parseGameGroupBy,
+  parseGroupDir,
+  parseGroupFrom,
+  parseGroupPage,
+  parseGroupSort,
+} from "@/modules/catalog/ui/browse/groups/params";
+import { filterRedirectSearch } from "@sok/api-contract";
 import { gamesBrowseHref } from "@/modules/catalog/ui/links";
 
 const dev = (igdbId: number, order?: number) => ({ igdbId, role: "developer", ...(order === undefined ? {} : { order }) });
@@ -57,6 +69,26 @@ describe("廠商對照表", () => {
     expect(publisherGroupOfCompany(817)).toBe("square-enix");
     expect(publisherGroupOfCompany(1440)).toBe("square-enix");
     expect(publisherGroupOfCompany(0)).toBeNull();
+  });
+  it("2026-10-29 新增三欄：雷亞遊戲 Rayark（12017、14094）、赤燭遊戲 Red Candle Games（11926）、信革數位 SIGONO（15108）；排在名單後段（既有欄位索引不變）", () => {
+    expect(publisherGroupOfCompany(12017)).toBe("rayark");
+    expect(publisherGroupOfCompany(14094)).toBe("rayark");
+    expect(publisherGroupOfCompany(11926)).toBe("red-candle-games");
+    expect(publisherGroupOfCompany(15108)).toBe("sigono");
+    expect(publisherColumnName("rayark", "zh-Hant")).toBe("雷亞遊戲");
+    expect(publisherColumnName("red-candle-games", "zh-Hant")).toBe("赤燭遊戲");
+    expect(publisherColumnName("sigono", "zh-Hant")).toBe("信革數位");
+    expect(publisherColumnName("rayark", "en")).toBe("Rayark");
+    expect(publisherColumnName("red-candle-games", "en")).toBe("Red Candle Games");
+    expect(publisherColumnName("sigono", "en")).toBe("SIGONO");
+    // 既有欄位的索引（games.publisher_group 已存的值）不能變：paradox 仍是新增前的最後一欄，新欄接在後面
+    const keys = PUBLISHER_GROUPS.map((g) => g.key);
+    expect(keys.indexOf("paradox")).toBe(keys.length - 4);
+    expect(keys.slice(-3)).toEqual(["rayark", "red-candle-games", "sigono"]);
+    expect(groupOfGame([{ igdbId: 14094, role: "developer" }, { igdbId: 70, role: "publisher" }])).toBe("rayark");
+    // SQL 對照表同步
+    const { igdbIds, groupIdx } = publisherGroupSqlMap();
+    for (const id of [12017, 14094, 11926, 15108]) expect(groupIdx[igdbIds.indexOf(id)]).toBe(keys.indexOf(publisherGroupOfCompany(id)!));
   });
   it("名稱依語系，未知語系退回英文", () => {
     expect(publisherColumnName("sony", "zh-Hant")).toBe("索尼互動娛樂");
@@ -142,6 +174,56 @@ describe("分組檢視參數", () => {
     expect(gamesBrowseHref("en", { platform: ["ps5"] }, 2, "publisher")).toBe("/en/games?platform=ps5&by=publisher&page=2");
     expect(gamesBrowseHref("zh-Hant", { q: "zelda" }, 1, "none")).toBe("/zh-Hant/games?q=zelda");
   });
+  it("網址：組排序（gsort／gdir，只有平台／廠商）與起算月（gfrom，只有日期）；預設值不寫入；參數依名稱排序（與 proxy 正規形式一致，不會被 308）", () => {
+    expect(gamesBrowseHref("en", {}, 1, "platform", { sort: "latest", dir: "desc" })).toBe("/en/games?by=platform");
+    expect(gamesBrowseHref("en", {}, 1, "platform", { sort: "count", dir: "desc" })).toBe("/en/games?by=platform&gsort=count");
+    expect(gamesBrowseHref("en", {}, 1, "publisher", { sort: "name", dir: "asc" })).toBe("/en/games?by=publisher&gdir=asc&gsort=name");
+    expect(gamesBrowseHref("en", { genre: ["rpg"] }, 3, "publisher", { sort: "latest", dir: "asc" })).toBe("/en/games?genre=rpg&by=publisher&gdir=asc&page=3");
+    expect(gamesBrowseHref("en", {}, 1, "date", { from: "2024-03" })).toBe("/en/games?by=date&gfrom=2024-03");
+    expect(gamesBrowseHref("en", {}, 2, "date", { from: "2024-03" })).toBe("/en/games?by=date&gfrom=2024-03&page=2");
+    // 不相關的參數不寫：日期不帶組排序、平台不帶起算月、不分組都不帶
+    expect(gamesBrowseHref("en", {}, 1, "date", { sort: "name", dir: "asc" })).toBe("/en/games?by=date");
+    expect(gamesBrowseHref("en", {}, 1, "platform", { from: "2024-03" })).toBe("/en/games?by=platform");
+    expect(gamesBrowseHref("en", {}, 1, "none", { sort: "name", dir: "asc", from: "2024-03" })).toBe("/en/games");
+    expect(groupQueryParts("none", { sort: "name" })).toEqual([]);
+    // proxy 的 filterRedirectSearch 對頁面產生的網址不轉址；對順序不同的表單送出會轉成同一種寫法
+    for (const href of [
+      "/en/games?genre=rpg&by=publisher&gdir=asc&gsort=name&page=2",
+      "/en/games?by=date&gfrom=2024-03",
+      "/en/games?q=zelda&by=platform&gsort=count",
+    ]) expect(filterRedirectSearch(href.slice(href.indexOf("?"))), href).toBeNull();
+    expect(filterRedirectSearch("?by=date&gyear=2024&gmonth=3")).toBe("?by=date&gmonth=3&gyear=2024");
+  });
+  it("gsort／gdir／gfrom 解析：不合法一律預設；沒有 JS 的跳月表單（gyear＋gmonth）組成起算月", () => {
+    expect(parseGroupSort("count")).toBe("count");
+    expect(parseGroupSort("COUNT")).toBe("latest");
+    expect(parseGroupSort(undefined)).toBe("latest");
+    expect(parseGroupDir("asc")).toBe("asc");
+    expect(parseGroupDir("up")).toBe("desc");
+    expect(parseGroupFrom("2024-03")).toBe("2024-03");
+    expect(parseGroupFrom("2024-13")).toBeNull();
+    expect(parseGroupFrom("2024-3")).toBeNull();
+    expect(parseGroupFrom("1949-12")).toBeNull();
+    expect(parseGroupFrom(undefined, "2024", "3")).toBe("2024-03");
+    expect(parseGroupFrom(undefined, "2024", "12")).toBe("2024-12");
+    expect(parseGroupFrom(undefined, "2024", "13")).toBeNull();
+    expect(parseGroupFrom(undefined, "24", "3")).toBeNull();
+    expect(parseGroupFrom("2020-01", "2024", "3")).toBe("2020-01"); // gfrom 優先
+    expect(normalizeGroupOrder("name", "asc")).toEqual({ sort: "name", dir: "asc" });
+    expect(normalizeGroupOrder("x", "y")).toEqual({ sort: "latest", dir: "desc" });
+  });
+  it("起算月：範圍、加減月、年份下拉", () => {
+    expect(isGroupMonth(GROUP_MONTH_MIN)).toBe(true);
+    expect(isGroupMonth("2200-12")).toBe(true);
+    expect(isGroupMonth("2201-01")).toBe(false);
+    expect(shiftGroupMonth("2026-10", -6)).toBe("2026-04");
+    expect(shiftGroupMonth("2026-03", -6)).toBe("2025-09");
+    expect(shiftGroupMonth("2026-10", 3)).toBe("2027-01");
+    expect(shiftGroupMonth("1950-02", -6)).toBe(GROUP_MONTH_MIN);
+    expect(groupYearOptions(2026, 2026).at(0)).toBe(1950);
+    expect(groupYearOptions(2026, 2026).at(-1)).toBe(2032);
+    expect(groupYearOptions(2100, 2026).at(-1)).toBe(2100);
+  });
 });
 
 describe("組 key 與標題", () => {
@@ -164,54 +246,92 @@ describe("組 key 與標題", () => {
     expect(dateGroupTitle("2027", "zh-Hant")).toContain("2027");
     expect(dateGroupTitle("tbd", "zh-Hant")).toBe("日期未定");
   });
-  it("平台組順序＝平台總覽順序，hybrid 只取第一次出現", () => {
-    const ranks = platformColumnRanks([
-      { kind: "console", platforms: [{ slug: "ps5" }, { slug: "switch" }] },
-      { kind: "handheld", platforms: [{ slug: "switch" }, { slug: "deck" }] },
-      { kind: "pc", platforms: [{ slug: "win" }] },
-    ] as never);
-    expect([...ranks.entries()]).toEqual([
-      ["ps5", 0],
-      ["switch", 1],
-      ["deck", 2],
-      ["win", 3],
-    ]);
+});
+
+describe("sortGroupRows（平台／廠商的組排序）", () => {
+  const rows = [
+    { gkey: "ps5", total: 50, gname: "PlayStation 5", latest: "2027-01-01" },
+    { gkey: "switch", total: 80, gname: "Nintendo Switch", latest: "2026-06-01" },
+    { gkey: "win", total: 80, gname: "PC (Microsoft Windows)", latest: "2027-01-01" },
+    { gkey: "gb", total: 5, gname: "Game Boy", latest: null },
+  ];
+  const keys = (sort: "latest" | "count" | "name", dir: "asc" | "desc") => sortGroupRows(rows, "platform", { sort, dir }, "en").map((r) => r.gkey);
+  it("latest：組內最新發售日；沒有日期的永遠最後；同日期依遊戲數多的在前", () => {
+    expect(keys("latest", "desc")).toEqual(["win", "ps5", "switch", "gb"]);
+    expect(keys("latest", "asc")).toEqual(["switch", "win", "ps5", "gb"]);
+  });
+  it("count：遊戲數，平手依名稱", () => {
+    expect(keys("count", "desc")).toEqual(["switch", "win", "ps5", "gb"]);
+    expect(keys("count", "asc")).toEqual(["gb", "ps5", "switch", "win"]);
+  });
+  it("name：依組名稱（平台用平台名稱）", () => {
+    expect(keys("name", "asc")).toEqual(["gb", "switch", "win", "ps5"]);
+    expect(keys("name", "desc")).toEqual(["ps5", "win", "switch", "gb"]);
+  });
+  it("廠商：名稱用介面語系的欄名；獨立／其他（-1）永遠最後，不論排序與方向", () => {
+    const pubs = [
+      { gkey: "-1", total: 1000, latest: "2030-01-01" },
+      { gkey: String(PUBLISHER_COLUMN_KEYS.indexOf("capcom")), total: 3, latest: "2020-01-01" },
+      { gkey: String(PUBLISHER_COLUMN_KEYS.indexOf("sony")), total: 9, latest: "2025-01-01" },
+    ];
+    for (const sort of ["latest", "count", "name"] as const) {
+      for (const dir of ["asc", "desc"] as const) {
+        expect(sortGroupRows(pubs, "publisher", { sort, dir }, "en").at(-1)!.gkey, `${sort}/${dir}`).toBe("-1");
+      }
+    }
+    expect(sortGroupRows(pubs, "publisher", { sort: "name", dir: "asc" }, "en").map((r) => publisherColumnKeyOfIndex(Number(r.gkey)))).toEqual(["capcom", "sony", "other"]);
+    expect(sortGroupRows(pubs, "publisher", { sort: "count", dir: "desc" }, "en").map((r) => publisherColumnKeyOfIndex(Number(r.gkey)))).toEqual(["sony", "capcom", "other"]);
+  });
+  it("不改動輸入陣列", () => {
+    const copy = rows.map((r) => r.gkey);
+    sortGroupRows(rows, "platform", { sort: "name", dir: "desc" }, "en");
+    expect(rows.map((r) => r.gkey)).toEqual(copy);
   });
 });
 
 describe("組查詢的 SQL 組裝", () => {
   const dialect = new PgDialect();
-  const base = { filter: { gameTypes: ["main_game"], stages: ["full"], statuses: ["scheduled"], includeRumored: false, includeRemoved: true } as const, sort: "popularity" as const, locale: "en", today: "2026-10-23" as const };
+  const base = { filter: { gameTypes: ["main_game"], stages: ["full"], statuses: ["scheduled"], includeRumored: false, includeRemoved: true } as const, locale: "en", today: "2026-10-23" as const };
+  const order = { groupOrder: { sort: "latest", dir: "desc" } as const };
   const sqlOf = (q: Parameters<PgDialect["sqlToQuery"]>[0]) => dialect.sqlToQuery(q);
-  it("組清單：日期組讀預先計算的 release_group；預設（熱度）＝當月起往未來、再往過去、tbd 最後（D88）；sort=release_date 由舊到新、sort=name 由新到舊", () => {
-    const pop = sqlOf(buildGroupListQuery({ ...base, by: "date", groupOffset: 0, groupLimit: 6 }));
+  it("組清單：日期組讀預先計算的 release_group；預設＝當月起往未來、再往過去、tbd 最後（D88）；沒有 sort 參數、沒有依首發日期聚合", () => {
+    const pop = sqlOf(buildGroupListQuery({ ...base, ...order, by: "date", groupOffset: 0, groupLimit: 6 }));
     expect(pop.sql).toContain("GROUP BY g.release_group");
     expect(pop.sql).toMatch(/ORDER BY \(g\.release_group = \$\d+\) ASC,/);
     expect(pop.sql).toMatch(/ELSE g\.release_group/);
     expect(pop.sql).not.toContain("min(g.first_release_date)");
+    expect(pop.sql).not.toContain("HAVING");
+    expect(pop.sql).toMatch(/LIMIT \$?\d+ OFFSET \$?\d+/);
     expect(pop.params).toContain("2026-10"); // 當月來自 today
-    const desc = sqlOf(buildGroupListQuery({ ...base, by: "date", sort: "name", groupOffset: 0, groupLimit: 6 })).sql;
-    expect(desc).toContain("GROUP BY g.release_group");
-    expect(desc).toMatch(/FILTER \(WHERE g\.release_group <> \$\d+\) DESC NULLS LAST/);
-    expect(desc).not.toContain("to_char");
-    const asc = sqlOf(buildGroupListQuery({ ...base, by: "date", sort: "release_date", groupOffset: 12, groupLimit: 6 }));
-    expect(asc.sql).toMatch(/FILTER \(WHERE g\.release_group <> \$\d+\) ASC NULLS LAST/);
-    expect(asc.sql).toMatch(/LIMIT \$?\d+ OFFSET \$?\d+/);
   });
-  it("組清單：多取 1 組判斷後面還有；廠商組讀 publisher_group、other(-1) 最後，不再即時比對公司名單", () => {
-    const q = sqlOf(buildGroupListQuery({ ...base, by: "publisher", groupOffset: 0, groupLimit: 6 }));
+  it("組清單：指定起算月（gfrom）＝結束月 ≥ 起算月的組由舊到新、tbd 保留且最後；預設值（沒給）不產生 HAVING", () => {
+    const from = sqlOf(buildGroupListQuery({ ...base, ...order, by: "date", groupFrom: "2024-03", groupOffset: 12, groupLimit: 6 }));
+    expect(from.sql).toContain("GROUP BY g.release_group");
+    expect(from.sql).toMatch(/HAVING g\.release_group = \$\d+ OR [\s\S]* >= \$\d+::text/);
+    expect(from.sql).toMatch(/ORDER BY \(g\.release_group = \$\d+\) ASC,\s+greatest\(/);
+    expect(from.sql).toMatch(/LIMIT \$?\d+ OFFSET \$?\d+/);
+    expect(from.params).toContain("2024-03");
+    expect(from.params).toContain("tbd");
+  });
+  it("組清單：平台／廠商取全部的組（含 max 首發日 latest 與總數），不排序、不分頁（由 sortGroupRows 排序後切頁）；廠商讀 publisher_group，不再即時比對公司名單", () => {
+    const q = sqlOf(buildGroupListQuery({ ...base, ...order, by: "publisher", groupOffset: 0, groupLimit: 6 }));
     expect(q.sql).toContain("GROUP BY g.publisher_group");
-    expect(q.sql).toContain("(g.publisher_group = -1) ASC");
+    expect(q.sql).toContain("max(g.first_release_date)::text AS latest");
+    expect(q.sql).not.toMatch(/ORDER BY|LIMIT/);
     expect(q.sql).not.toContain("unnest(");
     expect(q.params.some((p) => Array.isArray(p) && p.length > 500)).toBe(false);
-    expect(q.sql).toMatch(/LIMIT 7|LIMIT \$\d+/);
+    const plat = sqlOf(buildGroupListQuery({ ...base, ...order, by: "platform", groupOffset: 0, groupLimit: 6 }));
+    expect(plat.sql).toContain("max(g.first_release_date)::text AS latest");
+    expect(plat.sql).toContain("plg.kind <> 'mobile'");
+    expect(plat.sql).not.toMatch(/ORDER BY|LIMIT|array_position/);
   });
   it("組內卡片：每組一個 UNION ALL 子查詢依組 index 取 [offset, offset+limit)，不掃其他組", () => {
     const date = sqlOf(buildGroupCardsQuery({ ...base, by: "date", keys: ["2026-10"], offset: 0, limit: 8 }));
     expect(date.sql).toMatch(/g\.release_group = \$\d+/);
     expect(date.sql).toContain("OFFSET");
     expect(date.sql).toContain("LIMIT");
-    expect(date.sql).toContain("g.popularity_score DESC NULLS LAST, g.name ASC, g.id ASC");
+    // 組內順序固定：發售日由新到舊（未定最後）→ 熱度 → id，不論頁面的 sort
+    expect(date.sql).toContain("g.first_release_date DESC NULLS LAST, g.popularity_score DESC NULLS LAST, g.id ASC");
     const plat = sqlOf(buildGroupCardsQuery({ ...base, by: "platform", keys: ["ps5"], offset: 0, limit: 8 }));
     expect(plat.sql).toContain("EXISTS (SELECT 1 FROM game_platforms gpg");
     expect(plat.sql).toContain("(SELECT id FROM platforms WHERE slug = ");

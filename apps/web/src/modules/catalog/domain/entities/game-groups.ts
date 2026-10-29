@@ -36,3 +36,40 @@ export interface GameGroup {
   /** 只有 by=platform：組頭用的平台資料。 */
   platform?: { slug: string; name: string; kind: PlatformKind };
 }
+
+// ── 分組檢視的「組排序」與「日期分組的起算月」（2026-10-29） ───────────────────────────────
+
+/**
+ * 組排序（只有依平台／依廠商分組有；依日期分組固定時間順序）：
+ * latest＝組內最新遊戲的發售日（組內 max first_release_date，含尚未發售的；沒有日期的組排最後）、count＝組內遊戲數、name＝組名稱。
+ * 「獨立／其他」永遠排最後。組內遊戲永遠是發售日由新到舊（不受排序參數影響）。
+ */
+export const GROUP_SORTS = ["latest", "count", "name"] as const;
+export type GroupSort = (typeof GROUP_SORTS)[number];
+export const GROUP_DIRS = ["asc", "desc"] as const;
+export type GroupDir = (typeof GROUP_DIRS)[number];
+export const DEFAULT_GROUP_SORT: GroupSort = "latest";
+export const DEFAULT_GROUP_DIR: GroupDir = "desc";
+
+export interface GroupOrder {
+  sort: GroupSort;
+  dir: GroupDir;
+}
+
+/** 日期分組可選起算月的範圍（含）。 */
+export const GROUP_MONTH_MIN = "1950-01";
+export const GROUP_MONTH_MAX = "2200-12";
+
+/** `YYYY-MM`（月 01~12），且在 GROUP_MONTH_MIN~GROUP_MONTH_MAX 內。 */
+export function isGroupMonth(value: string | null | undefined): value is string {
+  return !!value && /^\d{4}-(?:0[1-9]|1[0-2])$/.test(value) && value >= GROUP_MONTH_MIN && value <= GROUP_MONTH_MAX;
+}
+
+/** `YYYY-MM` 加減 delta 個月（結果夾在 GROUP_MONTH_MIN~GROUP_MONTH_MAX）。 */
+export function shiftGroupMonth(month: string, delta: number): string {
+  const index = Number(month.slice(0, 4)) * 12 + (Number(month.slice(5, 7)) - 1) + Math.trunc(delta);
+  const y = Math.floor(index / 12);
+  const m = (index % 12) + 1;
+  const out = `${String(y).padStart(4, "0")}-${String(m).padStart(2, "0")}`;
+  return out < GROUP_MONTH_MIN ? GROUP_MONTH_MIN : out > GROUP_MONTH_MAX ? GROUP_MONTH_MAX : out;
+}
