@@ -42,6 +42,7 @@ import {
 } from "@/modules/catalog/schema";
 import resetTestDatabase from "../../test/integration/global-setup";
 import { FIXTURE, FIXTURE_3B, FIXTURE_4, FIXTURE_HOME } from "./fixture-data";
+import { seedFold } from "./seed-fold";
 import { seedZ2a } from "./seed-z2a";
 import { seedZ2b } from "./seed-z2b";
 import { seedZ4b } from "./seed-z4b";
@@ -312,6 +313,9 @@ export async function seedE2eDatabase(): Promise<void> {
 
     // ── GameDex 第 2 輪 Z2A：全遊戲列表（2036-09）──
     await seedZ2a(db, region, platform);
+
+    // ── 月曆未定日摺起來的組（2038-12：年精度 30 款、季精度 24 款）──
+    await seedFold(db, region, platform);
 
     // ── GameDex 第 2 輪 Z2B：評分排名的 IGDB／玩家平均分數（掛在時間軸 fixture 的遊戲上）──
     await seedZ2b(db);

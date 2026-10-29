@@ -64,6 +64,8 @@
       "year": "年のみ確定"
     },
     "undatedEmpty": "今月は日付未定のゲームはありません",
+
+    "undatedViewAll": "{count}本すべてを見る",
     "agendaTitle": "日付順に表示",
     "dayListTitle": "{date}の発売とイベント",
     "backToList": "その日のリストに戻る",

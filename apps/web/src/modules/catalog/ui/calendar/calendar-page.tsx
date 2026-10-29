@@ -202,7 +202,7 @@ export async function CalendarMonthPage({ locale, supportedLocales, month, searc
 
       <CalendarInteractive key={`${path}?${query}`} previews={vm.previews} labels={labels} cell={{ apiBase: dayApiBase, labels: cellLabels }}>
         <MonthGridView ym={ym} locale={locale} t={t} vm={vm} weekStart={weekStartFor(locale)} titleId="cal-title" />
-        <UndatedView locale={locale} t={t} groups={vm.undated} hrefOf={hrefOf} />
+        <UndatedView locale={locale} t={t} groups={vm.undated} hrefOf={hrefOf} spec={spec} />
       </CalendarInteractive>
       {slots?.cardActions}
       {vm.eventCount > 0 ? <p className="mt-4 text-sm text-[var(--muted)]">{t.t("ui.calendar.timesInUtc")}</p> : null}

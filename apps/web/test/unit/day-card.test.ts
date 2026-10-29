@@ -2,7 +2,7 @@ import { createTranslator, type Locale } from "@sok/i18n";
 import { describe, expect, it } from "vitest";
 import type { ReleaseCard } from "@/modules/catalog/domain/entities";
 import { DAY_CARD_MAX_CHIPS, DAY_CARD_MAX_TAGS, buildPreview, cardTags, toDayCard, toFoldRow } from "@/modules/catalog/ui/calendar/day-card";
-import { buildCalendarViewModel } from "@/modules/catalog/ui/calendar/view-model";
+import { buildCalendarViewModel, yearOfDate } from "@/modules/catalog/ui/calendar/view-model";
 import { UNDATED_OPEN_MAX } from "@/modules/catalog/ui/month";
 import { DAY_DOTS_MAX } from "@/modules/catalog/ui/calendar/day-cell";
 
@@ -84,21 +84,32 @@ describe("月曆格卡片資料（toDayCard／cardTags）", () => {
     expect(Object.keys(vm.previews)).toEqual([]);
   });
 
-  it("未定日：數量少帶完整卡片與預覽資料；超過 UNDATED_OPEN_MAX 只帶精簡列（陣列），沒有預覽資料", () => {
+  it("未定日：數量少帶完整卡片與預覽資料；超過 UNDATED_OPEN_MAX 只帶熱度最高的前 UNDATED_OPEN_MAX 款精簡列（陣列）與總數，沒有預覽資料", () => {
     const mk = (n: number, precision: "month" | "quarter") =>
       Array.from({ length: n }, (_, i) => card({ gameId: 1000 * n + i, slug: `u${n}-${i}`, name: `U${n}-${i}`, date: "2026-10-01", precision }));
     const small = mk(2, "quarter");
     const big = mk(UNDATED_OPEN_MAX + 1, "month");
     const vm = buildCalendarViewModel({ year: 2026, month: 10, days: {}, undated: [...big, ...small], events: [], ignored: [] }, "en", t);
     const [month, quarter] = vm.undated;
-    expect(month).toMatchObject({ precision: "month", count: UNDATED_OPEN_MAX + 1, firstDate: "2026-10-01", items: [] });
-    expect(month!.rows).toHaveLength(UNDATED_OPEN_MAX + 1);
+    expect(month).toMatchObject({ precision: "month", count: UNDATED_OPEN_MAX + 1, firstDate: "2026-10-01", items: [], more: true, year: 2026 });
+    expect(month!.rows).toHaveLength(UNDATED_OPEN_MAX); // 只送前 24 款；count 仍是總數
     expect(month!.rows[0]).toEqual(["/en/games/u25-0", "U25-0", "PS5", ""]);
-    expect(quarter).toMatchObject({ precision: "quarter", count: 2, rows: [] });
+    expect(month!.rows.at(-1)![1]).toBe(`U25-${UNDATED_OPEN_MAX - 1}`);
+    expect(quarter).toMatchObject({ precision: "quarter", count: 2, rows: [], more: false });
     expect(quarter!.items).toHaveLength(2);
     expect(Object.keys(vm.previews)).toHaveLength(2); // 只有數量少的那組
     expect(vm.releaseCount).toBe(UNDATED_OPEN_MAX + 3);
     expect(toFoldRow(card({ stage: "early_access" }), "en", t)[3]).toBe("(Early access)");
+  });
+
+  it("未定日：剛好 UNDATED_OPEN_MAX 款不摺（完整卡片、more=false）；yearOfDate 取代表日年份", () => {
+    const cards = Array.from({ length: UNDATED_OPEN_MAX }, (_, i) => card({ gameId: 7000 + i, slug: `e${i}`, name: `E${i}`, date: "2027-12-31", precision: "year" }));
+    const vm = buildCalendarViewModel({ year: 2027, month: 12, days: {}, undated: cards, events: [], ignored: [] }, "en", t);
+    expect(vm.undated[0]).toMatchObject({ precision: "year", count: UNDATED_OPEN_MAX, more: false, rows: [], year: 2027 });
+    expect(vm.undated[0]!.items).toHaveLength(UNDATED_OPEN_MAX);
+    expect(yearOfDate("2027-12-31")).toBe(2027);
+    expect(yearOfDate(null)).toBeNull();
+    expect(yearOfDate("tbd")).toBeNull();
   });
 
   it("切換鈕與計數的字典樣板含 {index}／{total}（三語）", () => {
