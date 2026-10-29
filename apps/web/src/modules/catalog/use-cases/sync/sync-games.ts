@@ -250,7 +250,7 @@ export async function writeGameBatch(records: readonly GameRecord[], ctx: WriteC
         .filter((x): x is number => x !== undefined),
       companies: r.companies.flatMap((c) => {
         const companyId = companyIds.get(c.company.igdbId);
-        return companyId === undefined ? [] : c.roles.map((role) => ({ companyId, role }));
+        return companyId === undefined ? [] : c.roles.map((role) => ({ companyId, role, igdbPosition: c.position }));
       }),
       localizations: r.localizations,
       languageSupports: r.languageSupports.flatMap((l) => {

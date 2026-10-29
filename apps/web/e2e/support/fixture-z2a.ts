@@ -16,8 +16,8 @@ export const FIXTURE_Z2A = {
   quarter: { slug: "e2e-z2a-quarter", name: "Z2A Quarter Test" },
   year: { slug: "e2e-z2a-year", name: "Z2A Year Test" },
   undated: { slug: "e2e-z2a-undated", name: "Z2A Undated Test" },
-  /** 日期組（熱度排序＝由新到舊）。 */
-  dateGroups: ["2037", "2036-Q4", "2036-09", "tbd"],
+  /** 日期組（熱度排序＝當月起往未來由近到遠，D88；fixture 全在遙遠的未來）。 */
+  dateGroups: ["2036-09", "2036-Q4", "2037", "tbd"],
   /** 該月總數：4＋36。 */
   monthTotal: 40,
   /** e2e 平台（seed.ts 建立）。 */

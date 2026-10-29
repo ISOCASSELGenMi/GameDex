@@ -365,6 +365,14 @@ const DETAIL_FIELD_LIST = [
 ];
 export const GAME_DETAIL_FIELDS = DETAIL_FIELD_LIST.join(",");
 
+/** backfill_company_positions 只取公司與角色（陣列順序就是 IGDB 列出的順序）。 */
+const COMPANY_FIELD_LIST = [
+  "involved_companies.company.name", "involved_companies.company.slug",
+  "involved_companies.developer", "involved_companies.publisher",
+  "involved_companies.porting", "involved_companies.supporting",
+];
+export const GAME_COMPANY_FIELDS = COMPANY_FIELD_LIST.join(",");
+
 export const GAME_FIELDS = [
   "name", "slug", "summary", "cover.image_id", "updated_at",
   "genres.name", "genres.slug", "themes.name", "themes.slug",
@@ -378,9 +386,7 @@ export const GAME_FIELDS = [
   "release_dates.date", "release_dates.date_format", "release_dates.platform",
   "release_dates.release_region", "release_dates.status",
   "platforms",
-  "involved_companies.company.name", "involved_companies.company.slug",
-  "involved_companies.developer", "involved_companies.publisher",
-  "involved_companies.porting", "involved_companies.supporting",
+  ...COMPANY_FIELD_LIST,
   "franchises.name", "franchises.slug", "collections.name", "collections.slug",
   "similar_games",
   "websites.url", "websites.type",
@@ -433,8 +439,8 @@ export function toGameRecord(g: IgdbGame, warn: Warn = defaultWarn): GameRecord 
   }
 
   const companies = new Map<number, GameCompanyRecord>();
-  for (const ic of g.involved_companies ?? []) {
-    if (!ic.company || typeof ic.company.id !== "number") continue;
+  (g.involved_companies ?? []).forEach((ic, position) => {
+    if (!ic.company || typeof ic.company.id !== "number") return;
     const roles: GameCompanyRole[] = [];
     if (ic.developer) roles.push("developer");
     if (ic.publisher) roles.push("publisher");
@@ -442,8 +448,8 @@ export function toGameRecord(g: IgdbGame, warn: Warn = defaultWarn): GameRecord 
     if (ic.supporting) roles.push("supporting");
     const cur = companies.get(ic.company.id);
     if (cur) cur.roles = [...new Set([...cur.roles, ...roles])];
-    else companies.set(ic.company.id, { company: toTaxonomy(ic.company, "company"), roles });
-  }
+    else companies.set(ic.company.id, { company: toTaxonomy(ic.company, "company"), roles, position });
+  });
 
   const franchises: FranchiseRecord[] = [
     ...uniqueById(g.franchises).map((f) => ({ ...toTaxonomy(f, "franchise"), kind: "franchise" as const })),
@@ -617,7 +623,8 @@ export class IgdbProvider implements GameDataProvider, ExternalHypeSource {
     if (q.ids && q.ids.length === 0) return [];
     const limit = Math.min(Math.max(1, Math.trunc(q.limit)), IGDB_PAGE_SIZE);
     const where = buildGamesWhere(q);
-    const body = `fields ${q.fieldSet === "detail" ? GAME_DETAIL_FIELDS : GAME_FIELDS};${where ? ` where ${where};` : ""} sort id asc; limit ${limit};`;
+    const fields = q.fieldSet === "detail" ? GAME_DETAIL_FIELDS : q.fieldSet === "companies" ? GAME_COMPANY_FIELDS : GAME_FIELDS;
+    const body = `fields ${fields};${where ? ` where ${where};` : ""} sort id asc; limit ${limit};`;
     const rows = await this.client.query<IgdbGame>("games", body);
     return rows.map((g) => toGameRecord(g, this.warnOnce));
   }

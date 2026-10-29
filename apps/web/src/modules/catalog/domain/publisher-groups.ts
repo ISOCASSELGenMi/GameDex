@@ -4,8 +4,8 @@
  * - 每欄一個 key、三語名稱、IGDB 公司 id 清單（含子公司、工作室、更名前的公司；成員的名稱只是註記，比對一律用 igdbId）。
  *   IGDB 的母公司欄位（parent）沒有同步進資料庫，也只當輔助：最終以這張表為準。
  * - 歸屬規則：開發商優先 → 開發商都不在名單才看發行商 → 都不在歸「獨立／其他」。
- *   一款遊戲的多個開發商都在名單內時，取 IGDB 列出的第一個（`order` 最小者）；
- *   目前 game_companies 沒存 IGDB 的順序，所以呼叫端沒給 `order` 時改用「本表欄位順序最後者」（名單前段是大型集團，後段是獨立品牌，
+ *   一款遊戲的多個開發商都在名單內時，取 IGDB 列出的第一個（`order` 最小者；game_companies.igdb_position，D88）；
+ *   沒有 `order` 的資料（igdb_position 還是 NULL 的舊資料）改用「本表欄位順序最後者」（名單前段是大型集團，後段是獨立品牌，
  *   合開的作品歸更具體的品牌：尼爾：自動人形的開發商同時有史克威爾艾尼克斯與白金工作室 → 白金工作室；血源詛咒 → FromSoftware）——
  *   SQL 版（repository/release-columns.ts 用 {@link publisherGroupSqlMap} 產生）一律用這個替代規則，兩邊對沒有 order 的資料結果相同。
  * - 一個公司只能屬於一欄（單元測試檢查）。porting／supporting 角色不參與歸屬。
@@ -499,7 +499,7 @@ export interface GameCompanyRef {
   igdbId: number;
   /** game_companies.role（developer、publisher、porting、supporting） */
   role: string;
-  /** IGDB 列出的順序（0 起算，小的在前）；目前資料庫沒存，沒有時用欄位順序平手。 */
+  /** IGDB 列出的順序（0 起算，小的在前；game_companies.igdb_position）；NULL（舊資料）時不給，改用欄位順序平手。 */
   order?: number;
 }
 

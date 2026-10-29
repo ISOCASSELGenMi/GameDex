@@ -3,6 +3,7 @@ import type { ModuleManifestBase } from "@/kernel/modules/types";
 import type { GameFilterProvider, PopularitySignal, RatingColumn } from "./domain/entities";
 import { getCatalogExtensions } from "./extensions";
 import { getIgdbProvider } from "./providers/igdb";
+import { backfillCompanyPositions, parseCompanyPositionsArgs } from "./use-cases/sync/backfill-company-positions";
 import { backfillDetailFields, parseDetailBackfillArgs } from "./use-cases/sync/backfill-detail-fields";
 import { backfillGameGroups, parseGameGroupsBackfillArgs } from "./use-cases/sync/backfill-game-groups";
 import { backfillGames, parseBackfillArgs } from "./use-cases/sync/backfill-games";
@@ -66,6 +67,14 @@ export const catalogModule: ModuleManifest = {
       lockMode: "session",
       run: async (ctx) => {
         await backfillDetailFields(getIgdbProvider({ maxReqPerSec: getCoreEnv().BACKFILL_MAX_REQ_PER_SEC }), ctx, parseDetailBackfillArgs(ctx.args));
+      },
+    },
+    {
+      // 手動：npm run job -- backfill_company_positions [--max-batches N] [--restart]。從 IGDB 補 game_companies.igdb_position（公司列出順序）並重算 publisher_group（D88；需要 IGDB 金鑰）
+      name: "backfill_company_positions",
+      lockMode: "session",
+      run: async (ctx) => {
+        await backfillCompanyPositions(getIgdbProvider({ maxReqPerSec: getCoreEnv().BACKFILL_MAX_REQ_PER_SEC }), ctx, parseCompanyPositionsArgs(ctx.args));
       },
     },
     {

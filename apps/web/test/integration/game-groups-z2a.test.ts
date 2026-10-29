@@ -109,14 +109,28 @@ describe.skipIf(!enabled)("瀏覽頁分組檢視（整合）", () => {
   });
 
   describe("依日期", () => {
-    it("預設（熱度排序）由新到舊：年、月、季、日期未定在最後；一頁 6 組、後面還有", async () => {
+    it("預設（熱度排序，D88）：當月起往未來由近到遠（季、年依起始月）→ 往過去由新到舊 → 日期未定最後；一頁 6 組、後面還有", async () => {
       const r = await getGameGroups({ ...BASE, by: "date", now: NOW });
       expect(GAME_GROUPS_PER_PAGE).toBe(6);
-      expect(keysOf(r)).toEqual(["2037", "2036-12", "2036-11", "2036-10", "2036-Q4", "2036-09"]);
+      expect(keysOf(r)).toEqual(["2036-09", "2036-10", "2036-Q4", "2036-11", "2036-12", "2037"]);
       expect(r.hasMoreGroups).toBe(true);
       const p2 = await getGameGroups({ ...BASE, by: "date", page: 2, now: NOW });
       expect(keysOf(p2)).toEqual(["2036-08", "tbd"]);
       expect(p2.hasMoreGroups).toBe(false);
+    });
+
+    it("當月在中間時：未來段在前、過去段由新到舊；翻頁串起來與單頁取全部一致且穩定", async () => {
+      const mid = new Date("2036-11-15T00:00:00Z");
+      const p1 = await getGameGroups({ ...BASE, by: "date", now: mid });
+      const p2 = await getGameGroups({ ...BASE, by: "date", page: 2, now: mid });
+      const all = [...keysOf(p1), ...keysOf(p2)];
+      expect(all).toEqual(["2036-11", "2036-12", "2037", "2036-10", "2036-Q4", "2036-09", "2036-08", "tbd"]);
+      expect(keysOf(await getGameGroups({ ...BASE, by: "date", now: mid }))).toEqual(keysOf(p1));
+    });
+
+    it("sort=name 維持由新到舊", async () => {
+      const r = await getGameGroups({ ...BASE, by: "date", sort: "name", now: NOW });
+      expect(keysOf(r)[0]).toBe("2037");
     });
 
     it("sort=release_date 由舊到新，日期未定仍在最後", async () => {
@@ -213,7 +227,7 @@ describe.skipIf(!enabled)("瀏覽頁分組檢視（整合）", () => {
   describe("篩選與搜尋", () => {
     it("平台篩選（遊戲層級）限制分組的範圍", async () => {
       const r = await getGameGroups({ ...BASE, by: "date", filter: { platformSlugs: ["gz58-ps5"] }, now: NOW });
-      expect(r.groups.map((g) => [g.key, g.total])).toEqual([["2036-10", 1], ["2036-09", 1]]);
+      expect(r.groups.map((g) => [g.key, g.total])).toEqual([["2036-09", 1], ["2036-10", 1]]);
       expect(r.ignored).toEqual([]);
     });
 

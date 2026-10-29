@@ -75,6 +75,8 @@ export interface GameCompanyRecord {
   company: TaxonomyRecord;
   /** 同公司兼多個角色就有多個值；可能為空（四個布林皆 false）。 */
   roles: GameCompanyRole[];
+  /** 該公司在 IGDB involved_companies 陣列中第一次出現的位置（0 起算）；廠商分欄「取 IGDB 第一個」用（D88）。 */
+  position: number;
 }
 
 export interface FranchiseRecord extends TaxonomyRecord {
@@ -122,7 +124,10 @@ export interface FetchGamesQuery {
   firstReleaseMissingWithDates?: boolean;
   /** 只取這些遊戲類型（白名單）。 */
   gameTypes?: readonly GameType[];
-  /** "detail"＝只取詳情補欄位（storyline、版本、人數、視角、引擎；backfill_detail_fields 用）；預設完整欄位。 */
-  fieldSet?: "full" | "detail";
+  /**
+   * "detail"＝只取詳情補欄位（storyline、版本、人數、視角、引擎；backfill_detail_fields 用）；
+   * "companies"＝只取 involved_companies（公司與角色、陣列順序；backfill_company_positions 用）；預設完整欄位。
+   */
+  fieldSet?: "full" | "detail" | "companies";
   limit: number;
 }
