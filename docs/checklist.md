@@ -187,7 +187,8 @@
   - 追蹤數：現在 `countFollowsOfUser` 算全部類型 → 只算遊戲
 - [x] 第二輪 Z1（2026-10-22，`1fa7ffc`；npm test 1071、test:a11y 728 過）：Holodex 式 header、活動時間單行＋時區、刪舊 `/api/timeline/*`、手機選單對齊（10/22 用量重置後開工）
 - [x] 第二輪 Z2（2026-10-23，`33d5304`；npm test 1159、test:a11y 815 過）：/games 分組檢視（日期／平台／廠商）、刪 /releases、header 依頁切換品牌名、評分排名頁 /ratings、月曆遊戲／活動開關、平台頁全部遊戲；migration 0012 已套開發 DB（2026-10-23）
-- [ ] Z2 待決：評分排名頁篩選只列常用平台（為壓 HTML）（2026-10-23 新增）。同列的其他項目已處理：分組查詢、平台頁全部遊戲冷查詢、/games HTML 由 Z6 解決；Next 16.4.0 安全漏洞由 GameDex#2 升到 16.4.1 解決（2026-10-24）
+- [x] Z2 待決：評分排名頁篩選只列常用平台（為壓 HTML）（2026-10-23 新增；2026-10-29 已解決：`/trending` 改緊湊列＋共用 sprite 251→163 KB，`/ratings` 改列完整平台 168～173 KB；新增 `scripts/html-size.mjs`、`html-budget-a` 單元＋e2e）。同列的其他項目已處理：分組查詢、平台頁全部遊戲冷查詢、/games HTML 由 Z6 解決；Next 16.4.0 安全漏洞由 GameDex#2 升到 16.4.1 解決（2026-10-24）
+- [ ] 待決：月曆頁未定日大組讓 HTML 暴增（2026-12 約 711 KB、2026-09／2027-12 約 300 KB，預算約 250 KB）。建議限制未定日清單顯示量＋「查看全部」連到瀏覽頁（2026-10-29 新增）
 - [x] 第二輪 Z6 效能（2026-10-24，PR `ISOCASSELGenMi/GameDex#3`，`perf/z2-queries`；npm test 1271、單元 928、test:a11y 892 過）：預先計算 `games.release_group`／`publisher_group` 與 `release_picks`；migration 0015、0016 已套開發 DB，`backfill_game_groups` 已跑完（408 秒）；開發 DB 實測分組最慢 391 ms、平台頁全部遊戲最慢 308 ms，/games HTML 166～173 KB；spec 寫回 03、04、06、16、90、CHANGELOG
 - [x] GameDex#1（第二輪 Z1～Z4）、#2（Next 16.4.1 安全修補）合併到 main（2026-10-24）
 - [x] GameDex#3（Z6）合併到 main；修偶發失敗的 PR 開立、交接檔 `docs/handoff/2026-10-24-gamedex-z6-done.md`；開發暫停等使用者重開（2026-10-24）

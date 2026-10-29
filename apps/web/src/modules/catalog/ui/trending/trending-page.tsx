@@ -5,7 +5,6 @@
  * - 快取：熱度每小時才重算，所以資料查詢以 "use cache" ＋ cacheLife(revalidate 900 秒＝15 分鐘) 包起來（同 filter-options.ts 做法）；
  *   頁面本身仍在每次請求時組裝（讀 searchParams），只有查詢結果被共用。頁面註明「熱度每小時更新、不是即時排名」。
  */
-import Image from "next/image";
 import { connection } from "next/server";
 import { cacheLife } from "next/cache";
 import type { ReactElement } from "react";
@@ -18,14 +17,17 @@ import { loadFilterOptions } from "../calendar/filter-options";
 import { collectFilterNotices, filterSpecToReleaseFilter, withoutIgnored } from "../filter-mapping";
 import { appliedChips, filterSpecForPage, makeFilterLabeler, PAGE_FILTER_PARAMS } from "../filters/filter-labels";
 import { AppliedFilterChips, EmptyFilterResult, FilterNotices, FilterPanel, TRENDING_FILTER_FIELDS } from "../filters/filter-panel";
-import { HeatBadge, heatBadgeLabel } from "../heat-badge";
+import { HeatSprite, heatBadgeLabel } from "../heat-badge";
 import { getTranslator } from "../labels";
 import { PageShell } from "../layout/page-shell";
 import { gameHref, localeHref, trendingHref } from "../links";
 import { gameNameLang } from "../name-lang";
 import { PageNav } from "../page-nav";
 import { rethrowForPage, timeoutMarkerOrRethrow, unwrapCachedForPage, type CachedTimeout } from "../page-errors";
+import { TrendingList, type TrendingRow } from "./trending-list";
 import { TRENDING_PAGE_MAX, TRENDING_PAGE_SIZE, parseTrendingGroup, parseTrendingPage } from "./params";
+
+const HEAT_SPRITE_ID = "trending-heat-flame";
 
 export type SearchParamsRecord = Readonly<Record<string, string | string[] | undefined>>;
 
@@ -106,6 +108,17 @@ export async function TrendingViewPage({ locale, supportedLocales, searchParams 
   const rankedBy = data.page.rankedBy ?? "popularity";
   const shellQuery = [query, groupQuery, pageNo > 1 ? `page=${pageNo}` : ""].filter(Boolean).join("&");
 
+  const rows: TrendingRow[] = items.map((it, i) => [
+    it.slug,
+    gameHref(locale, it.slug),
+    it.cover?.small ?? "",
+    it.name,
+    gameNameLang(it.name, it.name === it.originalName, locale) ?? "",
+    t.t("ui.common.labelValue", { label: t.t("ui.trending.releaseDate"), value: formatReleaseLabel(it.releaseDate, it.releasePrecision ?? "tbd", locale) }),
+    it.heatLevel ?? 0,
+    t.t("ui.trending.rank", { rank: offset + i + 1 }),
+  ]);
+  const heatLabels = [0, 1, 2, 3, 4, 5].map((n) => heatBadgeLabel(t, n));
   const groups: { id: PopularityGroup; label: string; hint: string }[] = [
     { id: "upcoming", label: t.t("ui.trending.upcoming"), hint: t.t("ui.trending.upcomingHint") },
     { id: "released", label: t.t("ui.trending.released"), hint: t.t("ui.trending.releasedHint") },
@@ -149,31 +162,10 @@ export async function TrendingViewPage({ locale, supportedLocales, searchParams 
       {items.length === 0 ? (
         <EmptyFilterResult chips={isEmptyFilter(spec) ? [] : chips} t={t} clearHref={clearHref} emptyText={t.t("ui.trending.empty")} />
       ) : (
-        <ol className="mt-4 grid list-none grid-cols-1 gap-2 p-0 md:grid-cols-2" role="list">
-          {items.map((it, i) => {
-            const rank = offset + i + 1;
-            const dateText = formatReleaseLabel(it.releaseDate, it.releasePrecision ?? "tbd", locale);
-            return (
-              <li key={it.gameId} className="flex items-center gap-3 rounded-lg border border-[var(--border)] p-2" data-trending-item={it.slug}>
-                <span className="w-14 shrink-0 text-center text-sm font-bold">{t.t("ui.trending.rank", { rank })}</span>
-                <a className="flex min-h-11 min-w-0 flex-1 items-center gap-3" href={gameHref(locale, it.slug)}>
-                  {it.cover ? (
-                    <Image className="summary-thumb" src={it.cover.small} alt="" width={90} height={128} unoptimized loading="lazy" style={{ width: 45, height: 64, objectFit: "cover", flex: "none" }} />
-                  ) : (
-                    <span className="summary-thumb card-thumb-empty" aria-hidden="true" style={{ width: 45, height: 64, flex: "none" }} />
-                  )}
-                  <span className="flex min-w-0 flex-col gap-1">
-                    <span className="font-semibold [overflow-wrap:anywhere]" lang={gameNameLang(it.name, it.name === it.originalName, locale)}>
-                      {it.name}
-                    </span>
-                    <span className="text-sm text-[var(--muted)]">{t.t("ui.common.labelValue", { label: t.t("ui.trending.releaseDate"), value: dateText })}</span>
-                    <HeatBadge level={it.heatLevel} label={heatBadgeLabel(t, it.heatLevel)} className="self-start" />
-                  </span>
-                </a>
-              </li>
-            );
-          })}
-        </ol>
+        <>
+          <HeatSprite id={HEAT_SPRITE_ID} />
+          <TrendingList rows={rows} heatLabels={heatLabels} spriteId={HEAT_SPRITE_ID} />
+        </>
       )}
 
       {pageNo > 1 || hasMore ? (
