@@ -19,7 +19,7 @@ const slugs = async (tuning?: { hotWindow?: number; hotMaxChars?: number; pool?:
 describe.skipIf(!enabled)("搜尋候選兩段式（整合）", () => {
   beforeAll(async () => {
     const db = getDb();
-    let igdb = 887000;
+    let igdb = 893000;
     const add = async (slug: string, name: string, popularity: number) => {
       await db.insert(games).values({ igdbId: igdb++, slug, name, searchText: buildSearchText([name]), popularityScore: popularity, coverUrl: null });
     };
