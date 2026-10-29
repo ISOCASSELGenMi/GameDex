@@ -3,8 +3,8 @@
  * 查詢（信箱片段或 ID）→ 結果表 → 每列一個停權／解除表單（POST /internal/users/{id}，含 CSRF token）。
  * 沒有查詢時列出目前停權中的帳號。個資只在這個內部頁面顯示，稽核 log 只記 userId 與時間。
  */
-import Link from "next/link";
 import type { ReactElement } from "react";
+import { AdminNav } from "@/kernel/ui/admin-nav";
 import { adminSearchUsers, type AdminUserView } from "../use-cases/account-self";
 
 const when = (iso: string | null) => (iso ? `${iso.slice(0, 16).replace("T", " ")} UTC` : "—");
@@ -64,20 +64,7 @@ export async function AdminUsersPage({ searchParams, csrf }: AdminUsersPageProps
   return (
     <main id="main" className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 py-6">
       <h1 className="text-2xl font-bold">使用者管理</h1>
-      <nav aria-label="內部頁面">
-        <ul className="flex flex-wrap gap-2">
-          <li>
-            <Link className="link-quiet inline-flex min-h-11 items-center rounded-md px-2" href="/internal/reports" prefetch={false}>
-              資料更正回報
-            </Link>
-          </li>
-          <li>
-            <Link className="link-quiet inline-flex min-h-11 items-center rounded-md px-2 font-semibold underline" href="/internal/users" aria-current="page" prefetch={false}>
-              使用者管理
-            </Link>
-          </li>
-        </ul>
-      </nav>
+      <AdminNav current="users" />
       <form method="get" action="/internal/users" role="search" className="flex flex-wrap items-end gap-2">
         <label className="flex min-w-0 flex-col gap-1">
           <span className="font-semibold">信箱（片段）或使用者 ID</span>

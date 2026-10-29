@@ -1,5 +1,7 @@
 import { ConfigError, getCoreEnv, type CoreEnv } from "@/kernel/config/env";
+import { getSettings } from "@/kernel/settings";
 import {
+  applyRatingSettings,
   RatingConfigError,
   resolveRatingDisplayConfig,
   type RatingDisplayConfig,
@@ -20,7 +22,29 @@ export function validateRatingDisplayEnv(env: RatingEnv = getCoreEnv()): RatingD
   }
 }
 
-/** 詳情頁、JSON-LD、日後的 API 讀同一份站長層設定。 */
+/** 環境變數層（不含後台設定）；單元測試與啟動檢查用。 */
 export function getRatingDisplayConfig(env: RatingEnv = getCoreEnv()): RatingDisplayConfig {
   return validateRatingDisplayEnv(env);
+}
+
+/**
+ * 詳情頁、JSON-LD、日後的 API 讀同一份站長層設定：環境變數是預設值，後台設定（DB，短 TTL 快取）有值就覆蓋（12 §設定頁）。
+ */
+export async function getEffectiveRatingDisplayConfig(env: RatingEnv = getCoreEnv()): Promise<RatingDisplayConfig> {
+  const base = validateRatingDisplayEnv(env);
+  const s = await getSettings();
+  const list = (k: "ratings.visibleProviders" | "ratings.priority") => {
+    const v = s.get(k);
+    return Array.isArray(v) ? v : undefined;
+  };
+  const flag = (k: "ratings.showMetascore" | "ratings.showUserscore") => {
+    const v = s.get(k);
+    return typeof v === "boolean" ? v : undefined;
+  };
+  return applyRatingSettings(base, {
+    visibleProviders: list("ratings.visibleProviders"),
+    priority: list("ratings.priority"),
+    showMetascore: flag("ratings.showMetascore"),
+    showUserscore: flag("ratings.showUserscore"),
+  });
 }

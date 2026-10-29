@@ -1,7 +1,7 @@
 import { GAME_COMPANY_ROLES, normalizePaging, type CompanyPage, type GameCompanyRole } from "../../domain/entities";
 import { resolveImageRef } from "../../providers/image-ref";
 import { getCompanyPageBySlug } from "../../repository/company-page";
-import { releaseFilterDefaults } from "./resolve-filter";
+import { effectiveReleaseFilterDefaults } from "./resolve-filter";
 
 export interface GetCompanyPageInput {
   slug: string;
@@ -29,7 +29,7 @@ export async function getCompanyPage(input: GetCompanyPageInput): Promise<Compan
     slug,
     locale: input.locale,
     role,
-    gameTypes: releaseFilterDefaults().gameTypes,
+    gameTypes: (await effectiveReleaseFilterDefaults()).gameTypes,
     limit,
     offset,
     resolveImage: resolveImageRef,

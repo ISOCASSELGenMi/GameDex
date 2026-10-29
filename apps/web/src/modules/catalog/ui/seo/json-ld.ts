@@ -52,6 +52,7 @@ function organization(name: string, pageUrl: string): JsonLd {
 function aggregateRating(game: GameDetail, config: RatingDisplayConfig): JsonLd | null {
   const { primary } = selectRatings(game.ratings, {
     visible: config.visible,
+    hiddenScoreTypes: config.hiddenScoreTypes,
     selected: defaultSelectedProviders(config.visible),
     priority: config.priority,
   });

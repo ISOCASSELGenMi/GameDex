@@ -10,7 +10,7 @@ import { filterSpecToQueryString, parseFilterSpec, type FilterSearchInput } from
 import { formatNumber, intlLocale, type Locale } from "@sok/i18n";
 import { RATING_MIN_VOTES_MAX } from "../../domain/entities";
 import { parseRatingsParams, type RatingsRawParams } from "../../domain/ratings-ranking";
-import { getRatingColumns, getRatingsRanking } from "../../use-cases/read";
+import { getEffectiveRatingColumns, getRatingsRanking } from "../../use-cases/read";
 import { yearFieldValues } from "../browse/view-model";
 import { loadFilterOptions } from "../calendar/filter-options";
 import { collectFilterNotices, filterSpecToReadQuery, withoutIgnored } from "../filter-mapping";
@@ -47,7 +47,7 @@ function has(sp: SearchParamsRecord, name: string): boolean {
 export async function RatingsPage({ locale, supportedLocales, searchParams }: RatingsPageProps): Promise<ReactElement> {
   await connection();
   const t = getTranslator(locale);
-  const columns = getRatingColumns();
+  const columns = await getEffectiveRatingColumns();
   const rp = parseRatingsParams(searchParams as RatingsRawParams, columns);
   const parsed = parseFilterSpec(searchParams as FilterSearchInput);
   const pageParams = new Set<string>(PAGE_FILTER_PARAMS.ratings);

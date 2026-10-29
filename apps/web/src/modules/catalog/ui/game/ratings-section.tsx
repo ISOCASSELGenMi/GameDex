@@ -33,7 +33,7 @@ export function buildRatingItems(
 ): (RatingItem & GameRating)[] {
   const nf = new Intl.NumberFormat(locale);
   // 全部（層 1 之後）依優先序排好；selected 不在伺服器套（由預設與客戶端偏好決定顯示哪些）
-  const { shown } = selectRatings(ratings, { visible: config.visible, priority: config.priority });
+  const { shown } = selectRatings(ratings, { visible: config.visible, hiddenScoreTypes: config.hiddenScoreTypes, priority: config.priority });
   return shown.map((r) => {
     const source = sourceLabel(t, r.scoreProvider, r.scoreType);
     const score = nf.format(r.score);
@@ -65,7 +65,11 @@ export function RatingsSection({
   t: Translator;
 }): ReactElement {
   const defaultSelected = defaultSelectedProviders(config.visible);
-  const providerIds = selectableProviders(ratings, config.visible, config.priority);
+  const providerIds = selectableProviders(
+    ratings.filter((r) => !config.hiddenScoreTypes.includes(r.scoreType)),
+    config.visible,
+    config.priority,
+  );
   // 有欄位可顯示的來源：站長允許的（visible 為空＝已知的全部）；偏好與空白欄位都以此為準
   const fieldProviders = KNOWN_RATING_PROVIDERS.filter((id) => config.visible.length === 0 || config.visible.includes(id));
 

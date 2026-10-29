@@ -8,14 +8,24 @@ import {
 } from "../../domain/entities";
 import { DEFAULT_RATING_SORT, effectiveMinVotes, mergeRatingColumns } from "../../domain/ratings-ranking";
 import { getCatalogExtensions } from "../../extensions";
+import { getEffectiveRatingDisplayConfig } from "./rating-config";
 import { resolveImageRef } from "../../providers/image-ref";
 import { listRatingsRanking } from "../../repository/ratings-ranking";
 import { utcToday } from "../../repository/release-aggregate";
 import { resolveFilterSlugs } from "./resolve-filter";
 
-/** 目前可用的分數欄：內建 igdb＋已啟用模組註冊的欄位（catalog 不知道有哪些模組）。 */
+/** 目前註冊的分數欄：內建 igdb＋已啟用模組註冊的欄位（catalog 不知道有哪些模組）。不含後台設定的隱藏。 */
 export function getRatingColumns(): RatingColumn[] {
   return mergeRatingColumns(getCatalogExtensions().ratingColumns);
+}
+
+/**
+ * 實際顯示的分數欄：再去掉後台關掉的分數類型（Metascore、Userscore 開關）。
+ * 內建 igdb 欄（預設排序欄）永遠保留；排名頁是排名工具，不套「可見來源」（VISIBLE_SCORE_PROVIDERS 只管詳情頁的分數區）。
+ */
+export async function getEffectiveRatingColumns(): Promise<RatingColumn[]> {
+  const cfg = await getEffectiveRatingDisplayConfig();
+  return getRatingColumns().filter((c) => c.id === DEFAULT_RATING_SORT || !cfg.hiddenScoreTypes.includes(c.scoreType));
 }
 
 export interface GetRatingsRankingInput {
@@ -42,7 +52,7 @@ export interface GetRatingsRankingInput {
  * prev 欄用它自己的預設最低票數（不跟著使用者調的門檻，那是排序欄的設定）。
  */
 export async function getRatingsRanking(input: GetRatingsRankingInput): Promise<RatingsRanking> {
-  const columns = getRatingColumns();
+  const columns = await getEffectiveRatingColumns();
   const sort = columns.find((c) => c.id === input.sort) ?? columns.find((c) => c.id === DEFAULT_RATING_SORT)!;
   const prevCol = input.prev && input.prev !== sort.id ? columns.find((c) => c.id === input.prev) : undefined;
   const dir: RatingRankDir = input.dir === "asc" ? "asc" : "desc";

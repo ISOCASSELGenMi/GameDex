@@ -127,6 +127,20 @@
       "when": 1793238901089,
       "tag": "0017_yielding_lenny_balinger",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1793284921316,
+      "tag": "0018_dashing_madame_hydra",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1793285787941,
+      "tag": "0019_loose_hellcat",
+      "breakpoints": true
     }
   ]
 }

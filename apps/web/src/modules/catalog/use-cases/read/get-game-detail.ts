@@ -5,7 +5,7 @@ import { hasPopularitySignal } from "../../extensions";
 import { getGameDetailBySlug } from "../../repository/game-detail";
 import { getGameFollowHeat } from "../../repository/game-follow-heat";
 import { resolveImageRef } from "../../providers/image-ref";
-import { releaseFilterDefaults, resolveRegionPref } from "./resolve-filter";
+import { effectiveReleaseFilterDefaults, resolveRegionPref } from "./resolve-filter";
 
 export interface GetGameDetailInput {
   slug: string;
@@ -25,7 +25,7 @@ export async function getGameDetail(input: GetGameDetailInput): Promise<GameDeta
     slug,
     locale: input.locale,
     regionPref: resolveRegionPref(input.regionPref),
-    franchiseGameTypes: releaseFilterDefaults().gameTypes,
+    franchiseGameTypes: (await effectiveReleaseFilterDefaults()).gameTypes,
     resolveImage: resolveImageRef,
   });
   if (!detail) return null;
