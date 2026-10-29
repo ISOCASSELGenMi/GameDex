@@ -64,6 +64,8 @@
       "year": "Year known"
     },
     "undatedEmpty": "No games without an exact date this month",
+
+    "undatedViewAll": "View all {count} games",
     "agendaTitle": "By date",
     "dayListTitle": "Releases and events on {date}",
     "backToList": "Back to the day list",

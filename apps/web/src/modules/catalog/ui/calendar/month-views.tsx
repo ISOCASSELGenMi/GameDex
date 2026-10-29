@@ -5,7 +5,10 @@
  * - UndatedView：「本月未定日」（月／季／年精度，依精度分組，數量多時預設收合）。
  */
 import type { ReactElement } from "react";
+import type { FilterSpec } from "@sok/api-contract";
 import { formatIsoDate, formatReleaseLabel, weekdayNames, type Locale, type Translator } from "@sok/i18n";
+import { filterSpecForPage } from "../filters/filter-labels";
+import { gamesBrowseHref } from "../links";
 import { UNDATED_OPEN_MAX, buildMonthGrid, weekdayOf, type WeekStart, type YearMonth } from "../month";
 import { DayCell } from "./day-cell";
 import { FoldedCards } from "./folded-cards";
@@ -97,11 +100,14 @@ export function UndatedView({
   t,
   groups,
   hrefOf,
+  spec = {},
 }: {
   locale: Locale;
   t: Translator;
   groups: readonly UndatedGroup[];
   hrefOf: HrefOf;
+  /** 月曆目前的篩選；「查看全部」連結帶同一組條件（瀏覽頁不適用的參數略過）。 */
+  spec?: FilterSpec;
 }): ReactElement {
   return (
     <section className="undated" aria-labelledby="undated-title">
@@ -127,7 +133,16 @@ export function UndatedView({
                 ))}
               </ul>
             ) : (
-              <FoldedCards rows={group.rows} className="fold-list fold-columns" />
+              <>
+                <FoldedCards rows={group.rows} className="fold-list fold-columns" />
+                {group.more && group.year !== null ? (
+                  <p className="undated-more">
+                    <a className="btn-secondary" href={gamesBrowseHref(locale, { ...filterSpecForPage(spec, "browse"), year: group.year }, 1, "date")}>
+                      {t.t("ui.calendar.undatedViewAll", { count: group.count })}
+                    </a>
+                  </p>
+                ) : null}
+              </>
             )}
           </details>
         );

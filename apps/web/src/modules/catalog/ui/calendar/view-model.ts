@@ -31,12 +31,17 @@ export interface EventItem {
 
 /**
  * 本月未定日的一組（月／季／年精度）。數量少（≤ UNDATED_OPEN_MAX）：完整卡片 items（可開側邊預覽卡）；
- * 數量多：精簡列 rows（RSC payload 小，點了直接進詳情頁）。兩者只有一個有內容。
+ * 數量多：只送熱度最高的前 UNDATED_OPEN_MAX 款的精簡列 rows（RSC payload 小，點了直接進詳情頁），
+ * 其餘由「查看全部」連結到瀏覽頁（`more`＝true；`year`＝連結帶的年份）。items 與 rows 只有一個有內容。
  */
 export interface UndatedGroup {
   precision: "month" | "quarter" | "year";
-  /** 組內遊戲數 */
+  /** 組內遊戲數（總數；多於送出的列數時 rows 只含前 UNDATED_OPEN_MAX 款） */
   count: number;
+  /** count > UNDATED_OPEN_MAX：有未送出的款數，要顯示「查看全部」連結 */
+  more: boolean;
+  /** 「查看全部」連結帶的年份（期間最後一天所在年；沒有代表日時 null） */
+  year: number | null;
   /** 組內第一款的代表日期（標題的「2026年10月」文字用） */
   firstDate: string | null;
   items: CardItem[];
@@ -57,6 +62,12 @@ export interface CalendarViewModel {
   previews: Record<string, PreviewCardData>;
   releaseCount: number;
   eventCount: number;
+}
+
+/** ISO 日期（yyyy-mm-dd）的年份；格式不對回 null。 */
+export function yearOfDate(date: string | null): number | null {
+  const y = date ? /^(\d{4})-/.exec(date)?.[1] : undefined;
+  return y ? Number(y) : null;
 }
 
 /** 活動在月曆中的日期：開始日（UTC）；開始於上個月的多日活動放本月 1 日。 */
@@ -114,9 +125,11 @@ export function buildCalendarViewModel(data: CalendarMonth, locale: Locale, t: T
       return {
         precision,
         count: cards.length,
+        more: !small,
+        year: yearOfDate(cards[0]?.date ?? null),
         firstDate: cards[0]?.date ?? null,
         items: small ? cards.map(toItem) : [],
-        rows: small ? [] : cards.map((c) => toFoldRow(c, locale, t)),
+        rows: small ? [] : cards.slice(0, UNDATED_OPEN_MAX).map((c) => toFoldRow(c, locale, t)),
       };
     });
 
