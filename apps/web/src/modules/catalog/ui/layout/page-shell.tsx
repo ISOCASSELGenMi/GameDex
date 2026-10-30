@@ -11,6 +11,7 @@ import { getTranslator } from "../labels";
 import { aboutHref, gamesBrowseHref, languageMenuLinks, localeHref, subscribeHref, type LocalPath } from "../links";
 import { searchBoxLabels } from "../search/labels";
 import { HeaderSearch } from "../search/header-search";
+import { BrandText } from "./brand-roll";
 import { HeaderRightOutlet } from "./header-right";
 import { FollowingLanguageMenu } from "./following-language-menu";
 import { LanguageMenu } from "./language-menu";
@@ -40,6 +41,7 @@ export function PageShell({ locale, supportedLocales, path, query = "", followPa
   // 導覽項目是單一陣列（nav-items.ts）。aria-current 依路徑判斷：
   // /games 只在瀏覽頁本身為 current（遊戲詳情 /games/{slug} 不標），其餘依路徑前綴。
   const items = navItems(locale, t);
+  const brand = followPathname ? DEFAULT_BRAND : brandOfPath(path);
   const navProps = {
     items,
     label: t.t("a11y.menu"),
@@ -63,9 +65,9 @@ export function PageShell({ locale, supportedLocales, path, query = "", followPa
                 {t.t("ui.org.backTo", { name: org.name })}
               </a>
             ) : null}
-            <a href={localeHref(locale, "/")} className="hd-brand" data-site-brand="">
-              <span className="hd-brand-text" lang="en">
-                {followPathname ? DEFAULT_BRAND : brandOfPath(path)}
+            <a href={localeHref(locale, "/")} className="hd-brand" data-site-brand="" aria-label={brand}>
+              <span lang="en">
+                <BrandText text={brand} />
               </span>
             </a>
             {followPathname ? <FollowingNavMenu {...navProps} /> : <NavMenu {...navProps} currentPath={path} />}

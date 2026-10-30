@@ -3,9 +3,10 @@ import type { EnvLike } from "@/kernel/config/env";
 import { isModuleEnabled } from "@/kernel/modules/enabled";
 import { accountsModule } from "./accounts";
 import { adminModule } from "./admin";
+import { metacriticModule } from "./metacritic";
 import { catalogModule, setCatalogExtensions, type CatalogExtensionSet, type ModuleManifest } from "./catalog";
 
-const ALL: readonly ModuleManifest[] = [catalogModule, accountsModule, adminModule];
+const ALL: readonly ModuleManifest[] = [catalogModule, accountsModule, adminModule, metacriticModule];
 
 export function allModules(): readonly ModuleManifest[] {
   return ALL;

@@ -1,5 +1,6 @@
 import { getCoreEnv } from "@/kernel/config/env";
-import type { IgnoredFilterValue, RegionCode, ReleaseFilter, ResolvedReleaseFilter } from "../../domain/entities";
+import { getSettings } from "@/kernel/settings";
+import { GAME_TYPES, RELEASE_STAGES, type IgnoredFilterValue, type RegionCode, type ReleaseFilter, type ResolvedReleaseFilter } from "../../domain/entities";
 import { normalizeRegionPref, normalizeReleaseFilter, regionPrefIssue } from "../../domain/release-filter";
 import { lookupFilterSlugs } from "../../repository/filter-options";
 
@@ -9,10 +10,25 @@ export interface ResolvedFilterResult {
   ignored: IgnoredFilterValue[];
 }
 
-/** 預設值來自環境變數（16）：CALENDAR_VISIBLE_GAME_TYPES、CALENDAR_VISIBLE_RELEASE_STAGES。 */
+/** 環境變數層的預設（16）：CALENDAR_VISIBLE_GAME_TYPES、CALENDAR_VISIBLE_RELEASE_STAGES。 */
 export function releaseFilterDefaults() {
   const env = getCoreEnv();
   return { gameTypes: env.CALENDAR_VISIBLE_GAME_TYPES, stages: env.CALENDAR_VISIBLE_RELEASE_STAGES };
+}
+
+/**
+ * 實際生效的預設：後台設定（DB，短 TTL 快取；12 §設定頁）有值就覆蓋環境變數。月曆、時間軸、瀏覽、公司／系列頁、詳情頁同系列共用。
+ * 設定值在寫入時已驗證；這裡再過濾一次未知值，空清單視為沒設（否則預設會變成「什麼都不顯示」）。
+ */
+export async function effectiveReleaseFilterDefaults() {
+  const base = releaseFilterDefaults();
+  const s = await getSettings();
+  const types = s.get("calendar.defaultGameTypes");
+  const stages = s.get("calendar.defaultStages");
+  return {
+    gameTypes: Array.isArray(types) && types.length > 0 ? types.filter((x) => (GAME_TYPES as readonly string[]).includes(x)) : base.gameTypes,
+    stages: Array.isArray(stages) && stages.length > 0 ? stages.filter((x) => (RELEASE_STAGES as readonly string[]).includes(x)) : base.stages,
+  };
 }
 
 /**
@@ -20,7 +36,7 @@ export function releaseFilterDefaults() {
  * 某維度的 slug 全部未知 → 該維度不限制（照樣回報）。
  */
 export async function resolveFilterSlugs(filter: ReleaseFilter = {}): Promise<ResolvedFilterResult> {
-  const n = normalizeReleaseFilter(filter, releaseFilterDefaults());
+  const n = normalizeReleaseFilter(filter, await effectiveReleaseFilterDefaults());
   const ignored = [...n.ignored];
   const found = await lookupFilterSlugs({
     platformSlugs: n.platformSlugs ?? [],

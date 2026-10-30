@@ -37,6 +37,7 @@
 - ✅ **GameDex 第一輪**（PR 舊 #15、#16）與**第二輪 Z1～Z4**（2026-10-22～23，PR `ISOCASSELGenMi/GameDex#1`）：header 依頁切換品牌名、搜尋候選、/games 分組、評分排名、彩蛋與隱藏主題、詳情頁補資訊；舊交接 `docs/handoff/2026-10-23-gamedex-v2.md`
 - ✅ **GameDex Z6 效能、Next 16.4.1、偶發失敗修正**（2026-10-24，GameDex `#2`～`#4` 已合併）：舊交接 `docs/handoff/2026-10-24-gamedex-z6-done.md`
 - ✅ **GameDex 第三輪**（2026-10-29，GameDex `#5`～`#10` 已合併）：小清理、e2e 時鐘修正、全站 HTML 瘦身、搜尋候選兩段式、月曆未定日只送前 24 款、分組細節 D88（廠商取 IGDB 第一個、日期分組從當月起算）：**接手先讀 `docs/handoff/2026-10-29-gamedex-round3-done.md`**（剩餘任務、需要使用者處理的事、地雷）。**開發暫停中，等使用者說繼續再動工**
+- 🚧 **後台設定＋Phase 6 Metacritic＋品牌拉霸機**（2026-10-29，分支 `feat/admin-settings`，尚未合併 main）：kernel `app_settings`／稽核（migration 0019）、`/internal/settings`／`/internal/sync`／`/internal/matches`、共用導覽、`modules/metacritic`（migration 0020，**雙開關預設關**：`METACRITIC_SCRAPE_ENABLED`＋後台「允許抓取」）、header 品牌拉霸機；D90；對真實站台的整輪排程尚未跑
 - ⏭ Phase 9（見 spec 15）
   - 任務註冊在 `catalog/module.ts` 的 `jobs`；長任務用 `lockMode: "session"`；遊戲寫入一律經 `writeGameBatch`
 

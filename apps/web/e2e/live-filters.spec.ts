@@ -34,6 +34,13 @@ async function trackScrollAtChange(page: Page): Promise<void> {
 /** 把目標捲到視窗上緣附近（之後 check() 不必再捲動，變更當下的位置才是測試要守住的位置）。 */
 const scrollNear = (target: Locator): Promise<void> =>
   target.evaluate((el) => {
+    // 頁面不一定夠高（CI 的 Linux 字型／內容量不同）：在 body 末端加撐高元素（不在 React 管轄內，客戶端導覽後仍在），確保有東西可捲
+    if (!document.getElementById("e2e-scroll-pad")) {
+      const pad = document.createElement("div");
+      pad.id = "e2e-scroll-pad";
+      pad.style.height = "3000px";
+      document.body.appendChild(pad);
+    }
     window.scrollTo(0, Math.round(window.scrollY + el.getBoundingClientRect().top - 140));
   });
 const scrollAtChange = (page: Page): Promise<number> => page.evaluate(() => (window as unknown as { __yChange: number }).__yChange);

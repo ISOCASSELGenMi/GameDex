@@ -134,6 +134,20 @@
       "when": 1793285249833,
       "tag": "0018_lethal_zzzax",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1793324750811,
+      "tag": "0019_thankful_sleeper",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1793324752650,
+      "tag": "0020_thin_preak",
+      "breakpoints": true
     }
   ]
 }

@@ -5,6 +5,18 @@
 - 06：§篩選——共用篩選面板改為即時套用（有 JS 時無套用按鈕、保留全部清除；無 JS 仍可送出）；文字／數字欄位 debounce 400 ms、`/games` 搜尋框 `q` 只在 Enter 套用；`router.replace(…, { scroll: false })`；篩選不改變位置（月曆年月、時間軸 `week`／`at`、`/games` 的 `by`／`gfrom`／`gsort`／`gdir`／`page`、評分排名 `page`），頁碼超出範圍退到最後一頁；a11y（焦點、aria-live）。
 - 無 migration、無 API 形狀變更；新增 i18n 鍵 `filters.live.updating`／`updated`（zh-Hant、en、ja）。
 
+## 後台設定、Metacritic（Phase 6）、品牌拉霸機 D90（2026-10-29 寫回；repo 副本先改，Project 正本待使用者匯入）
+
+- 00：原則三由「可獨立關閉」改述為**兩道開關都開才抓**（環境變數＋後台允許抓取）。
+- 02：manifest 表加 metacritic／admin 說明；新增 §後台設定（kernel/settings 的分層理由與規則：鍵登記、形狀檢查、30 秒快取、稽核、`MODULES` 不做執行期切換、共用導覽放 kernel/ui）。
+- 05：§Metacritic 抓取重寫為雙開關、依 2026-10-29 實際觀察改用 sitemap 取代站內搜尋（robots.txt 禁止 `/search`）、限速／退避／每日額度（`METACRITIC_DAILY_REQUEST_LIMIT`）／被擋 24 小時冷卻／解析失敗率告警／更新頻率（索引每週、修復每日、分數每小時）；§顯示規則第 1、3 層註明後台設定覆蓋與 Metascore／Userscore 開關。
+- 06：§header 品牌換字由淡入改為拉霸機（≤ 0.5 秒、字格寬度補間、reduced-motion 直接換字）；§評分排名 Metacritic 欄與後台開關。
+- 12：§管理介面表更新實作狀態（網站設定、同步監控、比對覆核、帳號停權）；新增 §內部頁面共用導覽與設定頁（回報審核紀錄、設定頁、同步監控；處理人欄位不存在的說明）。
+- 15：Phase 6 步驟與完成標準標註實作狀態與尚未做的項目。
+- 16：新增 `METACRITIC_DAILY_REQUEST_LIMIT`、`METACRITIC_USER_AGENT`；評分與月曆環境變數註明後台設定可覆蓋。
+- 90：新增 D90。91：§Metacritic 新增 2026-10-29 實際觀察結果（robots、sitemap、頁面結構、分數位置、未使用的內部 API）。
+- 03：新增表 `app_settings`、`app_settings_audit`（kernel，migration 0019）、`metacritic_slugs`（metacritic，migration 0020）；07 無 API 形狀變更（`/internal/*` 為內部頁面）。
+
 ## /games 分組檢視的排序與瀏覽 D89（2026-10-29 寫回；repo 副本先改，Project 正本待使用者匯入）
 
 - 03：新增 migration 0018 的三個組內排序 index（`games_release_group_date_idx`、`games_publisher_group_date_idx`、`games_browse_date_desc_idx`）；尚未在開發 DB 實測。
