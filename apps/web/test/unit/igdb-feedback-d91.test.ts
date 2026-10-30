@@ -9,6 +9,7 @@ import {
   buildFeedbackPasteText,
   feedbackFieldForReportType,
   isFeedbackAdopted,
+  igdbGameUrl,
   type FeedbackBuildContext,
   type IgdbAdoptionSnapshot,
 } from "@/modules/catalog/domain/igdb-feedback-fields";
@@ -66,7 +67,7 @@ describe("登錄表", () => {
 
   it("整理文字：含遊戲、IGDB 遊戲頁、欄位位置、定位、舊新值、佐證、備註", () => {
     const text = buildFeedbackPasteText({
-      field: "release_date", gameName: "Game", gameSlug: "g", platformName: "PS5", regionCode: "WW", stage: "full",
+      field: "release_date", gameName: "Game", gameSlug: "g", igdbGameId: 100, platformName: "PS5", regionCode: "WW", stage: "full",
       oldValue: { date: "2037-05-10", precision: "day" }, newValue: { date: "2037-08-01", precision: "month" }, sourceUrl: "https://e.example", reporterNote: "備註",
     });
     expect(text.split("\n")).toEqual([
@@ -79,10 +80,18 @@ describe("登錄表", () => {
       "佐證：https://e.example",
       "回報者備註：備註",
     ]);
-    const bare = buildFeedbackPasteText({ field: "localized_title", gameName: "G", gameSlug: "g", platformName: null, regionCode: null, stage: null, oldValue: null, newValue: { title: "T" }, sourceUrl: null, reporterNote: null });
+    const bare = buildFeedbackPasteText({ field: "localized_title", gameName: "G", gameSlug: "g", igdbGameId: 100, platformName: null, regionCode: null, stage: null, oldValue: null, newValue: { title: "T" }, sourceUrl: null, reporterNote: null });
     expect(bare).not.toContain("平台／地區／階段");
     expect(bare).not.toContain("佐證");
     expect(bare).toContain("目前（IGDB）：（無）");
+  });
+});
+
+describe("igdbGameUrl", () => {
+  it("去掉 slug 衝突時加的 -<igdbId> 尾綴；其他不動", () => {
+    expect(igdbGameUrl("zelda-123", 123)).toBe("https://www.igdb.com/games/zelda");
+    expect(igdbGameUrl("zelda-123", 456)).toBe("https://www.igdb.com/games/zelda-123");
+    expect(igdbGameUrl("-123", 123)).toBe("https://www.igdb.com/games/-123");
   });
 });
 

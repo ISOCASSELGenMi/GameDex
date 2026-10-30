@@ -265,12 +265,18 @@ export function isFeedbackAdopted(item: AdoptionTarget, snap: IgdbAdoptionSnapsh
   return IGDB_FEEDBACK_REGISTRY[item.field].isAdopted(item, snap);
 }
 
-export const igdbGameUrl = (slug: string): string => `https://www.igdb.com/games/${encodeURIComponent(slug)}`;
+/** IGDB 遊戲頁。同步遇 slug 衝突時 games.slug 會加上 `-<igdbId>` 尾綴，這裡去掉才是 IGDB 的 slug。 */
+export const igdbGameUrl = (slug: string, igdbId: number): string => {
+  const suffix = `-${igdbId}`;
+  const igdbSlug = slug.endsWith(suffix) && slug.length > suffix.length ? slug.slice(0, -suffix.length) : slug;
+  return `https://www.igdb.com/games/${encodeURIComponent(igdbSlug)}`;
+};
 
 export interface FeedbackPasteSource {
   field: IgdbFeedbackField;
   gameName: string;
   gameSlug: string;
+  igdbGameId: number;
   platformName: string | null;
   regionCode: string | null;
   stage: ReleaseStage | null;
@@ -290,7 +296,7 @@ export function buildFeedbackPasteText(s: FeedbackPasteSource): string {
   const def = IGDB_FEEDBACK_REGISTRY[s.field];
   const lines = [
     `遊戲：${s.gameName}`,
-    `IGDB：${igdbGameUrl(s.gameSlug)}`,
+    `IGDB：${igdbGameUrl(s.gameSlug, s.igdbGameId)}`,
     `欄位：${def.label}（${def.igdbLocation}）`,
   ];
   const where = feedbackLocationText(s);
