@@ -67,8 +67,8 @@ test.describe("品牌文字拉霸機", () => {
     // 字格數 = 舊字（GameCalendar 12）與新字（GameTimeline 12）的較長者
     expect(rolling!.slots).toBe(12);
     const ms = Number(await brandText(page).getAttribute("data-roll-ms"));
-    expect(ms).toBeGreaterThan(150);
-    expect(ms).toBeLessThanOrEqual(500); // 動畫本身（第一個字格開始滾動 → 最後一個字格停下）
+    expect(ms).toBeGreaterThan(100);
+    expect(ms).toBeLessThanOrEqual(400); // 動畫本身的時間軸（第一個字格開始 → 最後一個字格停下；理論值 280）
     // 牆鐘時間另外量（含 hydration 等主執行緒忙碌的開始延遲）：負載下只做粗略上限，避免 CI 抖動
     expect(Number(await brandText(page).getAttribute("data-roll-wall"))).toBeLessThan(1500);
     await expect(page.locator(".hd-roll-slot")).toHaveCount(0);

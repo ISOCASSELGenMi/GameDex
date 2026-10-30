@@ -1,7 +1,7 @@
 "use client";
 /**
  * header 左上角的品牌文字（GameDex／GameCalendar…）。換頁後文字改變時用「拉霸機」效果換字：
- * 各字母逐字（錯開約 15ms）上下滾動，滾過幾個填充字母後停在新字母；整體 ≤ 0.5 秒。
+ * 各字母逐字（錯開 ≤ 10ms）上下滾動，滾過幾個填充字母後停在新字母；整體 ≤ 0.5 秒。
  *
  * - 伺服器與首次 hydration 一律輸出純文字（沒有 JavaScript、搜尋引擎、第一次進站都看到最終文字）。
  * - 上一頁的品牌記在 sessionStorage（導覽下拉是整頁導覽，記憶體變數撐不過換頁）；mount 後發現與這頁不同才播放。
@@ -13,9 +13,9 @@
 import { useLayoutEffect, useRef, type ReactElement } from "react";
 
 const STORAGE_KEY = "gd-brand";
-/** 單字滾動時間與逐字錯開（毫秒）。最後一字結束時間 = (n-1)*stagger + DURATION ≤ 380（留約 120 ms 給畫面排程）。 */
-export const BRAND_ROLL_DURATION_MS = 220;
-export const BRAND_ROLL_MAX_STAGGER_TOTAL_MS = 160;
+/** 單字滾動時間與逐字錯開（毫秒）。最後一字結束時間 = (n-1)*stagger + DURATION ≤ 280（慢機器上也留足餘裕）。 */
+export const BRAND_ROLL_DURATION_MS = 170;
+export const BRAND_ROLL_MAX_STAGGER_TOTAL_MS = 110;
 const FILLERS = "GAMEDXPLTRNKBS";
 const FILLER_COUNT = 2;
 const EASING = "cubic-bezier(0.23, 1, 0.32, 1)";
@@ -28,7 +28,7 @@ export function fillerAt(index: number, k: number): string {
 /** 第 index 個字格的啟動延遲。 */
 export function staggerDelay(index: number, slotCount: number): number {
   if (slotCount <= 1) return 0;
-  return Math.round(Math.min(16, BRAND_ROLL_MAX_STAGGER_TOTAL_MS / (slotCount - 1)) * index);
+  return Math.round(Math.min(10, BRAND_ROLL_MAX_STAGGER_TOTAL_MS / (slotCount - 1)) * index);
 }
 
 function readLast(): string | null {
@@ -112,16 +112,25 @@ export function BrandText({ text }: { text: string }): ReactElement {
       if (finished) return;
       finished = true;
       window.clearTimeout(timer);
-      anims.forEach((a) => a.cancel());
-      layer.textContent = "";
-      root.setAttribute("data-brand-roll", "idle");
-      // data-roll-ms：動畫本身從第一個字格開始滾動到結束的時間（timeline 時間，不含 hydration 等主執行緒忙碌造成的開始延遲）；data-roll-wall：從 effect 開始算的牆鐘時間
-      const t0 = anims.reduce((m, a) => (typeof a.startTime === "number" ? Math.min(m, a.startTime) : m), Infinity);
-      const now = document.timeline.currentTime;
-      const own = Number.isFinite(t0) && typeof now === "number" ? now - t0 : performance.now() - started;
+      // data-roll-ms：動畫本身的時間（取消動畫之前先讀）；data-roll-wall：從 effect 開始算的牆鐘時間
+      // 用動畫自己的時間軸算（最後一個字格的結束時間 − 第一個字格的開始時間），不是「回呼什麼時候被執行」：主執行緒忙碌只會延後回呼，不會讓動畫變長
+      let t0 = Infinity;
+      let t1 = -Infinity;
+      for (const a of anims) {
+        const st = a.startTime;
+        const end = a.effect?.getComputedTiming().endTime;
+        if (typeof st === "number" && typeof end === "number") {
+          t0 = Math.min(t0, st);
+          t1 = Math.max(t1, st + end);
+        }
+      }
+      const own = Number.isFinite(t0) ? t1 - t0 : performance.now() - started;
       root.setAttribute("data-roll-ms", String(Math.round(own)));
       root.setAttribute("data-roll-wall", String(Math.round(performance.now() - started)));
       if (!measure) root.setAttribute("data-roll-cut", "");
+      anims.forEach((a) => a.cancel());
+      layer.textContent = "";
+      root.setAttribute("data-brand-roll", "idle");
     };
     Promise.all(anims.map((a) => a.finished)).then(() => finish(true), () => undefined);
     // 保險：動畫被中斷（分頁切到背景等）時最晚 0.8 秒後還原成純文字
