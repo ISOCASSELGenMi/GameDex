@@ -462,6 +462,7 @@
       "language_support": "言語対応の誤り・不足",
       "cancelled": "中止・開発中止",
       "localized_title": "繁体字中国語のタイトル",
+      "field_correction": "その他のデータ項目の訂正",
       "duplicate": "重複したデータ",
       "takedown": "削除・著作権に関する申請",
       "other": "その他"
@@ -516,7 +517,81 @@
       "network": "接続できません。ネットワークを確認してもう一度お試しください。",
       "generic": "送信に失敗しました。しばらくしてからお試しください。"
     },
-    "captchaLoading": "確認機能を読み込み中…"
+    "captchaLoading": "確認機能を読み込み中…",
+    "fc": {
+      "intro": "IGDB が投稿を受け付けている各項目を報告できます。承認されても「IGDB への申請待ち」リストに追加されるだけで、管理者が IGDB に申請します。本サイトのデータを直接変更することはなく、IGDB の同期に合わせて更新されます。",
+      "fieldLabel": "訂正する項目",
+      "opLabel": "操作",
+      "group": {
+        "text": "テキスト",
+        "media": "メディア",
+        "taxonomy": "分類",
+        "relation": "関連",
+        "other": "その他"
+      },
+      "field": {
+        "name": "ゲーム名（原題）",
+        "summary": "概要",
+        "storyline": "ストーリー",
+        "game_type": "ゲームの種類（本編・DLC・リメイクなど）",
+        "game_status": "発売状況",
+        "alternative_name": "別名",
+        "localized_title_other": "他言語のタイトル",
+        "cover": "カバー画像",
+        "screenshot": "スクリーンショット／アートワーク",
+        "video": "予告編",
+        "genre": "ジャンル",
+        "theme": "テーマ",
+        "game_mode": "ゲームモード",
+        "player_perspective": "プレイヤー視点",
+        "engine": "ゲームエンジン",
+        "platform": "プラットフォーム",
+        "company_developer": "開発元",
+        "company_publisher": "販売元",
+        "company_supporting": "協力開発／移植",
+        "franchise": "フランチャイズ",
+        "collection": "シリーズ",
+        "external_link": "外部リンク",
+        "age_rating": "年齢区分",
+        "relation_parent": "本編／DLC／バージョンの関連"
+      },
+      "op": {
+        "add": "追加",
+        "change": "変更",
+        "remove": "削除"
+      },
+      "input": {
+        "text": "新しい内容",
+        "name": "名称",
+        "comment": "注記（任意）",
+        "locale": "言語コード",
+        "role": "役割",
+        "url": "URL",
+        "label": "分類（任意。例：Official、Steam）",
+        "organization": "区分の団体",
+        "rating": "区分",
+        "relation": "関連の種類",
+        "gameName": "相手のゲーム名",
+        "gameSlug": "相手のゲームの slug（任意）"
+      },
+      "role": {
+        "supporting": "協力開発",
+        "porting": "移植"
+      },
+      "relation": {
+        "parent": "本編",
+        "version_parent": "バージョンの元",
+        "dlc": "DLC（本作が本編）",
+        "expansion": "拡張（本作が本編）"
+      },
+      "hint": {
+        "media": "画像または動画の URL を入力してください。この URL が出典になります。",
+        "locale": "ja、ko、zh-Hans などの言語コード。",
+        "remove": "削除する場合は、削除する値を 1 つ入力してください。",
+        "oldValue": "任意：変更の場合、置き換える元の値を入力してください。"
+      },
+      "oldValueLegend": "置き換える元の値（任意）"
+    }
   },
   "subscribe": {
     "title": "カレンダーを購読",

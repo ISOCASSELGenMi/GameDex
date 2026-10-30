@@ -6,6 +6,7 @@ import { IGDB_FEEDBACK_FIELDS, REPORT_TYPES } from "@/modules/catalog/domain/ent
 import {
   IGDB_FEEDBACK_REGISTRY,
   buildFeedbackDraft,
+  emptyGameFacts,
   buildFeedbackPasteText,
   feedbackFieldForReportType,
   isFeedbackAdopted,
@@ -20,7 +21,7 @@ const report = (over: Partial<FeedbackBuildContext["report"]>): FeedbackBuildCon
   id: 7, reportType: "other", targetType: "game", targetId: 1, proposed: null, sourceUrl: "https://e.example", note: "n", ...over,
 });
 const ctx = (over: Partial<FeedbackBuildContext> & { report: FeedbackBuildContext["report"] }): FeedbackBuildContext => ({ game, event: null, plan: null, ...over });
-const snap = (over: Partial<IgdbAdoptionSnapshot> = {}): IgdbAdoptionSnapshot => ({ releases: [], languages: [], gameStatus: null, names: [], ...over });
+const snap = (over: Partial<IgdbAdoptionSnapshot> = {}): IgdbAdoptionSnapshot => ({ releases: [], languages: [], gameStatus: null, names: [], facts: emptyGameFacts(), ...over });
 
 describe("登錄表", () => {
   it("每個欄位鍵都有登錄；核可後會建項目的回報類型對應欄位，duplicate／takedown／other 不建", () => {
