@@ -4,6 +4,7 @@
 import { filterSpecToQueryString, type FilterSpec } from "@sok/api-contract";
 import { localeSelfName, type Locale } from "@sok/i18n";
 import type { GameGroupBy } from "../domain/entities/game-groups";
+import { groupQueryParts, type GroupViewParams } from "./browse/groups/params";
 import { formatMonthParam, type YearMonth } from "./month";
 
 /** 去掉語系前綴後的路徑，一律以 `/` 開頭（`/calendar/2026-10`）；根目錄為 `/`。 */
@@ -57,8 +58,9 @@ function pageQuery(extra: string[], page?: number): string {
   return parts.join("&");
 }
 
-export function platformsHref(locale: Locale): string {
-  return localeHref(locale, "/platforms");
+/** 平台總覽。排序固定依平台發售日（`sort=release` 是預設，不寫入）；`dir` 預設 desc（新到舊），只有 asc 寫入。 */
+export function platformsHref(locale: Locale, dir: "asc" | "desc" = "desc"): string {
+  return localeHref(locale, "/platforms", dir === "asc" ? "dir=asc" : "");
 }
 
 /** 第 4 個參數（可省略）：section 預設 upcoming、sort 預設 date，預設值不寫入網址。 */
@@ -115,10 +117,10 @@ export function eventHref(locale: Locale, slug: string): string {
 
 /**
  * 遊戲瀏覽／搜尋 `/games`。篩選參數（含 q、sort；順序同 FILTER_PARAMS）在前，`page`（第 1 頁不寫入）在後，
- * 與 proxy 的正規形式一致。`by`（分組檢視；none 不寫入）依名稱排序在 `page` 前。
+ * 與 proxy 的正規形式一致。分組檢視的參數（`by`；依平台／廠商的 `gdir`、`gsort`；依日期的 `gfrom`；預設值不寫入）依名稱排序在 `page` 前。
  */
-export function gamesBrowseHref(locale: Locale, filter: FilterSpec = {}, page = 1, by: GameGroupBy = "none"): string {
-  const q = [filterSpecToQueryString(filter), by !== "none" ? `by=${by}` : "", page > 1 ? `page=${Math.floor(page)}` : ""].filter(Boolean).join("&");
+export function gamesBrowseHref(locale: Locale, filter: FilterSpec = {}, page = 1, by: GameGroupBy = "none", view: Partial<GroupViewParams> = {}): string {
+  const q = [filterSpecToQueryString(filter), ...groupQueryParts(by, view, page)].filter(Boolean).join("&");
   return localeHref(locale, "/games", q);
 }
 

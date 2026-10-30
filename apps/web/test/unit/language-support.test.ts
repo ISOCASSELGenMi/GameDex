@@ -104,6 +104,8 @@ describe("groupPlatformsByKind", () => {
     logoUrl: null,
     recentReleaseCount: 0,
     isCommon: false,
+    firstReleaseDate: null,
+    firstReleasePrecision: null,
     ...extra,
   });
   it("kind 依固定順序、other 最後、mobile 不列；組內常用在前、世代新到舊、名稱", () => {
@@ -121,6 +123,21 @@ describe("groupPlatformsByKind", () => {
     // hybrid（Switch）同時在主機與掌機兩組：主機組內常用在前
     expect(groups[0].platforms.map((x) => x.slug)).toEqual(["switch", "xsx", "ps5", "ps4", "ps1"]);
     expect(groups[1].platforms.map((x) => x.slug)).toEqual(["switch"]);
+  });
+  it("平台總覽排序（sort=release）：依平台發售日，預設新到舊；沒有日期的永遠最後；平手依原本順序（2026-10-29）", () => {
+    const items = [
+      p("ps4", "console", { generation: 8, firstReleaseDate: "2013-11-15" }),
+      p("ps5", "console", { generation: 9, isCommon: true, recentReleaseCount: 900, firstReleaseDate: "2020-11-12" }),
+      p("ps1", "console", { generation: 5, firstReleaseDate: "1994-12-03" }),
+      p("nodate", "console", { generation: 7 }),
+      p("xone", "console", { generation: 8, firstReleaseDate: "2013-11-15" }),
+    ];
+    const desc = groupPlatformsByKind(items, { sort: "release", dir: "desc" })[0]!.platforms.map((x) => x.slug);
+    expect(desc).toEqual(["ps5", "ps4", "xone", "ps1", "nodate"]);
+    const asc = groupPlatformsByKind(items, { sort: "release", dir: "asc" })[0]!.platforms.map((x) => x.slug);
+    expect(asc).toEqual(["ps1", "ps4", "xone", "ps5", "nodate"]);
+    // 不給 order＝原本的順序（常用在前，其餘世代新到舊）
+    expect(groupPlatformsByKind(items)[0]!.platforms.map((x) => x.slug)).toEqual(["ps5", "ps4", "xone", "nodate", "ps1"]);
   });
 });
 

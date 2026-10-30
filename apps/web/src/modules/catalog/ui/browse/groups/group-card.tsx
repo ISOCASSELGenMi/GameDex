@@ -15,6 +15,8 @@ export interface GroupCardData {
   n: string;
   /** 名稱的 lang（顯示的是外文原名時才有） */
   nl?: string;
+  /** 標題原文（IGDB 名稱）；主標題＝原文（沒有翻譯）時不給，第二行留空但保留固定高度 */
+  o?: string;
   /** 封面網址 */
   c?: string;
   /** 首發日（YYYY-MM-DD，只有日精度才有）與文字 */
@@ -47,6 +49,13 @@ export function GroupCard({ data, eager = false, appended = false }: { data: Gro
           <span className="rc-name" lang={data.nl}>
             {data.n}
           </span>
+          {data.o ? (
+            <span className="rc-orig" lang="en">
+              {data.o}
+            </span>
+          ) : (
+            <span className="rc-orig" aria-hidden="true" />
+          )}
           {data.dt ? (
             <time className="rc-meta" dateTime={data.dt}>
               {data.d}

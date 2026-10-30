@@ -285,4 +285,38 @@ describe.skipIf(!enabled)("平台／公司／系列頁（整合）", () => {
     expect(col!.games.items.map((g) => g.slug)).toEqual(["h3b-830202"]);
     expect(await getFranchisePage({ slug: "h3b-none", locale: "en" })).toBeNull();
   });
+
+  // ── 平台總覽排序（2026-10-29）：依平台發售日（platform_release_dates 最早一筆有日期的），沒有日期的永遠最後 ──
+  it("listPlatforms order：sort=release 依平台發售日，預設新到舊，asc 舊到新，沒有日期的永遠最後；不給 order 維持原順序", async () => {
+    const db = getDb();
+    const rows = [
+      { slug: "h3c-new", name: "H3C New", kind: "console" as const, igdbId: 830906, generation: 9, dates: [["JP", "2041-03-03", "day"], ["US", "2041-02-02", "month"]] },
+      { slug: "h3c-mid", name: "H3C Mid", kind: "console" as const, igdbId: 830907, generation: 1, dates: [["US", "2035-05-05", "day"]] },
+      { slug: "h3c-none", name: "H3C None", kind: "console" as const, igdbId: 830908, generation: 9, dates: [["EU", null, "tbd"]] },
+    ];
+    for (const r of rows) {
+      const [p] = await db.insert(platforms).values({ slug: r.slug, name: r.name, kind: r.kind, igdbId: r.igdbId, generation: r.generation }).returning({ id: platforms.id });
+      for (const [region, date, precision] of r.dates) {
+        await db.insert(platformReleaseDates).values({ platformId: p.id, regionId: ids.region[region as string], releaseDate: date, precision: precision as "day" | "month" | "tbd" });
+      }
+    }
+    const slugs = async (order?: { sort?: string; dir?: string }) =>
+      (await listPlatforms({ locale: "en", today: TODAY, ...(order ? { order } : {}) }))
+        .find((g) => g.kind === "console")!
+        .platforms.filter((p) => p.slug.startsWith("h3c-"))
+        .map((p) => p.slug);
+    // h3c-new 的最早一筆是 US 2041-02-02（月精度），不是 JP 2041-03-03
+    expect(await slugs({})).toEqual(["h3c-new", "h3c-mid", "h3c-none"]);
+    expect(await slugs({ sort: "release", dir: "desc" })).toEqual(["h3c-new", "h3c-mid", "h3c-none"]);
+    expect(await slugs({ sort: "release", dir: "asc" })).toEqual(["h3c-mid", "h3c-new", "h3c-none"]);
+    expect(await slugs({ sort: "bad", dir: "bad" })).toEqual(["h3c-new", "h3c-mid", "h3c-none"]);
+    // 不給 order＝原本的順序（世代新到舊、名稱）
+    expect(await slugs()).toEqual(["h3c-new", "h3c-none", "h3c-mid"]);
+    const first = (await listPlatforms({ locale: "en", today: TODAY, order: {} })).find((g) => g.kind === "console")!.platforms.find((p) => p.slug === "h3c-new")!;
+    expect(first.firstReleaseDate).toBe("2041-02-02");
+    expect(first.firstReleasePrecision).toBe("month");
+    const none = (await listPlatforms({ locale: "en", today: TODAY })).find((g) => g.kind === "console")!.platforms.find((p) => p.slug === "h3c-none")!;
+    expect(none.firstReleaseDate).toBeNull();
+    expect(none.firstReleasePrecision).toBeNull();
+  });
 });

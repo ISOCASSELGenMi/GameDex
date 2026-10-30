@@ -12,6 +12,8 @@
 
 ## 名單
 
+2026-10-29 新增三個獨立品牌欄（雷亞遊戲 Rayark、赤燭遊戲 Red Candle Games、信革數位 SIGONO；key＝rayark／red-candle-games／sigono，排在名單後段，不影響既有欄位索引；遊戲要跑 backfill_game_groups 才會重新歸欄）。
+
 使用者 2026-10-23 對照表疑義定案：上表「包含」欄補入 Sony／Sony Online Entertainment／Bungie → 索尼互動娛樂、Xbox Live Arcade／Production → Xbox、Codemasters → 美商藝電、Intelligent Systems → 任天堂、Taito → 史克威爾艾尼克斯。Crystal Dynamics、Eidos、Relic、Amplitude、Time Warner Interactive、Fire Falcom、Snkl Studio 不納入（獨立／其他）。
 
 同角色多家公司都在名單內時取 IGDB 列出的第一個（game_companies.igdb_position，D88）；舊資料位置是 NULL 時的替代規則：取名單欄位順序最後者（合開作品歸更具體的品牌）。
@@ -55,4 +57,7 @@
 | 型月 | TYPE-MOON | Fate 系列、魔法使之夜 |
 | Nexon | Nexon、Neople、Nexon Games | 楓之谷、跑跑卡丁車、新瑪奇英雄傳、藍色協議 |
 | Paradox Interactive | Paradox Interactive、Paradox Development Studio | 歐陸風雲、鋼鐵雄心、王國風雲、群星 |
+| 雷亞遊戲 | Rayark（IGDB 公司 id 12017 Rayark Inc.、14094 Rayark） | Cytus、Deemo、VOEZ、Sdorica |
+| 赤燭遊戲 | Red Candle Games（11926） | 返校、還願、嬰靈 |
+| 信革數位 | SIGONO（15108 SIGONO INC.） | — |
 | 獨立／其他 | 以上以外 | — |

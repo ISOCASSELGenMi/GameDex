@@ -309,9 +309,31 @@
     "groupLoadError": "Could not load. Please try again later.",
     "groupLoaded": "Loaded {count} more games",
     "groupNote": {
-      "date": "Grouped by first release date. Group order follows the sort (oldest first when sorting by release date, newest first otherwise); undated games come last. Each group shows a few games first.",
-      "platform": "Grouped by platform (mobile excluded). A game appears in each of its platform groups. Each group shows a few games first.",
-      "publisher": "Only major publishers get their own group; everything else is Indie & Other. A game is placed in one group, developer first. Each group shows a few games first."
+      "date": "Grouped by first release date, always in time order: by default from this month into the future, then earlier released months (newest first); undated games come last. Go back to earlier months or jump to a year and month. Each group shows a few games first, newest release first.",
+      "platform": "Grouped by platform (mobile excluded). A game appears in each of its platform groups. Choose the group order below; games inside a group are newest release first. Each group shows a few games first.",
+      "publisher": "Only major publishers get their own group; everything else is Indie & Other (always last). A game is placed in one group, developer first. Choose the group order below; games inside a group are newest release first. Each group shows a few games first."
+    },
+    "groupOrder": {
+      "sortLabel": "Order groups by",
+      "dirLabel": "Direction",
+      "sort": {
+        "latest": "Latest release",
+        "count": "Number of games",
+        "name": "Name"
+      },
+      "dir": {
+        "asc": "Ascending",
+        "desc": "Descending"
+      }
+    },
+    "dateNav": {
+      "earlier": "Earlier months (from {month})",
+      "jumpLabel": "Jump to year and month",
+      "year": "Year",
+      "month": "Month",
+      "go": "Go",
+      "fromCurrent": "Showing from {month} onward; undated games come last.",
+      "defaultCurrent": "Showing from this month ({month}) into the future, then earlier released months; undated games come last."
     }
   },
   "langSupport": {
@@ -329,6 +351,12 @@
     "note": "Platforms grouped by type. Common platforms are listed first. Mobile platforms are not covered.",
     "empty": "No platforms yet",
     "generation": "Generation {generation}",
+    "releasedOn": "Released {date}",
+    "order": {
+      "label": "Sorted by platform release date",
+      "desc": "Newest first",
+      "asc": "Oldest first"
+    },
     "kind": "Type",
     "status": "Status",
     "family": "Platform family",

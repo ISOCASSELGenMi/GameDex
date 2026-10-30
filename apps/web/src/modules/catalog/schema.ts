@@ -208,6 +208,38 @@ export const games = pgTable(
         t.gameStatus,
       ),
     ),
+    // /games 分組檢視的組內排序固定為「發售日由新到舊（未定最後）→ 熱度 → id」（2026-10-29）：三個分組鍵各一個 index，
+    // 組內 OFFSET／LIMIT 沿 index 取、提早結束（沒有這些 index 時，30 萬款的「其他」廠商組、日期未定組要整組排序）
+    index("games_release_group_date_idx").on(
+      t.releaseGroup,
+      t.firstReleaseDate.desc().nullsLast(),
+      t.popularityScore.desc(),
+      t.id,
+      t.gameType,
+      t.gameStatus,
+      t.heatLevel,
+      t.name,
+    ),
+    index("games_publisher_group_date_idx").on(
+      t.publisherGroup,
+      t.firstReleaseDate.desc().nullsLast(),
+      t.popularityScore.desc(),
+      t.id,
+      t.gameType,
+      t.gameStatus,
+      t.heatLevel,
+      t.name,
+    ),
+    // 平台分組：沿發售日新到舊掃描並用 game_platforms 的 EXISTS 過濾，遇到足夠筆數就停
+    index("games_browse_date_desc_idx").on(
+      t.firstReleaseDate.desc().nullsLast(),
+      t.popularityScore.desc(),
+      t.id,
+      t.gameType,
+      t.gameStatus,
+      t.heatLevel,
+      t.name,
+    ),
     // 以 id 查窄欄位用（join 其他表時代替讀 games 堆積資料表）
     index("games_browse_cover_idx").on(
       t.id,

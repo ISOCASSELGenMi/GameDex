@@ -6,6 +6,7 @@
  * - 結果筆數：role="status" 的 live region
  * - 分組檢視 `?by=date|platform|publisher`（預設 none＝上面的清單）：同一批遊戲（受搜尋與篩選限制）分成幾組，一頁 GAME_GROUPS_PER_PAGE 組（`page` 翻組），
  *   每組先送 GAME_GROUP_INITIAL 張卡，其餘「顯示更多」按需從 /api/v1/games/group 載入
+ *   組內固定發售日由新到舊（分組檢視隱藏排序欄位）；依平台／廠商有組排序（gsort、gdir），依日期有起算月（gfrom、往前看、跳到年月）
  */
 import Form from "next/form";
 import { connection } from "next/server";
@@ -40,7 +41,19 @@ import {
 } from "./view-model";
 import { GroupCardList, GroupSwitch, GroupsProvider } from "./groups/groups-client";
 import { groupApiBase, loadGameGroups, type GroupView } from "./groups/groups-server";
-import { groupPagination, groupRange, isGrouped, parseGameGroupBy, parseGroupPage } from "./groups/params";
+import { DateRangeNav, GroupOrderNav } from "./groups/group-controls";
+import {
+  groupPagination,
+  groupQueryParts,
+  groupRange,
+  isGrouped,
+  parseGameGroupBy,
+  parseGroupDir,
+  parseGroupFrom,
+  parseGroupPage,
+  parseGroupSort,
+  type GroupViewParams,
+} from "./groups/params";
 
 export type SearchParamsRecord = Readonly<Record<string, string | string[] | undefined>>;
 
@@ -82,11 +95,14 @@ function GameCard({ game, locale, t }: { game: BrowseGameCard; locale: Locale; t
           <span className="bc-name" lang={gameNameLang(game.name, game.name === game.originalName, locale)}>
             {game.name}
           </span>
+          {/* 第二行一律是原文：沒有翻譯（主標題＝原文）時留空但保留固定高度，同一列的卡片才會等高 */}
           {game.originalName !== game.name ? (
-            <span className="bc-meta [overflow-wrap:anywhere]" lang="en">
+            <span className="bc-meta bc-orig [overflow-wrap:anywhere]" lang="en">
               {game.originalName}
             </span>
-          ) : null}
+          ) : (
+            <span className="bc-meta bc-orig" aria-hidden="true" />
+          )}
           <span className="bc-meta">{t.t("ui.common.labelValue", { label: t.t("ui.games.firstRelease"), value: dateText })}</span>
           {game.platforms.length > 0 ? <span className="bc-meta">{platformText}</span> : null}
           <span className="bc-tags">
@@ -119,6 +135,13 @@ export async function GamesBrowsePage({ locale, supportedLocales, searchParams, 
   const by: GameGroupBy = parseGameGroupBy(first(searchParams.by));
   const grouped = isGrouped(by);
   const pageNo = grouped ? parseGroupPage(first(searchParams.page)) : parseBrowsePage(first(searchParams.page));
+  // 分組檢視的檢視參數：依平台／廠商的組排序（gsort、gdir）、依日期的起算月（gfrom；沒有 JS 的跳月表單是 gyear＋gmonth）。非 grouped 時用不到
+  const view: GroupViewParams = {
+    sort: parseGroupSort(first(searchParams.gsort)),
+    dir: parseGroupDir(first(searchParams.gdir)),
+    from: parseGroupFrom(first(searchParams.gfrom), first(searchParams.gyear), first(searchParams.gmonth)),
+  };
+  const currentMonth = new Date().toISOString().slice(0, 7);
   const parsed = parseFilterSpec(searchParams as FilterSearchInput);
   const pageParams = new Set<string>(PAGE_FILTER_PARAMS.browse);
   const pageSpec = filterSpecForPage(parsed.filter, "browse");
@@ -139,7 +162,7 @@ export async function GamesBrowsePage({ locale, supportedLocales, searchParams, 
             limit: BROWSE_PAGE_SIZE,
             locale,
           }),
-      grouped ? loadGameGroups({ locale, spec: pageSpec, by, page: pageNo }, t) : Promise.resolve(null),
+      grouped ? loadGameGroups({ locale, spec: pageSpec, by, page: pageNo, view }, t) : Promise.resolve(null),
       loadFilterOptions(locale),
     ]);
   } catch (err) {
@@ -151,7 +174,7 @@ export async function GamesBrowsePage({ locale, supportedLocales, searchParams, 
   );
   const spec = withoutIgnored(pageSpec, notices);
   const basePath = localeHref(locale, "/games");
-  const extraQuery = grouped ? `by=${by}` : "";
+  const extraQuery = groupQueryParts(by, view).join("&");
   const chips = appliedChips(spec, basePath, makeFilterLabeler(t, options), extraQuery);
   const clearHref = localeHref(locale, "/games", extraQuery);
   const games = result?.games ?? [];
@@ -161,7 +184,7 @@ export async function GamesBrowsePage({ locale, supportedLocales, searchParams, 
   const range = result ? browseRange(result.offset, result.games.length) : null;
   const pager = result ? browsePagination(pageNo, result.hasMore) : groupPagination(pageNo, groupsResult?.hasMoreGroups ?? false);
   const groupsText = groupRange(pageNo, groups.length);
-  const shellQuery = [filterSpecToQueryString(spec), extraQuery, pageNo > 1 ? `page=${pageNo}` : ""].filter(Boolean).join("&");
+  const shellQuery = [filterSpecToQueryString(spec), ...groupQueryParts(by, view, pageNo)].filter(Boolean).join("&");
   const panelHidden: Record<string, string | undefined> = {
     q: spec.q,
     sort: spec.sort,
@@ -170,8 +193,13 @@ export async function GamesBrowsePage({ locale, supportedLocales, searchParams, 
   };
   const hidden = hiddenFilterFields(spec, ["q", "sort", "year", "yearFrom", "yearTo"]);
   if (grouped) {
-    hidden.push({ name: "by", value: by });
-    panelHidden.by = by;
+    if (spec.sort) hidden.push({ name: "sort", value: spec.sort });
+    // 搜尋與篩選表單送出後要留在同一個分組檢視與組排序／起算月（預設值不帶）
+    for (const part of groupQueryParts(by, view)) {
+      const [name, value] = part.split("=") as [string, string];
+      hidden.push({ name, value });
+      panelHidden[name] = value;
+    }
   }
   const groupLabels = Object.fromEntries(GAME_GROUP_BYS.map((v) => [v, t.t(`ui.games.by.${v}`)])) as Record<GameGroupBy, string>;
 
@@ -199,23 +227,28 @@ export async function GamesBrowsePage({ locale, supportedLocales, searchParams, 
               inputClassName={`${inputClass} w-full`}
             />
           </div>
-          <label className="flex flex-col gap-1">
-            <span className="font-bold">{t.t("ui.games.sortLabel")}</span>
-            <select name="sort" defaultValue={sort} aria-describedby="browse-sort-note" className={inputClass}>
-              {BROWSE_SORT_OPTIONS.map((s) => (
-                <option key={s} value={s}>
-                  {t.t(`filters.sortValues.${s}`)}
-                </option>
-              ))}
-            </select>
-          </label>
+          {/* 分組檢視組內固定「發售日由新到舊」，瀏覽的排序不適用：隱藏排序欄位（值仍用隱藏欄位帶著，切回不分組時還在） */}
+          {grouped ? null : (
+            <label className="flex flex-col gap-1">
+              <span className="font-bold">{t.t("ui.games.sortLabel")}</span>
+              <select name="sort" defaultValue={sort} aria-describedby="browse-sort-note" className={inputClass}>
+                {BROWSE_SORT_OPTIONS.map((s) => (
+                  <option key={s} value={s}>
+                    {t.t(`filters.sortValues.${s}`)}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
           <button type="submit" className="btn-primary">
             {t.t("ui.games.searchButton")}
           </button>
         </div>
-        <p id="browse-sort-note" className="fieldset-sub">
-          {t.t(`ui.games.sortNote.${sort}`)}
-        </p>
+        {grouped ? null : (
+          <p id="browse-sort-note" className="fieldset-sub">
+            {t.t(`ui.games.sortNote.${sort}`)}
+          </p>
+        )}
         <fieldset aria-describedby="browse-year-hint">
           <legend>{t.t("ui.games.yearLegend")}</legend>
           <p id="browse-year-hint" className="fieldset-sub">
@@ -244,13 +277,13 @@ export async function GamesBrowsePage({ locale, supportedLocales, searchParams, 
             legend={t.t("ui.games.groupBy")}
             name="by"
             current={by}
-            items={GAME_GROUP_BYS.map((value) => ({ value, label: groupLabels[value], href: gamesBrowseHref(locale, spec, 1, value) }))}
+            items={GAME_GROUP_BYS.map((value) => ({ value, label: groupLabels[value], href: gamesBrowseHref(locale, spec, 1, value, view) }))}
           />
           <noscript>
             <ul className="rc-noscript">
               {GAME_GROUP_BYS.map((value) => (
                 <li key={value}>
-                  <a className="link" href={gamesBrowseHref(locale, spec, 1, value)} aria-current={value === by ? "true" : undefined}>
+                  <a className="link" href={gamesBrowseHref(locale, spec, 1, value, view)} aria-current={value === by ? "true" : undefined}>
                     {groupLabels[value]}
                   </a>
                 </li>
@@ -268,6 +301,8 @@ export async function GamesBrowsePage({ locale, supportedLocales, searchParams, 
               : t.t("filters.resultsCount", { count: formatNumber(0, locale) })}
         </p>
         {grouped ? <p className="fieldset-sub">{t.t(`ui.games.groupNote.${by}`)}</p> : null}
+        {by === "platform" || by === "publisher" ? <GroupOrderNav locale={locale} t={t} spec={spec} by={by} view={view} /> : null}
+        {by === "date" ? <DateRangeNav locale={locale} t={t} spec={spec} view={view} currentMonth={currentMonth} page={pageNo} action={basePath} /> : null}
       </div>
 
       {(grouped ? groups.length : games.length) === 0 ? (
@@ -275,7 +310,7 @@ export async function GamesBrowsePage({ locale, supportedLocales, searchParams, 
           <EmptyFilterResult chips={chips} t={t} clearHref={clearHref} emptyText={pageNo > 1 ? t.t("ui.games.otherPage") : t.t("ui.games.empty")} />
           {pageNo > 1 ? (
             <p className="mt-2">
-              <a className="link" href={gamesBrowseHref(locale, spec, 1, by)}>
+              <a className="link" href={gamesBrowseHref(locale, spec, 1, by, view)}>
                 {t.t("ui.games.backToFirst")}
               </a>
             </p>
@@ -283,7 +318,7 @@ export async function GamesBrowsePage({ locale, supportedLocales, searchParams, 
         </>
       ) : grouped ? (
         <GroupsProvider
-          key={`${by}|${pageNo}|${filterSpecToQueryString(spec)}`}
+          key={`${by}|${pageNo}|${groupQueryParts(by, view).join("&")}|${filterSpecToQueryString(spec)}`}
           endpoint={groupApiBase(locale, by, spec)}
           labels={{ more: t.t("ui.games.groupMore"), loading: t.t("ui.games.groupLoading"), error: t.t("ui.games.groupLoadError"), loaded: t.t("ui.games.groupLoaded") }}
         >
@@ -307,8 +342,8 @@ export async function GamesBrowsePage({ locale, supportedLocales, searchParams, 
       {pageNo > 1 || pager.next || pager.limitReached ? (
         <PageNav
           label={t.t("ui.games.pagination")}
-          prevHref={pager.prev ? gamesBrowseHref(locale, spec, pager.prev, by) : null}
-          nextHref={pager.next ? gamesBrowseHref(locale, spec, pager.next, by) : null}
+          prevHref={pager.prev ? gamesBrowseHref(locale, spec, pager.prev, by, view) : null}
+          nextHref={pager.next ? gamesBrowseHref(locale, spec, pager.next, by, view) : null}
           prevText={t.t("ui.games.prevPage")}
           nextText={t.t("ui.games.nextPage")}
           pageText={t.t("ui.games.page", { page: pageNo })}

@@ -7,7 +7,7 @@
  *   一款遊戲的多個開發商都在名單內時，取 IGDB 列出的第一個（`order` 最小者；game_companies.igdb_position，D88）；
  *   沒有 `order` 的資料（igdb_position 還是 NULL 的舊資料）改用「本表欄位順序最後者」（名單前段是大型集團，後段是獨立品牌，
  *   合開的作品歸更具體的品牌：尼爾：自動人形的開發商同時有史克威爾艾尼克斯與白金工作室 → 白金工作室；血源詛咒 → FromSoftware）——
- *   SQL 版（repository/release-columns.ts 用 {@link publisherGroupSqlMap} 產生）一律用這個替代規則，兩邊對沒有 order 的資料結果相同。
+ *   SQL 版（repository/game-groups.ts 的寫入／回填，用 {@link publisherGroupSqlMap} 產生對照表）一律用這個替代規則，兩邊對沒有 order 的資料結果相同。
  * - 一個公司只能屬於一欄（單元測試檢查）。porting／supporting 角色不參與歸屬。
  * - 「Take-Two Interactive」本體（母公司、2K 品牌之前的發行者）歸 2K 欄；Rockstar 與 2K 以外的 Take-Two 品牌（Zynga 等）不列。
  */
@@ -454,6 +454,21 @@ export const PUBLISHER_GROUPS = [
       [43813, "Paradox Arc"], [940, "Paradox Arctic"], [7466, "Paradox Development Studio"],
       [10993, "Paradox Entertainment"], [517, "Paradox Interactive"], [46095, "Paradox Tectonic"], [54212, "Paradox Tinto"],
     ],
+  },
+  {
+    key: "rayark",
+    names: { "zh-Hant": "雷亞遊戲", en: "Rayark", ja: "Rayark" },
+    members: [[12017, "Rayark Inc."], [14094, "Rayark"]],
+  },
+  {
+    key: "red-candle-games",
+    names: { "zh-Hant": "赤燭遊戲", en: "Red Candle Games", ja: "Red Candle Games" },
+    members: [[11926, "Red Candle Games"]],
+  },
+  {
+    key: "sigono",
+    names: { "zh-Hant": "信革數位", en: "SIGONO", ja: "SIGONO" },
+    members: [[15108, "SIGONO INC."]],
   },
 ] as const satisfies readonly PublisherGroup[];
 

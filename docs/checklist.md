@@ -214,9 +214,11 @@
 
 - [x] 後台設定與 Phase 6 Metacritic（2026-10-29，分支 `feat/admin-settings`，尚未合併）：
   - [x] A 品牌文字拉霸機（`catalog/ui/layout/brand-roll.tsx`）：逐字上下滾動、≤ 0.5 秒、字格寬度補間不抖動、reduced-motion 直接換字、aria-label 完整品牌字串；e2e `brand-roll-a.spec.ts`
-  - [x] B 後台設定：kernel `app_settings`／`app_settings_audit`（migration 0018）、短 TTL 快取、`/internal/settings`（評分來源顯示＋Metascore／Userscore 開關、月曆預設、模組啟停唯讀、Metacritic 允許抓取、變更歷史）；讀取端覆蓋環境變數；單元／整合／e2e 測試含 CSRF、同源、權限
+  - [x] B 後台設定：kernel `app_settings`／`app_settings_audit`（migration 0019）、短 TTL 快取、`/internal/settings`（評分來源顯示＋Metascore／Userscore 開關、月曆預設、模組啟停唯讀、Metacritic 允許抓取、變更歷史）；讀取端覆蓋環境變數；單元／整合／e2e 測試含 CSRF、同源、權限
   - [x] C 後台導覽：`kernel/ui/admin-nav.tsx` 共用導覽；`/internal/sync` 同步監控；回報頁加審核紀錄（結果、時間、備註、提案、核可後的 manual 上市列；**處理人無資料，未顯示**）；使用者頁沿用既有搜尋／停權／狀態／建立時間
-  - [x] D Phase 6 Metacritic（`modules/metacritic`，migration 0019）：雙開關、HTTP 出口（robots、限速、退避、不繞過）、sitemap 索引、`refresh_metacritic_index`／`repair_matches_metacritic`／`sync_ratings`、負向快取、`/internal/matches` 覆核、selectRatings／ratings-section／排名頁 metascore／userscore 欄；關閉時請求數 0（整合測試＋e2e）
+  - [x] D Phase 6 Metacritic（`modules/metacritic`，migration 0020）：雙開關、HTTP 出口（robots、限速、退避、不繞過）、sitemap 索引、`refresh_metacritic_index`／`repair_matches_metacritic`／`sync_ratings`、負向快取、`/internal/matches` 覆核、selectRatings／ratings-section／排名頁 metascore／userscore 欄；關閉時請求數 0（整合測試＋e2e）
   - [x] E spec 同步：00、02、03、05、06、12、15、16、90（D89）、91、CHANGELOG
   - [ ] 待使用者：合併 PR；對真實 metacritic.com 啟用前再觀察一次頁面結構（05）；啟用順序＝設 `METACRITIC_SCRAPE_ENABLED=true`＋重啟 → 後台勾「允許抓取」→ 手動跑 `refresh_metacritic_index`（約 40 片/次）→ `repair_matches_metacritic` → 覆核 `/internal/matches` → `sync_ratings`
   - [ ] 尚未做：「未配對遊戲」覆核佇列（12）、回報處理人欄位、`rolling_refresh_misses`（沒有對應的表）
+- [x] /games 分組檢視的排序與瀏覽 D89（2026-10-29，分支 `feat/browse-sorts`）：①卡片第二行一律顯示標題原文，沒有譯名留空但保留固定高度、同列卡片等高（`.rc-orig`／`.bc-orig`；不分組清單的卡片撐滿格子）；②依日期分組加 `gfrom=YYYY-MM`（預設＝當月起不變）、第 1 頁「往前看較早的月份」連結（往前 6 個月）與年／月下拉跳月 GET 表單（無 JS 送 `gyear`＋`gmonth`）；③依平台／廠商組排序 `gsort=latest｜count｜name`、`gdir=asc｜desc`（預設 latest／desc 不寫進網址，「獨立／其他」永遠最後），組內固定首發日由新到舊、分組檢視隱藏排序欄位、`/api/v1/games/group` 忽略 `sort`；④廠商欄新增雷亞遊戲（12017、14094）、赤燭遊戲（11926）、信革數位（15108），並修 publisher-groups.ts 檔頭過時註解；⑤平台總覽 `/platforms?sort=release&dir=` 依平台發售日（platform_release_dates 最早有日期者；沒有日期最後；預設新到舊）。新增 migration 0018（三個組內排序 index）；spec 03／06／07／90（D89）／CHANGELOG 與 publisher-groups.md 已同步；單元＋整合＋e2e（`games-sorts.spec.ts` 等）已補
+- [ ] 待使用者處理（2026-10-29 新增）：開發 DB 套 migration 0018（三個 index，約數百 MB）後用 EXPLAIN 確認 `buildGroupCardsQuery` 的組內排序走這三個 index、量 `/games?by=platform|publisher|date` 冷查詢；跑 `backfill_game_groups` 讓三個新廠商欄生效

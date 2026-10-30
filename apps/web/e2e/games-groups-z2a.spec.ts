@@ -38,7 +38,7 @@ test.describe("分組檢視：切換與網址", () => {
     // 直接開網址就是同一個畫面
     await page.goto(`/en/games?q=${F.q}&by=publisher`);
     await expect(radio(page, "en", "publisher")).toBeChecked();
-    expect(await groupKeys(page)).toEqual(["nintendo", "capcom", "fromsoftware", "other"]);
+    expect(await groupKeys(page)).toEqual(["capcom", "fromsoftware", "nintendo", "other"]);
   });
 
   test("未知的 by 退回不分組；舊的 /releases 已不存在", async ({ page, request }) => {
@@ -90,36 +90,39 @@ test.describe("分組檢視：三種分組的內容", () => {
     const first = section(page, "2036-09");
     await expect(first).toHaveAttribute("aria-labelledby", "rc-h-2036-09");
     await expect(first.locator("h2")).toContainText(msg("en", "ui.games.groupCount", { count: F.monthTotal }));
-    // 熱度由高到低；首屏 8 張
+    // 組內固定依發售日由新到舊（09-20 Capcom → 09-15 Bulk → 09-10 Elden／Zelda／Indie）；首屏 6 張
     await expect(cardsIn(first)).toHaveCount(6);
-    await expect(cardsIn(first).nth(0)).toContainText(F.elden.name);
-    await expect(cardsIn(first).nth(1)).toContainText(F.zelda.name);
+    await expect(cardsIn(first).nth(0)).toContainText(F.capcom.name);
+    await expect(cardsIn(first).nth(1)).toContainText("Z2A Bulk 01");
     // 卡片：封面、名稱、日期、平台；連到詳情
-    const elden = cardsIn(first).nth(0);
-    await expect(elden.locator("a")).toHaveAttribute("href", `/en/games/${F.elden.slug}`);
-    await expect(elden.locator("time")).toHaveAttribute("datetime", "2036-09-10");
-    await expect(elden).toContainText("PS5");
-    await expect(elden.locator("img")).toHaveCount(1);
+    const capcom = cardsIn(first).nth(0);
+    await expect(capcom.locator("a")).toHaveAttribute("href", `/en/games/${F.capcom.slug}`);
+    await expect(capcom.locator("time")).toHaveAttribute("datetime", "2036-09-20");
+    await expect(capcom).toContainText("PS5");
+    await expect(capcom.locator("img")).toHaveCount(1);
     // 日期只到季／年的卡片顯示該精度的文字，沒有 <time>
     await expect(cardsIn(section(page, "2036-Q4")).first().locator("time")).toHaveCount(0);
     // 日期未定
     await expect(cardsIn(section(page, "tbd")).first()).toContainText(F.undated.name);
   });
 
-  test("依平台：主機在 PC 前；一款遊戲出現在它的每個平台組；沒有平台的遊戲不出現", async ({ page }) => {
+  test("依平台：預設依組內最新發售日由新到舊；一款遊戲出現在它的每個平台組；沒有平台的遊戲不出現", async ({ page }) => {
     await page.goto(`${URL_ALL}&by=platform`);
-    expect(await groupKeys(page)).toEqual(["e2e-ps5", "e2e-switch", "e2e-pc"]);
+    // pc 最新 2037-01-01（Year）、ps5 2036-09-20（Capcom）、switch 2036-09-10（Zelda）
+    expect(await groupKeys(page)).toEqual(["e2e-pc", "e2e-ps5", "e2e-switch"]);
     await expect(section(page, "e2e-ps5").locator("h2")).toContainText("E2E PlayStation 5");
     await expect(cardsIn(section(page, "e2e-ps5"))).toHaveCount(2);
-    await expect(cardsIn(section(page, "e2e-ps5")).first()).toContainText(F.elden.name);
-    await expect(cardsIn(section(page, "e2e-pc")).first()).toContainText(F.elden.name);
+    // 組內發售日由新到舊：Capcom（09-20）在 Elden（09-10）前
+    await expect(cardsIn(section(page, "e2e-ps5")).nth(0)).toContainText(F.capcom.name);
+    await expect(cardsIn(section(page, "e2e-ps5")).nth(1)).toContainText(F.elden.name);
+    await expect(cardsIn(section(page, "e2e-pc")).first()).toContainText(F.year.name);
     await expect(cardsIn(section(page, "e2e-switch"))).toHaveCount(1);
     await expect(page.getByText(F.undated.name)).toHaveCount(0);
   });
 
   test("依廠商：開發商優先（艾爾登法環→FromSoftware）、發行商次之、其餘獨立／其他在最後", async ({ page }) => {
     await page.goto(`${URL_ALL}&by=publisher`);
-    expect(await groupKeys(page)).toEqual(["nintendo", "capcom", "fromsoftware", "other"]);
+    expect(await groupKeys(page)).toEqual(["capcom", "fromsoftware", "nintendo", "other"]);
     await expect(section(page, "fromsoftware").locator("h2")).toContainText("FromSoftware");
     await expect(cardsIn(section(page, "fromsoftware"))).toHaveCount(1);
     await expect(cardsIn(section(page, "fromsoftware"))).toContainText(F.elden.name);

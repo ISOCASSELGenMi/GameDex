@@ -1,13 +1,18 @@
 import {
-  BROWSE_SORTS,
+  DEFAULT_GROUP_DIR,
+  DEFAULT_GROUP_SORT,
   GAME_GROUPS_PER_PAGE,
   GAME_GROUP_MAX_LIMIT,
   GAME_GROUP_MAX_PAGE,
-  type BrowseSort,
+  GROUP_DIRS,
+  GROUP_SORTS,
+  isGroupMonth,
   type GameGroup,
+  type GroupDir,
   type GroupedBy,
+  type GroupOrder,
+  type GroupSort,
   type IgnoredFilterValue,
-  type PlatformKindGroup,
   type ReleaseFilter,
 } from "../../domain/entities";
 import { isPublisherColumnKey } from "../../domain/publisher-groups";
@@ -15,7 +20,6 @@ import { tokenizeForSearch } from "../../domain/search-text";
 import { resolveImageRef } from "../../providers/image-ref";
 import { isDateGroupKey, readGameGroupPage, readGameGroups } from "../../repository/browse-groups";
 import { utcToday } from "../../repository/release-aggregate";
-import { listPlatforms } from "./list-platforms";
 import { resolveFilterSlugs } from "./resolve-filter";
 
 export interface GameGroupsFilterInput {
@@ -25,8 +29,6 @@ export interface GameGroupsFilterInput {
   yearTo?: number;
   /** 搜尋字串（原樣；這裡經 tokenizeForSearch）。 */
   q?: string | null;
-  /** 預設 popularity；同時決定日期組的順序（release_date 由舊到新，其餘由新到舊）與組內排序。 */
-  sort?: BrowseSort;
   locale: string;
   now?: Date;
 }
@@ -37,11 +39,19 @@ export interface GetGameGroupsInput extends GameGroupsFilterInput {
   page?: number;
   /** 每組先取幾張（1 ~ GAME_GROUP_MAX_LIMIT）。 */
   perGroup: number;
+  /** by=platform／publisher 的組排序（預設 latest／desc；by=date 不適用）。不合法的值退回預設。 */
+  groupSort?: GroupSort;
+  groupDir?: GroupDir;
+  /** by=date：起算月 `YYYY-MM`（不合法或未給＝預設的「當月起」順序；其他 by 忽略）。 */
+  groupFrom?: string | null;
 }
 
 export interface GameGroups {
   by: GroupedBy;
-  sort: BrowseSort;
+  /** 實際使用的組排序（by=date 固定時間順序，這兩個欄位仍回預設值，UI 不顯示）。 */
+  groupOrder: GroupOrder;
+  /** by=date 實際使用的起算月（null＝預設順序）。 */
+  groupFrom: string | null;
   page: number;
   /** 本頁的組（已排序）。 */
   groups: GameGroup[];
@@ -58,22 +68,19 @@ function validYear(y: number | undefined): number | undefined {
 }
 
 function normalized(input: GameGroupsFilterInput) {
-  const sort: BrowseSort = input.sort && (BROWSE_SORTS as readonly string[]).includes(input.sort) ? input.sort : "popularity";
   let yearFrom = validYear(input.yearFrom);
   let yearTo = validYear(input.yearTo);
   if (yearFrom !== undefined && yearTo !== undefined && yearFrom > yearTo) [yearFrom, yearTo] = [yearTo, yearFrom];
   const searchTokens = input.q ? tokenizeForSearch(input.q).slice(0, 200) || null : null;
-  return { sort, yearFrom, yearTo, searchTokens };
+  return { yearFrom, yearTo, searchTokens };
 }
 
-/**
- * 平台組的順序＝平台總覽的順序（分組 console → handheld → pc → arcade → other，組內常用平台在前）。
- * hybrid（Switch 系列）同時在 console 與 handheld 兩組，只取第一次出現的位置。
- */
-export function platformColumnRanks(groups: readonly PlatformKindGroup[]): Map<string, number> {
-  const ranks = new Map<string, number>();
-  for (const g of groups) for (const p of g.platforms) if (!ranks.has(p.slug)) ranks.set(p.slug, ranks.size);
-  return ranks;
+/** 組排序參數的正規化（不合法退回預設）。 */
+export function normalizeGroupOrder(sort: string | null | undefined, dir: string | null | undefined): GroupOrder {
+  return {
+    sort: (GROUP_SORTS as readonly string[]).includes(sort ?? "") ? (sort as GroupSort) : DEFAULT_GROUP_SORT,
+    dir: (GROUP_DIRS as readonly string[]).includes(dir ?? "") ? (dir as GroupDir) : DEFAULT_GROUP_DIR,
+  };
 }
 
 /** 組 key 的格式是否合法（API 驗證用；平台 slug 的存在與否由查詢決定）。 */
@@ -85,14 +92,15 @@ export function isGroupKey(by: GroupedBy, key: string): boolean {
 
 /**
  * 瀏覽頁分組檢視（`/games?by=…`）：篩選與瀏覽同一份條件（buildBrowseConditions），這裡只決定組怎麼排、一頁幾組。
+ * 組內遊戲永遠是發售日由新到舊（不受瀏覽的 sort 影響）；組的順序：date 固定時間順序（可指定起算月）、platform／publisher 依組排序。
  * 逾時丟 CatalogQueryTimeoutError。
  */
 export async function getGameGroups(input: GetGameGroupsInput): Promise<GameGroups> {
   const { filter, ignored } = await resolveFilterSlugs(input.filter);
   const n = normalized(input);
   const page = Math.min(GAME_GROUP_MAX_PAGE, Math.max(1, Math.floor(input.page ?? 1)));
-  const platformOrder =
-    input.by === "platform" ? [...platformColumnRanks(await listPlatforms({ locale: input.locale })).keys()] : undefined;
+  const groupOrder = normalizeGroupOrder(input.groupSort, input.groupDir);
+  const groupFrom = input.by === "date" && isGroupMonth(input.groupFrom) ? input.groupFrom : null;
   const found = await readGameGroups({
     by: input.by,
     filter,
@@ -101,11 +109,12 @@ export async function getGameGroups(input: GetGameGroupsInput): Promise<GameGrou
     today: utcToday(input.now),
     groupOffset: (page - 1) * GAME_GROUPS_PER_PAGE,
     groupLimit: GAME_GROUPS_PER_PAGE,
-    ...(platformOrder ? { platformOrder } : {}),
+    groupOrder,
+    groupFrom,
     perGroup: clampLimit(input.perGroup),
     resolveImage: resolveImageRef,
   });
-  return { by: input.by, sort: n.sort, page, ...found, ignored };
+  return { by: input.by, groupOrder, groupFrom, page, ...found, ignored };
 }
 
 export interface GetGameGroupPageInput extends GameGroupsFilterInput {
@@ -115,7 +124,7 @@ export interface GetGameGroupPageInput extends GameGroupsFilterInput {
   limit: number;
 }
 
-/** 某一組的一段卡片（「顯示更多」）。組 key 不合法或沒有資料回 null。 */
+/** 某一組的一段卡片（「顯示更多」）。組內順序固定（發售日由新到舊）。組 key 不合法或沒有資料回 null。 */
 export async function getGameGroupPage(input: GetGameGroupPageInput): Promise<GameGroup | null> {
   if (!isGroupKey(input.by, input.key)) return null;
   const { filter } = await resolveFilterSlugs(input.filter);

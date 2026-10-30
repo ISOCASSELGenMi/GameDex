@@ -1,0 +1,3 @@
+CREATE INDEX "games_release_group_date_idx" ON "games" USING btree ("release_group","first_release_date" DESC NULLS LAST,"popularity_score" DESC NULLS LAST,"id","game_type","game_status","heat_level","name");--> statement-breakpoint
+CREATE INDEX "games_publisher_group_date_idx" ON "games" USING btree ("publisher_group","first_release_date" DESC NULLS LAST,"popularity_score" DESC NULLS LAST,"id","game_type","game_status","heat_level","name");--> statement-breakpoint
+CREATE INDEX "games_browse_date_desc_idx" ON "games" USING btree ("first_release_date" DESC NULLS LAST,"popularity_score" DESC NULLS LAST,"id","game_type","game_status","heat_level","name");
