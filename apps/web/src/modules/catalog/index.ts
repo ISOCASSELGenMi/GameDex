@@ -82,6 +82,27 @@ export {
 } from "./domain/report-validation";
 export { CATALOG_TAG, gameDetailTag } from "./ui/seo/cache-tags";
 
+// ── Phase 6：外部評分來源（Metacritic）——分層更新、比對與覆核、負向快取 ───────────
+export { saveExternalRatings, type ExternalScore, type SaveExternalRatingsInput } from "./use-cases/external-ratings";
+export { nextRefreshAt, periodEndDate, refreshIntervalDays } from "./domain/rating-refresh";
+export {
+  selectRepairCandidates,
+  selectRatingSyncTargets,
+  getRejectedExternalIds,
+  recordMatchAttempt,
+  upsertExternalIdMatch,
+  listMatchReviewQueue,
+  countMatchReviewQueue,
+  confirmExternalMatch,
+  rejectExternalMatch,
+  setManualExternalMatch,
+  type RepairCandidateGame,
+  type RatingSyncTarget,
+  type MatchAttemptResult,
+  type ExternalMatchInput,
+  type MatchReviewItem,
+} from "./repository/external-ratings";
+
 // ── Phase 7 第 3 波：外部遊戲庫（Steam）比對用的唯讀查詢 ─────────────────
 export { findTitleMatchCandidates, findGameIdsByExternalIds, getGameBriefsByIds, TITLE_CANDIDATE_LIMIT, type GameBrief } from "./use-cases/matching";
 

@@ -6,6 +6,7 @@
 import type { ReactElement } from "react";
 import { createTranslator, formatReleaseLabel } from "@sok/i18n";
 import { REPORT_STATUSES, listReportQueue, parseHttpUrl, type DataReport, type ReportQueueItem, type ReportStatus } from "@/modules/catalog";
+import { AdminNav } from "@/kernel/ui/admin-nav";
 import { createCsrfToken } from "../csrf";
 
 const LOCALE = "zh-Hant" as const;
@@ -115,6 +116,53 @@ function Others({ others }: { others: DataReport[] }): ReactElement | null {
   );
 }
 
+/** 已處理回報的審核紀錄：結果、處理時間、處理備註、提案內容、核可後目前生效的 manual 上市列。處理人沒有存（data_reports 沒有這個欄位）。 */
+function ResolutionRecord({ item }: { item: ReportQueueItem }): ReactElement | null {
+  const { report, target } = item;
+  if (report.status === "open") return null;
+  const p = report.proposed;
+  const proposedBits = [
+    p?.date ? `日期 ${p.date}（${p.precision ?? "day"}）` : null,
+    p?.stage ? `階段 ${stageLabel(p.stage)}` : null,
+    p?.regionCode ? `地區 ${regionLabel(p.regionCode)}` : null,
+    p?.language ? `語言 ${p.language}／${p.supportType ? t.t(`enums.languageSupportType.${p.supportType}`) : "—"}` : null,
+  ].filter((x): x is string => x !== null);
+  const manual = target.currentReleases.filter((r) => r.source === "manual");
+  return (
+    <div className="rounded-md border border-[var(--border)] p-3" data-resolution={report.status}>
+      <h4 className="font-semibold">審核紀錄</h4>
+      <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
+        <dt className="font-semibold">結果</dt>
+        <dd>{STATUS_LABEL[report.status]}</dd>
+        <dt className="font-semibold">處理時間</dt>
+        <dd>{when(report.resolvedAt)}</dd>
+        <dt className="font-semibold">處理人</dt>
+        <dd className="text-[var(--muted)]">未記錄（目前管理介面是單一 Basic auth 帳號，回報表沒有處理人欄位）</dd>
+        <dt className="font-semibold">提案內容</dt>
+        <dd>{proposedBits.length > 0 ? proposedBits.join("；") : "—"}</dd>
+        {report.status === "accepted" ? (
+          <>
+            <dt className="font-semibold">核可後套用的內容</dt>
+            <dd>
+              {manual.length === 0 ? (
+                "沒有自動套用（此回報類型核可只改狀態），或 manual 上市列已被 IGDB 更新覆蓋"
+              ) : (
+                <ul className="ml-4 list-disc">
+                  {manual.map((r) => (
+                    <li key={r.releaseEventId}>
+                      {r.platformName}／{regionLabel(r.regionCode)}／{stageLabel(r.stage)}：{formatReleaseLabel(r.date, r.precision as never, LOCALE)}（sequence {r.sequence}）
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </dd>
+          </>
+        ) : null}
+      </dl>
+    </div>
+  );
+}
+
 function ReportCard({ item, csrf, publicLocale }: { item: ReportQueueItem; csrf: string; publicLocale: string }): ReactElement {
   const { report, target } = item;
   const headingId = `report-${report.id}`;
@@ -157,6 +205,7 @@ function ReportCard({ item, csrf, publicLocale }: { item: ReportQueueItem; csrf:
         ) : null}
       </dl>
       <Others others={item.others} />
+      <ResolutionRecord item={item} />
       {report.status === "open" ? (
         <form method="post" action={`/internal/reports/${report.id}`} className="flex flex-col gap-2">
           <input type="hidden" name="csrf" value={csrf} />
@@ -204,6 +253,7 @@ export async function ReportsAdminPage({ searchParams, publicLocale }: ReportsAd
   return (
     <main id="main" className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-4 py-6">
       <h1 className="text-2xl font-bold">資料更正回報</h1>
+      <AdminNav current="reports" />
       <nav aria-label="回報狀態">
         <ul className="flex flex-wrap gap-2">
           {REPORT_STATUSES.map((s) => (

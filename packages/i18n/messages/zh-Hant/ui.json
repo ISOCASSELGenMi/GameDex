@@ -644,11 +644,14 @@
     "intro": "依 IGDB 專業評論分數與站內玩家平均排名。點選欄位標題可改變排序，再點一次切換升降冪。",
     "col": {
       "igdb": "IGDB 分數",
-      "players": "站內玩家平均"
+      "players": "站內玩家平均",
+      "metascore": "Metascore",
+      "userscore": "Userscore"
     },
     "count": {
       "critics": "{count} 則評論",
-      "players": "{count} 位玩家"
+      "players": "{count} 位玩家",
+      "userRatings": "{count} 筆評分"
     },
     "rank": "名次",
     "game": "遊戲",

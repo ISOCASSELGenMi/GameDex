@@ -61,3 +61,8 @@ export async function markJobsAlerted(jobNames: readonly string[], at: Date = ne
     .set({ lastAlertedAt: at })
     .where(inArray(syncState.jobName, [...jobNames]));
 }
+
+/** 同步監控頁用：全部任務狀態列（依名稱）。 */
+export async function listAllSyncStates(): Promise<SyncStateRow[]> {
+  return getDb().select().from(syncState).orderBy(syncState.jobName);
+}

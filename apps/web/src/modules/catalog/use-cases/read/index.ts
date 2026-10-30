@@ -3,7 +3,7 @@ export { getCalendarMonth, type GetCalendarMonthInput } from "./get-calendar-mon
 export { getGameDetail, type GetGameDetailInput } from "./get-game-detail";
 export { getFilterOptions, type GetFilterOptionsInput } from "./get-filter-options";
 export { listReleaseCards, type ListReleaseCardsInput } from "./list-release-cards";
-export { resolveFilterSlugs, resolveRegionPref, type ResolvedFilterResult } from "./resolve-filter";
+export { resolveFilterSlugs, resolveRegionPref, releaseFilterDefaults, effectiveReleaseFilterDefaults, type ResolvedFilterResult } from "./resolve-filter";
 // Phase 3b（H）：平台／公司／系列頁、活動
 export { listPlatforms, type ListPlatformsInput } from "./list-platforms";
 export { getPlatformPage, type GetPlatformPageInput } from "./get-platform-page";
@@ -18,7 +18,7 @@ export { browseGames, type BrowseGamesInput } from "./browse-games";
 // Phase 3.5：sitemap
 export { getSitemapCounts, listSitemapEntries, listSitemapSmall, type ListSitemapShardInput } from "./sitemap";
 // Phase 4：評分顯示設定（環境變數驗證）
-export { getRatingDisplayConfig, validateRatingDisplayEnv } from "./rating-config";
+export { getRatingDisplayConfig, getEffectiveRatingDisplayConfig, validateRatingDisplayEnv } from "./rating-config";
 // Phase 7 第 6 波：我的遊戲
 export { getMyGames, pickNextRelease, type GetMyGamesInput } from "./get-my-games";
 // GameDex 第 2 段：首頁儀表板
@@ -28,7 +28,7 @@ export { getCalendarDay, type GetCalendarDayInput, type CalendarDay } from "./ge
 // GameDex 第 3 段（X2）：時間軸一週
 export { getTimelineWeek, type GetTimelineWeekInput, type TimelineWeek, type TimelineWeekDay } from "./get-timeline-week";
 // GameDex 第 2 輪（Z2B）：評分排名
-export { getRatingsRanking, getRatingColumns, type GetRatingsRankingInput } from "./get-ratings-ranking";
+export { getRatingsRanking, getRatingColumns, getEffectiveRatingColumns, type GetRatingsRankingInput } from "./get-ratings-ranking";
 // GameDex 第 2 輪（Z2A）：瀏覽頁分組檢視（依日期／平台／廠商）
 export {
   getGameGroups,

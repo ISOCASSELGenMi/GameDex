@@ -30,6 +30,8 @@ export interface RatingLike {
 export interface RatingSelectionOptions {
   /** 層 1：站長允許的來源；空陣列＝不過濾。 */
   visible: readonly string[];
+  /** 層 1 的補充：站長在後台關掉的分數類型（例如 metascore、user_score）；省略＝不隱藏。 */
+  hiddenScoreTypes?: readonly string[];
   /** 層 2：使用者選的來源；undefined＝沒有偏好（不再過濾）；空陣列＝什麼都沒選（不顯示）。 */
   selected?: readonly string[];
   /** 層 3：主分數優先序（前面的優先）；不在清單內的來源排最後。 */
@@ -57,8 +59,14 @@ function rank(priority: readonly string[], provider: string): number {
 }
 
 /** 層 1 之後的列（有分數、來源允許）。 */
-export function visibleRatings<R extends RatingLike>(ratings: readonly R[], visible: readonly string[]): R[] {
-  return ratings.filter((r) => hasScore(r) && (visible.length === 0 || visible.includes(r.scoreProvider)));
+export function visibleRatings<R extends RatingLike>(
+  ratings: readonly R[],
+  visible: readonly string[],
+  hiddenScoreTypes: readonly string[] = [],
+): R[] {
+  return ratings.filter(
+    (r) => hasScore(r) && (visible.length === 0 || visible.includes(r.scoreProvider)) && !hiddenScoreTypes.includes(r.scoreType),
+  );
 }
 
 /** 可供使用者選擇的來源（層 1 之後實際有分數的來源，去重、依 priority 排序）。 */
@@ -98,9 +106,9 @@ export function selectRatings<R extends RatingLike>(
   ratings: readonly R[],
   options: RatingSelectionOptions,
 ): RatingSelection<R> {
-  const { visible, selected, priority } = options;
+  const { visible, selected, priority, hiddenScoreTypes } = options;
   // 1. visible（硬限制）；score=NULL 視為無分數
-  let rows = visibleRatings(ratings, visible);
+  let rows = visibleRatings(ratings, visible, hiddenScoreTypes);
   // 2. selected（使用者）：選的來源都沒分數 → 空，不退回沒選的
   if (selected !== undefined) rows = rows.filter((r) => selected.includes(r.scoreProvider));
   // 3. 排序（critic 類先，再依來源優先序；穩定）與主分數

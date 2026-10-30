@@ -1985,21 +1985,36 @@ button.sheet-entry:hover {
   font-weight: 700;
   white-space: nowrap;
 }
-/* 品牌文字依頁面區塊切換（Holodex 式）：換頁後短暫淡入，帶一點模糊遮蓋字形切換；只動 opacity／filter，reduced-motion 直接切換 */
+/* 品牌文字依頁面區塊切換：換字時各字母像拉霸機一樣上下滾動（brand-roll.tsx；≤ 0.5 秒）。
+   滾動中的字格寬度由 JS 以 Web Animations 從舊字寬補間到新字寬；reduced-motion 時 JS 直接換字、不建立字格 */
 .hd-brand-text {
   display: inline-block;
-  animation: hd-brand-in 150ms var(--ease-out) both;
+  line-height: 1.5;
 }
-@keyframes hd-brand-in {
-  from {
-    opacity: 0;
-    filter: blur(2px);
-  }
+.hd-brand-layer {
+  display: none;
 }
-@media (prefers-reduced-motion: reduce) {
-  .hd-brand-text {
-    animation: none;
-  }
+.hd-brand-text[data-brand-roll="rolling"] > .hd-brand-final {
+  display: none;
+}
+.hd-brand-text[data-brand-roll="rolling"] > .hd-brand-layer {
+  display: inline-block;
+}
+.hd-roll-slot {
+  display: inline-block;
+  height: 1.5em;
+  overflow: clip;
+  vertical-align: top;
+}
+.hd-roll-strip {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.hd-roll-row {
+  display: block;
+  height: 1.5em;
+  white-space: pre;
 }
 .hd-right {
   display: flex;

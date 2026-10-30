@@ -2,7 +2,7 @@ import { BROWSE_SORTS, GAME_TYPES, RELEASE_STAGES, RELEASE_STATE_FILTERS, type F
 import { PLATFORM_GROUP_KINDS } from "../../domain/platform-groups";
 import { normalizeReleaseFilter } from "../../domain/release-filter";
 import { listGenreOptions, listPlatformOptions, listRegionCodes, listThemeOptions } from "../../repository/filter-options";
-import { releaseFilterDefaults } from "./resolve-filter";
+import { effectiveReleaseFilterDefaults } from "./resolve-filter";
 
 export interface GetFilterOptionsInput {
   /** 目前選項名稱都是原文（平台是專有名詞；genres 由 UI 字典翻譯）；保留參數以便日後依語系排序。 */
@@ -15,7 +15,7 @@ export interface GetFilterOptionsInput {
 export async function getFilterOptions(input: GetFilterOptionsInput): Promise<FilterOptions> {
   void input.locale;
   const today = (input.today ?? new Date()).toISOString().slice(0, 10);
-  const defaults = normalizeReleaseFilter({}, releaseFilterDefaults());
+  const defaults = normalizeReleaseFilter({}, await effectiveReleaseFilterDefaults());
   const [platforms, genres, themes, regions] = await Promise.all([
     listPlatformOptions(today),
     listGenreOptions(),

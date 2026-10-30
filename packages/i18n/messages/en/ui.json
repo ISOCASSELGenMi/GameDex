@@ -644,11 +644,14 @@
     "intro": "Games ranked by IGDB critic score and the site players' average. Select a column heading to sort by it; select it again to reverse the order.",
     "col": {
       "igdb": "IGDB score",
-      "players": "Player average"
+      "players": "Player average",
+      "metascore": "Metascore",
+      "userscore": "Userscore"
     },
     "count": {
       "critics": "{count} reviews",
-      "players": "{count} players"
+      "players": "{count} players",
+      "userRatings": "{count} ratings"
     },
     "rank": "Rank",
     "game": "Game",

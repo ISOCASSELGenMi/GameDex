@@ -260,7 +260,7 @@ test.describe("header 品牌文字與導覽下拉", () => {
 
   test("品牌文字在伺服器 HTML 裡（不靠 JS、可快取）", async ({ request }) => {
     const html = await (await request.get("/en/calendar")).text();
-    expect(html).toMatch(/data-site-brand[^>]*>\s*<span[^>]*>GameCalendar<\/span>/);
+    expect(html).toMatch(/data-site-brand="" aria-label="GameCalendar"[^>]*>[\s\S]{0,200}?<span class="hd-brand-final">GameCalendar<\/span>/);
   });
 
   test("三語相同（品牌名不翻譯），<title> 不變", async ({ page }) => {
@@ -284,17 +284,6 @@ test.describe("header 品牌文字與導覽下拉", () => {
     await expect(trigger).toHaveAttribute("aria-expanded", "true");
   });
 
-  test("品牌文字換頁時短暫淡入（opacity／filter ≤ 150ms）；reduced-motion 沒有動畫", async ({ page }) => {
-    await page.goto("/en/calendar");
-    const info = await page.locator(".hd-brand-text").evaluate((el) => {
-      const s = getComputedStyle(el);
-      return { name: s.animationName, duration: s.animationDuration };
-    });
-    expect(info.name).toBe("hd-brand-in");
-    expect(info.duration).toBe("0.15s");
-    await page.emulateMedia({ reducedMotion: "reduce" });
-    expect(await page.locator(".hd-brand-text").evaluate((el) => getComputedStyle(el).animationName)).toBe("none");
-  });
 
   test("首頁「最新上市」的查看更多連到時間軸（30 天前那一週）", async ({ page }) => {
     await page.goto("/en");

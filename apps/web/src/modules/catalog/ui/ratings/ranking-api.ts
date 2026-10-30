@@ -16,7 +16,7 @@ import type { Locale } from "@sok/i18n";
 import { getLocaleConfig, isSupportedLocale } from "@/kernel/locale";
 import { isCatalogQueryTimeoutError } from "../../domain/entities/read-errors";
 import { parseRatingsParams } from "../../domain/ratings-ranking";
-import { getRatingColumns, getRatingsRanking } from "../../use-cases/read";
+import { getEffectiveRatingColumns, getRatingsRanking } from "../../use-cases/read";
 import { filterSpecToReadQuery } from "../filter-mapping";
 import { filterSpecForPage } from "../filters/filter-labels";
 import { toRankingResponse } from "./view-model";
@@ -37,7 +37,7 @@ export async function ratingsRankingResponse(request: Request): Promise<Response
   if (!isSupportedLocale(rawLocale, getLocaleConfig())) return json({ error: "invalid_locale" }, 400);
   const locale = rawLocale as Locale;
   const rq = filterSpecToReadQuery(filterSpecForPage(parseFilterSpec(params).filter, "ratings"));
-  const rp = parseRatingsParams(Object.fromEntries(params), getRatingColumns());
+  const rp = parseRatingsParams(Object.fromEntries(params), await getEffectiveRatingColumns());
   try {
     const result = await getRatingsRanking({
       filter: rq.filter,

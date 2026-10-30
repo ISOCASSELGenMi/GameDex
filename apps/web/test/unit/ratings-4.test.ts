@@ -41,7 +41,7 @@ describe("selectRatings：05 三層順序", () => {
 
   it("層 1 visible：空＝不過濾；非空＝硬限制", () => {
     expect(selectRatings([IGDB, META], { visible: [], priority: PRIORITY }).shown).toHaveLength(2);
-    const only = selectRatings([IGDB, META], { visible: ["igdb"], priority: PRIORITY });
+    const only = selectRatings([IGDB, META], { visible: ["igdb"], priority: PRIORITY, hiddenScoreTypes: [] });
     expect(only.shown).toEqual([IGDB]);
     expect(only.primary).toBe(IGDB);
   });
@@ -166,7 +166,7 @@ describe("RATING_DISPLAY_PRIORITY（層 3）", () => {
 });
 
 describe("詳情頁評分區 HTML", () => {
-  const config = { visible: [] as string[], priority: PRIORITY };
+  const config = { visible: [] as string[], priority: PRIORITY, hiddenScoreTypes: [] as string[] };
   const render = (locale: "zh-Hant" | "en" | "ja", ratings: GameRating[], cfg = config) =>
     renderToStaticMarkup(createElement(RatingsSection, { ratings, config: cfg, locale, t: createTranslator(locale) }));
 
@@ -207,7 +207,7 @@ describe("詳情頁評分區 HTML", () => {
   });
 
   it("站長把有分數的來源都隱藏 → 仍顯示評分區，欄位是允許的來源（Metascore）、值空白，不洩漏 IGDB 分數", () => {
-    const html = render("en", [IGDB], { visible: ["metacritic_scrape"], priority: PRIORITY });
+    const html = render("en", [IGDB], { visible: ["metacritic_scrape"], priority: PRIORITY, hiddenScoreTypes: [] });
     expect(html).toContain("data-ratings-section");
     expect(html).toContain('data-rating-empty="metacritic_scrape"');
     expect(html).toContain("Metascore");
@@ -235,7 +235,7 @@ describe("詳情頁評分區 HTML", () => {
   });
 
   it("2 個來源但其中一個被站長隱藏 → 沒有設定 UI", () => {
-    const html = render("zh-Hant", [IGDB, META], { visible: ["igdb"], priority: PRIORITY });
+    const html = render("zh-Hant", [IGDB, META], { visible: ["igdb"], priority: PRIORITY, hiddenScoreTypes: [] });
     expect(html).not.toContain("data-rating-settings");
     expect(html).not.toContain("metacritic_scrape");
   });
@@ -277,7 +277,7 @@ describe("JSON-LD aggregateRating 只用預設來源", () => {
   });
 
   it("站長把 igdb 隱藏 → 預設改用 visible；不輸出被隱藏的來源", () => {
-    const cfg = { visible: ["metacritic_scrape"], priority: PRIORITY };
+    const cfg = { visible: ["metacritic_scrape"], priority: PRIORITY, hiddenScoreTypes: [] as string[] };
     expect((gameJsonLd(game([IGDB, META]), { ...ctx, ratingConfig: cfg }).aggregateRating as { ratingValue: number }).ratingValue).toBe(90);
     expect(gameJsonLd(game([IGDB]), { ...ctx, ratingConfig: cfg })).not.toHaveProperty("aggregateRating");
   });

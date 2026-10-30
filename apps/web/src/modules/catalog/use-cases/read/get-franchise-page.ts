@@ -1,7 +1,7 @@
 import { FRANCHISE_KINDS, normalizePaging, type FranchiseKind, type FranchisePage } from "../../domain/entities";
 import { resolveImageRef } from "../../providers/image-ref";
 import { getFranchisePageBySlug } from "../../repository/franchise-page";
-import { releaseFilterDefaults } from "./resolve-filter";
+import { effectiveReleaseFilterDefaults } from "./resolve-filter";
 
 export interface GetFranchisePageInput {
   slug: string;
@@ -28,7 +28,7 @@ export async function getFranchisePage(input: GetFranchisePageInput): Promise<Fr
     slug,
     kind,
     locale: input.locale,
-    gameTypes: releaseFilterDefaults().gameTypes,
+    gameTypes: (await effectiveReleaseFilterDefaults()).gameTypes,
     limit,
     offset,
     resolveImage: resolveImageRef,

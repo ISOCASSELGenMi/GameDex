@@ -644,11 +644,14 @@
     "intro": "IGDB の専門家スコアとサイト内プレイヤー平均でゲームを順位付けします。列見出しを選ぶとその列で並べ替え、もう一度選ぶと昇順・降順が切り替わります。",
     "col": {
       "igdb": "IGDB スコア",
-      "players": "プレイヤー平均"
+      "players": "プレイヤー平均",
+      "metascore": "Metascore",
+      "userscore": "Userscore"
     },
     "count": {
       "critics": "{count} 件のレビュー",
-      "players": "{count} 人"
+      "players": "{count} 人",
+      "userRatings": "{count} 件の評価"
     },
     "rank": "順位",
     "game": "ゲーム",

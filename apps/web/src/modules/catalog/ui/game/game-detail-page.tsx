@@ -9,7 +9,7 @@ import { cache, type ReactElement, type ReactNode } from "react";
 import { EventTime } from "@/kernel/ui/event-time";
 import { formatReleaseLabel, type Locale, type Translator } from "@sok/i18n";
 import type { CalendarEventItem, GameDetail, GameFranchiseGroup, GameReleaseRow, GameSummary, PlatformChip } from "../../domain/entities";
-import { getGameDetail, getRatingDisplayConfig } from "../../use-cases/read";
+import { getEffectiveRatingDisplayConfig, getGameDetail } from "../../use-cases/read";
 import { joinList } from "../calendar/view-model";
 import { safeDecode } from "../entities/view-model";
 import { safeExternalUrl } from "../external-url";
@@ -247,7 +247,7 @@ export async function GameDetailPage({ locale, supportedLocales, slug, slots }: 
     const key = `enums.linkCategory.${category}`;
     return t.has(key) ? t.t(key) : category;
   };
-  const ratingConfig = getRatingDisplayConfig();
+  const ratingConfig = await getEffectiveRatingDisplayConfig();
   const jsonLdCtx = { origin: siteOrigin(), locale, ratingConfig };
   const franchises = dedupeFranchises(game.franchises);
   const notice = editionNotice(game);
