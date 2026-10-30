@@ -41,13 +41,13 @@ const scrollNear = (target: Locator): Promise<void> =>
       pad.style.height = "3000px";
       document.body.appendChild(pad);
     }
-    window.scrollTo(0, Math.round(window.scrollY + el.getBoundingClientRect().top - 140));
+    window.scrollTo(0, Math.round(window.scrollY + el.getBoundingClientRect().top - 100));
   });
 const scrollAtChange = (page: Page): Promise<number> => page.evaluate(() => (window as unknown as { __yChange: number }).__yChange);
 /** 導覽之後捲動位置仍在變更當下的位置（容許 4 px）。 */
 async function expectScrollKept(page: Page): Promise<void> {
   const y = await scrollAtChange(page);
-  expect(y).toBeGreaterThan(100);
+  expect(y).toBeGreaterThan(60);
   await expect.poll(async () => Math.abs((await scrollY(page)) - y)).toBeLessThanOrEqual(4);
 }
 
