@@ -15,9 +15,7 @@ import type {
   LanguageSupportType,
 } from "../domain/entities";
 import { planReleaseEventDiff, type DesiredRelease } from "../domain/release-diff";
-import { resolveDisplayNames } from "../domain/display-names";
 import { releaseGroupKey } from "../domain/game-group-keys";
-import { buildSearchText } from "../domain/search-text";
 import {
   externalIds,
   gameCompanies,
@@ -34,7 +32,9 @@ import {
   games,
   ratings,
 } from "../schema";
+import { computeGameNames } from "./display-names";
 import { computePublisherGroups } from "./game-groups";
+import { markAdoptedFeedback } from "./igdb-feedback";
 import { upsertRating } from "./ratings";
 import { applyReleaseDiffPlan, listIgdbReleaseRows, type ReleaseDiffApplyStats } from "./release-events";
 
@@ -192,15 +192,13 @@ export async function syncIgdbGame(
     const applied = await applyReleaseDiffPlan(tx, gameId, plan, input.sourceUpdatedAt);
 
     // ── 衍生欄位：顯示名稱（人工優先）與搜尋字串 ──
-    const locs = await tx
-      .select({ localeCode: gameLocalizations.localeCode, name: gameLocalizations.name, source: gameLocalizations.source })
-      .from(gameLocalizations)
-      .where(eq(gameLocalizations.gameId, gameId));
-    const displayNames = resolveDisplayNames(locs, input.alternativeNames);
-    const searchText = buildSearchText([input.name, ...input.alternativeNames.map((a) => a.name), ...locs.map((l) => l.name)]);
+    const { displayNames, searchText } = await computeGameNames(tx, gameId, { name: input.name, alternativeNames: input.alternativeNames });
     // 預先計算的廠商欄（games.publisher_group）；日期組 release_group 已隨本體 upsert 寫入
     const publisherGroup = (await computePublisherGroups(tx, [gameId])).get(gameId) ?? -1;
     await tx.update(games).set({ displayNames, searchText, publisherGroup }).where(eq(games.id, gameId));
+
+    // 待回饋 IGDB 清單（D91）：同一個 transaction 內偵測 IGDB 是否已採納（沒有待處理項目時只花一次查詢）
+    await markAdoptedFeedback(tx, gameId);
 
     return {
       gameId,

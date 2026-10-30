@@ -7,7 +7,7 @@ import type { ReactElement } from "react";
 import type { EnvLike } from "../config/env";
 import { isModuleEnabled } from "../modules/enabled";
 
-export type AdminNavKey = "reports" | "users" | "settings" | "sync" | "matches";
+export type AdminNavKey = "reports" | "igdb-feedback" | "users" | "settings" | "sync" | "matches";
 
 export interface AdminNavItem {
   key: AdminNavKey;
@@ -17,7 +17,10 @@ export interface AdminNavItem {
 
 /** 目前啟用的內部頁面（純函式，供測試）。 */
 export function adminNavItems(env: EnvLike = process.env): AdminNavItem[] {
-  const items: AdminNavItem[] = [{ key: "reports", href: "/internal/reports", label: "資料更正回報" }];
+  const items: AdminNavItem[] = [
+    { key: "reports", href: "/internal/reports", label: "資料更正回報" },
+    { key: "igdb-feedback", href: "/internal/igdb-feedback", label: "待回饋 IGDB" },
+  ];
   if (isModuleEnabled("accounts", env)) items.push({ key: "users", href: "/internal/users", label: "使用者管理" });
   items.push({ key: "settings", href: "/internal/settings", label: "網站設定" });
   items.push({ key: "sync", href: "/internal/sync", label: "同步監控" });

@@ -23,6 +23,8 @@ export interface ManualReleasePlan {
   existingManual: ReleaseEvent | null;
   /** 寫入後取代顯示的現有列（既有 manual，否則同鍵的 igdb 列）；用來寫改期紀錄與預覽。 */
   replaces: ReleaseEvent | null;
+  /** 同鍵的 igdb 列（待回饋 IGDB 項目的舊值來源，D91）；沒有則 null。 */
+  igdbSame: ReleaseEvent | null;
   /** 寫入列的 sequence 至少要有這個值。 */
   minSequence: number;
 }
@@ -98,6 +100,6 @@ export function planManualRelease(input: ManualReleasePlanInput): ManualReleaseP
 
   return {
     ok: true,
-    plan: { gameId, platformId, regionId, stage, span, status, existingManual, replaces, minSequence: Math.max(0, igdbMax + 1) },
+    plan: { gameId, platformId, regionId, stage, span, status, existingManual, replaces, igdbSame, minSequence: Math.max(0, igdbMax + 1) },
   };
 }
