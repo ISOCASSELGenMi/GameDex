@@ -6,6 +6,7 @@
   "clear": "クリア",
   "clearAll": "すべてクリア",
   "apply": "適用",
+  "live": { "updating": "結果を更新しています…", "updated": "結果を更新しました" },
   "active": "適用中の条件",
   "remove": "「{label}」を外す",
   "dimensions": {

@@ -6,6 +6,7 @@
   "clear": "Clear",
   "clearAll": "Clear all",
   "apply": "Apply",
+  "live": { "updating": "Updating results…", "updated": "Results updated" },
   "active": "Active filters",
   "remove": "Remove “{label}”",
   "dimensions": {

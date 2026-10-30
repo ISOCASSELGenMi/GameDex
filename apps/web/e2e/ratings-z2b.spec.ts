@@ -348,8 +348,7 @@ test.describe("評分排名頁：篩選與最低票數", () => {
     await page.locator("summary", { hasText: msg("zh-Hant", "filters.title") }).first().click();
     await page.locator("select[name=sort]").selectOption("players");
     await page.locator("select[name=dir]").selectOption("asc");
-    await page.locator("input[name=minVotes]").fill("6");
-    await page.getByRole("button", { name: msg("zh-Hant", "filters.apply") }).first().click();
+    await page.locator("input[name=minVotes]").fill("6"); // 即時套用：三個變更合併成一次導覽
     await expect(page).toHaveURL(/sort=players/);
     await expect(page).toHaveURL(/dir=asc/);
     await expect(page).toHaveURL(/minVotes=6/);
@@ -392,7 +391,6 @@ test.describe("評分排名頁：篩選與最低票數", () => {
     await expect(page.locator("select[name=dir]")).toHaveValue("asc");
     await page.locator("summary", { hasText: msg("zh-Hant", "filters.title") }).first().click();
     await page.locator('input[name="platformKind"][value="pc"]').check();
-    await page.getByRole("button", { name: msg("zh-Hant", "filters.apply") }).first().click();
     await expect(page).toHaveURL(/sort=players/);
     await expect(page).toHaveURL(/dir=asc/);
     await expect(th(page, "players")).toHaveAttribute("aria-sort", "ascending");

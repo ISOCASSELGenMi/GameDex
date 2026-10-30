@@ -6,6 +6,7 @@
   "clear": "清除",
   "clearAll": "全部清除",
   "apply": "套用",
+  "live": { "updating": "正在更新結果…", "updated": "結果已更新" },
   "active": "已套用的條件",
   "remove": "移除「{label}」",
   "dimensions": {

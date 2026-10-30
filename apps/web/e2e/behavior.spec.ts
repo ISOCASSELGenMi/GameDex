@@ -114,7 +114,7 @@ test.describe("篩選", () => {
     // fixture 的平台事件數不到「常用平台」門檻，收在「更多平台」裡
     await page.locator("details.more-platforms > summary").click();
     await page.locator(`input[type=checkbox][name=platform][value="${FIXTURE.platformSwitch}"]`).check();
-    await page.locator("form.filter-form button[type=submit]").click();
+    // 即時套用：勾選後自動更新（不必按套用）
     await expect(page).toHaveURL(new RegExp(`platform=${FIXTURE.platformSwitch}`));
     await expect(status).not.toHaveText(before ?? "");
     // 只剩 Switch 的兩款：主角（三平台）與月精度遊戲

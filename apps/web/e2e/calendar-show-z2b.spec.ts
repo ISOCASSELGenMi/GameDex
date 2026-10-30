@@ -93,10 +93,9 @@ test.describe("月曆「遊戲／活動」開關", () => {
     await expect(sw(page, "events")).toHaveAttribute("aria-checked", "true");
     await page.locator('[data-month-nav="prev"]').click();
     await expect(page).toHaveURL(/\/calendar\/2036-05\?show=events,releases$/);
-    // 篩選表單（GET）送出：不遺失 show
+    // 篩選即時套用：不遺失 show
     await page.locator("summary", { hasText: msg("zh-Hant", "filters.title") }).first().click();
     await page.locator('input[name="platformKind"][value="console"]').check();
-    await page.getByRole("button", { name: msg("zh-Hant", "filters.apply") }).first().click();
     await expect(page).toHaveURL(/platformKind=console/);
     await expect(page).toHaveURL(/show=events(,|%2C)releases/);
     await expect(sw(page, "events")).toHaveAttribute("aria-checked", "true");

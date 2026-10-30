@@ -26,6 +26,7 @@ import {
   FilterPanel,
   WEEK_TIMELINE_FILTER_FIELDS,
 } from "../filters/filter-panel";
+import { LiveLink } from "../filters/live-link";
 import { loadFilterOptions } from "../calendar/filter-options";
 import { getTranslator, platformKindLabel } from "../labels";
 import { PageShell } from "../layout/page-shell";
@@ -186,13 +187,13 @@ export async function TimelineViewPage({
             <ul>
               {options.platformKinds.map((k) => (
                 <li key={k}>
-                  <a
+                  <LiveLink
                     className="tw-kind"
                     href={kindHref(k)}
                     aria-current={activeKinds.has(k) ? "true" : undefined}
                   >
                     {platformKindLabel(t, k)}
-                  </a>
+                  </LiveLink>
                 </li>
               ))}
             </ul>

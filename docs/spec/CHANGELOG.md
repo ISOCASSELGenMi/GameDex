@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 篩選即時套用與位置保留（2026-10-30 寫回；repo 副本先改，Project 正本待使用者匯入）
+
+- 06：§篩選——共用篩選面板改為即時套用（有 JS 時無套用按鈕、保留全部清除；無 JS 仍可送出）；文字／數字欄位 debounce 400 ms、`/games` 搜尋框 `q` 只在 Enter 套用；`router.replace(…, { scroll: false })`；篩選不改變位置（月曆年月、時間軸 `week`／`at`、`/games` 的 `by`／`gfrom`／`gsort`／`gdir`／`page`、評分排名 `page`），頁碼超出範圍退到最後一頁；a11y（焦點、aria-live）。
+- 無 migration、無 API 形狀變更；新增 i18n 鍵 `filters.live.updating`／`updated`（zh-Hant、en、ja）。
+
 ## /games 分組檢視的排序與瀏覽 D89（2026-10-29 寫回；repo 副本先改，Project 正本待使用者匯入）
 
 - 03：新增 migration 0018 的三個組內排序 index（`games_release_group_date_idx`、`games_publisher_group_date_idx`、`games_browse_date_desc_idx`）；尚未在開發 DB 實測。
