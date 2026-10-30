@@ -8,7 +8,7 @@
  * igdbId 930xxx、slug 前綴 fbd91-。
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { and, eq } from "drizzle-orm";
+import { and, between, eq, inArray } from "drizzle-orm";
 import { closeDb, getDb } from "@/kernel/db/client";
 import type { GameRecord } from "@/modules/catalog";
 import { listIgdbFeedback, resolveReport, updateIgdbFeedback } from "@/modules/catalog";
@@ -18,6 +18,7 @@ import { markAdoptedFeedback } from "@/modules/catalog/repository/igdb-feedback"
 import { upsertPlatform } from "@/modules/catalog/repository/platforms";
 import { tokenizeForSearch } from "@/modules/catalog/domain/search-text";
 import {
+  changeFeed,
   dataReports,
   gameLanguageSupports,
   gameLocalizations,
@@ -84,6 +85,12 @@ describe.skipIf(!enabled)("待回饋 IGDB 清單（整合）", () => {
   });
 
   afterAll(async () => {
+    // change_feed 沒有 FK；popularity.test 的 TRUNCATE ... RESTART IDENTITY 會讓 release_events 的 id 重來，
+    // 留下的 release_event 紀錄會與之後的測試（sync-games）撞 entity_id。本檔建的紀錄自己清掉。
+    const mine = await db().select({ id: releaseEvents.id }).from(releaseEvents).innerJoin(games, eq(games.id, releaseEvents.gameId)).where(between(games.igdbId, 930000, 930999));
+    if (mine.length > 0) {
+      await db().delete(changeFeed).where(and(eq(changeFeed.entityType, "release_event"), inArray(changeFeed.entityId, mine.map((m) => m.id))));
+    }
     await closeDb();
   });
 
