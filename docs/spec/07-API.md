@@ -44,7 +44,7 @@ GET  /api/v1/ratings/ranking?locale=&<篩選>&sort=<欄位 id>&dir=asc|desc&minV
                                           page 預設累計前 page 頁（每頁 50），chunk=1 只回第 page 頁；有 prev 時每列帶 prevRank；
                                           200 RatingsRankingResponse；400 { error: "invalid_locale" }、503 { error: "timeout" }；
                                           Cache-Control: public, max-age=60, s-maxage=300, stale-while-revalidate=300
-POST /api/v1/reports                      資料更正回報（允許匿名，rate limit＋人機驗證，12；reportType 含 localized_title：targetType=game、proposed.title 1～200 字、proposed.locale 只允許 zh-Hant，D91）
+POST /api/v1/reports                      資料更正回報（允許匿名，rate limit＋人機驗證，12；reportType 含 localized_title：targetType=game、proposed.title 1～200 字、proposed.locale 只允許 zh-Hant，D91；reportType 含 field_correction：targetType=game、proposed={ field, op, value, oldValue? }，欄位鍵與形狀見 12 §第 2 波，錯誤鍵 proposed.field／proposed.op／proposed.value.*，D92）
 ```
 
 **帳號（accounts）**

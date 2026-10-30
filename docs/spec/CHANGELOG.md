@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 待回饋 IGDB 清單第 2 波 D92（2026-10-30 寫回；repo 副本先改，Project 正本待使用者匯入）
+
+- 03：`igdb_feedback_items` 註記（無新欄位，`field` 容納 24 個新鍵）。
+- 07：`POST /api/v1/reports` 新增回報類型 `field_correction`（targetType=game、`proposed.{field, op, value, oldValue?}`、錯誤鍵 `proposed.field`／`proposed.op`／`proposed.value.*`）。
+- 12：§待回饋 IGDB 清單新增「第 2 波：通用欄位更正」（24 欄位表：鍵、形狀、允許動作、IGDB 位置提示〔推測〕、偵測規則；值的形狀、驗證、核可只建項目不改資料、自動偵測、公開表單）；回報類型與核可說明同步。
+- 90：新增 D92。無環境變數變更、無 migration。
+
 ## 待回饋 IGDB 清單 D91（2026-10-30 寫回；repo 副本先改，Project 正本待使用者匯入）
 
 - 03：新增表 `igdb_feedback_items`（catalog，migration 0021）與三個索引。
