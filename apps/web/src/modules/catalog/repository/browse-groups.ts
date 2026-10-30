@@ -3,37 +3,45 @@
  * 分組只是在同一批遊戲上多算一個「組 key」：
  *
  * - date：組＝games.release_group（預先計算：首發年月 `YYYY-MM`、季精度 `YYYY-Qn`、年精度 `YYYY`、日期未定 `tbd`；規則在
- *   domain/game-group-keys.ts，由寫入路徑與 backfill_game_groups 維護）。組序：sort=popularity（預設）＝當月起往未來由近到遠（涵蓋當月的季/年組算當月）→ 往過去由新到舊（依結束月）→ `tbd`（D88）；sort=release_date 由舊到新；sort=name 由新到舊；`tbd` 永遠最後。
- * - platform：組＝平台 slug（不含 mobile；一款遊戲出現在它每個平台的組）。組序由 Use Case 傳入（平台總覽的分組與排序）。
+ *   domain/game-group-keys.ts，由寫入路徑與 backfill_game_groups 維護）。組序固定是時間順序，沒有組排序參數，`tbd` 永遠最後：
+ *   沒有起算月（預設）＝當月起往未來由近到遠（涵蓋當月的季/年組算當月）→ 往過去由新到舊（依結束月）→ `tbd`（D88）；
+ *   有起算月（groupFrom，`YYYY-MM`）＝期間結束月 ≥ 起算月的組由舊到新（涵蓋起算月的季/年組算起算月）→ `tbd`；更早的組不列（UI 用「往前看」連結換起算月）。
+ * - platform：組＝平台 slug（不含 mobile；一款遊戲出現在它每個平台的組）。
  * - publisher：組＝games.publisher_group（預先計算的廠商欄索引，規則在 domain/publisher-groups.ts publisherGroupIndexOfGame；-1＝other）。
- *   欄位順序＝名單順序，other 最後。
+ *   平台與廠商的組序由使用者選（groupOrder：最新發售日／遊戲數／名稱，升降冪；預設最新發售日由新到舊），other 永遠最後。
+ *   組數少（平台約百個、廠商約四十個），所以組清單一次取全部（含 max 發售日與總數），在 {@link sortGroupRows} 排序後再切頁；名稱排序要用介面語系的組名，SQL 做不到。
  *
- * 兩段查詢：(1) 組清單與每組總數（GROUP BY，分頁取一頁的組；date／publisher 走分組 index 的 index-only scan）；
- * (2) 只針對這些組，每組一個 LATERAL 依排序鍵取 [offset, offset+limit)（popularity 排序時 index 已排好，LIMIT 提早結束）。
- * 組內排序＝瀏覽的排序（sort），並以 id 作最後的平手條件，讓「顯示更多」的分頁穩定。
+ * 兩段查詢：(1) 組清單與每組總數（GROUP BY；date 在 SQL 排序分頁；date／publisher 走分組 index 的 index-only scan）；
+ * (2) 只針對這些組，每組一個子查詢依排序鍵取 [offset, offset+limit)（index 已排好，LIMIT 提早結束）。
+ * **組內排序固定＝發售日由新到舊**（未定日期最後），再依熱度、id 作平手條件，讓「顯示更多」的分頁穩定；不受瀏覽頁 sort 參數影響。
  */
 import { sql, type SQL } from "drizzle-orm";
 import type {
   BrowseGameCard,
-  BrowseSort,
   GameGroup,
   GroupedBy,
+  GroupOrder,
   ImageResolver,
   IsoDate,
   PlatformKind,
   ResolvedReleaseFilter,
 } from "../domain/entities";
 import { TBD_RELEASE_GROUP } from "../domain/game-group-keys";
-import { OTHER_PUBLISHER_KEY, PUBLISHER_COLUMN_KEYS, publisherColumnKeyOfIndex, type PublisherColumnKey } from "../domain/publisher-groups";
+import {
+  OTHER_PUBLISHER_KEY,
+  PUBLISHER_COLUMN_KEYS,
+  publisherColumnKeyOfIndex,
+  publisherColumnName,
+  type PublisherColumnKey,
+} from "../domain/publisher-groups";
 import { browseCardColumns, browseRowToCard, buildBrowseConditions, type BrowseRow } from "./browse";
-import { pgArray, withReadTimeout, type ReadOptions } from "./read-tx";
+import { withReadTimeout, type ReadOptions } from "./read-tx";
 
 export interface GameGroupFilter {
   filter: ResolvedReleaseFilter;
   yearFrom?: number;
   yearTo?: number;
   searchTokens?: string | null;
-  sort: BrowseSort;
   locale: string;
   today: IsoDate;
 }
@@ -43,8 +51,10 @@ export interface ReadGameGroupsInput extends GameGroupFilter {
   /** 略過幾組、取幾組（組的分頁）。 */
   groupOffset: number;
   groupLimit: number;
-  /** by=platform：平台 slug 的順序（沒列到的排最後）。 */
-  platformOrder?: readonly string[];
+  /** by=platform／publisher 的組排序（by=date 忽略）。 */
+  groupOrder: GroupOrder;
+  /** by=date：起算月 `YYYY-MM`（未給＝預設的「當月起」順序）。 */
+  groupFrom?: string | null;
   /** 每組先取幾張。 */
   perGroup: number;
   resolveImage: ImageResolver;
@@ -66,6 +76,8 @@ interface GroupRow extends Record<string, unknown> {
   total: number;
   gname: string | null;
   gkind: PlatformKind | null;
+  /** by=platform／publisher：組內最新的首發日（max first_release_date，YYYY-MM-DD；全組都沒有日期為 null）。 */
+  latest?: string | null;
 }
 
 interface CardRow extends BrowseRow {
@@ -118,20 +130,70 @@ function releaseGroupEndMonthSql(col: string): SQL {
   END)`;
 }
 
-function cardOrder(sort: BrowseSort, a: string, dateCol: string): SQL {
+/** 組內排序（固定）：發售日由新到舊（未定最後）→ 熱度 → id。對應 index games_browse_date_desc_idx／games_release_group_date_idx／games_publisher_group_date_idx。 */
+function cardOrder(a: string, dateCol: string): SQL {
   const c = (col: string) => sql.raw(`${a}.${col}`);
-  return sort === "name"
-    ? sql`${c("name")} ASC, ${c("id")} ASC`
-    : sort === "release_date"
-      ? sql`${c(dateCol)} ASC NULLS LAST, ${c("popularity_score")} DESC NULLS LAST, ${c("id")} ASC`
-      : sql`${c("popularity_score")} DESC NULLS LAST, ${c("name")} ASC, ${c("id")} ASC`;
+  return sql`${c(dateCol)} DESC NULLS LAST, ${c("popularity_score")} DESC NULLS LAST, ${c("id")} ASC`;
 }
 
-/** 組清單查詢（匯出供效能量測與單元測試用）：一頁的組＋每組符合條件的總數。 */
+/** 平台／廠商組清單的一列（排序用的最小欄位）。 */
+export interface SortableGroupRow {
+  /** SQL 的組 key（平台 slug；廠商欄索引字串，-1＝other）。 */
+  gkey: string;
+  total: number;
+  gname?: string | null;
+  latest?: string | null;
+}
+
+/**
+ * 平台／廠商的組排序（純函式，單元測試覆蓋）。latest＝組內 max 首發日（沒有日期的組永遠最後，不論升降冪）、count＝組內遊戲數、name＝組名稱（依介面語系）；
+ * 平手依序比：遊戲數多的在前、名稱、key。「獨立／其他」（廠商 -1）永遠最後。
+ */
+export function sortGroupRows<T extends SortableGroupRow>(rows: readonly T[], by: Exclude<GroupedBy, "date">, order: GroupOrder, locale: string): T[] {
+  const nameOf = (r: T): string => (by === "platform" ? (r.gname ?? r.gkey) : publisherColumnName(publisherColumnKeyOfIndex(Number(r.gkey)), locale));
+  const names = new Map(rows.map((r) => [r.gkey, nameOf(r)]));
+  const sign = order.dir === "asc" ? 1 : -1;
+  const byName = (a: T, b: T) => names.get(a.gkey)!.localeCompare(names.get(b.gkey)!, locale) || (a.gkey < b.gkey ? -1 : a.gkey > b.gkey ? 1 : 0);
+  const isOther = (r: T) => by === "publisher" && Number(r.gkey) < 0;
+  return [...rows].sort((a, b) => {
+    if (isOther(a) !== isOther(b)) return isOther(a) ? 1 : -1;
+    if (order.sort === "latest") {
+      const x = a.latest ?? null;
+      const y = b.latest ?? null;
+      if ((x === null) !== (y === null)) return x === null ? 1 : -1;
+      if (x !== null && y !== null && x !== y) return (x < y ? -1 : 1) * sign;
+      return b.total - a.total || byName(a, b);
+    }
+    if (order.sort === "count") return (a.total - b.total) * sign || byName(a, b);
+    return byName(a, b) * sign;
+  });
+}
+
+/**
+ * 組清單查詢（匯出供效能量測與單元測試用）。date：已排序並分頁（一頁的組＋每組符合條件的總數）；
+ * platform／publisher：**全部的組**（不排序、不分頁；每組總數與 latest＝組內 max 首發日），由 {@link sortGroupRows} 排序後切頁。
+ */
 export function buildGroupListQuery(input: Omit<ReadGameGroupsInput, "resolveImage" | "perGroup">): SQL {
   const conds = buildBrowseConditions(input);
   const page = sql`LIMIT ${Math.max(0, Math.floor(input.groupLimit)) + 1} OFFSET ${Math.max(0, Math.floor(input.groupOffset))}`;
-  if (input.by === "date" && input.sort === "popularity") {
+  if (input.by === "date" && input.groupFrom) {
+    // 指定起算月：期間結束月 ≥ 起算月的組（含涵蓋起算月的季／年組）由舊到新，日期未定最後；更早的組不列
+    const start = releaseGroupStartMonthSql("g.release_group");
+    const end = releaseGroupEndMonthSql("g.release_group");
+    const from = input.groupFrom;
+    return sql`
+      SELECT g.release_group AS gkey, count(*)::int AS total, NULL::text AS gname, NULL::text AS gkind
+      FROM games g WHERE ${sql.join(conds, sql` AND `)}
+      GROUP BY g.release_group
+      HAVING g.release_group = ${TBD_RELEASE_GROUP} OR ${end} >= ${from}::text
+      ORDER BY (g.release_group = ${TBD_RELEASE_GROUP}) ASC,
+        greatest(${start}, ${from}::text) ASC,
+        (CASE WHEN g.release_group ~ '^[0-9]{4}-[0-9]{2}$' THEN 0 WHEN g.release_group ~ '^[0-9]{4}-Q' THEN 1 ELSE 2 END) ASC,
+        g.release_group ASC
+      ${page}
+    `;
+  }
+  if (input.by === "date") {
     // 預設順序（D88）：當月起往未來由近到遠 → 再往過去由新到舊 → 日期未定最後。組的期間 [起始月, 結束月] 由 release_group 字串推得
     // （月 YYYY-MM；季 YYYY-Qn；年 YYYY）。期間涵蓋當月的季／年組視為「當月」；完全在未來的依起始月排進未來段；完全在過去的依結束月排進過去段。
     // 同一時間點的組，精度細的在前（月 → 季 → 年）。
@@ -152,39 +214,24 @@ export function buildGroupListQuery(input: Omit<ReadGameGroupsInput, "resolveIma
       ${page}
     `;
   }
-  if (input.by === "date") {
-    const dir = input.sort === "release_date" ? sql`ASC` : sql`DESC`;
-    return sql`
-      SELECT g.release_group AS gkey, count(*)::int AS total, NULL::text AS gname, NULL::text AS gkind
-      FROM games g WHERE ${sql.join(conds, sql` AND `)}
-      GROUP BY g.release_group
-      ORDER BY min(g.first_release_date) FILTER (WHERE g.release_group <> ${TBD_RELEASE_GROUP}) ${dir} NULLS LAST, g.release_group ${dir}
-      ${page}
-    `;
-  }
   if (input.by === "platform") {
-    const rank = sql`COALESCE(array_position(${pgArray([...(input.platformOrder ?? [])])}::text[], plg.slug), 100000)`;
     // 先用整數 platform_id 分組（hash aggregate），再 join 平台資料；對 slug 字串分組排序在 30 萬列上要排序 1~2 秒
     return sql`
       WITH t AS (
-        SELECT gpg.platform_id AS pid, count(*)::int AS total
+        SELECT gpg.platform_id AS pid, count(*)::int AS total, max(g.first_release_date)::text AS latest
         FROM games g JOIN game_platforms gpg ON gpg.game_id = g.id
         WHERE ${sql.join(conds, sql` AND `)}
         GROUP BY gpg.platform_id
       )
-      SELECT plg.slug AS gkey, plg.id AS gid, t.total, plg.name AS gname, plg.kind::text AS gkind
+      SELECT plg.slug AS gkey, plg.id AS gid, t.total, t.latest, plg.name AS gname, plg.kind::text AS gkind
       FROM t JOIN platforms plg ON plg.id = t.pid
       WHERE plg.kind <> 'mobile'
-      ORDER BY ${rank}, plg.slug
-      ${page}
     `;
   }
   return sql`
-    SELECT g.publisher_group::text AS gkey, count(*)::int AS total, NULL::text AS gname, NULL::text AS gkind
+    SELECT g.publisher_group::text AS gkey, count(*)::int AS total, max(g.first_release_date)::text AS latest, NULL::text AS gname, NULL::text AS gkind
     FROM games g WHERE ${sql.join(conds, sql` AND `)}
     GROUP BY g.publisher_group
-    ORDER BY (g.publisher_group = -1) ASC, g.publisher_group ASC
-    ${page}
   `;
 }
 
@@ -205,13 +252,13 @@ export function buildGroupCardsQuery(
       SELECT ${key}::text AS gkey, g.id, g.popularity_score, g.name, g.first_release_date AS rdate
       FROM games g
       WHERE ${sql.join([...groupSource(q.by, key, q.platformIds?.[i]), ...conds], sql` AND `)}
-      ORDER BY ${cardOrder(q.sort, "g", "first_release_date")}
+      ORDER BY ${cardOrder("g", "first_release_date")}
       OFFSET ${offset} LIMIT ${limit}
     )`,
   );
   return sql`
     WITH picked AS (
-      SELECT u.gkey, u.id, row_number() OVER (PARTITION BY u.gkey ORDER BY ${cardOrder(q.sort, "u", "rdate")})::int AS rn
+      SELECT u.gkey, u.id, row_number() OVER (PARTITION BY u.gkey ORDER BY ${cardOrder("u", "rdate")})::int AS rn
       FROM (${sql.join(perKey, sql` UNION ALL `)}) u
     )
     SELECT r.gkey, r.rn, ${browseCardColumns(q.locale)}
@@ -263,8 +310,16 @@ function groupsFromRows(by: GroupedBy, rows: readonly CardRow[], meta: ReadonlyM
  */
 export async function readGameGroups(input: ReadGameGroupsInput, opts: ReadOptions = {}): Promise<{ groups: GameGroup[]; hasMoreGroups: boolean }> {
   const list = await withReadTimeout((tx) => tx.execute<GroupRow>(buildGroupListQuery(input)), opts);
-  const hasMoreGroups = list.rows.length > input.groupLimit;
-  const pageRows = list.rows.slice(0, input.groupLimit);
+  // date 已在 SQL 排序並分頁（多取一組判斷有沒有下一頁）；platform／publisher 取回全部的組，這裡排序後切頁
+  const rows =
+    input.by === "date"
+      ? list.rows
+      : sortGroupRows(list.rows, input.by, input.groupOrder, input.locale).slice(
+          Math.max(0, Math.floor(input.groupOffset)),
+          Math.max(0, Math.floor(input.groupOffset)) + Math.max(0, Math.floor(input.groupLimit)) + 1,
+        );
+  const hasMoreGroups = rows.length > input.groupLimit;
+  const pageRows = rows.slice(0, input.groupLimit);
   if (pageRows.length === 0) return { groups: [], hasMoreGroups };
   const meta = new Map(pageRows.map((r) => [r.gkey, r]));
   const cards = await withReadTimeout(

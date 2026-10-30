@@ -12,9 +12,9 @@ export async function generateMetadata({ params }: PageProps<"/[locale]/platform
   return { title: platformsTitle(locale), ...seoMetadata({ locale, config: getLocaleConfig(), path: "/platforms" }) };
 }
 
-export default async function Platforms({ params }: PageProps<"/[locale]/platforms">) {
+export default async function Platforms({ params, searchParams }: PageProps<"/[locale]/platforms">) {
   const { locale } = await params;
   const config = getLocaleConfig();
   if (!isSupportedLocale(locale, config)) notFound();
-  return <PlatformsOverviewPage locale={locale} supportedLocales={config.supported} />;
+  return <PlatformsOverviewPage locale={locale} supportedLocales={config.supported} searchParams={await searchParams} />;
 }

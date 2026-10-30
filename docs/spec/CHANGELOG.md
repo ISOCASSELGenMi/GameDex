@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## /games 分組檢視的排序與瀏覽 D89（2026-10-29 寫回；repo 副本先改，Project 正本待使用者匯入）
+
+- 03：新增 migration 0018 的三個組內排序 index（`games_release_group_date_idx`、`games_publisher_group_date_idx`、`games_browse_date_desc_idx`）；尚未在開發 DB 實測。
+- 06：§全部遊戲與分組檢視——日期組加起算月 `gfrom`（預設行為不變）與「往前看／跳到年月」；平台／廠商加組排序 `gsort`／`gdir`（預設最新發售日由新到舊、「獨立／其他」永遠最後）；組內固定首發日由新到舊、分組檢視隱藏排序欄位；卡片第二行固定顯示標題原文；網址正規形式；廠商欄 37→40（新增雷亞遊戲、赤燭遊戲、信革數位）；新增 §平台總覽的排序（`/platforms?sort=release&dir=`，依平台發售日）；路由表同步。
+- 07：`GET /api/v1/games/group` 忽略 `sort`（組內順序固定）、卡片多 `o`（標題原文）。無其他 API 形狀變更。
+- 90：新增 D89。`docs/design/publisher-groups.md` 加三欄。
+
 ## GameDex 分組細節 D88（2026-10-29 寫回；repo 副本先改，Project 正本待使用者匯入）
 
 - 03：`game_companies` 加 `igdb_position`（migration 0017，可為 NULL）；`publisher_group` 同角色取位置最小者，有 NULL 時退回舊規則。

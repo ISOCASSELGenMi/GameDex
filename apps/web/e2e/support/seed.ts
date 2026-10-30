@@ -34,6 +34,7 @@ import {
   gameSimilarGames,
   genres,
   languages,
+  platformReleaseDates,
   platforms,
   ratings,
   regions,
@@ -76,6 +77,12 @@ export async function seedE2eDatabase(): Promise<void> {
       const [row] = await db.insert(platforms).values(p).returning({ id: platforms.id });
       platform[p.slug] = row!.id;
     }
+    // 平台發售日（平台總覽的排序用，2026-10-29）：Switch 2017、PS5 2020（PS5 取最早的一筆 JP）、PC 沒有日期（排最後）
+    await db.insert(platformReleaseDates).values([
+      { platformId: platform["e2e-switch"]!, regionId: region.WW!, releaseDate: "2017-03-03", precision: "day" },
+      { platformId: platform["e2e-ps5"]!, regionId: region.US!, releaseDate: "2020-11-12", precision: "day" },
+      { platformId: platform["e2e-ps5"]!, regionId: region.JP!, releaseDate: "2020-11-10", precision: "day" },
+    ]);
     const genre: Record<string, number> = {};
     for (const g of [
       { igdbId: 440951, slug: "role-playing-rpg", name: "Role-playing (RPG)" },

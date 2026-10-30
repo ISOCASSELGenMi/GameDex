@@ -211,7 +211,8 @@ describe.skipIf(!enabled)("Z6 預先計算（整合）", () => {
   it("/games 分組檢視讀預先計算的欄位：廠商欄與日期組", async () => {
     const byPub = await getGameGroups({ by: "publisher", q: "z6", locale: "zh-Hant", perGroup: 6, now: new Date("2026-10-21T00:00:00Z") });
     const keys = byPub.groups.map((g) => g.key);
-    expect(keys).toEqual(["nintendo", "fromsoftware", "other"].filter((k) => keys.includes(k)));
+    // 組序是組排序（預設最新發售日由新到舊）：Nintendo 的第二次同步後沒有日期，排在 FromSoftware 後面；other 永遠最後
+    expect(keys).toEqual(["fromsoftware", "nintendo", "other"].filter((k) => keys.includes(k)));
     expect(byPub.groups.find((g) => g.key === "fromsoftware")!.cards.map((c) => c.slug)).toEqual(["z6-elden"]);
     expect(byPub.groups.find((g) => g.key === "nintendo")!.cards.map((c) => c.slug)).toEqual(["z6-zelda"]);
     expect(byPub.groups.find((g) => g.key === "other")!.cards.map((c) => c.slug).sort()).toEqual(["z6-bare", "z6-port"]);

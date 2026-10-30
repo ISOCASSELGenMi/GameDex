@@ -16,6 +16,7 @@ import { filterSpecToReadQuery } from "../../filter-mapping";
 import { getTranslator } from "../../labels";
 import { toGroupCard } from "./group-card-data";
 import type { GroupCardData, GroupMoreResponse } from "./group-card";
+import type { GroupViewParams } from "./params";
 
 /** 頁面用的一組（已格式化成字串）。 */
 export interface GroupView {
@@ -35,7 +36,10 @@ export interface GameGroupsQuery {
 
 /** 「顯示更多」API 的基底網址（客戶端再接 key、offset、limit）。篩選參數與頁面同一組。 */
 export function groupApiBase(locale: Locale, by: GroupedBy, spec: FilterSpec): string {
-  const query = filterSpecToQueryString(spec);
+  // 分組檢視組內順序固定（發售日由新到舊），sort 不影響結果，不放進網址（CDN 快取鍵不因 sort 分裂）；組排序／起算月只決定「哪些組」，API 以組 key 取卡片，也不需要
+  const { sort: _sort, ...rest } = spec;
+  void _sort;
+  const query = filterSpecToQueryString(rest);
   return `/api/v1/games/group?locale=${locale}&by=${by}${query ? `&${query}` : ""}`;
 }
 
@@ -56,19 +60,21 @@ export function groupTitle(group: GameGroup, by: GroupedBy, locale: Locale): str
 
 
 export async function loadGameGroups(
-  q: GameGroupsQuery & { page: number },
+  q: GameGroupsQuery & { page: number; view?: Partial<GroupViewParams> },
   t: Translator = getTranslator(q.locale),
 ): Promise<{ groups: GroupView[]; hasMoreGroups: boolean; ignored: IgnoredFilterValue[] }> {
   const rq = filterSpecToReadQuery(q.spec);
   const res = await getGameGroups({
     by: q.by,
     page: q.page,
+    groupSort: q.view?.sort,
+    groupDir: q.view?.dir,
+    groupFrom: q.view?.from,
     perGroup: GAME_GROUP_INITIAL,
     filter: rq.filter,
     yearFrom: rq.yearFrom,
     yearTo: rq.yearTo,
     q: rq.q,
-    sort: rq.sort,
     locale: q.locale,
   });
   return {
@@ -103,7 +109,6 @@ export async function loadGroupMore(q: GroupMoreQuery, t: Translator = getTransl
     yearFrom: rq.yearFrom,
     yearTo: rq.yearTo,
     q: rq.q,
-    sort: rq.sort,
     locale: q.locale,
   });
   return { key: q.key, total: group?.total ?? 0, cards: (group?.cards ?? []).map((c) => toGroupCard(c, q.locale, t)) };
