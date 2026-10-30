@@ -28,7 +28,19 @@ const scrollY = (page: Page): Promise<number> => page.evaluate(() => Math.round(
 /** 記下「變更發生當下」的捲動位置（Playwright 的 check() 會先把元素捲進視窗，測試端事先量的值不準）。 */
 async function trackScrollAtChange(page: Page): Promise<void> {
   await page.evaluate(() => {
-    document.addEventListener("change", () => ((window as unknown as { __yChange: number }).__yChange = Math.round(window.scrollY)), true);
+    const w = window as unknown as { __yChange: number; __slog: string[] };
+    w.__slog = [];
+    const log = (what: string) => w.__slog.push(`${what} y=${Math.round(window.scrollY)} h=${document.documentElement.scrollHeight} t=${Math.round(performance.now())}`);
+    document.addEventListener(
+      "change",
+      () => {
+        w.__yChange = Math.round(window.scrollY);
+        log("change");
+      },
+      true,
+    );
+    window.addEventListener("scroll", () => log("scroll"));
+    (window as unknown as { __slogPush: (s: string) => void }).__slogPush = log;
   });
 }
 /** 把目標捲到視窗上緣附近（之後 check() 不必再捲動，變更當下的位置才是測試要守住的位置）。 */
@@ -41,13 +53,17 @@ const scrollNear = (target: Locator): Promise<void> =>
       pad.style.height = "3000px";
       document.body.appendChild(pad);
     }
-    window.scrollTo(0, Math.round(window.scrollY + el.getBoundingClientRect().top - 100));
+    const top = el.getBoundingClientRect().top;
+    const header = document.querySelector("header")?.getBoundingClientRect().height ?? -1;
+    window.scrollTo(0, Math.round(window.scrollY + top - 300));
+    (window as unknown as { __slogPush?: (s: string) => void }).__slogPush?.(`scrollNear elTop=${Math.round(top)} header=${Math.round(header)} vw=${window.innerWidth} vh=${window.innerHeight}`);
   });
 const scrollAtChange = (page: Page): Promise<number> => page.evaluate(() => (window as unknown as { __yChange: number }).__yChange);
 /** 導覽之後捲動位置仍在變更當下的位置（容許 4 px）。 */
 async function expectScrollKept(page: Page): Promise<void> {
   const y = await scrollAtChange(page);
-  expect(y).toBeGreaterThan(60);
+  const slog = await page.evaluate(() => (window as unknown as { __slog: string[] }).__slog.join(" | "));
+  expect(y, `變更當下 scrollY；診斷：${slog}`).toBeGreaterThan(60);
   await expect.poll(async () => Math.abs((await scrollY(page)) - y)).toBeLessThanOrEqual(4);
 }
 
@@ -132,10 +148,12 @@ test.describe("時間軸", () => {
     await expect(apply(page)).toBeHidden();
     await mark(page);
     await trackScrollAtChange(page);
-    await scrollNear(page.locator('input[name="genre"][value="shooter"]'));
+    // 面板最下面的核取方塊：捲到它離視窗上緣 300px（在 sticky 標頭之下，Playwright 的 check() 不必再捲動）
+    const rumored = page.locator('input[name="rumored"]');
+    await scrollNear(rumored);
 
-    await page.locator('input[name="genre"][value="shooter"]').check();
-    await expect(page).toHaveURL(/genre=shooter/);
+    await rumored.check();
+    await expect(page).toHaveURL(/rumored=1/);
     await expect(page).toHaveURL(/week=2037-W11/);
     await expect(page.locator("[data-week-range]")).toHaveAttribute("data-week", "2037-W11");
     expect(await marked(page)).toBe(true);
@@ -143,8 +161,9 @@ test.describe("時間軸", () => {
 
     // chip 移除：week 仍是 W11
     await page.locator("a.filter-chip").first().click();
-    await expect(page).not.toHaveURL(/genre=/);
+    await expect(page).not.toHaveURL(/rumored=/);
     await expect(page).toHaveURL(/week=2037-W11/);
+    await expect(rumored).not.toBeChecked();
 
     // 再切到 W12，用面板的「全部清除」
     await page.locator('input[name="genre"][value="shooter"]').check();

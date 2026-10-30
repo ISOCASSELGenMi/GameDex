@@ -212,6 +212,7 @@ test.describe("詳情頁", () => {
     const res = await page.goto(gameUrl("en", "e2e-no-such-game"));
     expect([200, 404]).toContain(res?.status());
     await expect(page.locator("h1")).toHaveText(msg("en", "errors.notFound.title"));
-    await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
+    // 串流中繼資料偶爾會讓同一個 robots meta 出現兩份（head 與串流區塊），內容一致即可：每一份都要有 noindex
+    await expect.poll(() => page.locator('meta[name="robots"]').evaluateAll((els) => els.length > 0 && els.every((e) => /noindex/.test(e.getAttribute("content") ?? "")))).toBe(true);
   });
 });
