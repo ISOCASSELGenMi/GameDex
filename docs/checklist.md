@@ -197,6 +197,7 @@
 - [ ] 待使用者決定：何時用 IGDB 金鑰跑 `backfill_company_positions`（會打 IGDB 重抓約 32 萬款的公司順序；跑完廠商分組才會變成「取 IGDB 第一個」）
 - [x] 搜尋候選兩段式（2026-10-29，PR GameDex#8 已合併）：≤ 3 字元查詢先在熱度前 3000 筆找、找滿 120 筆才用、不足退回全表；開發 DB `the` 467→10 ms、`z` 265→6 ms、`ド` 237→5 ms，中密度與稀有字不變；無 migration；新增 `game-suggest-two-stage` 整合測試；spec 06／07／CHANGELOG 已同步
 - [x] GameDex#1（第二輪 Z1～Z4）、#2（Next 16.4.1 安全修補）合併到 main（2026-10-24）
+- [x] Next.js 升到 16.4.3（latest；`next`、`eslint-config-next` 皆鎖 16.4.3）（2026-10-30）。本機 node_modules 原本停在 16.4.0（package.json 雖寫 16.4.1，未重裝），升級後 `next build` 連跑兩次都過，「每隔一次 SecurityFatalError」消失；typecheck／lint／lint:arch／npm test 1380／i18n:check 通過；test:a11y 951 通過，另 2 個失敗是本機 `.env.local` 開著 `METACRITIC_SCRAPE_ENABLED=true`（測試預期預設關），設 false 重跑 37 全過，與升級無關（跑 e2e 前要先把它關掉）
 - [x] GameDex#3（Z6）合併到 main；修偶發失敗的 PR 開立、交接檔 `docs/handoff/2026-10-24-gamedex-z6-done.md`；開發暫停等使用者重開（2026-10-24）
 - [x] 開發 DB 重算 `display_names`：1,693 款補上 zh-Hant（例：王國之淚），未移除任何既有中文名；全庫 zh-Hant 218 → 1,911（2026-10-18）
 - [x] Z1 加做（2026-10-22 完成；`recompute_display_names` 尚未在開發 DB 執行）：搜尋候選名單（所有搜尋框共用 combobox 元件）；`recompute_display_names` 任務（規則改動時全庫重算，只動 display_names，不打 IGDB）（2026-10-18 新增）
