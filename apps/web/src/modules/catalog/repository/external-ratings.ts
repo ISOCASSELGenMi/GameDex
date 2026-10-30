@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import { getDb, type DbOrTx } from "@/kernel/db/client";
 import { WHITELIST_GAME_TYPES } from "../domain/entities";
 import { REFRESH_WINDOW_AFTER_DAYS, REFRESH_WINDOW_BEFORE_DAYS } from "../domain/rating-refresh";
+import { pgArray } from "./read-tx";
 
 /**
  * 需要獨立請求的外部評分來源（Metacritic）所用的查詢與寫入（05 §分層排程、§修復排程；12 §比對覆核）。
@@ -34,13 +35,21 @@ export interface RepairCandidateGame {
 }
 
 /** 窗口內、尚未有該來源外部 ID 的遊戲；最久沒試的優先（external_match_attempts.last_attempted_at NULLS FIRST），再依 id。 */
-export async function selectRepairCandidates(source: string, today: string, limit: number, db: DbOrTx = getDb()): Promise<RepairCandidateGame[]> {
+export async function selectRepairCandidates(
+  source: string,
+  today: string,
+  limit: number,
+  db: DbOrTx = getDb(),
+  onlyGameIds?: readonly number[],
+): Promise<RepairCandidateGame[]> {
+  const scope = onlyGameIds ? sql`AND g.id = ANY(${pgArray(onlyGameIds)}::int[])` : sql``;
   const res = await db.execute<{ id: number; name: string; alt: { name: string }[] | null; year: number | null; rd: string | null }>(sql`
     SELECT g.id, g.name, g.alternative_names AS alt, EXTRACT(YEAR FROM g.first_release_date)::int AS year, g.first_release_date::text AS rd
     FROM games g
     LEFT JOIN external_match_attempts a ON a.game_id = g.id AND a.source = ${source}
     WHERE ${inWindow(today)}
       AND NOT EXISTS (SELECT 1 FROM external_ids e WHERE e.game_id = g.id AND e.source = ${source})
+      ${scope}
     ORDER BY a.last_attempted_at ASC NULLS FIRST, g.id ASC
     LIMIT ${Math.max(1, Math.min(limit, 1000))}`);
   return res.rows.map((r) => ({

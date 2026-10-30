@@ -8,9 +8,8 @@ import type { FilterOptions } from "@/modules/catalog/domain/entities";
 import { FilterPanel, type FilterField } from "@/modules/catalog/ui/filters/filter-panel";
 import { TrendingList, type TrendingRow } from "@/modules/catalog/ui/trending/trending-list";
 
-vi.mock("next/form", () => ({
-  default: (props: Record<string, unknown>) => createElement("form", { className: props.className as string, action: props.action as string }, props.children as never),
-}));
+// 篩選面板的即時篩選表單是客戶端元件（useRouter）；靜態渲染沒有 App Router，換成空的 router
+vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: () => undefined, push: () => undefined }) }));
 vi.mock("next/image", () => ({
   default: (props: Record<string, unknown>) => createElement("img", { className: props.className as string, src: props.src as string, alt: "" }),
 }));

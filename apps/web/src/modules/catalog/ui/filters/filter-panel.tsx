@@ -5,7 +5,6 @@
  * - 已套用條件以可移除 chip（連結）顯示；空結果時列出條件並可逐一移除
  * - 面板外框：桌機 <details>、手機底部抽屜（FilterDrawer）
  */
-import Form from "next/form";
 import type { ReactElement, ReactNode } from "react";
 import { FILTER_MAX_VALUES, countFilterValues, hasFilterValue, type FilterDimension, type FilterSpec } from "@sok/api-contract";
 import type { Locale, Translator } from "@sok/i18n";
@@ -13,7 +12,10 @@ import type { FilterOptions } from "../../domain/entities";
 import type { FilterNotice } from "../filter-mapping";
 import { genreLabel, platformKindLabel, regionLabel, stageLabel } from "../labels";
 import { joinList } from "../calendar/view-model";
+import { CheckGrid } from "./check-grid";
 import { FilterDrawer } from "./filter-drawer";
+import { LiveFilterForm } from "./live-filter-form";
+import { LiveLink } from "./live-link";
 import { filterParamLabel, gameTypeLabel, minHeatLabel, releaseStateLabel, showKindLabel, themeLabel, type AppliedChip } from "./filter-labels";
 
 /** 面板上可出現的欄位（依此順序渲染）。 */
@@ -80,17 +82,17 @@ export function AppliedFilterChips({
           const text = t.t("filters.chipLabel", { dimension: filterParamLabel(t, c.param), label: c.label });
           return (
             <li key={`${c.param}:${c.value}`}>
-              <a className="filter-chip" href={c.removeHref} aria-label={t.t("filters.remove", { label: text })}>
+              <LiveLink className="filter-chip" href={c.removeHref} aria-label={t.t("filters.remove", { label: text })}>
                 {text}
                 <span aria-hidden="true"> ✕</span>
-              </a>
+              </LiveLink>
             </li>
           );
         })}
         <li>
-          <a className="link inline-flex min-h-11 items-center px-2" href={clearHref}>
+          <LiveLink className="link inline-flex min-h-11 items-center px-2" href={clearHref}>
             {t.t("filters.clearAll")}
-          </a>
+          </LiveLink>
         </li>
       </ul>
     </div>
@@ -170,8 +172,8 @@ function checkGridHtml(name: string, items: readonly { value: string; label: str
     .join("");
 }
 
-function CheckGrid({ name, items }: { name: string; items: readonly { value: string; label: string; checked: boolean }[] }): ReactElement {
-  return <div className="check-grid" dangerouslySetInnerHTML={{ __html: checkGridHtml(name, items) }} />;
+function Grid({ name, items }: { name: string; items: readonly { value: string; label: string; checked: boolean }[] }): ReactElement {
+  return <CheckGrid html={checkGridHtml(name, items)} />;
 }
 
 function CheckGroup({
@@ -197,7 +199,7 @@ function CheckGroup({
           {hint}
         </p>
       ) : null}
-      <CheckGrid name={name} items={items.map((it) => ({ ...it, checked: hasFilterValue(spec, name, it.value as never) }))} />
+      <Grid name={name} items={items.map((it) => ({ ...it, checked: hasFilterValue(spec, name, it.value as never) }))} />
     </fieldset>
   );
 }
@@ -230,8 +232,16 @@ export function FilterPanel({ locale, t, options, spec, action, fields, hidden, 
 
   return (
     <FilterDrawer summary={summary} title={summary} closeLabel={t.t("ui.common.close")}>
-      <Form action={action} prefetch={false} className="filter-form">
-        {Object.entries(hidden ?? {}).map(([k, v]) => (v ? <input key={k} type="hidden" name={k} value={v} /> : null))}
+      <LiveFilterForm
+        action={action}
+        className="filter-form"
+        applyLabel={t.t("filters.apply")}
+        clearLabel={t.t("filters.clearAll")}
+        clearHref={clearHref ?? action}
+        updatingText={t.t("filters.live.updating")}
+        updatedText={t.t("filters.live.updated")}
+        hiddenFields={Object.entries(hidden ?? {}).map(([k, v]) => (v ? <input key={k} type="hidden" name={k} value={v} /> : null))}
+      >
         {fields.map((field) => {
           switch (field) {
             case "platform":
@@ -241,13 +251,13 @@ export function FilterPanel({ locale, t, options, spec, action, fields, hidden, 
                   {common.length > 0 ? (
                     <>
                       <p className="fieldset-sub">{t.t("filters.commonPlatforms")}</p>
-                      <CheckGrid name="platform" items={common.map((p) => ({ value: p.slug, label: p.name, checked: hasFilterValue(spec, "platform", p.slug) }))} />
+                      <Grid name="platform" items={common.map((p) => ({ value: p.slug, label: p.name, checked: hasFilterValue(spec, "platform", p.slug) }))} />
                     </>
                   ) : null}
                   {others.length > 0 ? (
                     <details className="more-platforms" open={othersChecked}>
                       <summary>{t.t("filters.morePlatforms")}</summary>
-                      <CheckGrid name="platform" items={others.map((p) => ({ value: p.slug, label: p.name, checked: hasFilterValue(spec, "platform", p.slug) }))} />
+                      <Grid name="platform" items={others.map((p) => ({ value: p.slug, label: p.name, checked: hasFilterValue(spec, "platform", p.slug) }))} />
                     </details>
                   ) : null}
                 </fieldset>
@@ -391,15 +401,7 @@ export function FilterPanel({ locale, t, options, spec, action, fields, hidden, 
           }
         })}
         {extraFields}
-        <div className="flex flex-wrap gap-3">
-          <button type="submit" className="btn-primary">
-            {t.t("filters.apply")}
-          </button>
-          <a className="btn-secondary" href={clearHref ?? action}>
-            {t.t("filters.clearAll")}
-          </a>
-        </div>
-      </Form>
+      </LiveFilterForm>
     </FilterDrawer>
   );
 }

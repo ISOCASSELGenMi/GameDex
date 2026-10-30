@@ -135,7 +135,7 @@ describe.skipIf(!enabled)("Metacritic（整合）", () => {
       const { io, calls } = mkIo({
         "/game/fixture-quest-chronicles/": { body: gamePageHtml({ year: y }) },
         "/game/another-great-game/": { body: gamePageHtml({ year: y - 9 }) },
-      });
+      }, { onlyGameIds: [hit, wrongYear, none] }); // 整合測試共用同一個資料庫：只修復本測試的遊戲，不把其他測試檔的遊戲算進 tried
       const stats = await runRepairMatches(io, 1000);
       expect(stats).toMatchObject({ tried: 3, matched: 1, review: 1, noCandidate: 1, verifiedMismatch: 1 });
       expect(await extRow(hit)).toMatchObject({ external_id: "fixture-quest-chronicles", needs_review: false, match_method: "auto" });
@@ -151,7 +151,7 @@ describe.skipIf(!enabled)("Metacritic（整合）", () => {
       await insertSlugs([slugRow("something-else")]);
       const seen: number[] = [];
       for (let i = 0; i < 3; i += 1) {
-        await runRepairMatches(mkIo({}).io, 1);
+        await runRepairMatches(mkIo({}, { onlyGameIds: ids }).io, 1);
         const rows = await getDb().execute<{ game_id: number }>(sql`SELECT game_id FROM external_match_attempts WHERE source = ${SRC} AND game_id IN (${sql.join(ids.map((x) => sql`${x}`), sql`, `)})`);
         seen.push(rows.rows.length);
       }
@@ -165,7 +165,7 @@ describe.skipIf(!enabled)("Metacritic（整合）", () => {
       await getDb().execute(sql`INSERT INTO external_id_rejections (game_id, source, external_id) VALUES (${rejected}, ${SRC}, 'fixture-quest-chronicles-reborn')`);
       await insertSlugs(["fixture-quest-chronicles", "fixture-quest-chronicles-reborn"].map(slugRow));
       const y = today.getUTCFullYear();
-      await runRepairMatches(mkIo({ "/game/fixture-quest-chronicles/": { body: gamePageHtml({ year: y }) } }).io, 1000);
+      await runRepairMatches(mkIo({ "/game/fixture-quest-chronicles/": { body: gamePageHtml({ year: y }) } }, { onlyGameIds: [manual, rejected] }).io, 1000);
       expect(await extRow(manual)).toMatchObject({ external_id: "hand-picked", match_method: "manual" });
       expect(await getRejectedExternalIds(rejected, SRC)).toEqual(new Set(["fixture-quest-chronicles-reborn"]));
       const r = await extRow(rejected);
@@ -175,7 +175,7 @@ describe.skipIf(!enabled)("Metacritic（整合）", () => {
       const a = await addGame("Dupe Target Game");
       const b = await addGame("Dupe Target Game ");
       await insertSlugs([slugRow("dupe-target-game")]);
-      await runRepairMatches(mkIo({ "/game/dupe-target-game/": { body: gamePageHtml({ year: y }) } }).io, 1000);
+      await runRepairMatches(mkIo({ "/game/dupe-target-game/": { body: gamePageHtml({ year: y }) } }, { onlyGameIds: [a, b] }).io, 1000);
       expect((await extRow(a))?.needs_review).toBe(true);
       expect((await extRow(b))?.needs_review).toBe(true);
     });

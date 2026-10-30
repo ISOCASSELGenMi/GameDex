@@ -8,7 +8,7 @@
  *   每組先送 GAME_GROUP_INITIAL 張卡，其餘「顯示更多」按需從 /api/v1/games/group 載入
  *   組內固定發售日由新到舊（分組檢視隱藏排序欄位）；依平台／廠商有組排序（gsort、gdir），依日期有起算月（gfrom、往前看、跳到年月）
  */
-import Form from "next/form";
+import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import type { ReactElement } from "react";
 import { FILTER_QUERY_MAX_LENGTH, filterSpecToQueryString, parseFilterSpec, type FilterSearchInput } from "@sok/api-contract";
@@ -18,6 +18,8 @@ import { browseGames } from "../../use-cases/read";
 import { loadFilterOptions } from "../calendar/filter-options";
 import { collectFilterNotices, filterSpecToReadQuery, withoutIgnored } from "../filter-mapping";
 import { appliedChips, filterSpecForPage, makeFilterLabeler, PAGE_FILTER_PARAMS } from "../filters/filter-labels";
+import { lastPageWithContent } from "../filters/live-filter";
+import { LiveFilterForm } from "../filters/live-filter-form";
 import { AppliedFilterChips, EmptyFilterResult, FilterNotices, FilterPanel } from "../filters/filter-panel";
 import { HeatBadge, HeatSprite, heatBadgeLabel } from "../heat-badge";
 import { getTranslator } from "../labels";
@@ -173,6 +175,14 @@ export async function GamesBrowsePage({ locale, supportedLocales, searchParams, 
     result?.ignored ?? groupsResult?.ignored ?? [],
   );
   const spec = withoutIgnored(pageSpec, notices);
+  // 即時篩選保留頁碼：篩選後該頁已超出範圍（空頁）就退到最後一頁（整頁導向正規網址）
+  if (pageNo > 1 && (grouped ? groupsResult!.groups.length === 0 : result!.games.length === 0)) {
+    const hasContent = async (p: number): Promise<boolean> => {
+      if (grouped) return (await loadGameGroups({ locale, spec: pageSpec, by, page: p, view }, t)).groups.length > 0;
+      return (await browseGames({ filter: query.filter, yearFrom: query.yearFrom, yearTo: query.yearTo, q: query.q, sort: query.sort, offset: browseOffset(p), limit: BROWSE_PAGE_SIZE, locale })).games.length > 0;
+    };
+    redirect(gamesBrowseHref(locale, spec, await lastPageWithContent(pageNo - 1, hasContent), by, view));
+  }
   const basePath = localeHref(locale, "/games");
   const extraQuery = groupQueryParts(by, view).join("&");
   const chips = appliedChips(spec, basePath, makeFilterLabeler(t, options), extraQuery);
@@ -208,10 +218,19 @@ export async function GamesBrowsePage({ locale, supportedLocales, searchParams, 
       <h1 className="text-2xl font-bold">{t.t("ui.games.title")}</h1>
       <p className="mt-2 text-sm text-[var(--muted)]">{t.t("ui.games.intro")}</p>
 
-      <Form action={basePath} prefetch={false} role="search" aria-label={t.t("ui.games.searchLabel")} className="filter-form mt-3">
-        {hidden.map((h) => (
+      <LiveFilterForm
+        action={basePath}
+        role="search"
+        ariaLabel={t.t("ui.games.searchLabel")}
+        className="filter-form mt-3"
+        bare
+        submitOnlyNames={["q"]}
+        updatingText={t.t("filters.live.updating")}
+        updatedText={t.t("filters.live.updated")}
+        hiddenFields={hidden.map((h) => (
           <input key={`${h.name}:${h.value}`} type="hidden" name={h.name} value={h.value} />
         ))}
+      >
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex min-w-[14rem] flex-1 flex-col gap-1">
             <label htmlFor="browse-search" className="font-bold">
@@ -265,7 +284,7 @@ export async function GamesBrowsePage({ locale, supportedLocales, searchParams, 
             </label>
           </div>
         </fieldset>
-      </Form>
+      </LiveFilterForm>
 
       <div className="cal-tools">
         <FilterNotices notices={notices} t={t} />

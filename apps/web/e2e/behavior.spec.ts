@@ -114,7 +114,7 @@ test.describe("篩選", () => {
     // fixture 的平台事件數不到「常用平台」門檻，收在「更多平台」裡
     await page.locator("details.more-platforms > summary").click();
     await page.locator(`input[type=checkbox][name=platform][value="${FIXTURE.platformSwitch}"]`).check();
-    await page.locator("form.filter-form button[type=submit]").click();
+    // 即時套用：勾選後自動更新（不必按套用）
     await expect(page).toHaveURL(new RegExp(`platform=${FIXTURE.platformSwitch}`));
     await expect(status).not.toHaveText(before ?? "");
     // 只剩 Switch 的兩款：主角（三平台）與月精度遊戲
@@ -212,6 +212,7 @@ test.describe("詳情頁", () => {
     const res = await page.goto(gameUrl("en", "e2e-no-such-game"));
     expect([200, 404]).toContain(res?.status());
     await expect(page.locator("h1")).toHaveText(msg("en", "errors.notFound.title"));
-    await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
+    // 串流中繼資料偶爾會讓同一個 robots meta 出現兩份（head 與串流區塊），內容一致即可：每一份都要有 noindex
+    await expect.poll(() => page.locator('meta[name="robots"]').evaluateAll((els) => els.length > 0 && els.every((e) => /noindex/.test(e.getAttribute("content") ?? "")))).toBe(true);
   });
 });

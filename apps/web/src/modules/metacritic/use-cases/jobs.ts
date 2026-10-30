@@ -32,6 +32,8 @@ export interface JobIo {
   http?: MetacriticHttp;
   alert?: (message: string) => Promise<unknown>;
   dailyLimit?: number;
+  /** 測試用：只修復這些遊戲（整合測試共用同一個資料庫，其他測試檔的遊戲不該被算進 tried）。 */
+  onlyGameIds?: readonly number[];
 }
 
 const INDEX_STATE = "metacritic_slug_index";
@@ -138,7 +140,7 @@ export async function runRepairMatches(io: JobIo, batch: number = REPAIR_BATCH):
   const provider = createMetacriticProvider(ctx.http);
   const today = ctx.now.toISOString().slice(0, 10);
   try {
-    for (const game of await selectRepairCandidates(METACRITIC_SOURCE, today, batch)) {
+    for (const game of await selectRepairCandidates(METACRITIC_SOURCE, today, batch, undefined, io.onlyGameIds)) {
       const rejected = await getRejectedExternalIds(game.gameId, METACRITIC_SOURCE);
       const cands = await candidatesFor(game.name, game.altNames, rejected);
       const match = findBestMatch(game.name, game.altNames, game.year, cands);
