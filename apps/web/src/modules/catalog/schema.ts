@@ -36,6 +36,7 @@ import {
   SOURCE_STATUSES,
 } from "./domain/entities/enums";
 import type { ReportProposed, ReportStatus, ReportTargetType, ReportType } from "./domain/entities/data-report";
+import type { IgdbFeedbackField, IgdbFeedbackStatus, IgdbFeedbackValue } from "./domain/entities/igdb-feedback";
 
 const tz = { withTimezone: true } as const;
 /** games 的「顯示名稱排序」表達式 index 涵蓋的語系；與 packages/i18n 的 AVAILABLE_LOCALES 一致（test/unit/z6-schema.test.ts 檢查）。 */
@@ -687,5 +688,39 @@ export const dataReports = pgTable(
     // 補充索引（03 索引總表只列第一個）：同目標其他回報、每 IP 每日計數
     index("data_reports_target_idx").on(t.targetType, t.targetId),
     index("data_reports_ip_created_idx").on(t.reporterIpHash, t.createdAt),
+  ],
+);
+
+/**
+ * 待回饋 IGDB 項目（12 §待回饋 IGDB 清單，D91）：回報核可時同一個 transaction 建立；管理者手動到 IGDB 網站提交，
+ * 同步偵測到 IGDB 已採納時標 adopted。程式不呼叫任何 IGDB 寫入。欄位鍵與值的形狀見 domain/igdb-feedback-fields.ts。
+ * platformId／regionCode／stage 只是定位用（不設 FK，與 data_reports.targetId 同理）。
+ */
+export const igdbFeedbackItems = pgTable(
+  "igdb_feedback_items",
+  {
+    id: serial("id").primaryKey(),
+    reportId: integer("report_id").notNull().unique().references(() => dataReports.id),
+    gameId: integer("game_id").notNull().references(() => games.id, { onDelete: "cascade" }),
+    igdbGameId: integer("igdb_game_id").notNull(),
+    gameSlug: varchar("game_slug", { length: 255 }).notNull(), // 即 IGDB 遊戲 slug
+    field: varchar("field", { length: 32 }).notNull().$type<IgdbFeedbackField>(),
+    platformId: integer("platform_id"),
+    regionCode: varchar("region_code", { length: 16 }),
+    stage: releaseStageEnum("stage"),
+    oldValue: jsonb("old_value").$type<IgdbFeedbackValue>(),
+    newValue: jsonb("new_value").$type<IgdbFeedbackValue>().notNull(),
+    sourceUrl: text("source_url"),
+    reporterNote: text("reporter_note"),
+    status: varchar("status", { length: 12 }).notNull().default("pending").$type<IgdbFeedbackStatus>(),
+    handlerNote: text("handler_note"),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    statusChangedAt: timestamp("status_changed_at", tz).defaultNow(),
+    adoptedAt: timestamp("adopted_at", tz),
+  },
+  (t) => [
+    index("igdb_feedback_items_game_status_idx").on(t.gameId, t.status), // 同步後偵測採納
+    index("igdb_feedback_items_status_created_idx").on(t.status, t.createdAt), // 後台清單
   ],
 );

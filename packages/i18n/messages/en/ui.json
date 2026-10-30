@@ -461,6 +461,7 @@
       "wrong_stage": "Release stage is wrong",
       "language_support": "Language support is wrong or missing",
       "cancelled": "Cancelled or no longer in development",
+      "localized_title": "Traditional Chinese title",
       "duplicate": "Duplicate entry",
       "takedown": "Takedown or copyright request",
       "other": "Something else"
@@ -480,6 +481,7 @@
       "stage": "Release stage",
       "language": "Language",
       "supportType": "Support type",
+      "title": "Traditional Chinese title",
       "sourceUrl": "Source URL",
       "note": "Additional details",
       "captcha": "Human verification"
@@ -488,6 +490,7 @@
       "sourceUrl": "A link to an official announcement, store page or reliable outlet (http or https).",
       "sourceUrlRequired": "Date reports must include a source URL.",
       "date": "For month, quarter or year precision, enter any day within that period.",
+      "title": "The title this game is commonly known by in Traditional Chinese (Taiwan), up to {max} characters.",
       "stage": "Choose \"Unspecified\" if you are not sure.",
       "takedown": "Takedown and copyright requests are sent to the site owner only and are never shown publicly. Please state what and why in the details.",
       "currentValue": "Currently shown: {value}",

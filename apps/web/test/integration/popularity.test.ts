@@ -120,7 +120,8 @@ async function expectGroupMatchesDomain(igdbIds: number[], weights: { site: numb
 describe.skipIf(!enabled)("熱度（整合）", () => {
   beforeAll(async () => {
     const db = getDb();
-    await db.execute(sql`TRUNCATE games, game_popularity_signals RESTART IDENTITY CASCADE`);
+    // change_feed 沒有 FK：release_events 的 id 重來後，先前測試留下的紀錄會與後面測試新建的 id 撞 entity_id，所以一起清
+    await db.execute(sql`TRUNCATE games, game_popularity_signals, change_feed RESTART IDENTITY CASCADE`);
     await db.execute(sql`DELETE FROM sync_state WHERE job_name = ${POPULARITY_STATE}`);
     platformIds = [];
     for (const [i, kind] of (["console", "pc", "mobile"] as const).entries()) {

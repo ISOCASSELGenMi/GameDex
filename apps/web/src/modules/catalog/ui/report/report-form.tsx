@@ -20,12 +20,14 @@ export interface ReportFormStrings {
   fieldStage: string;
   fieldLanguage: string;
   fieldSupportType: string;
+  fieldTitle: string;
   fieldSourceUrl: string;
   fieldNote: string;
   fieldCaptcha: string;
   hintSourceUrl: string;
   hintSourceUrlRequired: string;
   hintDate: string;
+  hintTitle: string;
   hintTakedown: string;
   hintNote: string;
   choose: string;
@@ -63,6 +65,7 @@ export interface ReportFormProps {
   languages: Option[];
   supportTypes: Option[];
   noteMax: number;
+  titleMax: number;
   siteKey: string | null;
   /** Turnstile widget 的語言代碼（zh-tw、en、ja）。 */
   captchaLanguage: string;
@@ -82,7 +85,7 @@ declare global {
 const SCRIPT_SRC = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
 const DATE_TYPES = ["wrong_date", "missing_region_date"];
 
-type Values = Record<"date" | "precision" | "platformId" | "regionCode" | "stage" | "language" | "supportType" | "sourceUrl" | "note", string>;
+type Values = Record<"date" | "precision" | "platformId" | "regionCode" | "stage" | "language" | "supportType" | "title" | "sourceUrl" | "note", string>;
 
 interface FieldBoxProps {
   uid: string;
@@ -132,6 +135,7 @@ export function ReportForm(props: ReportFormProps): ReactElement {
     stage: "",
     language: "",
     supportType: "",
+    title: "",
     sourceUrl: "",
     note: "",
   });
@@ -197,6 +201,9 @@ export function ReportForm(props: ReportFormProps): ReactElement {
     } else if (type === "language_support") {
       if (values.language) proposed.language = values.language;
       if (values.supportType) proposed.supportType = values.supportType;
+    } else if (type === "localized_title") {
+      if (values.title) proposed.title = values.title;
+      proposed.locale = "zh-Hant";
     }
     return {
       reportType: type,
@@ -389,6 +396,14 @@ export function ReportForm(props: ReportFormProps): ReactElement {
             )}
           </FieldBox>
         </>
+      ) : null}
+
+      {type === "localized_title" ? (
+        <FieldBox {...box} name="title" label={s.fieldTitle} errorKey="proposed.title" hint={s.hintTitle}>
+          {({ id, describedBy, invalid }) => (
+            <input id={id} type="text" lang="zh-Hant" maxLength={props.titleMax} autoComplete="off" className={control} value={values.title} onChange={set("title")} aria-describedby={describedBy} aria-invalid={invalid} aria-required="true" />
+          )}
+        </FieldBox>
       ) : null}
 
       <FieldBox {...box} name="sourceUrl" label={s.fieldSourceUrl} errorKey="sourceUrl" hint={isDate ? `${s.hintSourceUrlRequired} ${s.hintSourceUrl}` : s.hintSourceUrl}>

@@ -27,7 +27,7 @@ const statusLabel = (s: string) => (t.has(`enums.releaseStatus.${s}`) ? t.t(`enu
 const regionLabel = (code: string) => (t.has(`enums.region.${code}`) ? `${code} ${t.t(`enums.region.${code}`)}` : code);
 const when = (d: Date | null) => (d ? `${d.toISOString().slice(0, 16).replace("T", " ")} UTC` : "—");
 
-function Url({ href }: { href: string | null }): ReactElement {
+export function Url({ href }: { href: string | null }): ReactElement {
   const safe = href ? parseHttpUrl(href) : null;
   if (!safe) return <span className="text-[var(--muted)]">—</span>;
   return (
@@ -73,6 +73,9 @@ function CompareTable({ item }: { item: ReportQueueItem }): ReactElement | null 
       current: "（見遊戲詳情頁）",
       proposed: `${p?.language ?? "—"}／${p?.supportType ? t.t(`enums.languageSupportType.${p.supportType}`) : "—"}`,
     });
+  }
+  else if (report.reportType === "localized_title") {
+    rows.push({ label: "繁體中文標題", current: target.currentTitle ?? "（目前沒有繁中標題）", proposed: p?.title ?? "—" });
   }
   if (rows.length === 0) return null;
   return (
@@ -125,6 +128,7 @@ function ResolutionRecord({ item }: { item: ReportQueueItem }): ReactElement | n
     p?.date ? `日期 ${p.date}（${p.precision ?? "day"}）` : null,
     p?.stage ? `階段 ${stageLabel(p.stage)}` : null,
     p?.regionCode ? `地區 ${regionLabel(p.regionCode)}` : null,
+    p?.title ? `繁中標題 ${p.title}` : null,
     p?.language ? `語言 ${p.language}／${p.supportType ? t.t(`enums.languageSupportType.${p.supportType}`) : "—"}` : null,
   ].filter((x): x is string => x !== null);
   const manual = target.currentReleases.filter((r) => r.source === "manual");
@@ -169,7 +173,9 @@ function ReportCard({ item, csrf, publicLocale }: { item: ReportQueueItem; csrf:
   const acceptHint =
     report.reportType === "wrong_date" || report.reportType === "missing_region_date"
       ? "核可會寫入 manual 上市列（含改期紀錄與 sequence）。"
-      : "核可只改狀態並記錄備註，不會自動修改資料。";
+      : report.reportType === "localized_title"
+        ? "核可會寫入 manual 的繁中標題並重算顯示名稱與搜尋字串，並建立一筆待回饋 IGDB 項目。"
+        : "核可只改狀態並記錄備註，不會自動修改資料。";
   return (
     <article aria-labelledby={headingId} className="flex flex-col gap-3 rounded-lg border border-[var(--border)] p-4">
       <h3 id={headingId} className="text-lg font-semibold">
@@ -206,6 +212,14 @@ function ReportCard({ item, csrf, publicLocale }: { item: ReportQueueItem; csrf:
       </dl>
       <Others others={item.others} />
       <ResolutionRecord item={item} />
+      {item.feedbackItem ? (
+        <p data-feedback-created="">
+          已建立待回饋 IGDB 項目 #{item.feedbackItem.id}：
+          <a className="link" href={`/internal/igdb-feedback?status=${item.feedbackItem.status}`}>
+            到「待回饋 IGDB」處理
+          </a>
+        </p>
+      ) : null}
       {report.status === "open" ? (
         <form method="post" action={`/internal/reports/${report.id}`} className="flex flex-col gap-2">
           <input type="hidden" name="csrf" value={csrf} />

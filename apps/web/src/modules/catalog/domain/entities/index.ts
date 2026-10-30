@@ -18,6 +18,7 @@ export * from "./sitemap";
 export * from "./matching";
 export * from "./game-rating";
 export * from "./data-report";
+export * from "./igdb-feedback";
 export * from "./ical";
 export * from "./game-card";
 export * from "./game-suggest";
