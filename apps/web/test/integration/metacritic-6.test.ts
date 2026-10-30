@@ -136,7 +136,7 @@ describe.skipIf(!enabled)("Metacritic（整合）", () => {
         "/game/fixture-quest-chronicles/": { body: gamePageHtml({ year: y }) },
         "/game/another-great-game/": { body: gamePageHtml({ year: y - 9 }) },
       });
-      const stats = await runRepairMatches(io);
+      const stats = await runRepairMatches(io, 1000);
       expect(stats).toMatchObject({ tried: 3, matched: 1, review: 1, noCandidate: 1, verifiedMismatch: 1 });
       expect(await extRow(hit)).toMatchObject({ external_id: "fixture-quest-chronicles", needs_review: false, match_method: "auto" });
       expect(await extRow(wrongYear)).toMatchObject({ external_id: "another-great-game", needs_review: true });
@@ -165,7 +165,7 @@ describe.skipIf(!enabled)("Metacritic（整合）", () => {
       await getDb().execute(sql`INSERT INTO external_id_rejections (game_id, source, external_id) VALUES (${rejected}, ${SRC}, 'fixture-quest-chronicles-reborn')`);
       await insertSlugs(["fixture-quest-chronicles", "fixture-quest-chronicles-reborn"].map(slugRow));
       const y = today.getUTCFullYear();
-      await runRepairMatches(mkIo({ "/game/fixture-quest-chronicles/": { body: gamePageHtml({ year: y }) } }).io);
+      await runRepairMatches(mkIo({ "/game/fixture-quest-chronicles/": { body: gamePageHtml({ year: y }) } }).io, 1000);
       expect(await extRow(manual)).toMatchObject({ external_id: "hand-picked", match_method: "manual" });
       expect(await getRejectedExternalIds(rejected, SRC)).toEqual(new Set(["fixture-quest-chronicles-reborn"]));
       const r = await extRow(rejected);
@@ -175,7 +175,7 @@ describe.skipIf(!enabled)("Metacritic（整合）", () => {
       const a = await addGame("Dupe Target Game");
       const b = await addGame("Dupe Target Game ");
       await insertSlugs([slugRow("dupe-target-game")]);
-      await runRepairMatches(mkIo({ "/game/dupe-target-game/": { body: gamePageHtml({ year: y }) } }).io);
+      await runRepairMatches(mkIo({ "/game/dupe-target-game/": { body: gamePageHtml({ year: y }) } }).io, 1000);
       expect((await extRow(a))?.needs_review).toBe(true);
       expect((await extRow(b))?.needs_review).toBe(true);
     });
