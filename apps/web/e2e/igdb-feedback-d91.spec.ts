@@ -33,6 +33,9 @@ test.beforeAll(async () => {
     );
     const gameId = g.rows[0].id;
     await c.query("INSERT INTO game_platforms (game_id, platform_id) VALUES ($1, $2) ON CONFLICT DO NOTHING", [gameId, ps5]);
+    // serial 失敗時整組會重跑（beforeAll 也重跑）：還原前一輪核可寫入的繁中標題與被批次略過的種子項目
+    await c.query("DELETE FROM game_localizations WHERE game_id = $1 AND locale_code = 'zh-Hant' AND source = 'manual'", [gameId]);
+    await c.query("UPDATE igdb_feedback_items SET status = 'pending', handler_note = NULL WHERE game_id = $1 AND reporter_note = ANY($2)", [gameId, SEEDS]);
     const has = await c.query("SELECT 1 FROM igdb_feedback_items WHERE game_id = $1", [gameId]);
     if (has.rowCount === 0) {
       for (const [i, note] of SEEDS.entries()) {
@@ -164,7 +167,8 @@ test.describe("待回饋 IGDB 流程（serial）", () => {
     try {
       await page.goto("/internal/igdb-feedback");
       await page.getByRole("button", { name: "勾選的略過" }).click();
-      await expect(page.getByRole("alert")).toContainText("請先勾選至少一筆項目");
+      // Next 的 route announcer 也是 role=alert，要限定在頁面內容的提示
+      await expect(page.locator('main p[role="alert"]')).toContainText("請先勾選至少一筆項目");
       for (const note of SEEDS.slice(0, 2)) await page.locator("article", { hasText: note }).getByRole("checkbox").check();
       await page.getByLabel("批次處理備註（選填）").fill("e2e 批次略過");
       await page.getByRole("button", { name: "勾選的略過" }).click();
