@@ -93,6 +93,54 @@
   --shadow-2: 0 10px 24px -8px rgb(0 0 0 / 0.6), 0 2px 6px rgb(0 0 0 / 0.4);
   --shadow-3: 0 26px 50px -14px rgb(0 0 0 / 0.75), 0 10px 16px -8px rgb(0 0 0 / 0.5);
 }
+/* 深色字在 Windows 的中文字型（只有 400／700 兩種字重）上比淺色字細：讓深色的非標題小字與淺色字的視覺重量相近。
+ * ① 亮色底的主題（手動亮色、跟隨系統為亮色、任天堂紅）：內文整體加字重與描邊，標題不動；
+ * ② 暗色主題裡的深色字（亮色按鈕、目前選中的分段／標籤上的 --on-link 字）：同樣加粗。 */
+:root[data-theme="light"] body,
+:root[data-theme="nintendo-red"] body {
+  font-weight: 500;
+  -webkit-text-stroke: 0.2px currentColor;
+}
+:root[data-theme="light"] :is(h1, h2, h3, h4, h5, h6),
+:root[data-theme="nintendo-red"] :is(h1, h2, h3, h4, h5, h6) {
+  -webkit-text-stroke: 0;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) body {
+    font-weight: 500;
+    -webkit-text-stroke: 0.2px currentColor;
+  }
+  :root:not([data-theme]) :is(h1, h2, h3, h4, h5, h6) {
+    -webkit-text-stroke: 0;
+  }
+}
+:root[data-theme]:not([data-theme="light"], [data-theme="nintendo-red"]) :is(
+    .skip-link,
+    .btn-primary,
+    .cal-today-tag,
+    .filter-count,
+    .tw-kind[aria-current="true"],
+    .rc-switch-item input:checked + span,
+    .rc-order-item[aria-current="true"],
+    a.mp-month[aria-current="true"]
+  ) {
+  -webkit-text-stroke: 0.2px currentColor;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) :is(
+      .skip-link,
+      .btn-primary,
+      .cal-today-tag,
+      .filter-count,
+      .tw-kind[aria-current="true"],
+      .rc-switch-item input:checked + span,
+      .rc-order-item[aria-current="true"],
+      a.mp-month[aria-current="true"]
+    ) {
+    -webkit-text-stroke: 0.2px currentColor;
+  }
+}
+
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
     --background: #0a0f1c;
@@ -2618,7 +2666,26 @@ a.card:hover {
   cursor: pointer;
   z-index: 1; /* 透明的 radio 蓋在分段按鈕上面，點哪裡都是點到 radio 本身 */
 }
+.rc-switch {
+  position: relative;
+}
+.rc-switch-thumb {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: calc(var(--radius-sm) - 1px);
+  background: var(--link);
+  pointer-events: none;
+  transition:
+    transform 240ms var(--ease-out),
+    width 240ms var(--ease-out),
+    height 240ms var(--ease-out);
+}
+.rc-switch:not([data-slide]) .rc-switch-thumb {
+  display: none;
+}
 .rc-switch-item span {
+  position: relative; /* 疊在滑動色塊上面 */
   display: inline-flex;
   align-items: center;
   min-height: 2rem;
@@ -2637,8 +2704,10 @@ a.card:hover {
   }
 }
 .rc-switch-item input:checked + span {
-  background: var(--link);
   color: var(--on-link);
+}
+.rc-switch:not([data-slide]) .rc-switch-item input:checked + span {
+  background: var(--link);
 }
 .rc-switch-item input:focus-visible + span {
   outline: 3px solid var(--focus);
@@ -2873,6 +2942,9 @@ a.card:hover {
   .rc-card-link,
   .rc-switch-item span {
     transform: none !important;
+  }
+  .rc-switch-thumb {
+    transition: none !important;
   }
 }
 
