@@ -14,7 +14,7 @@ import {
 
 export const SHAPE_KINDS = ["triangle", "circle", "cross", "square"] as const;
 export const BUTTON_KINDS = ["btn-a", "btn-b", "btn-x", "btn-y"] as const;
-export const DPAD_KINDS = ["dpad-up", "dpad-down", "dpad-left", "dpad-right"] as const;
+export const DPAD_KINDS = ["dpad"] as const;
 export const STICK_KIND = "stick" as const;
 export type SymbolKind = (typeof SHAPE_KINDS)[number] | (typeof BUTTON_KINDS)[number] | (typeof DPAD_KINDS)[number] | typeof STICK_KIND;
 export const ALL_SYMBOL_KINDS: readonly SymbolKind[] = [...SHAPE_KINDS, ...BUTTON_KINDS, ...DPAD_KINDS, STICK_KIND];
@@ -30,33 +30,36 @@ export interface SymbolSequence {
   unlock: EggUnlockTarget;
 }
 
-/** 彩蛋 1a／1b／1c：依序點破。 */
+/** 彩蛋 1a／1b／1c：連續點到每一顆各一次即成立，不限順序；點到重複的或別組的就重來（那顆若屬於本組，算第一步）。 */
 export const SYMBOL_SEQUENCES: readonly SymbolSequence[] = [
   { id: "shapes", kinds: ["triangle", "circle", "cross", "square"], unlock: { type: "theme", key: "sony-blue" } },
   { id: "buttons", kinds: ["btn-a", "btn-b", "btn-x", "btn-y"], unlock: { type: "theme", key: "xbox-green" } },
-  { id: "dpad", kinds: ["dpad-up", "dpad-down", "dpad-left", "dpad-right"], unlock: { type: "theme", key: "nintendo-red" } },
+  { id: "dpad", kinds: ["dpad", "stick"], unlock: { type: "theme", key: "nintendo-red" } },
 ];
 
-/** 依序點破追蹤：錯了就重來（但錯的那顆若是某序列的第一顆，算那個序列的第一步）。 */
 export function createSequenceTracker(sequences: readonly SymbolSequence[] = SYMBOL_SEQUENCES) {
-  const index = new Map<string, number>(sequences.map((s) => [s.id, 0]));
+  const seen = new Map<string, Set<SymbolKind>>(sequences.map((s) => [s.id, new Set()]));
   return {
-    /** 點破一顆；回傳剛完成的序列（可能多個）。 */
+    /** 點到一顆；回傳剛完成的序列（可能多個）。 */
     hit(kind: SymbolKind): SymbolSequence[] {
       const done: SymbolSequence[] = [];
       for (const s of sequences) {
-        const i = index.get(s.id) ?? 0;
-        if (s.kinds[i] === kind) {
-          if (i + 1 === s.kinds.length) {
-            index.set(s.id, 0);
+        let set = seen.get(s.id)!;
+        if (!s.kinds.includes(kind)) set.clear();
+        else {
+          if (set.has(kind)) set = new Set();
+          set.add(kind);
+          seen.set(s.id, set);
+          if (set.size === s.kinds.length) {
+            set.clear();
             done.push(s);
-          } else index.set(s.id, i + 1);
-        } else index.set(s.id, s.kinds[0] === kind ? 1 : 0);
+          }
+        }
       }
       return done;
     },
     progress(id: string): number {
-      return index.get(id) ?? 0;
+      return seen.get(id)?.size ?? 0;
     },
   };
 }

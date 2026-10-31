@@ -6,7 +6,7 @@
  * - GroupSwitch：分組切換（radio group）。每個選項帶自己的網址，選取後客戶端導覽（沒有 JS 時由 <noscript> 的連結取代）。
  * 動態只用 transform／opacity；鍵盤操作（Enter／空白鍵／方向鍵）不做動畫。
  */
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { GAME_GROUP_MORE } from "../../../domain/entities/game-groups";
 import { GroupCard, type GroupCardData, type GroupMoreResponse } from "./group-card";
@@ -122,7 +122,10 @@ export interface GroupSwitchItem {
   href: string;
 }
 
-/** 分組切換（radio group）：選取就導覽到該選項的網址。鍵盤的方向鍵切換也會導覽，所以不另做動畫。 */
+/**
+ * 分組切換（radio group）：選取就導覽到該選項的網址。選取底色是一塊滑動的色塊（transform＋寬高補間；reduced-motion 直接到位）；
+ * 沒有 JS 時色塊不存在，改由選中項自己上色（CSS 以 data-slide 區分）。
+ */
 export function GroupSwitch({ legend, name, current, items }: { legend: string; name: string; current: string; items: readonly GroupSwitchItem[] }) {
   const router = useRouter();
   // 選取後導覽需要一點時間：先在本地反映選取（受控的 radio 否則會彈回舊值），網址換了以後再與 current 對齊
@@ -132,9 +135,37 @@ export function GroupSwitch({ legend, name, current, items }: { legend: string; 
     setSeen(current);
     setSelected(current);
   }
+  const boxRef = useRef<HTMLFieldSetElement>(null);
+  const thumbRef = useRef<HTMLSpanElement>(null);
+  useLayoutEffect(() => {
+    const box = boxRef.current;
+    const thumb = thumbRef.current;
+    if (!box || !thumb) return;
+    const place = (animate: boolean): void => {
+      const label = box.querySelector<HTMLElement>("input:checked")?.parentElement;
+      if (!label) return;
+      thumb.style.transition = animate ? "" : "none";
+      thumb.style.width = `${label.offsetWidth}px`;
+      thumb.style.height = `${label.offsetHeight}px`;
+      thumb.style.transform = `translate(${label.offsetLeft}px, ${label.offsetTop}px)`;
+      box.dataset.slide = "true";
+    };
+    place(box.dataset.slide === "true"); // 第一次直接到位，之後的選取才滑動
+    const onResize = (): void => place(false);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [selected]);
   return (
-    <fieldset ref={markReady} className="rc-switch" data-rc-switch="">
+    <fieldset
+      ref={(el) => {
+        boxRef.current = el;
+        markReady(el);
+      }}
+      className="rc-switch"
+      data-rc-switch=""
+    >
       <legend className="sr-only">{legend}</legend>
+      <span ref={thumbRef} className="rc-switch-thumb" aria-hidden="true" />
       {items.map((item) => (
         <label key={item.value} className="rc-switch-item">
           <input

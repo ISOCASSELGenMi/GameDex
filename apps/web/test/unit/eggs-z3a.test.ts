@@ -25,24 +25,24 @@ import { THEME_INIT_SCRIPT, THEME_STORAGE_KEY, normalizeTheme, readTheme, themeO
 import { UNLOCK_COLLECTIBLE_KEYS, UNLOCK_THEME_KEYS, type UnlockRecord } from "@/kernel/ui/unlocks";
 
 describe("依序點破（彩蛋 1a／1b／1c）", () => {
-  it("△○×□ 依序完成；順序錯就重來", () => {
+  it("△○×□ 不限順序、連點四顆不重複即完成；重複就重來", () => {
     const t = createSequenceTracker();
     expect(t.hit("triangle")).toEqual([]);
-    expect(t.hit("cross")).toEqual([]); // 錯：重來
-    expect(t.hit("circle")).toEqual([]);
-    expect(t.hit("triangle")).toEqual([]); // 錯的那顆是第一顆 → 算第 1 步
-    expect(t.hit("circle")).toEqual([]);
     expect(t.hit("cross")).toEqual([]);
-    const done = t.hit("square");
+    expect(t.hit("cross")).toEqual([]); // 重複：重來，這顆算第 1 步
+    expect(t.progress("shapes")).toBe(1);
+    expect(t.hit("square")).toEqual([]);
+    expect(t.hit("triangle")).toEqual([]);
+    const done = t.hit("circle");
     expect(done.map((s) => s.unlock.key)).toEqual(["sony-blue"]);
     expect(t.progress("shapes")).toBe(0);
   });
-  it("ABXY、十字鍵四向各自獨立追蹤", () => {
+  it("ABXY 不限順序；十字鍵＋搖桿各點一次（不分上下左右）", () => {
     const t = createSequenceTracker();
-    for (const k of ["btn-a", "btn-b", "btn-x"] as const) expect(t.hit(k)).toEqual([]);
-    expect(t.hit("btn-y").map((s) => s.unlock.key)).toEqual(["xbox-green"]);
-    for (const k of ["dpad-up", "dpad-down", "dpad-left"] as const) expect(t.hit(k)).toEqual([]);
-    expect(t.hit("dpad-right").map((s) => s.unlock.key)).toEqual(["nintendo-red"]);
+    for (const k of ["btn-y", "btn-a", "btn-x"] as const) expect(t.hit(k)).toEqual([]);
+    expect(t.hit("btn-b").map((s) => s.unlock.key)).toEqual(["xbox-green"]);
+    expect(t.hit("stick")).toEqual([]);
+    expect(t.hit("dpad").map((s) => s.unlock.key)).toEqual(["nintendo-red"]);
   });
   it("點到別的序列的符號會重置本序列的進度", () => {
     const t = createSequenceTracker();

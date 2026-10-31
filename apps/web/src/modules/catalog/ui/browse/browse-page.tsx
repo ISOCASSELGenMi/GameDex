@@ -270,7 +270,7 @@ export async function GamesBrowsePage({ locale, supportedLocales, searchParams, 
               <SortMenu
                 key={sort} // 網址的排序變了（即時篩選、上一頁）就重建，狀態永遠與網址一致
                 value={sort}
-                describedBy="browse-sort-note"
+                describedBy={sort.startsWith("popularity") ? undefined : "browse-sort-note"}
                 labels={{
                   sort: t.t("ui.games.sortLabel"),
                   asc: t.t("ui.games.sortDir.asc"),
@@ -284,7 +284,7 @@ export async function GamesBrowsePage({ locale, supportedLocales, searchParams, 
               />
             )}
           </div>
-          {grouped ? null : (
+          {grouped || sort.startsWith("popularity") ? null : (
             <p id="browse-sort-note" className="tb-note">
               {t.t(`ui.games.sortNote.${sort.replace(/_(asc|desc)$/, "")}`)}
             </p>
