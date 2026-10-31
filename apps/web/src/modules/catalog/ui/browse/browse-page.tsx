@@ -33,7 +33,6 @@ import { searchBoxLabels } from "../search/labels";
 import { SearchCombobox } from "../search/search-combobox";
 import {
   BROWSE_FILTER_FIELDS,
-  BROWSE_SORT_OPTIONS,
   browseOffset,
   browsePagination,
   browseRange,
@@ -42,6 +41,8 @@ import {
   yearFieldValues,
 } from "./view-model";
 import { GroupCardList, GroupSwitch, GroupsProvider } from "./groups/groups-client";
+import { SortMenu } from "./sort-menu";
+import { ViewSwitch } from "./view-switch";
 import { groupApiBase, loadGameGroups, type GroupView } from "./groups/groups-server";
 import { DateRangeNav, GroupOrderNav } from "./groups/group-controls";
 import {
@@ -75,8 +76,6 @@ function first(v: string | string[] | undefined): string | undefined {
   return Array.isArray(v) ? v[0] : v;
 }
 
-const inputClass = "min-h-11 rounded-md border border-[var(--border)] bg-[var(--background)] px-2 text-[var(--foreground)]";
-
 const HEAT_SPRITE_ID = "browse-heat-flame";
 
 function GameCard({ game, locale, t }: { game: BrowseGameCard; locale: Locale; t: Translator }): ReactElement {
@@ -89,7 +88,7 @@ function GameCard({ game, locale, t }: { game: BrowseGameCard; locale: Locale; t
       <a className="summary-card" href={gameHref(locale, game.slug)}>
         {game.cover ? (
           // eslint-disable-next-line @next/next/no-img-element -- 封面本來就是 unoptimized 外部圖；純 <img> 少掉 next/image 的屬性與客戶端元件參照
-          <img className="summary-thumb" src={game.cover.small} alt="" width={90} height={128} loading="lazy" decoding="async" />
+          <img className="summary-thumb" src={game.cover.small} data-m={game.cover.medium !== game.cover.small ? game.cover.medium : undefined} alt="" width={90} height={128} loading="lazy" decoding="async" />
         ) : (
           <span className="summary-thumb card-thumb-empty" aria-hidden="true" />
         )}
@@ -216,80 +215,92 @@ export async function GamesBrowsePage({ locale, supportedLocales, searchParams, 
   return (
     <PageShell locale={locale} supportedLocales={supportedLocales} path="/games" query={shellQuery}>
       <h1 className="text-2xl font-bold">{t.t("ui.games.title")}</h1>
-      <p className="mt-2 text-sm text-[var(--muted)]">{t.t("ui.games.intro")}</p>
+      <p className="mt-1 mb-3 text-sm text-[var(--muted)]">{t.t("ui.games.intro")}</p>
 
-      <LiveFilterForm
-        action={basePath}
-        role="search"
-        ariaLabel={t.t("ui.games.searchLabel")}
-        className="filter-form mt-3"
-        bare
-        submitOnlyNames={["q"]}
-        updatingText={t.t("filters.live.updating")}
-        updatedText={t.t("filters.live.updated")}
-        hiddenFields={hidden.map((h) => (
-          <input key={`${h.name}:${h.value}`} type="hidden" name={h.name} value={h.value} />
-        ))}
-      >
-        <div className="flex flex-wrap items-end gap-3">
-          <div className="flex min-w-[14rem] flex-1 flex-col gap-1">
-            <label htmlFor="browse-search" className="font-bold">
-              {t.t("ui.games.searchLabel")}
-            </label>
-            <SearchCombobox
-              locale={locale}
-              id="browse-search"
-              defaultValue={spec.q ?? ""}
-              maxLength={FILTER_QUERY_MAX_LENGTH}
-              placeholder={t.t("ui.games.searchPlaceholder")}
-              labels={searchBoxLabels(t)}
-              inputClassName={`${inputClass} w-full`}
-            />
+      {/* 精簡工具列（參考 AniList）：搜尋＋年份＋排序（同一個表單）、篩選圖示鈕（面板在下方浮出）、卡片大小切換 */}
+      <div className="tb-row">
+        <LiveFilterForm
+          action={basePath}
+          role="search"
+          ariaLabel={t.t("ui.games.searchLabel")}
+          className="filter-form browse-bar"
+          bare
+          submitOnlyNames={["q"]}
+          updatingText={t.t("filters.live.updating")}
+          updatedText={t.t("filters.live.updated")}
+          hiddenFields={hidden.map((h) => (
+            <input key={`${h.name}:${h.value}`} type="hidden" name={h.name} value={h.value} />
+          ))}
+        >
+          <div className="tb">
+            <div className="tb-search">
+              <label htmlFor="browse-search" className="sr-only">
+                {t.t("ui.games.searchLabel")}
+              </label>
+              <SearchCombobox
+                locale={locale}
+                id="browse-search"
+                defaultValue={spec.q ?? ""}
+                maxLength={FILTER_QUERY_MAX_LENGTH}
+                placeholder={t.t("ui.games.searchPlaceholder")}
+                labels={searchBoxLabels(t)}
+                inputClassName="tb-field w-full"
+              />
+            </div>
+            <fieldset aria-describedby="browse-year-hint" className="tb-years">
+              <legend className="sr-only">{t.t("ui.games.yearLegend")}</legend>
+              <p id="browse-year-hint" className="sr-only">
+                {t.t("ui.games.yearHint")}
+              </p>
+              <label className="tb-year">
+                <span className="sr-only">{t.t("filters.dimensions.yearFrom")}</span>
+                <input type="number" inputMode="numeric" name="yearFrom" min={1900} max={2200} defaultValue={years.from} placeholder={t.t("filters.dimensions.yearFrom")} className="tb-field w-24" />
+              </label>
+              <span aria-hidden="true">–</span>
+              <label className="tb-year">
+                <span className="sr-only">{t.t("filters.dimensions.yearTo")}</span>
+                <input type="number" inputMode="numeric" name="yearTo" min={1900} max={2200} defaultValue={years.to} placeholder={t.t("filters.dimensions.yearTo")} className="tb-field w-24" />
+              </label>
+            </fieldset>
+            {/* 分組檢視組內固定「發售日由新到舊」，瀏覽的排序不適用：隱藏排序欄位（值仍用隱藏欄位帶著，切回不分組時還在） */}
+            <button type="submit" className="btn-primary tb-submit">
+              {t.t("ui.games.searchButton")}
+            </button>
+            {grouped ? null : (
+              <SortMenu
+                key={sort} // 網址的排序變了（即時篩選、上一頁）就重建，狀態永遠與網址一致
+                value={sort}
+                describedBy="browse-sort-note"
+                labels={{
+                  sort: t.t("ui.games.sortLabel"),
+                  asc: t.t("ui.games.sortDir.asc"),
+                  desc: t.t("ui.games.sortDir.desc"),
+                  options: {
+                    popularity: t.t("filters.sortValues.popularity"),
+                    release_date: t.t("filters.sortValues.release_date"),
+                    name: t.t("filters.sortValues.name"),
+                  },
+                }}
+              />
+            )}
           </div>
-          {/* 分組檢視組內固定「發售日由新到舊」，瀏覽的排序不適用：隱藏排序欄位（值仍用隱藏欄位帶著，切回不分組時還在） */}
           {grouped ? null : (
-            <label className="flex flex-col gap-1">
-              <span className="font-bold">{t.t("ui.games.sortLabel")}</span>
-              <select name="sort" defaultValue={sort} aria-describedby="browse-sort-note" className={inputClass}>
-                {BROWSE_SORT_OPTIONS.map((s) => (
-                  <option key={s} value={s}>
-                    {t.t(`filters.sortValues.${s}`)}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <p id="browse-sort-note" className="tb-note">
+              {t.t(`ui.games.sortNote.${sort.replace(/_(asc|desc)$/, "")}`)}
+            </p>
           )}
-          <button type="submit" className="btn-primary">
-            {t.t("ui.games.searchButton")}
-          </button>
-        </div>
+        </LiveFilterForm>
+        {by === "platform" || by === "publisher" ? <GroupOrderNav locale={locale} t={t} spec={spec} by={by} view={view} /> : null}
+        {by === "date" ? <DateRangeNav locale={locale} t={t} spec={spec} view={view} currentMonth={currentMonth} /> : null}
+        <FilterPanel locale={locale} t={t} options={options} spec={spec} action={basePath} fields={BROWSE_FILTER_FIELDS} hidden={panelHidden} clearHref={clearHref} />
         {grouped ? null : (
-          <p id="browse-sort-note" className="fieldset-sub">
-            {t.t(`ui.games.sortNote.${sort}`)}
-          </p>
+          <ViewSwitch labels={{ group: t.t("ui.games.view.label"), cover: t.t("ui.games.view.cover"), card: t.t("ui.games.view.card"), list: t.t("ui.games.view.list") }} />
         )}
-        <fieldset aria-describedby="browse-year-hint">
-          <legend>{t.t("ui.games.yearLegend")}</legend>
-          <p id="browse-year-hint" className="fieldset-sub">
-            {t.t("ui.games.yearHint")}
-          </p>
-          <div className="flex flex-wrap gap-4">
-            <label className="flex flex-col gap-1">
-              <span>{t.t("filters.dimensions.yearFrom")}</span>
-              <input type="number" inputMode="numeric" name="yearFrom" min={1900} max={2200} defaultValue={years.from} className={`${inputClass} w-32`} />
-            </label>
-            <label className="flex flex-col gap-1">
-              <span>{t.t("filters.dimensions.yearTo")}</span>
-              <input type="number" inputMode="numeric" name="yearTo" min={1900} max={2200} defaultValue={years.to} className={`${inputClass} w-32`} />
-            </label>
-          </div>
-        </fieldset>
-      </LiveFilterForm>
+      </div>
 
       <div className="cal-tools">
         <FilterNotices notices={notices} t={t} />
         <AppliedFilterChips chips={chips} t={t} clearHref={clearHref} />
-        <FilterPanel locale={locale} t={t} options={options} spec={spec} action={basePath} fields={BROWSE_FILTER_FIELDS} hidden={panelHidden} clearHref={clearHref} />
         {slots?.filterLinks}
         <div className="rc-nav">
           <GroupSwitch
@@ -320,8 +331,6 @@ export async function GamesBrowsePage({ locale, supportedLocales, searchParams, 
               : t.t("filters.resultsCount", { count: formatNumber(0, locale) })}
         </p>
         {grouped ? <p className="fieldset-sub">{t.t(`ui.games.groupNote.${by}`)}</p> : null}
-        {by === "platform" || by === "publisher" ? <GroupOrderNav locale={locale} t={t} spec={spec} by={by} view={view} /> : null}
-        {by === "date" ? <DateRangeNav locale={locale} t={t} spec={spec} view={view} currentMonth={currentMonth} page={pageNo} action={basePath} /> : null}
       </div>
 
       {(grouped ? groups.length : games.length) === 0 ? (
@@ -350,7 +359,7 @@ export async function GamesBrowsePage({ locale, supportedLocales, searchParams, 
       ) : (
         <>
           <HeatSprite id={HEAT_SPRITE_ID} />
-          <ul className="mt-4 grid list-none grid-cols-1 gap-2 p-0 md:grid-cols-2 xl:grid-cols-3" aria-label={t.t("ui.games.listLabel")}>
+          <ul className="bc-list" aria-label={t.t("ui.games.listLabel")}>
             {games.map((g) => (
               <GameCard key={g.gameId} game={g} locale={locale} t={t} />
             ))}

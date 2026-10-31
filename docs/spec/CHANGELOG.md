@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 扁平化第二輪（2026-10-31 寫回；repo 副本先改，Project 正本待使用者匯入）
+
+- 06：§篩選——篩選欄位預設折疊；§瀏覽——`sort` 新增 `popularity_asc`／`release_date_desc`／`name_desc`（升降冪反向變體，預設方向不變）；依日期分組以月份選擇器取代往前看連結與年月表單。
+- 無 migration；api-contract `FILTER_SORTS` 擴充；新增 i18n 鍵 `ui.games.sortDir.*`、`ui.games.dateNav.prevYear／nextYear`、`filters.sortValues` 三個變體。
+
+## 扁平化改版與精簡工具列（2026-10-30 寫回；repo 副本先改，Project 正本待使用者匯入）
+
+- 06：§UI——視覺語言由「Spatial UI 玻璃」改為極簡扁平（實色表面、無漸層／模糊）；`/games` 篩選改圖示鈕＋浮出面板、新增卡片大小切換（封面／詳細／清單）；品牌拉霸機只滾「Game」之後的後綴。
+- 無 migration、無 API 形狀變更；新增 i18n 鍵 `ui.games.view.*`（zh-Hant、en、ja）。
+
 ## 篩選即時套用與位置保留（2026-10-30 寫回；repo 副本先改，Project 正本待使用者匯入）
 
 - 06：§篩選——共用篩選面板改為即時套用（有 JS 時無套用按鈕、保留全部清除；無 JS 仍可送出）；文字／數字欄位 debounce 400 ms、`/games` 搜尋框 `q` 只在 Enter 套用；`router.replace(…, { scroll: false })`；篩選不改變位置（月曆年月、時間軸 `week`／`at`、`/games` 的 `by`／`gfrom`／`gsort`／`gdir`／`page`、評分排名 `page`），頁碼超出範圍退到最後一頁；a11y（焦點、aria-live）。

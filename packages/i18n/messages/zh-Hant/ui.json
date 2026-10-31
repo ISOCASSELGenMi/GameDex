@@ -272,6 +272,10 @@
     "searchPlaceholder": "輸入遊戲名稱",
     "searchButton": "搜尋",
     "sortLabel": "排序方式",
+    "sortDir": {
+      "asc": "升冪",
+      "desc": "降冪"
+    },
     "sortNote": {
       "popularity": "熱度每小時更新，由高到低。",
       "release_date": "依首發日期由早到晚排序，日期未定的排在最後。",
@@ -295,6 +299,12 @@
     "viewAllFranchise": "查看「{name}」的全部作品",
     "viewCompany": "查看「{name}」的作品",
     "groupBy": "分組檢視",
+    "view": {
+      "label": "卡片大小",
+      "cover": "只看封面",
+      "card": "詳細卡片",
+      "list": "清單"
+    },
     "by": {
       "none": "不分組",
       "date": "依日期",
@@ -327,6 +337,8 @@
       }
     },
     "dateNav": {
+      "prevYear": "上一年",
+      "nextYear": "下一年",
       "earlier": "往前看較早的月份（從 {month} 起）",
       "jumpLabel": "跳到年月",
       "year": "年",

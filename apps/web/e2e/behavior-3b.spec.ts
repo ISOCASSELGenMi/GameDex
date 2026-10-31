@@ -68,7 +68,7 @@ test.describe("導覽列（header 的導覽下拉）", () => {
     await expect((await openMainNav(page, "en")).getByRole("link", { name: msg("en", "ui.nav.games") })).not.toHaveAttribute("aria-current", "page");
   });
 
-  test("手機 375 寬：八個入口都完整在視窗內、觸控目標 >= 44px、頁面不水平捲動", async ({ page }) => {
+  test("手機 375 寬：八個入口都完整在視窗內、觸控目標 >= 32px（標準規格）、頁面不水平捲動", async ({ page }) => {
     await page.setViewportSize(MOBILE);
     await page.goto("/en/games");
     const links = (await openMainNav(page, "en")).getByRole("link");
@@ -79,7 +79,7 @@ test.describe("導覽列（header 的導覽下拉）", () => {
       expect(box, "導覽連結要有版面").not.toBeNull();
       expect(box!.x).toBeGreaterThanOrEqual(0);
       expect(box!.x + box!.width).toBeLessThanOrEqual(MOBILE.width);
-      expect(box!.height).toBeGreaterThanOrEqual(44);
+      expect(box!.height).toBeGreaterThanOrEqual(32); // 標準按鈕規格 2rem
     }
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
   });

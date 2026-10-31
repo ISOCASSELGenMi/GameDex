@@ -53,7 +53,10 @@
   "sortValues": {
     "popularity": "Heat",
     "release_date": "Release date",
-    "name": "Name"
+    "name": "Name",
+    "popularity_asc": "Popularity (low to high)",
+    "release_date_desc": "Release date (newest first)",
+    "name_desc": "Name (Z–A)"
   },
   "minHeatValue": "Heat {level} or higher",
   "rumoredValue": "Including rumored",

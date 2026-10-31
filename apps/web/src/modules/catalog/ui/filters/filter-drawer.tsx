@@ -17,13 +17,33 @@ export interface FilterDrawerProps {
   /** 抽屜標題（通常同 summary）。 */
   title: string;
   closeLabel: string;
+  /** 已套用的篩選值數量（徽章；0 不顯示）。 */
+  count?: number;
   children: ReactNode;
 }
 
-export function FilterDrawer({ summary, title, closeLabel, children }: FilterDrawerProps): ReactElement {
+/** 篩選圖示（三條滑桿）＋ 視覺隱藏的文字（無障礙名稱與測試仍是「篩選（n）」）＋ 數量徽章。 */
+function FilterButtonFace({ text, count }: { text: string; count: number }): ReactElement {
+  return (
+    <>
+      <svg aria-hidden="true" focusable="false" viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
+        <path d="M1 3h8v1.5H1V3Zm10 0h4v1.5h-4V3ZM9 1.75h2v4H9v-4ZM1 7.25h4v1.5H1v-1.5Zm6 0h8v1.5H7v-1.5ZM5 6h2v4H5V6ZM1 11.5h9V13H1v-1.5Zm11 0h3V13h-3v-1.5ZM10 10.25h2v4h-2v-4Z" />
+      </svg>
+      <span className="sr-only">{text}</span>
+      {count > 0 ? (
+        <span className="filter-count" aria-hidden="true">
+          {count}
+        </span>
+      ) : null}
+    </>
+  );
+}
+
+export function FilterDrawer({ summary, title, closeLabel, count = 0, children }: FilterDrawerProps): ReactElement {
   const [mobile, setMobile] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const detailsRef = useRef<HTMLDetailsElement>(null);
 
   useEffect(() => {
     const mq = window.matchMedia(MOBILE_QUERY);
@@ -32,6 +52,26 @@ export function FilterDrawer({ summary, title, closeLabel, children }: FilterDra
     mq.addEventListener("change", sync);
     return () => mq.removeEventListener("change", sync);
   }, []);
+
+  // 浮出式面板（精簡工具列內）：點面板外面或按 Esc 關閉，Esc 後焦點回到按鈕
+  useEffect(() => {
+    const d = detailsRef.current;
+    if (mobile || !d?.closest(".tb-row")) return;
+    const onDown = (e: PointerEvent) => {
+      if (d.open && !d.contains(e.target as Node)) d.open = false;
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || !d.open) return;
+      d.open = false;
+      d.querySelector("summary")?.focus();
+    };
+    document.addEventListener("pointerdown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [mobile]);
 
   const close = useCallback(() => {
     const d = dialogRef.current;
@@ -51,8 +91,10 @@ export function FilterDrawer({ summary, title, closeLabel, children }: FilterDra
 
   if (!mobile) {
     return (
-      <details className="filter-panel" data-filter-panel="">
-        <summary className="filter-summary">{summary}</summary>
+      <details ref={detailsRef} className="filter-panel" data-filter-panel="">
+        <summary className="filter-summary" title={summary}>
+          <FilterButtonFace text={summary} count={count} />
+        </summary>
         {children}
       </details>
     );
@@ -63,11 +105,12 @@ export function FilterDrawer({ summary, title, closeLabel, children }: FilterDra
       <button
         ref={buttonRef}
         type="button"
-        className="btn-secondary"
+        className="filter-summary"
+        title={summary}
         aria-haspopup="dialog"
         onClick={() => dialogRef.current?.showModal()}
       >
-        {summary}
+        <FilterButtonFace text={summary} count={count} />
       </button>
       <dialog
         ref={dialogRef}

@@ -18,7 +18,6 @@ import { GAME_GROUP_BYS, GAME_GROUP_MAX_PAGE, GAME_GROUPS_PER_PAGE, GROUP_MONTH_
 import { buildGroupCardsQuery, buildGroupListQuery, isDateGroupKey, publisherKeyToIndex, sortGroupRows } from "@/modules/catalog/repository/browse-groups";
 import { isGroupKey, normalizeGroupOrder } from "@/modules/catalog/use-cases/read";
 import { dateGroupTitle } from "@/modules/catalog/ui/browse/groups/groups-server";
-import { groupYearOptions } from "@/modules/catalog/ui/browse/groups/group-controls";
 import {
   groupPagination,
   groupQueryParts,
@@ -220,9 +219,6 @@ describe("分組檢視參數", () => {
     expect(shiftGroupMonth("2026-03", -6)).toBe("2025-09");
     expect(shiftGroupMonth("2026-10", 3)).toBe("2027-01");
     expect(shiftGroupMonth("1950-02", -6)).toBe(GROUP_MONTH_MIN);
-    expect(groupYearOptions(2026, 2026).at(0)).toBe(1950);
-    expect(groupYearOptions(2026, 2026).at(-1)).toBe(2032);
-    expect(groupYearOptions(2100, 2026).at(-1)).toBe(2100);
   });
 });
 

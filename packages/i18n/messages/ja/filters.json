@@ -53,7 +53,10 @@
   "sortValues": {
     "popularity": "注目度",
     "release_date": "発売日",
-    "name": "タイトル"
+    "name": "タイトル",
+    "popularity_asc": "人気（低い順）",
+    "release_date_desc": "発売日（新しい順）",
+    "name_desc": "名前（Z–A）"
   },
   "minHeatValue": "注目度{level}以上",
   "rumoredValue": "噂を含む",

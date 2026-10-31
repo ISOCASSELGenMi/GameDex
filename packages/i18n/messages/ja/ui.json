@@ -272,6 +272,10 @@
     "searchPlaceholder": "ゲームのタイトルを入力",
     "searchButton": "検索",
     "sortLabel": "並べ替え",
+    "sortDir": {
+      "asc": "昇順",
+      "desc": "降順"
+    },
     "sortNote": {
       "popularity": "注目度は1時間ごとに更新され、高い順に並びます。",
       "release_date": "初発売日の早い順に並び、日付未定のものは最後になります。",
@@ -295,6 +299,12 @@
     "viewAllFranchise": "「{name}」の全作品を見る",
     "viewCompany": "「{name}」の作品を見る",
     "groupBy": "グループ表示",
+    "view": {
+      "label": "表示サイズ",
+      "cover": "カバーのみ",
+      "card": "詳細カード",
+      "list": "リスト"
+    },
     "by": {
       "none": "グループなし",
       "date": "日付別",
@@ -327,6 +337,8 @@
       }
     },
     "dateNav": {
+      "prevYear": "前の年",
+      "nextYear": "次の年",
       "earlier": "さらに前の月を見る（{month} から）",
       "jumpLabel": "年月を指定して移動",
       "year": "年",

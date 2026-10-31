@@ -64,18 +64,19 @@ test.describe("品牌文字拉霸機", () => {
     const log = await readLog(page);
     const rolling = log.find((l) => l.state === "rolling");
     expect(rolling, "應該觀察到 rolling 狀態").toBeTruthy();
-    // 字格數 = 舊字（GameCalendar 12）與新字（GameTimeline 12）的較長者
-    expect(rolling!.slots).toBe(12);
+    // 「Game」固定不動；字格數 = 舊後綴（Calendar 8）與新後綴（Timeline 8）的較長者
+    expect(rolling!.slots).toBe(8);
+    await expect(page.locator(".hd-roll-fixed")).toHaveCount(0); // 結束後動畫層清空
     const ms = Number(await brandText(page).getAttribute("data-roll-ms"));
-    expect(ms).toBeGreaterThan(100);
-    expect(ms).toBeLessThanOrEqual(400); // 動畫本身的時間軸（第一個字格開始 → 最後一個字格停下；理論值 280）
+    expect(ms).toBeGreaterThan(600);
+    expect(ms).toBeLessThanOrEqual(1200); // 動畫本身的時間軸（所有字格同時開始、最慢的一格停下；理論值 450＋7×60＝870）
     // 牆鐘時間另外量（含 hydration 等主執行緒忙碌的開始延遲）：負載下只做粗略上限，避免 CI 抖動
-    expect(Number(await brandText(page).getAttribute("data-roll-wall"))).toBeLessThan(1500);
+    expect(Number(await brandText(page).getAttribute("data-roll-wall"))).toBeLessThan(2500);
     await expect(page.locator(".hd-roll-slot")).toHaveCount(0);
   });
 
-  test("不等長字串：字格數取較長者，寬度不超出新舊文字寬度，結束寬度 = 直接載入的寬度", async ({ page }) => {
-    // GameCalendar（12）→ GameDex（7）：逐步縮短
+  test("不等長字串：後綴字格數取較長者，寬度不超出新舊文字寬度，結束寬度 = 直接載入的寬度", async ({ page }) => {
+    // GameCalendar → GameDex：逐步縮短
     await page.goto("/en/calendar");
     const oldW = await page.locator(".hd-brand").evaluate((el) => el.getBoundingClientRect().width);
     await installBrandLog(page);
@@ -85,7 +86,7 @@ test.describe("品牌文字拉霸機", () => {
     const log = await readLog(page);
     const rolling = log.find((l) => l.state === "rolling");
     expect(rolling).toBeTruthy();
-    expect(rolling!.slots).toBe(12);
+    expect(rolling!.slots).toBe(8); // 後綴 Calendar（8）→ Dex（3）取較長者
     const endW = await page.locator(".hd-brand").evaluate((el) => el.getBoundingClientRect().width);
     expect(endW).toBeLessThan(oldW);
     // 重新整理同一頁（記憶的品牌 = 目前品牌）：不播放，寬度與動畫結束時相同

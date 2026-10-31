@@ -268,7 +268,7 @@ export function ReportForm(props: ReportFormProps): ReactElement {
 
   const fid = (name: string) => `${uid}-${name}`;
   const box = { uid, errors: fieldErrors, toText: errorText };
-  const control = "min-h-11 rounded-md border border-[var(--border)] bg-[var(--background)] px-2";
+  const control = "min-h-8 text-sm rounded-md border border-[var(--border)] bg-[var(--background)] px-2";
   const isDate = DATE_TYPES.includes(type);
 
   return (

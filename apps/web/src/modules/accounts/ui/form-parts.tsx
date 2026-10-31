@@ -4,7 +4,7 @@
  */
 import type { ReactElement, ReactNode } from "react";
 
-export const CONTROL_CLASS = "min-h-11 w-full rounded-md border border-[var(--border)] bg-[var(--background)] px-3";
+export const CONTROL_CLASS = "min-h-8 text-sm w-full rounded-md border border-[var(--border)] bg-[var(--background)] px-3";
 
 export interface FieldProps {
   id: string;

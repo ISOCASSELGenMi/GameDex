@@ -65,7 +65,7 @@ function Fieldset({ legend, children }: { legend: string; children: React.ReactN
 
 function Check({ name, value, label, checked }: { name: string; value?: string; label: string; checked: boolean }): ReactElement {
   return (
-    <label className="inline-flex min-h-11 items-center gap-2">
+    <label className="inline-flex min-h-8 text-sm items-center gap-2">
       <input type="checkbox" name={name} {...(value !== undefined ? { value } : {})} defaultChecked={checked} className="size-5" />
       <span>{label}</span>
     </label>
@@ -112,7 +112,7 @@ function RatingsForm({ v, csrf }: { v: SettingsView["ratings"]; csrf: string }):
             <select
               name={`priority_${i + 1}`}
               defaultValue={v.priority[i] ?? ""}
-              className="min-h-11 rounded-md border border-[var(--border)] bg-[var(--background)] px-2"
+              className="min-h-8 text-sm rounded-md border border-[var(--border)] bg-[var(--background)] px-2"
             >
               <option value="">（不指定）</option>
               {KNOWN_RATING_PROVIDERS.map((id) => (

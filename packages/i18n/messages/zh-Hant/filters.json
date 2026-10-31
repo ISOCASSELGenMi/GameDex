@@ -53,7 +53,10 @@
   "sortValues": {
     "popularity": "熱度",
     "release_date": "上市日期",
-    "name": "名稱"
+    "name": "名稱",
+    "popularity_asc": "熱度（低到高）",
+    "release_date_desc": "上市日期（新到舊）",
+    "name_desc": "名稱（Z–A）"
   },
   "minHeatValue": "熱度 {level} 以上",
   "rumoredValue": "含傳聞中",

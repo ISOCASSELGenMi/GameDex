@@ -132,28 +132,30 @@ export async function TrendingViewPage({ locale, supportedLocales, searchParams 
         {t.t(`ui.trending.rankedBy.${rankedBy}`)}
       </p>
 
-      <nav aria-label={t.t("ui.trending.groupLabel")} className="mt-3">
-        <ul className="flex flex-wrap gap-2">
-          {groups.map((g) => (
-            <li key={g.id}>
-              <a
-                className="btn-secondary aria-[current=page]:font-bold aria-[current=page]:underline"
-                href={trendingHref(locale, spec, g.id)}
-                aria-current={g.id === group ? "page" : undefined}
-                title={g.hint}
-              >
-                {g.label}
-              </a>
-            </li>
-          ))}
-        </ul>
-      </nav>
+      <div className="tb-row tb-split mt-3">
+        <nav aria-label={t.t("ui.trending.groupLabel")}>
+          <ul className="flex flex-wrap gap-2">
+            {groups.map((g) => (
+              <li key={g.id}>
+                <a
+                  className="btn-secondary aria-[current=page]:font-bold aria-[current=page]:underline"
+                  href={trendingHref(locale, spec, g.id)}
+                  aria-current={g.id === group ? "page" : undefined}
+                  title={g.hint}
+                >
+                  {g.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+        <FilterPanel locale={locale} t={t} options={options} spec={spec} action={basePath} fields={TRENDING_FILTER_FIELDS} hidden={{ group: group === "upcoming" ? undefined : group }} clearHref={clearHref} />
+      </div>
       <p className="mt-1 text-sm text-[var(--muted)]">{groups.find((g) => g.id === group)?.hint}</p>
 
       <div className="cal-tools">
         <FilterNotices notices={notices} t={t} />
         <AppliedFilterChips chips={chips} t={t} clearHref={clearHref} />
-        <FilterPanel locale={locale} t={t} options={options} spec={spec} action={basePath} fields={TRENDING_FILTER_FIELDS} hidden={{ group: group === "upcoming" ? undefined : group }} clearHref={clearHref} />
         <p role="status" className="text-sm text-[var(--muted)]">
           {t.t("filters.resultsCount", { count: formatNumber(items.length, locale) })}
         </p>

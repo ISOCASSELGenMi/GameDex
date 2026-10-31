@@ -37,7 +37,7 @@ export function ratingsTitle(locale: Locale): string {
 
 const RATINGS_FILTER_FIELDS: readonly FilterField[] = ["platform", "platformKind", "genre", "theme", "type", "status"];
 
-const inputClass = "min-h-11 rounded-md border border-[var(--border)] bg-[var(--background)] px-2 text-[var(--foreground)]";
+const inputClass = "tb-field";
 
 function has(sp: SearchParamsRecord, name: string): boolean {
   const v = sp[name];
@@ -177,22 +177,24 @@ export async function RatingsPage({ locale, supportedLocales, searchParams }: Ra
 
   return (
     <PageShell locale={locale} supportedLocales={supportedLocales} path="/ratings" query={shellQuery}>
-      <h1 className="text-2xl font-bold">{t.t("ui.ratings.title")}</h1>
+      <div className="tb-row tb-split">
+        <h1 className="text-2xl font-bold">{t.t("ui.ratings.title")}</h1>
+          <FilterPanel
+            locale={locale}
+            t={t}
+            options={options}
+            spec={spec}
+            action={basePath}
+            fields={RATINGS_FILTER_FIELDS}
+            clearHref={basePath}
+            extraFields={extraFields}
+          />
+      </div>
       <p className="mt-2 text-sm text-[var(--muted)]">{t.t("ui.ratings.intro")}</p>
 
       <div className="cal-tools">
         <FilterNotices notices={notices} t={t} />
         <AppliedFilterChips chips={chips} t={t} clearHref={basePath} />
-        <FilterPanel
-          locale={locale}
-          t={t}
-          options={options}
-          spec={spec}
-          action={basePath}
-          fields={RATINGS_FILTER_FIELDS}
-          clearHref={basePath}
-          extraFields={extraFields}
-        />
       </div>
 
       <RatingsTable
