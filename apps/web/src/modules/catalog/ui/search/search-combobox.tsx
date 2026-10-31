@@ -166,6 +166,11 @@ export function SearchCombobox({ locale, id, name = "q", defaultValue = "", maxL
       schedule("");
     }
     if (r.select) choose(r.state.active);
+    // 沒選中任何候選就按 Enter＝整個搜尋送出：清單要收起來，不能蓋住送出後的結果與條件 chip
+    else if (e.key === "Enter") {
+      cancel();
+      setState(COMBO_CLOSED);
+    }
   };
 
   // 點外面關閉

@@ -226,3 +226,10 @@
 - [x] 待回饋 IGDB 清單 D91 第 1 波（2026-10-30，worktree 分支 `worktree-agent-afd06dafaf538992d`，尚未合併）：欄位登錄表（六個欄位）、`igdb_feedback_items`（migration 0021，**未套到開發 DB**）、核可同交易建項目、`localized_title` 回報類型（核可寫 manual zh-Hant 並重算 display_names／search_text）、同步後採納偵測、`/internal/igdb-feedback`（分頁、單筆與批次動作）；單元＋整合＋e2e（`igdb-feedback-d91`）已補；spec 03／07／12／90／CHANGELOG 已同步
   - [ ] 待使用者：合併後開發 DB 套 migration 0021；第 2 波把 IGDB 可貢獻的其餘欄位加進登錄表
 - [x] 篩選即時套用與位置保留（2026-10-30，分支 `feat/live-filters`）：月曆、時間軸、`/games`、評分排名、熱門榜的篩選面板勾選即更新（有 JS 時無套用按鈕、無 JS 保留表單送出；文字／數字 debounce 400 ms；`/games` 的 `q` 只在 Enter）；`router.replace` 不跳回頂端；根因＝時間軸切週是 pushState，hidden `week`／chip 連結是過期位置——改以目前網址算新網址（`ui/filters/live-filter.ts`），chip／清除／平台種類連結同樣就地更新；`/games` 頁碼超出範圍退到最後一頁；單元 `live-filter.test.ts`、e2e `live-filters.spec.ts`；spec 06／CHANGELOG 已同步；驗收：npm test 1321 過、test:a11y 949 過／1 跳過／0 失敗、lint／lint:arch／i18n:check／typecheck 皆過
+- [x] 扁平化改版與精簡工具列（2026-10-30）：①品牌拉霸機 Game 固定、只滾後綴（e2e 字格數改 8）；②全站移除背景漸層／玻璃模糊／裝飾漸層，封面文字改實色底；③`/games` 精簡工具列（搜尋＋年份＋排序一列、篩選圖示鈕＋浮出面板、分段控制縮小）；④卡片大小切換（封面／詳細／清單，`view-switch.tsx`）；⑤游標傾斜視差（`kernel/ui/pointer-fx.tsx`）＋捲動視差（CSS）；⑥e2e `flat-redesign.spec.ts`，a11y 輔助改為只等時間軸動畫（捲動連動動畫永遠 running）。設計說明見 `docs/design/ui-direction.md` 檔尾。
+  - [ ] 待使用者：確認 `/games` 的樣子後，決定要不要推廣到時間軸／月曆／平台頁／評分排名；`gd-view` 首次繪製閃一下（要不要加 head inline script）。
+- [x] 扁平化第二輪（2026-10-31）：拉霸機放慢；封面模式 `cover.medium`；排序選單＋升降冪（新增 3 個排序值）；全站篩選圖示鈕＋欄位折疊；依日期改月份選擇器；按鈕標準規格化；e2e 加 `openFolds` 自動展開（要測折疊的測試設 `window.__keepFolds`）。細節見 `docs/design/ui-direction.md` 檔尾。
+
+- [x] 扁平化第三輪（2026-10-31）：排序三角左側可點＋同框、工具列對齊、分組卡片資訊底改懸浮／輕觸顯示、詳情封面 3D。已知偶發失敗：`eggs-z3a` 手機 375 兩個測試（改動前的完整跑就出現過，單獨重跑多半通過）。
+- [x] 拉霸機改捲軸效果（2026-10-31）：依字母順序、動態模糊、依序停下、回彈；單元與 e2e 時間斷言改為約 1.2 秒；排序框左側留白加寬。
+- [x] 拉霸機只轉兩三格、方向依導覽順序（2026-10-31）：`middleLetters`／`rollDirection`，單元與 e2e 時間斷言改約 0.9 秒。

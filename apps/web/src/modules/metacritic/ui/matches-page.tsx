@@ -92,11 +92,11 @@ export async function MatchesAdminPage({ searchParams, csrf }: MatchesAdminPageP
           <input type="hidden" name="action" value="manual" />
           <label className="flex flex-col gap-1">
             <span className="font-semibold">遊戲 ID</span>
-            <input name="gameId" inputMode="numeric" pattern="\d{1,9}" required className="min-h-11 w-40 rounded-md border border-[var(--border)] bg-[var(--background)] px-3" />
+            <input name="gameId" inputMode="numeric" pattern="\d{1,9}" required className="min-h-8 text-sm w-40 rounded-md border border-[var(--border)] bg-[var(--background)] px-3" />
           </label>
           <label className="flex flex-col gap-1">
             <span className="font-semibold">Metacritic slug（網址 /game/ 後面那段）</span>
-            <input name="slug" maxLength={200} required className="min-h-11 w-72 max-w-full rounded-md border border-[var(--border)] bg-[var(--background)] px-3" />
+            <input name="slug" maxLength={200} required className="min-h-8 text-sm w-72 max-w-full rounded-md border border-[var(--border)] bg-[var(--background)] px-3" />
           </label>
           <button type="submit" className="btn-primary">
             設定

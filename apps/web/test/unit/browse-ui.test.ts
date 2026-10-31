@@ -66,8 +66,8 @@ describe("browseRange", () => {
 });
 
 describe("排序與篩選欄位", () => {
-  it("只開放 popularity／release_date／name", () => {
-    expect([...BROWSE_SORT_OPTIONS]).toEqual(["popularity", "release_date", "name"]);
+  it("只開放 popularity／release_date／name 三個標的，各有反向（升降冪箭頭）變體", () => {
+    expect([...BROWSE_SORT_OPTIONS]).toEqual(["popularity", "release_date", "name", "popularity_asc", "release_date_desc", "name_desc"]);
   });
   it("篩選面板欄位不含瀏覽無作用的維度（stage／region／show／日期範圍）", () => {
     for (const bad of ["stage", "region", "show", "dateRange"]) expect(BROWSE_FILTER_FIELDS).not.toContain(bad);

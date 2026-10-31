@@ -9,7 +9,7 @@ import { selectRatings } from "@/modules/catalog/domain/rating-display";
 import { formatSettingValue } from "@/modules/admin/ui/settings-page";
 import { parseSettingsForm } from "@/modules/admin/use-cases/settings";
 import { buildSyncMonitorView, healthOf, summarizeProgress } from "@/modules/admin/use-cases/sync-monitor";
-import { BRAND_ROLL_DURATION_MS, BRAND_ROLL_MAX_STAGGER_TOTAL_MS, fillerAt, staggerDelay } from "@/modules/catalog/ui/layout/brand-roll";
+import { middleLetters, rollDirection, shiftLetter, slotDuration } from "@/modules/catalog/ui/layout/brand-roll";
 
 const form = (entries: Array<[string, string]>) => {
   const f = new FormData();
@@ -134,18 +134,29 @@ describe("同步監控的合併", () => {
   });
 });
 
-describe("品牌拉霸機的時間", () => {
-  it("逐字錯開，最後一字結束時間 ≤ 0.5 秒（含最長品牌 12 個字）", () => {
-    for (const n of [1, 7, 11, 12, 14]) {
-      const last = staggerDelay(n - 1, n) + BRAND_ROLL_DURATION_MS;
-      expect(last).toBeLessThanOrEqual(500);
-    }
-    expect(staggerDelay(0, 12)).toBe(0);
-    expect(staggerDelay(5, 12)).toBeGreaterThan(staggerDelay(4, 12));
-    expect(BRAND_ROLL_MAX_STAGGER_TOTAL_MS + BRAND_ROLL_DURATION_MS).toBeLessThanOrEqual(500);
+describe("品牌拉霸機的時間與捲軸", () => {
+  it("由左到右依序停下；最長品牌（後綴 8 字）約 0.9 秒內結束", () => {
+    for (let i = 1; i < 12; i++) expect(slotDuration(i)).toBeGreaterThan(slotDuration(i - 1));
+    expect(slotDuration(7)).toBeLessThanOrEqual(1000);
   });
-  it("填充字母只依位置決定", () => {
-    expect(fillerAt(3, 1)).toBe(fillerAt(3, 1));
-    expect(fillerAt(0, 0)).toMatch(/^[A-Z]$/);
+  it("轉動方向看新舊標題在導覽下拉裡的先後：往後＝往上（1），往前＝往下（-1），不在清單裡＝往上", () => {
+    expect(rollDirection("GameDex", "GameCalendar")).toBe(1);
+    expect(rollDirection("GameCalendar", "GameDex")).toBe(-1);
+    expect(rollDirection("GameRanking", "GameBase")).toBe(-1);
+    expect(rollDirection("Nope", "GameBase")).toBe(1);
+  });
+  it("舊字到新字之間最多經過 2 個字母，沿字母表走；相同字母不轉", () => {
+    expect(middleLetters("D", "T", 1)).toEqual(["I", "O"]); // D→T 17 步，平均分布
+    expect(middleLetters("a", "c", 1)).toEqual(["b"]);
+    expect(middleLetters("a", "b", 1)).toEqual([]);
+    expect(middleLetters("e", "e", 1)).toEqual([]);
+    expect(middleLetters("t", "d", -1)).toEqual(["o", "i"]); // 往下轉：沿字母表倒著走
+    expect(middleLetters(undefined, "k", 1)).toEqual(["i", "j"]); // 舊字沒有字：新字前面連續的字母
+    for (const [f, t2] of [["x", "b"], ["B", "Y"], ["m", "n"]] as const) expect(middleLetters(f, t2, 1).length).toBeLessThanOrEqual(2);
+  });
+  it("字母位移：同大小寫、Z 後接 A、非字母不動", () => {
+    expect(shiftLetter("z", 1)).toBe("a");
+    expect(shiftLetter("a", -1)).toBe("z");
+    expect(shiftLetter("7", 1)).toBe("7");
   });
 });

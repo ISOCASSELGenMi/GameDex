@@ -176,39 +176,41 @@ export async function TimelineViewPage({
       </p>
 
       <div className="cal-tools">
+        <div className="tb-row tb-split">
+          {options.platformKinds && options.platformKinds.length > 0 ? (
+            <nav
+              aria-label={t.t("filters.dimensions.platformKind")}
+              className="tw-kinds"
+              data-kind-filter=""
+            >
+              <ul>
+                {options.platformKinds.map((k) => (
+                  <li key={k}>
+                    <LiveLink
+                      className="tw-kind"
+                      href={kindHref(k)}
+                      aria-current={activeKinds.has(k) ? "true" : undefined}
+                    >
+                      {platformKindLabel(t, k)}
+                    </LiveLink>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          ) : null}
+          <FilterPanel
+            locale={locale}
+            t={t}
+            options={options}
+            spec={spec}
+            action={basePath}
+            fields={WEEK_TIMELINE_FILTER_FIELDS}
+            hidden={{ week: data.week }}
+            clearHref={clearHref}
+          />
+        </div>
         <FilterNotices notices={notices} t={t} />
         <AppliedFilterChips chips={chips} t={t} clearHref={clearHref} />
-        {options.platformKinds && options.platformKinds.length > 0 ? (
-          <nav
-            aria-label={t.t("filters.dimensions.platformKind")}
-            className="tw-kinds"
-            data-kind-filter=""
-          >
-            <ul>
-              {options.platformKinds.map((k) => (
-                <li key={k}>
-                  <LiveLink
-                    className="tw-kind"
-                    href={kindHref(k)}
-                    aria-current={activeKinds.has(k) ? "true" : undefined}
-                  >
-                    {platformKindLabel(t, k)}
-                  </LiveLink>
-                </li>
-              ))}
-            </ul>
-          </nav>
-        ) : null}
-        <FilterPanel
-          locale={locale}
-          t={t}
-          options={options}
-          spec={spec}
-          action={basePath}
-          fields={WEEK_TIMELINE_FILTER_FIELDS}
-          hidden={{ week: data.week }}
-          clearHref={clearHref}
-        />
         {slots?.filterLinks}
       </div>
 

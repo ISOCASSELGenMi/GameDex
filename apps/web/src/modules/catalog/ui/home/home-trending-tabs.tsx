@@ -28,7 +28,7 @@ export interface HomeTrendingTabsProps {
 }
 
 const TAB_BASE =
-  "relative min-h-11 px-5 text-sm font-semibold transition-[color,transform] duration-150 ease-out active:scale-[0.97] motion-reduce:transition-none";
+  "relative min-h-8 text-sm px-5 text-sm font-semibold transition-[color,transform] duration-150 ease-out active:scale-[0.97] motion-reduce:transition-none";
 
 export function HomeTrendingTabs(props: HomeTrendingTabsProps): ReactElement {
   const [active, setActive] = useState<TrendingGroup>("upcoming");
