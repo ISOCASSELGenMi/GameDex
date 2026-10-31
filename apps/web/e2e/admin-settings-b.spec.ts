@@ -38,7 +38,7 @@ test.describe("後台設定與同步監控", () => {
       await page.goto("/internal/settings");
       await expect(page.getByRole("heading", { level: 1, name: "網站設定" })).toBeVisible();
       const nav = page.getByRole("navigation", { name: "內部頁面" });
-      await expect(nav.getByRole("link")).toHaveText(["資料更正回報", "使用者管理", "網站設定", "同步監控"]);
+      await expect(nav.getByRole("link")).toHaveText(["資料更正回報", "待回饋 IGDB", "使用者管理", "網站設定", "同步監控"]);
       await expect(nav.getByRole("link", { name: "網站設定" })).toHaveAttribute("aria-current", "page");
       await nav.getByRole("link", { name: "同步監控" }).click();
       await expect(page).toHaveURL(/\/internal\/sync$/);

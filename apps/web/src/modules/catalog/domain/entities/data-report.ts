@@ -10,6 +10,7 @@ export const REPORT_TYPES = [
   "wrong_stage",
   "language_support",
   "cancelled",
+  "localized_title",
   "duplicate",
   "takedown",
   "other",
@@ -35,6 +36,9 @@ export interface ReportProposed {
   /** 語言代碼（languages.code，BCP-47 優先）。 */
   language?: string;
   supportType?: LanguageSupportType;
+  /** localized_title：繁中標題（trim 後 1～200 字）；locale 目前只允許 zh-Hant。 */
+  title?: string;
+  locale?: "zh-Hant";
 }
 
 export interface DataReport {
@@ -79,6 +83,8 @@ export interface ReportTargetView {
   platformName: string | null;
   /** release_event 目標或提案地區的現況列（可能多筆：igdb、manual）。 */
   currentReleases: ReportReleaseView[];
+  /** 目標遊戲目前的 zh-Hant 顯示標題（localized_title 比對用）；沒有為 null。 */
+  currentTitle: string | null;
 }
 
 export interface ReportReleaseView {
@@ -116,4 +122,6 @@ export interface ReportQueueItem {
   plan: ReportReleasePlanView | null;
   /** 同目標的其他回報（任何狀態，不含自己），新到舊。 */
   others: DataReport[];
+  /** 核可後已建立的待回饋 IGDB 項目（D91）；沒有為 null。 */
+  feedbackItem: { id: number; status: string } | null;
 }

@@ -43,6 +43,8 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
   const res = await resolveReport(id, action, note);
   if (!res.ok) return back(request, { error: res.error, id: String(id), ...(res.detail ? { detail: res.detail } : {}) });
   // 詳情頁是 ISR 快取：寫入 manual 上市列後立刻讓該遊戲的詳情頁重建
-  if (res.applied?.gameSlug) revalidateTag(gameDetailTag(res.applied.gameSlug), { expire: 0 });
+  // localized_title 改的是顯示名稱，同樣要重建詳情頁
+  const slug = res.applied?.gameSlug ?? res.titleApplied?.gameSlug;
+  if (slug) revalidateTag(gameDetailTag(slug), { expire: 0 });
   return back(request, { done: action, id: String(id), ...(res.applied ? { applied: res.applied.result } : {}) });
 }

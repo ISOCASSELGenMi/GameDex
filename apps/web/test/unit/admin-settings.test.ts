@@ -101,9 +101,9 @@ describe("設定值的顯示", () => {
 describe("共用導覽", () => {
   it("accounts 啟用才有「使用者」；metacritic 啟用才有「比對覆核」；設定與同步監控一直在", () => {
     const keys = (env: Record<string, string | undefined>) => adminNavItems(env).map((i) => i.key);
-    expect(keys({ MODULES: "admin" })).toEqual(["reports", "settings", "sync"]);
-    expect(keys({ MODULES: "admin,accounts" })).toEqual(["reports", "users", "settings", "sync"]);
-    expect(keys({ MODULES: "admin,accounts", METACRITIC_SCRAPE_ENABLED: "true" })).toEqual(["reports", "users", "settings", "sync", "matches"]);
+    expect(keys({ MODULES: "admin" })).toEqual(["reports", "igdb-feedback", "settings", "sync"]);
+    expect(keys({ MODULES: "admin,accounts" })).toEqual(["reports", "igdb-feedback", "users", "settings", "sync"]);
+    expect(keys({ MODULES: "admin,accounts", METACRITIC_SCRAPE_ENABLED: "true" })).toEqual(["reports", "igdb-feedback", "users", "settings", "sync", "matches"]);
   });
 });
 

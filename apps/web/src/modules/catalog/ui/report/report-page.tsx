@@ -6,7 +6,7 @@ import { notFound } from "next/navigation";
 import type { ReactElement } from "react";
 import { formatReleaseLabel, type Locale } from "@sok/i18n";
 import { DATE_PRECISIONS, LANGUAGE_SUPPORT_TYPES, RELEASE_STAGES, REPORT_TYPES, type ReportType } from "../../domain/entities";
-import { REPORT_NOTE_MAX } from "../../domain/report-validation";
+import { REPORT_NOTE_MAX, REPORT_TITLE_MAX } from "../../domain/report-validation";
 import { getReportFormContext, type ReportFormContext } from "../../use-cases/reports";
 import { getTranslator, regionLabel, stageLabel } from "../labels";
 import { localeHref } from "../links";
@@ -57,12 +57,14 @@ export async function ReportPage({
     fieldStage: r("field.stage"),
     fieldLanguage: r("field.language"),
     fieldSupportType: r("field.supportType"),
+    fieldTitle: r("field.title"),
     fieldSourceUrl: r("field.sourceUrl"),
     fieldNote: r("field.note"),
     fieldCaptcha: r("field.captcha"),
     hintSourceUrl: r("hint.sourceUrl"),
     hintSourceUrlRequired: r("hint.sourceUrlRequired"),
     hintDate: r("hint.date"),
+    hintTitle: r("hint.title", { max: REPORT_TITLE_MAX }),
     hintTakedown: r("hint.takedown"),
     hintNote: r("hint.note", { max: REPORT_NOTE_MAX }),
     choose: r("hint.choose"),
@@ -126,6 +128,7 @@ export async function ReportPage({
           languages={ctx.languages.map((l) => ({ value: l.code, label: languageName(l) }))}
           supportTypes={LANGUAGE_SUPPORT_TYPES.map((v) => ({ value: v, label: t.t(`enums.languageSupportType.${v}`) }))}
           noteMax={REPORT_NOTE_MAX}
+          titleMax={REPORT_TITLE_MAX}
           siteKey={siteKey}
           captchaLanguage={CAPTCHA_LANGUAGE[locale] ?? "auto"}
         />

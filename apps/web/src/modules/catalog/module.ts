@@ -45,7 +45,7 @@ export const catalogModule: ModuleManifest = {
     "game_franchises", "game_similar_games", "game_external_links", "events", "event_series", "event_games",
     "genres", "themes", "game_genres", "game_themes",
     "game_modes", "player_perspectives", "game_engines", "game_game_modes", "game_player_perspectives", "game_game_engines", "game_localizations", "languages",
-    "game_language_supports", "change_feed", "game_popularity_signals", "data_reports", "release_picks",
+    "game_language_supports", "change_feed", "game_popularity_signals", "data_reports", "release_picks", "igdb_feedback_items",
   ],
   // 頻率見 04 §排程任務
   jobs: [

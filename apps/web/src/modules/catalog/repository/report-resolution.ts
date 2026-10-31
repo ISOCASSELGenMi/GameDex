@@ -20,9 +20,12 @@ import type {
   ReportTargetView,
 } from "../domain/entities";
 import { DATE_REPORT_TYPES } from "../domain/report-validation";
+import { buildFeedbackDraft, type FeedbackBuildContext } from "../domain/igdb-feedback-fields";
 import { planManualRelease, type ManualReleasePlan, type ManualReleasePlanInput } from "../domain/report-resolution";
 import { dataReports, releaseDateHistory } from "../schema";
 import { appendChange } from "./change-feed";
+import { applyManualZhHantTitle } from "./display-names";
+import { getFeedbackByReportIds, getFeedbackGameInfo, insertFeedbackItem } from "./igdb-feedback";
 import { getRegionByCode, listRegions } from "./regions";
 import { upsertReleaseEvent } from "./release-events";
 import {
@@ -97,6 +100,7 @@ async function targetView(report: DataReport, db: DbOrTx): Promise<ReportTargetV
     gameSlug: null,
     platformName: null,
     currentReleases: [],
+    currentTitle: null,
   };
   const id = report.targetId;
   if (id === null) return view;
@@ -111,6 +115,7 @@ async function targetView(report: DataReport, db: DbOrTx): Promise<ReportTargetV
     const gameId = report.targetType === "game" ? id : (event?.gameId ?? null);
     const game = gameId ? await findGameRef({ id: gameId }, db) : null;
     if (game) Object.assign(view, { name: game.name, path: `/games/${encodeURIComponent(game.slug)}`, gameId: game.id, gameSlug: game.slug });
+    if (game && report.reportType === "localized_title") view.currentTitle = (await getFeedbackGameInfo(game.id, db))?.zhHantTitle ?? null;
     // 現況：release_event＝同平台的全部列；missing_region_date＝提案平台、提案地區的列
     const platformId = event?.platformId ?? report.proposed?.platformId ?? null;
     if (game && platformId) {
@@ -151,16 +156,17 @@ async function planView(plan: ManualReleasePlan, db: DbOrTx): Promise<ReportRele
 /** 審核佇列的一筆。唯讀。 */
 export async function buildReportQueueItem(report: DataReport, today: IsoDate, db: DbOrTx = getDb()): Promise<ReportQueueItem> {
   const inputs = DATE_REPORT_TYPES.includes(report.reportType) ? await loadPlanInputs(report, today, db) : null;
-  const [target, others] = await Promise.all([
+  const [target, others, feedback] = await Promise.all([
     targetView(report, db),
     report.targetId === null ? Promise.resolve([]) : listReportsForTarget(report.targetType, report.targetId, report.id, OTHERS_LIMIT, db),
+    report.status === "accepted" ? getFeedbackByReportIds([report.id], db) : Promise.resolve(new Map<number, { id: number; status: string }>()),
   ]);
   let plan: ReportReleasePlanView | null = null;
   if (inputs && inputs.problem === null) {
     const res = planManualRelease(inputs.input);
     if (res.ok) plan = await planView(res.plan, db);
   }
-  return { report, target, plan, others };
+  return { report, target, plan, others, feedbackItem: feedback.get(report.id) ?? null };
 }
 
 // ── 核可 ────────────────────────────────────────────────────────────────
@@ -173,17 +179,32 @@ export interface AppliedRelease {
   sequence: number;
 }
 
+/** 核可 localized_title 時被改動的遊戲（詳情頁快取要重建）。 */
+export interface AppliedTitle {
+  gameId: number;
+  gameSlug: string;
+}
+
 export type ResolveReportOutcome =
   | { kind: "not_found" }
   | { kind: "already_resolved"; report: DataReport }
   | { kind: "cannot_apply"; reason: "target_missing" | "invalid_proposal" | "not_a_date_report" }
-  | { kind: "resolved"; report: DataReport; applied: AppliedRelease | null };
+  | {
+      kind: "resolved";
+      report: DataReport;
+      applied: AppliedRelease | null;
+      titleApplied: AppliedTitle | null;
+      /** 核可時建立的待回饋 IGDB 項目 id；此類型不建項目為 null。 */
+      feedbackItemId: number | null;
+    };
 
 const ACTION_STATUS: Record<ReportAction, ReportStatus> = { accept: "accepted", reject: "rejected", duplicate: "duplicate" };
 
 /**
  * 審核一筆 open 的回報。核可 wrong_date／missing_region_date 時同一個 transaction 內寫入 manual 上市列。
+ * localized_title 核可時同一個 transaction 寫入 manual 的 zh-Hant 標題並重算 display_names／search_text。
  * 其他回報類型核可只改狀態與 resolutionNote（不自動改資料）。
+ * 核可時（會建項目的類型）同一個 transaction 建立一筆待回饋 IGDB 項目（D91；內容由 domain/igdb-feedback-fields.ts 決定）。
  */
 export async function resolveReportAtomically(
   id: number,
@@ -200,12 +221,37 @@ export async function resolveReportAtomically(
     if (report.status !== "open") return { kind: "already_resolved", report } as const;
 
     let applied: AppliedRelease | null = null;
-    if (action === "accept" && DATE_REPORT_TYPES.includes(report.reportType)) {
-      const inputs = await loadPlanInputs(report, today, tx);
-      if (inputs.problem) return { kind: "cannot_apply", reason: inputs.problem } as const;
-      const res = planManualRelease(inputs.input);
-      if (!res.ok) return { kind: "cannot_apply", reason: res.reason } as const;
-      applied = await applyPlan(tx, report, res.plan);
+    let titleApplied: AppliedTitle | null = null;
+    let feedbackItemId: number | null = null;
+    if (action === "accept") {
+      let plan: ManualReleasePlan | null = null;
+      if (DATE_REPORT_TYPES.includes(report.reportType)) {
+        const inputs = await loadPlanInputs(report, today, tx);
+        if (inputs.problem) return { kind: "cannot_apply", reason: inputs.problem } as const;
+        const res = planManualRelease(inputs.input);
+        if (!res.ok) return { kind: "cannot_apply", reason: res.reason } as const;
+        plan = res.plan;
+      }
+      // 先讀好建立項目需要的現況（localized_title 要在覆蓋標題之前取舊值）
+      const feedbackCtx = await loadFeedbackContext(tx, report, plan);
+      const title = report.proposed?.title?.trim();
+      if (report.reportType === "localized_title") {
+        if (!feedbackCtx) return { kind: "cannot_apply", reason: "target_missing" } as const;
+        if (report.targetType !== "game" || !title) return { kind: "cannot_apply", reason: "invalid_proposal" } as const;
+      }
+      if (plan) applied = await applyPlan(tx, report, plan);
+      if (report.reportType === "localized_title" && feedbackCtx && title) {
+        await applyManualZhHantTitle(tx, feedbackCtx.game.id, title);
+        titleApplied = { gameId: feedbackCtx.game.id, gameSlug: feedbackCtx.game.slug };
+      }
+      const draft = feedbackCtx ? buildFeedbackDraft(feedbackCtx) : null;
+      if (feedbackCtx && draft) {
+        const item = await insertFeedbackItem(
+          { reportId: report.id, game: feedbackCtx.game, draft, sourceUrl: report.sourceUrl, reporterNote: report.note },
+          tx,
+        );
+        feedbackItemId = item?.id ?? null;
+      }
     }
 
     const [updated] = await tx
@@ -213,8 +259,40 @@ export async function resolveReportAtomically(
       .set({ status: ACTION_STATUS[action], resolutionNote: note, resolvedAt: new Date() })
       .where(eq(dataReports.id, id))
       .returning();
-    return { kind: "resolved", report: updated, applied } as const;
+    return { kind: "resolved", report: updated, applied, titleApplied, feedbackItemId } as const;
   });
+}
+
+/** 建立待回饋項目需要的現況（遊戲、目標上市列、日期計畫）；找不到遊戲回 null（不建項目）。 */
+async function loadFeedbackContext(tx: DbOrTx, report: DataReport, plan: ManualReleasePlan | null): Promise<FeedbackBuildContext | null> {
+  const event = report.targetType === "release_event" && report.targetId ? await findReleaseEventRow(report.targetId, tx) : null;
+  const gameId = plan?.gameId ?? event?.gameId ?? (report.targetType === "game" ? report.targetId : null);
+  const game = gameId ? await getFeedbackGameInfo(gameId, tx) : null;
+  if (!game) return null;
+  const codes = event || plan ? await regionCodes(tx) : new Map<number, string>();
+  const codeOf = (regionId: number) => codes.get(regionId) ?? String(regionId);
+  return {
+    report: {
+      id: report.id,
+      reportType: report.reportType,
+      targetType: report.targetType,
+      targetId: report.targetId,
+      proposed: report.proposed,
+      sourceUrl: report.sourceUrl,
+      note: report.note,
+    },
+    game,
+    event: event ? { platformId: event.platformId, regionCode: codeOf(event.regionId), stage: event.releaseStage, status: event.status } : null,
+    plan: plan
+      ? {
+          platformId: plan.platformId,
+          regionCode: codeOf(plan.regionId),
+          stage: plan.stage,
+          span: plan.span,
+          igdbRow: plan.igdbSame ? { releaseDate: plan.igdbSame.releaseDate, precision: plan.igdbSame.precision } : null,
+        }
+      : null,
+  };
 }
 
 async function applyPlan(tx: DbOrTx, report: DataReport, plan: ManualReleasePlan): Promise<AppliedRelease> {

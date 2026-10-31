@@ -82,6 +82,25 @@ export {
 } from "./domain/report-validation";
 export { CATALOG_TAG, gameDetailTag } from "./ui/seo/cache-tags";
 
+// ── D91：待回饋 IGDB 清單（後台 /internal/igdb-feedback；程式不呼叫任何 IGDB 寫入）──────
+export {
+  listIgdbFeedback,
+  updateIgdbFeedback,
+  type IgdbFeedbackQueue,
+  type UpdateIgdbFeedbackResult,
+} from "./use-cases/igdb-feedback";
+export {
+  IGDB_FEEDBACK_REGISTRY,
+  feedbackFieldForReportType,
+  buildFeedbackDraft,
+  buildFeedbackPasteText,
+  isFeedbackAdopted,
+  igdbGameUrl,
+  type FeedbackFieldDef,
+  type FeedbackBuildContext,
+  type IgdbAdoptionSnapshot,
+} from "./domain/igdb-feedback-fields";
+
 // ── Phase 6：外部評分來源（Metacritic）——分層更新、比對與覆核、負向快取 ───────────
 export { saveExternalRatings, type ExternalScore, type SaveExternalRatingsInput } from "./use-cases/external-ratings";
 export { nextRefreshAt, periodEndDate, refreshIntervalDays } from "./domain/rating-refresh";

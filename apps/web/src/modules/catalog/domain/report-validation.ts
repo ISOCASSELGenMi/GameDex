@@ -17,6 +17,8 @@ import {
 
 export const REPORT_NOTE_MAX = 1000;
 export const REPORT_URL_MAX = 2000;
+/** localized_title 的標題長度上限（trim 後 1～200 字）。 */
+export const REPORT_TITLE_MAX = 200;
 
 /** 每種回報類型允許的目標類型，以及是否必須指定目標（12）。 */
 export const REPORT_TYPE_RULES: Readonly<Record<ReportType, { targets: readonly ReportTargetType[]; targetRequired: boolean }>> = {
@@ -25,6 +27,7 @@ export const REPORT_TYPE_RULES: Readonly<Record<ReportType, { targets: readonly 
   wrong_stage: { targets: ["release_event"], targetRequired: true },
   language_support: { targets: ["game"], targetRequired: true },
   cancelled: { targets: ["release_event", "game"], targetRequired: true },
+  localized_title: { targets: ["game"], targetRequired: true },
   duplicate: { targets: ["game", "release_event", "platform", "event"], targetRequired: true },
   takedown: { targets: ["game", "release_event", "platform", "event"], targetRequired: false },
   other: { targets: ["game", "release_event", "platform", "event"], targetRequired: false },
@@ -207,6 +210,13 @@ export function validateReportRequest(raw: unknown): ReportValidation {
     else if (!oneOf(LANGUAGE_SUPPORT_TYPES, p.supportType)) errors["proposed.supportType"] = "invalid";
     else out.supportType = p.supportType;
     proposed = out;
+  } else if (reportType === "localized_title") {
+    const title = typeof p.title === "string" ? p.title.trim() : "";
+    if (blank(p.title) || (typeof p.title === "string" && title === "")) errors["proposed.title"] = "required";
+    else if (typeof p.title !== "string") errors["proposed.title"] = "invalid";
+    else if (title.length > REPORT_TITLE_MAX) errors["proposed.title"] = "too_long";
+    if (!blank(p.locale) && p.locale !== "zh-Hant") errors["proposed.locale"] = "invalid";
+    proposed = { title, locale: "zh-Hant" };
   }
 
   if (Object.keys(errors).length > 0 || !reportType || !targetType) return { ok: false, fields: errors };

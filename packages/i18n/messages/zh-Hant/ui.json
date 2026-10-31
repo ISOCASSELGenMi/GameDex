@@ -473,6 +473,7 @@
       "wrong_stage": "上市階段有誤",
       "language_support": "語言支援有誤或缺漏",
       "cancelled": "已取消或停止開發",
+      "localized_title": "繁體中文標題",
       "duplicate": "重複的資料",
       "takedown": "下架或版權請求",
       "other": "其他"
@@ -492,6 +493,7 @@
       "stage": "上市階段",
       "language": "語言",
       "supportType": "支援類型",
+      "title": "繁體中文標題",
       "sourceUrl": "來源網址",
       "note": "補充說明",
       "captcha": "人機驗證"
@@ -500,6 +502,7 @@
       "sourceUrl": "官方公告、商店頁面或可靠媒體的連結（http 或 https）。",
       "sourceUrlRequired": "日期類回報必須附來源網址。",
       "date": "精度為月、季、年時，填該期間內任一天即可。",
+      "title": "請填這款遊戲在臺灣常用的繁體中文名稱，最多 {max} 字。",
       "stage": "不確定時選「未標示」。",
       "takedown": "下架或版權請求只會通知站長，不會公開顯示。請在補充說明寫明對象與理由。",
       "currentValue": "目前顯示：{value}",
