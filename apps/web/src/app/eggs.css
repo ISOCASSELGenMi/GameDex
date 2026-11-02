@@ -40,7 +40,7 @@
   background: var(--panel);
   color: var(--foreground);
   box-shadow: var(--shadow-3);
-  opacity: 0;
+  opacity: 0.6; /* 從 0 淡入時文字對比會低於 4.5；本來就從畫面外滑入，不需要淡入 */
   transform: translateX(calc(100% + 1.5rem));
   transition:
     transform 220ms var(--ease-out),
