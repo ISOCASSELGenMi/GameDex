@@ -232,12 +232,23 @@ test.describe("背景符號避開內容欄", () => {
     const mode = await egg(page).eval((e) => e.field!.mode(), null);
     expect(mode).toEqual({ wide: false, alpha: 0.07, symbols: 10 });
     const headerBottom = await page.locator(".site-header").evaluate((el) => el.getBoundingClientRect().bottom);
-    const visible = (await egg(page).eval((e) => e.field!.symbols(), null)).filter((s) => s.visible && s.alive);
-    expect(visible.length).toBeGreaterThanOrEqual(1);
-    for (const s of visible) {
-      expect(s.ay).toBeGreaterThan(headerBottom);
-      expect(await egg(page).eval((e, a) => e.field!.isBackgroundAt(a.x, a.y), { x: s.ax, y: s.ay }), `${s.kind} 的錨點不是空白背景`).toBe(true);
-    }
+    // 引擎以 24px 格的中心判定空白，錨點在格內抖動 ±6px，所以比對錨點所在格的中心
+    const cellCenter = (v: number) => Math.floor(v / 24) * 24 + 12;
+    // 可出現區域地圖是節流重算的（版面剛變動後最多約 1 秒才追上），所以輪詢到收斂
+    await expect
+      .poll(
+        async () => {
+          const visible = (await egg(page).eval((e) => e.field!.symbols(), null)).filter((s) => s.visible && s.alive);
+          if (visible.length < 1) return "沒有可見符號";
+          for (const s of visible) {
+            if (s.ay <= headerBottom) return `${s.kind} 在頁首`;
+            if (!(await egg(page).eval((e, a) => e.field!.isBackgroundAt(a.x, a.y), { x: cellCenter(s.ax), y: cellCenter(s.ay) }))) return `${s.kind} 的錨點格不是空白背景`;
+          }
+          return "ok";
+        },
+        { timeout: 5000 },
+      )
+      .toBe("ok");
     await snap(page, "mobile-375-background.png");
   });
 
