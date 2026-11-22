@@ -2047,6 +2047,14 @@ button.sheet-entry:hover {
 .hd-brand-text[data-brand-roll="rolling"] > .hd-brand-layer {
   display: inline-block;
 }
+/* hydration 前就知道會播動畫：先顯示舊字（brand-roll.tsx 的 pendingScript），寬度也是舊字寬，接上動畫的起點 */
+html[data-brand-pending] .hd-brand-text > .hd-brand-final {
+  display: none;
+}
+html[data-brand-pending] .hd-brand-text::before {
+  content: var(--brand-from);
+  white-space: pre;
+}
 .hd-roll-slot {
   display: inline-block;
   height: 1.5em;

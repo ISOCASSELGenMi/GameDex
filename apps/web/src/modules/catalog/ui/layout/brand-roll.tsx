@@ -3,7 +3,7 @@
  * header 左上角的品牌文字（GameDex／GameCalendar…）。換頁後文字改變時用「拉霸機」效果換字：
  * 開頭的「Game」固定不動；後綴的每個字母從「舊標題的字」轉到「新標題的字」，中間只經過 1～2 個字母（轉兩三格就停）。
  * 轉動方向看舊、新標題在導覽下拉裡的先後：往後面的項目走＝往上轉（新字從下方進來），往前面的項目走＝往下轉。
- * 滾動時帶垂直動態模糊，由左到右依序停下，停下時衝過頭再回彈。整體約 0.9 秒。
+ * 滾動時帶垂直動態模糊，由左到右依序停下，停下時衝過頭再回彈。整體 0.5 秒內（最長品牌約 470ms）。
  *
  * - 伺服器與首次 hydration 一律輸出純文字（沒有 JavaScript、搜尋引擎、第一次進站都看到最終文字）。
  * - 上一頁的品牌記在 sessionStorage（導覽下拉是整頁導覽，記憶體變數撐不過換頁）；mount 後發現與這頁不同才播放。
@@ -17,9 +17,9 @@ import { useLayoutEffect, useRef, type ReactElement } from "react";
 import { SECTION_BRANDS } from "./nav-items";
 
 const STORAGE_KEY = "gd-brand";
-/** 第 0 個字格的滾動時間；之後每個字格多滾 STEP（由左到右依序停下）。最長品牌（後綴 8 字）約 450＋7×60＝870ms。 */
-export const BRAND_ROLL_BASE_MS = 450;
-export const BRAND_ROLL_STEP_MS = 60;
+/** 第 0 個字格的滾動時間；之後每個字格多滾 STEP（由左到右依序停下）。最長品牌（後綴 8 字）約 260＋7×30＝470ms。 */
+export const BRAND_ROLL_BASE_MS = 260;
+export const BRAND_ROLL_STEP_MS = 30;
 /** 舊字與新字之間最多經過幾個字母（「轉兩三次」＝舊字→中間 1～2 個→新字）。 */
 export const BRAND_ROLL_MAX_MIDDLE = 2;
 const FIXED_PREFIX = "Game";
@@ -62,6 +62,19 @@ export function middleLetters(from: string | undefined, to: string, step: 1 | -1
   }
   if (!isLetter(to)) return [];
   return Array.from({ length: BRAND_ROLL_MAX_MIDDLE }, (_, k) => shiftLetter(to, -step * (BRAND_ROLL_MAX_MIDDLE - k)));
+}
+
+const PENDING_ATTR = "data-brand-pending";
+const PENDING_VAR = "--brand-from";
+
+/**
+ * 緊接在品牌文字後面的 inline script：hydration 前（頁面重、JS 晚到時可能有好幾百毫秒）就判斷這次會播動畫的話，
+ * 先讓品牌位置顯示舊字（<html> 上的屬性＋CSS 變數，globals.css 用 ::before 顯示），避免「新字 → 跳回舊字 → 轉到新字」的閃字。
+ * 判斷條件與 useLayoutEffect 相同（有上一頁品牌、不同、沒有 reduced-motion）；<html> 有 suppressHydrationWarning。
+ */
+export function pendingScript(text: string): string {
+  const t = JSON.stringify(text).replace(/</g, "\\u003c");
+  return `try{var l=sessionStorage.getItem(${JSON.stringify(STORAGE_KEY)});if(l&&l!==${t}&&!matchMedia("(prefers-reduced-motion: reduce)").matches){var d=document.documentElement;d.style.setProperty(${JSON.stringify(PENDING_VAR)},JSON.stringify(l));d.setAttribute(${JSON.stringify(PENDING_ATTR)},"")}}catch(e){}`;
 }
 
 function readLast(): string | null {
@@ -140,6 +153,9 @@ export function BrandText({ text }: { text: string }): ReactElement {
   useLayoutEffect(() => {
     const root = rootRef.current;
     const layer = layerRef.current;
+    // 拿掉 hydration 前顯示舊字的佔位（見 pendingScript）；與建立動畫層在同一個 layout effect，中間不會繪製
+    document.documentElement.removeAttribute(PENDING_ATTR);
+    document.documentElement.style.removeProperty(PENDING_VAR);
     const last = readLast();
     writeLast(text);
     if (!root || !layer || last === null || last === text) return;
@@ -224,9 +240,12 @@ export function BrandText({ text }: { text: string }): ReactElement {
   }, [text]);
 
   return (
-    <span ref={rootRef} className="hd-brand-text" data-brand-roll="idle">
-      <span className="hd-brand-final">{text}</span>
-      <span ref={layerRef} className="hd-brand-layer" aria-hidden="true" />
-    </span>
+    <>
+      <span ref={rootRef} className="hd-brand-text" data-brand-roll="idle">
+        <span className="hd-brand-final">{text}</span>
+        <span ref={layerRef} className="hd-brand-layer" aria-hidden="true" />
+      </span>
+      <script dangerouslySetInnerHTML={{ __html: pendingScript(text) }} />
+    </>
   );
 }
