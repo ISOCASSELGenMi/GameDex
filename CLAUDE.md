@@ -32,7 +32,7 @@
 - ✅ **Phase 4 完成**（2026-10-15，分支 `feat/phase4`）：評分顯示（selectRatings、訪客來源選擇）、標題比對、資料更正回報＋admin `/internal/reports`；**接手先讀 `docs/handoff/2026-10-15-phase4-done.md`**
 - ✅ PR `#3`（`feat/phase4` → main）2026-10-15 已合併
 - ✅ **Phase 5 iCal 完成**（2026-10-16，分支 `feat/phase5`）：公開 feed、訂閱頁、Google／Apple 原型實測通過；**接手先讀 `docs/handoff/2026-10-16-phase5-done.md`**
-- ✅ PR `#4`（phase5）、`#5`（phase9-prep：Docker／Caddy／備份／心跳告警）、`#6`（Phase 7 第 1 波）2026-10-16 合併；`#7`～`#13`（Phase 7 第 3、5、6、7 波、D82、D83、spec 寫回）2026-10-17 合併；**開發 DB 已套到 migration 0017**（2026-10-29），詳情欄位與分組欄（`backfill_game_groups`）已回填；`backfill_company_positions` 尚未跑（等使用者、需 IGDB 金鑰）
+- ✅ PR `#4`（phase5）、`#5`（phase9-prep：Docker／Caddy／備份／心跳告警）、`#6`（Phase 7 第 1 波）2026-10-16 合併；`#7`～`#13`（Phase 7 第 3、5、6、7 波、D82、D83、spec 寫回）2026-10-17 合併；**開發 DB 已套到 migration 0023**（2026-11-22），詳情欄位與分組欄（`backfill_game_groups`）已回填；`backfill_company_positions` 尚未跑（等使用者、需 IGDB 金鑰）
 - 🚧 **Phase 7 帳號**（Better Auth，D76～D83；任務書與報告在 `.local/agents/7/`；worktree 已清掉）：第 1、3、5、6、7 波＋D83 完成；第 2 波（社群登入）等 OAuth app、第 4 波（Xbox）依賴第 2 波、7.5 寄信服務等使用者選服務商；**接手先讀 `docs/handoff/2026-10-17-phase7-progress.md`**；進度見 `docs/checklist.md`
 - ✅ **GameDex 第一輪**（PR 舊 #15、#16）與**第二輪 Z1～Z4**（2026-10-22～23，PR `ISOCASSELGenMi/GameDex#1`）：header 依頁切換品牌名、搜尋候選、/games 分組、評分排名、彩蛋與隱藏主題、詳情頁補資訊；舊交接 `docs/handoff/2026-10-23-gamedex-v2.md`
 - ✅ **GameDex Z6 效能、Next 16.4.1、偶發失敗修正**（2026-10-24，GameDex `#2`～`#4` 已合併）：舊交接 `docs/handoff/2026-10-24-gamedex-z6-done.md`
