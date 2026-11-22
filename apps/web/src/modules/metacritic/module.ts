@@ -1,6 +1,6 @@
 import type { ModuleManifest, RatingColumn } from "@/modules/catalog";
 import { METACRITIC_SOURCE } from "./provider/provider";
-import { refreshSlugIndex, runRepairMatches, runSyncRatings } from "./use-cases/jobs";
+import { refreshSlugIndex, runRepairMatches, runReverifyMatches, runSyncRatings } from "./use-cases/jobs";
 
 /** 評分排名頁的 Metascore 欄（05、06；純文字名稱，不用官方配色或 Logo）。 */
 export const metascoreColumn: RatingColumn = {
@@ -28,14 +28,14 @@ export const userscoreColumn: RatingColumn = {
  * metacritic 模組（02、05、Phase 6）：Metacritic 的 RatingProvider。**預設關閉**，唯一的開關是 METACRITIC_SCRAPE_ENABLED（原則三），
  * 不受 MODULES 控制。關閉時 registry 不收這個模組：不註冊任務、不註冊排名欄、不碰 metacritic.com。
  * 啟用後還有第二道開關：後台「允許抓取」（kernel/settings metacritic.scrapeAllowed，預設關）——兩者皆開才會發出請求。
- * 擁有的表：metacritic_slugs（sitemap 取得的 slug 索引）；移除模組時 drop，並刪 ratings／external_ids 中 metacritic_scrape 的列。
+ * 擁有的表：metacritic_slugs（sitemap 取得的 slug 索引）、metacritic_pages（遊戲頁快取）；移除模組時 drop，並刪 ratings／external_ids 中 metacritic_scrape 的列。
  */
 export const metacriticModule: ModuleManifest = {
   name: "metacritic",
   kind: "optional",
   requires: [],
   requiredEnv: [],
-  ownedTables: ["metacritic_slugs"],
+  ownedTables: ["metacritic_slugs", "metacritic_pages"],
   jobs: [
     {
       // 每週：從公開 sitemap 更新 slug 索引（站內搜尋被 robots.txt 禁止）。手動：npm run job -- refresh_metacritic_index
@@ -53,6 +53,15 @@ export const metacriticModule: ModuleManifest = {
       lockMode: "session",
       run: async (ctx) => {
         await runRepairMatches({ log: ctx.log });
+      },
+    },
+    {
+      // 每日：用遊戲頁的標題／發售日／公司／平台重驗舊的自動配對（match_method='auto'），驗完標 auto2；沒有待驗的就不發請求
+      name: "reverify_matches_metacritic",
+      cron: "10 6 * * *",
+      lockMode: "session",
+      run: async (ctx) => {
+        await runReverifyMatches({ log: ctx.log });
       },
     },
     {

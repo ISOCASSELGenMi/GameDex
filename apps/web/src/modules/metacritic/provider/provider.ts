@@ -2,7 +2,7 @@
  * Metacritic 的 RatingProvider（05）：把 metacritic.com 的頁面轉成我方型別（ExternalScore）。
  * 外部格式（HTML、sitemap）到此為止，上層只看到 PageResult。
  */
-import type { ExternalScore } from "@/modules/catalog";
+import type { ExternalFacts, ExternalScore } from "@/modules/catalog";
 import { METACRITIC_ORIGIN, type MetacriticHttp } from "./http";
 import { parseGamePage, parseSitemapLocs, slugFromGameUrl } from "./parse";
 
@@ -12,7 +12,7 @@ export const METACRITIC_SCORE_TYPES = ["metascore", "user_score"] as const;
 export const SLUG_PATTERN = /^[a-z0-9][a-z0-9-]{0,200}$/;
 
 export type PageResult =
-  | { kind: "ok"; title: string | null; year: number | null; scores: ExternalScore[] }
+  | { kind: "ok"; title: string | null; year: number | null; facts: ExternalFacts; scores: ExternalScore[] }
   | { kind: "not_found" }
   | { kind: "parse_failed"; status: number };
 
@@ -42,7 +42,7 @@ export function createMetacriticProvider(http: MetacriticHttp): MetacriticProvid
       const scores: ExternalScore[] = [];
       if (page.metascore) scores.push({ scoreType: "metascore", score: page.metascore.value, scoreMax: 100, reviewCount: page.metascore.count });
       if (page.userScore) scores.push({ scoreType: "user_score", score: Math.round(page.userScore.value * 10), scoreMax: 100, reviewCount: page.userScore.count });
-      return { kind: "ok", title: page.title, year: page.releaseYear, scores };
+      return { kind: "ok", title: page.title, year: page.releaseYear, facts: { title: page.title, releaseDate: page.releaseDate, companies: page.companies, platforms: page.platforms }, scores };
     },
 
     async listSitemapShards() {

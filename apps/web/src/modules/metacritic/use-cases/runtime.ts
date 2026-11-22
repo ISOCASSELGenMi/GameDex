@@ -21,23 +21,44 @@ export function dailyRequestLimit(env: Record<string, string | undefined> = proc
 const dayOf = (d: Date) => d.toISOString().slice(0, 10);
 
 export interface Budget {
-  /** 今天還能用的請求數。 */
+  /** 今天還能用的請求數（即時：已掛上 track 的請求即使還沒寫入資料庫也已扣除）。 */
   remaining(): number;
-  /** 記下已用掉 n 個請求並存檔。 */
+  /** 直接記下已用掉 n 個請求並存檔（向後相容；有 track 時不需要）。 */
   spend(n: number): Promise<void>;
+  /** 掛到 http 上：每個請求即時累計，每 batch 個請求寫入一次（行程被殺最多少算 batch−1 個）。 */
+  track(http: MetacriticHttp, batch?: number): void;
+  /** 把還沒寫入的用量寫入；任務結束（finally）呼叫。寫的是絕對值，重複呼叫不會重複扣。 */
+  flush(): Promise<void>;
 }
+
+/** 每幾個請求寫入一次用量。 */
+export const BUDGET_FLUSH_EVERY = 5;
 
 /** 兩個任務（repair_matches_metacritic、sync_ratings）與索引更新共用同一個每日額度（05）。 */
 export async function loadBudget(now: Date = new Date(), limit: number = dailyRequestLimit()): Promise<Budget> {
   const state = await getSyncState(BUDGET_STATE);
   const meta = (state?.meta ?? {}) as { day?: string; used?: number };
   let used = meta.day === dayOf(now) && typeof meta.used === "number" ? meta.used : 0;
+  let saved = used;
+  const flush = async () => {
+    if (used === saved) return;
+    const target = used;
+    await saveSyncProgress(BUDGET_STATE, { meta: { day: dayOf(now), used: target, limit } });
+    saved = target;
+  };
   return {
     remaining: () => Math.max(0, limit - used),
     async spend(n) {
       used += n;
-      await saveSyncProgress(BUDGET_STATE, { meta: { day: dayOf(now), used, limit } });
+      await flush();
     },
+    track(http, batch = BUDGET_FLUSH_EVERY) {
+      http.onRequest = async () => {
+        used += 1;
+        if (used - saved >= batch) await flush();
+      };
+    },
+    flush,
   };
 }
 

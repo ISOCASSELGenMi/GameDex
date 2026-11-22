@@ -68,8 +68,8 @@ test.describe("品牌文字拉霸機", () => {
     expect(rolling!.slots).toBe(8);
     await expect(page.locator(".hd-roll-fixed")).toHaveCount(0); // 結束後動畫層清空
     const ms = Number(await brandText(page).getAttribute("data-roll-ms"));
-    expect(ms).toBeGreaterThan(600);
-    expect(ms).toBeLessThanOrEqual(1200); // 動畫本身的時間軸（所有字格同時開始、最慢的一格停下；理論值 450＋7×60＝870）
+    expect(ms).toBeGreaterThan(300);
+    expect(ms).toBeLessThanOrEqual(500); // 動畫本身的時間軸（所有字格同時開始、最慢的一格停下；理論值 260＋7×30＝470）
     // 牆鐘時間另外量（含 hydration 等主執行緒忙碌的開始延遲）：負載下只做粗略上限，避免 CI 抖動
     expect(Number(await brandText(page).getAttribute("data-roll-wall"))).toBeLessThan(2500);
     await expect(page.locator(".hd-roll-slot")).toHaveCount(0);

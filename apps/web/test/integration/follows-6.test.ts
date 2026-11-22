@@ -504,6 +504,14 @@ describe.skipIf(!enabled)("accounts 第 6 波：追蹤、熱度訊號、我的�
         const byFollows = await getTrending({ locale: "en", limit: 100, filter });
         expect(byFollows.rankedBy).toBe("site_follows_7d");
         expect(three(byFollows.items)).toEqual(["fl6-e", "fl6-a", "fl6-g"]); // 12、5、(0 → 分數 100)
+        // 查詢拆成「有 7 日訊號」＋「其餘依熱度前 K 筆」兩段：逐頁翻（跨過有／無訊號的交界）要與一次取全部相同
+        const paged: string[] = [];
+        for (let offset = 0; offset < byFollows.items.length; offset++) {
+          const p = await getTrending({ locale: "en", limit: 1, offset, filter });
+          paged.push(...p.items.map((i) => i.slug));
+          expect(p.hasMore).toBe(offset < byFollows.items.length - 1);
+        }
+        expect(paged).toEqual(byFollows.items.map((i) => i.slug));
         const explicit = await getTrending({ locale: "en", limit: 100, filter, rankBy: "popularity" });
         expect(three(explicit.items)).toEqual(["fl6-a", "fl6-e", "fl6-g"]);
       } finally {

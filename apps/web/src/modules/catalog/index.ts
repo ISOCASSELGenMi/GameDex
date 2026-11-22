@@ -46,7 +46,7 @@ export {
   DEFAULT_RATING_DISPLAY_CONFIG,
   type RatingDisplayConfig,
 } from "./domain/rating-config";
-export { normalizeTitle, levenshteinSimilarity, findBestMatch, MATCH_THRESHOLDS, type FindBestMatchOptions } from "./use-cases/matching";
+export { normalizeTitle, levenshteinSimilarity, findBestMatch, MATCH_THRESHOLDS, verifyExternalMatch, hasForeignSupplementary, VERIFY_THRESHOLDS, type FindBestMatchOptions } from "./use-cases/matching";
 
 // ── Phase 4：資料更正回報（12）──────────────────────────────────────────
 export {
@@ -115,6 +115,10 @@ export {
   confirmExternalMatch,
   rejectExternalMatch,
   setManualExternalMatch,
+  loadGameFacts,
+  listAutoMatchesToVerify,
+  markMatchVerified,
+  type AutoMatchToVerify,
   type RepairCandidateGame,
   type RatingSyncTarget,
   type MatchAttemptResult,

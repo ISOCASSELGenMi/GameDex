@@ -16,7 +16,7 @@ import { selectRatings } from "@/modules/catalog/domain/rating-display";
 import { listMatchReviewQueue, getRejectedExternalIds } from "@/modules/catalog/repository/external-ratings";
 import { insertSlugs, countSlugs } from "@/modules/metacritic/repository/slugs";
 import { MetacriticHttp } from "@/modules/metacritic/provider/http";
-import { refreshSlugIndex, runRepairMatches, runSyncRatings, PARSE_FAIL_ALERT } from "@/modules/metacritic/use-cases/jobs";
+import { refreshSlugIndex, runRepairMatches, runReverifyMatches, runSyncRatings, PARSE_FAIL_ALERT } from "@/modules/metacritic/use-cases/jobs";
 import { applyReviewAction, loadReviewQueue } from "@/modules/metacritic/use-cases/review";
 import { BLOCKED_STATE, BUDGET_STATE } from "@/modules/metacritic/use-cases/runtime";
 import { metascoreColumn, userscoreColumn } from "@/modules/metacritic";
@@ -41,6 +41,12 @@ async function addGame(name: string, over: Partial<typeof games.$inferInsert> = 
     .returning({ id: games.id });
   return g!.id;
 }
+let cseq = 0;
+async function addCompany(gameId: number, name: string, role: "developer" | "publisher" = "developer"): Promise<void> {
+  cseq += 1;
+  await getDb().execute(sql`INSERT INTO companies (igdb_id, name, slug) VALUES (${9_420_000 + cseq}, ${name}, ${`mc6-c-${cseq}`})`);
+  await getDb().execute(sql`INSERT INTO game_companies (game_id, company_id, role) SELECT ${gameId}, id, ${role} FROM companies WHERE slug = ${`mc6-c-${cseq}`}`);
+}
 const slugRow = (slug: string) => ({ slug, nameNorm: normalizeTitle(slug.replace(/-/g, " ")) });
 const ratingRows = (gameId: number) => getDb().select().from(ratings).where(and(eq(ratings.gameId, gameId), eq(ratings.scoreProvider, SRC)));
 const extRow = async (gameId: number) => (await getDb().execute<{ external_id: string; needs_review: boolean; match_method: string; confidence_pct: number }>(sql`SELECT external_id, needs_review, match_method, confidence_pct FROM external_ids WHERE game_id = ${gameId} AND source = ${SRC}`)).rows[0];
@@ -62,9 +68,11 @@ const pageCalls = (calls: Array<{ path: string }>) => calls.filter((c) => c.path
 
 async function wipe(): Promise<void> {
   const db = getDb();
-  await db.execute(sql`TRUNCATE app_settings, app_settings_audit, metacritic_slugs RESTART IDENTITY`);
+  await db.execute(sql`TRUNCATE app_settings, app_settings_audit, metacritic_slugs, metacritic_pages RESTART IDENTITY`);
   await db.execute(sql`DELETE FROM sync_state WHERE job_name LIKE 'metacritic%'`);
   await db.execute(sql`DELETE FROM games WHERE slug LIKE 'mc6-%'`);
+  await db.execute(sql`DELETE FROM companies WHERE slug LIKE 'mc6-c-%'`);
+  await db.execute(sql`DELETE FROM platforms WHERE slug = 'mc6-plat'`);
   clearSettingsCache();
 }
 const allow = () => updateSettings([{ key: "metacritic.scrapeAllowed", value: true }], "test");
@@ -125,25 +133,142 @@ describe.skipIf(!enabled)("Metacritic（整合）", () => {
   });
 
   describe("repair_matches_metacritic", () => {
-    it("配對：高信心且年份驗證通過 → 自動採用；年份差太多 → 進覆核；無候選只記嘗試", async () => {
+    it("配對：標題、發售日（±3 天）、公司都對 → 自動採用；日期差太多 → 覆核；標題不同 → 放棄；無候選只記嘗試", async () => {
       await allow();
       const hit = await addGame("Fixture Quest Chronicles", { firstReleaseDate: isoDay(-40) });
-      const wrongYear = await addGame("Another Great Game", { firstReleaseDate: isoDay(-50) });
+      await addCompany(hit, "Acme Games");
+      const wrongDate = await addGame("Another Great Game", { firstReleaseDate: isoDay(-50) });
+      await addCompany(wrongDate, "Acme Games");
+      const otherTitle = await addGame("Third Game Name", { firstReleaseDate: isoDay(-60) });
       const none = await addGame("Zzqx Unmatchable Title");
-      await insertSlugs(["fixture-quest-chronicles", "another-great-game", "unrelated-thing"].map(slugRow));
-      const y = today.getUTCFullYear();
+      await insertSlugs(["fixture-quest-chronicles", "another-great-game", "third-game-name", "unrelated-thing"].map(slugRow));
       const { io, calls } = mkIo({
-        "/game/fixture-quest-chronicles/": { body: gamePageHtml({ year: y }) },
-        "/game/another-great-game/": { body: gamePageHtml({ year: y - 9 }) },
-      }, { onlyGameIds: [hit, wrongYear, none] }); // 整合測試共用同一個資料庫：只修復本測試的遊戲，不把其他測試檔的遊戲算進 tried
+        "/game/fixture-quest-chronicles/": { body: gamePageHtml({ name: "Fixture Quest Chronicles", date: isoDay(-38), developer: "Acme" }) },
+        "/game/another-great-game/": { body: gamePageHtml({ name: "Another Great Game", date: "2010-01-01", developer: "Acme" }) },
+        "/game/third-game-name/": { body: gamePageHtml({ name: "Totally Different Title", date: isoDay(-60) }) },
+      }, { onlyGameIds: [hit, wrongDate, otherTitle, none] }); // 整合測試共用同一個資料庫：只修復本測試的遊戲，不把其他測試檔的遊戲算進 tried
       const stats = await runRepairMatches(io, 1000);
-      expect(stats).toMatchObject({ tried: 3, matched: 1, review: 1, noCandidate: 1, verifiedMismatch: 1 });
-      expect(await extRow(hit)).toMatchObject({ external_id: "fixture-quest-chronicles", needs_review: false, match_method: "auto" });
-      expect(await extRow(wrongYear)).toMatchObject({ external_id: "another-great-game", needs_review: true });
+      expect(stats).toMatchObject({ tried: 4, matched: 1, review: 1, rejected: 1, noCandidate: 1 });
+      expect(await extRow(hit)).toMatchObject({ external_id: "fixture-quest-chronicles", needs_review: false, match_method: "auto2" });
+      expect((await extRow(hit))!.confidence_pct).toBeGreaterThanOrEqual(90);
+      expect(await extRow(wrongDate)).toMatchObject({ external_id: "another-great-game", needs_review: true });
+      expect((await extRow(wrongDate))!.confidence_pct).toBeLessThanOrEqual(89);
+      expect(await extRow(otherTitle)).toBeUndefined();
       expect(await extRow(none)).toBeUndefined();
-      const attempts = await getDb().execute<{ game_id: number; last_result: string }>(sql`SELECT game_id, last_result FROM external_match_attempts WHERE source = ${SRC} AND game_id IN (${hit}, ${wrongYear}, ${none})`);
-      expect(Object.fromEntries(attempts.rows.map((r) => [r.game_id, r.last_result]))).toEqual({ [hit]: "matched", [wrongYear]: "low_confidence", [none]: "no_candidate" });
+      const attempts = await getDb().execute<{ game_id: number; last_result: string }>(sql`SELECT game_id, last_result FROM external_match_attempts WHERE source = ${SRC} AND game_id IN (${hit}, ${wrongDate}, ${otherTitle}, ${none})`);
+      expect(Object.fromEntries(attempts.rows.map((r) => [r.game_id, r.last_result]))).toEqual({ [hit]: "matched", [wrongDate]: "low_confidence", [otherTitle]: "no_candidate", [none]: "no_candidate" });
       expect(calls.some((c) => c.path === "/search")).toBe(false);
+    });
+    it("同一款遊戲各平台上架日不同：對方日期與任一平台的上市事件相符就採用", async () => {
+      await allow();
+      const g = await addGame("Multi Platform Quest", { firstReleaseDate: isoDay(-100) });
+      await addCompany(g, "Acme Games", "publisher");
+      const plat = await getDb().execute<{ id: number }>(sql`INSERT INTO platforms (name, slug) VALUES ('MC6 Plat', 'mc6-plat') ON CONFLICT (slug) DO UPDATE SET name = EXCLUDED.name RETURNING id`);
+      const region = await getDb().execute<{ id: number }>(sql`SELECT id FROM regions ORDER BY id LIMIT 1`);
+      await getDb().execute(sql`INSERT INTO release_events (game_id, platform_id, region_id, release_date, precision) VALUES (${g}, ${plat.rows[0]!.id}, ${region.rows[0]!.id}, ${isoDay(-20)}, 'day')`);
+      await insertSlugs([slugRow("multi-platform-quest")]);
+      const { io } = mkIo({ "/game/multi-platform-quest/": { body: gamePageHtml({ name: "Multi Platform Quest", date: isoDay(-18), publisher: "Acme" }) } }, { onlyGameIds: [g] });
+      expect(await runRepairMatches(io, 1000)).toMatchObject({ matched: 1, review: 0 });
+      expect(await extRow(g)).toMatchObject({ needs_review: false, match_method: "auto2" });
+    });
+    it("重驗舊的自動配對：通過→標 auto2；有疑慮→降覆核並刪分數；不是同一款→刪配對＋記否決＋刪分數；manual 不動", async () => {
+      await allow();
+      const ok = await addGame("Reverify Good", { firstReleaseDate: isoDay(-40) });
+      await addCompany(ok, "Acme Games");
+      const doubt = await addGame("Reverify Doubt", { firstReleaseDate: isoDay(-40) });
+      const wrong = await addGame("Reverify Wrong", { firstReleaseDate: isoDay(-40) });
+      const hand = await addGame("Reverify Hand", { firstReleaseDate: isoDay(-40) });
+      for (const [id, slug] of [[ok, "reverify-good"], [doubt, "reverify-doubt"], [wrong, "reverify-wrong-x"]] as const) {
+        await setExt(id, slug);
+        await getDb().insert(ratings).values({ gameId: id, scoreProvider: SRC, scoreOrigin: "metacritic", scoreType: "metascore", score: 80, scoreMax: 100 });
+      }
+      await setExt(hand, "hand-slug", false, "manual");
+      const ids = [ok, doubt, wrong, hand];
+      const { io } = mkIo({
+        "/game/reverify-good/": { body: gamePageHtml({ name: "Reverify Good", date: isoDay(-40), developer: "Acme" }) },
+        "/game/reverify-doubt/": { body: gamePageHtml({ name: "Reverify Doubt", date: isoDay(-40) }) }, // 沒有公司／平台佐證
+        "/game/reverify-wrong-x/": { body: gamePageHtml({ name: "Completely Unrelated", date: isoDay(-40) }) },
+        "/game/hand-slug/": { body: gamePageHtml({ name: "Whatever" }) },
+      }, { onlyGameIds: ids });
+      expect(await runReverifyMatches(io, 1000)).toMatchObject({ checked: 3, kept: 1, downgraded: 1, removed: 1 });
+      expect(await extRow(ok)).toMatchObject({ needs_review: false, match_method: "auto2" });
+      expect(await ratingRows(ok)).toHaveLength(1);
+      expect(await extRow(doubt)).toMatchObject({ needs_review: true, match_method: "auto2" });
+      expect(await ratingRows(doubt)).toHaveLength(0);
+      expect(await extRow(wrong)).toBeUndefined();
+      expect(await ratingRows(wrong)).toHaveLength(0);
+      expect(await getRejectedExternalIds(wrong, SRC)).toEqual(new Set(["reverify-wrong-x"]));
+      expect(await extRow(hand)).toMatchObject({ external_id: "hand-slug", match_method: "manual" });
+      // 驗過的不再重驗
+      expect(await runReverifyMatches(mkIo({}, { onlyGameIds: ids }).io, 1000)).toMatchObject({ checked: 0 });
+    });
+    it("重驗時 Steam 指向別頁：原本已確認的也降為覆核並刪分數", async () => {
+      await allow();
+      const g = await addGame("Reverify Steam Clash", { firstReleaseDate: isoDay(-40) });
+      await addCompany(g, "Acme Games");
+      await setExt(g, "reverify-steam-clash");
+      await getDb().insert(ratings).values({ gameId: g, scoreProvider: SRC, scoreOrigin: "metacritic", scoreType: "metascore", score: 70, scoreMax: 100 });
+      await getDb().execute(sql`INSERT INTO external_ids (game_id, source, external_id, confidence_pct, needs_review, match_method) VALUES (${g}, 'steam', '9410010', 100, false, 'auto')`);
+      const { io } = mkIo(
+        { "/game/reverify-steam-clash/": { body: gamePageHtml({ name: "Reverify Steam Clash", date: isoDay(-40), developer: "Acme" }) } },
+        { onlyGameIds: [g], steam: { getMetacriticSlug: async () => "the-real-page" } },
+      );
+      expect(await runReverifyMatches(io, 1000)).toMatchObject({ checked: 1, downgraded: 1, kept: 0 });
+      expect(await extRow(g)).toMatchObject({ needs_review: true, match_method: "auto2" });
+      expect(await ratingRows(g)).toHaveLength(0);
+    });
+    it("Steam 佐證：Steam 指向同一頁→採用（沒公司資料也行）；指向別頁→覆核；被頁面驗證放棄的不問 Steam；沒有 Steam ID 不問", async () => {
+      await allow();
+      const setSteam = (gameId: number, appId: string) =>
+        getDb().execute(sql`INSERT INTO external_ids (game_id, source, external_id, confidence_pct, needs_review, match_method) VALUES (${gameId}, 'steam', ${appId}, 100, false, 'auto')`);
+      const agree = await addGame("Steam Agree Quest", { firstReleaseDate: isoDay(-40) });
+      const clash = await addGame("Steam Clash Quest", { firstReleaseDate: isoDay(-40) });
+      await addCompany(clash, "Acme Games");
+      const wrongTitle = await addGame("Steam Wrong Title", { firstReleaseDate: isoDay(-40) });
+      const noSteam = await addGame("No Steam Quest", { firstReleaseDate: isoDay(-40) });
+      await addCompany(noSteam, "Acme Games");
+      await setSteam(agree, "9410001");
+      await setSteam(clash, "9410002");
+      await setSteam(wrongTitle, "9410003");
+      await insertSlugs(["steam-agree-quest", "steam-clash-quest", "steam-wrong-title", "no-steam-quest"].map(slugRow));
+      const asked: string[] = [];
+      const steam = {
+        getMetacriticSlug: async (appId: string) => {
+          asked.push(appId);
+          return appId === "9410001" ? "steam-agree-quest" : appId === "9410002" ? "some-other-page" : null;
+        },
+      };
+      const { io } = mkIo({
+        "/game/steam-agree-quest/": { body: gamePageHtml({ name: "Steam Agree Quest", date: isoDay(-40) }) }, // 頁面沒有公司／平台，單靠 Steam 佐證
+        "/game/steam-clash-quest/": { body: gamePageHtml({ name: "Steam Clash Quest", date: isoDay(-40), developer: "Acme" }) },
+        "/game/steam-wrong-title/": { body: gamePageHtml({ name: "Nothing Alike At All", date: isoDay(-40) }) },
+        "/game/no-steam-quest/": { body: gamePageHtml({ name: "No Steam Quest", date: isoDay(-40), developer: "Acme" }) },
+      }, { onlyGameIds: [agree, clash, wrongTitle, noSteam], steam });
+      expect(await runRepairMatches(io, 1000)).toMatchObject({ matched: 2, review: 1, rejected: 1 });
+      expect(await extRow(agree)).toMatchObject({ needs_review: false, match_method: "auto2" });
+      expect(await extRow(clash)).toMatchObject({ needs_review: true });
+      expect((await extRow(clash))!.confidence_pct).toBeLessThanOrEqual(60);
+      expect(await extRow(wrongTitle)).toBeUndefined();
+      expect(await extRow(noSteam)).toMatchObject({ needs_review: false });
+      expect(asked.sort()).toEqual(["9410001", "9410002"]); // 放棄的與沒有 Steam ID 的都沒問
+    });
+    it("追加內容頁（Pack／Season Pass）不當候選：索引有本體頁時配本體；只有追加內容頁時不配、不進覆核、不花請求", async () => {
+      await allow();
+      const both = await addGame("Supp Both Quest", { firstReleaseDate: isoDay(-40) });
+      await addCompany(both, "Acme Games");
+      const onlyPack = await addGame("Zzqw Lonely Title", { firstReleaseDate: isoDay(-40) });
+      await addCompany(onlyPack, "Acme Games");
+      await insertSlugs(["supp-both-quest", "supp-both-quest-tmnt-pack", "zzqw-lonely-title-season-pass"].map(slugRow));
+      const { io, calls } = mkIo({
+        "/game/supp-both-quest/": { body: gamePageHtml({ name: "Supp Both Quest", date: isoDay(-40), developer: "Acme" }) },
+        "/game/supp-both-quest-tmnt-pack/": { body: gamePageHtml({ name: "Supp Both Quest - TMNT Pack", date: isoDay(-40), developer: "Acme" }) },
+        "/game/zzqw-lonely-title-season-pass/": { body: gamePageHtml({ name: "Zzqw Lonely Title - Season Pass", date: isoDay(-40), developer: "Acme" }) },
+      }, { onlyGameIds: [both, onlyPack] });
+      const stats = await runRepairMatches(io, 1000);
+      expect(stats).toMatchObject({ tried: 2, matched: 1, review: 0, noCandidate: 1 });
+      expect(await extRow(both)).toMatchObject({ external_id: "supp-both-quest", needs_review: false });
+      expect(await extRow(onlyPack)).toBeUndefined();
+      expect(calls.filter((c) => c.path.includes("pack") || c.path.includes("season-pass"))).toHaveLength(0);
     });
     it("往前推進：最久沒試的優先，每輪換新的一批（不會永遠撈到同一批）", async () => {
       await allow();
@@ -164,8 +289,7 @@ describe.skipIf(!enabled)("Metacritic（整合）", () => {
       const rejected = await addGame("Fixture Quest Chronicles Reborn");
       await getDb().execute(sql`INSERT INTO external_id_rejections (game_id, source, external_id) VALUES (${rejected}, ${SRC}, 'fixture-quest-chronicles-reborn')`);
       await insertSlugs(["fixture-quest-chronicles", "fixture-quest-chronicles-reborn"].map(slugRow));
-      const y = today.getUTCFullYear();
-      await runRepairMatches(mkIo({ "/game/fixture-quest-chronicles/": { body: gamePageHtml({ year: y }) } }, { onlyGameIds: [manual, rejected] }).io, 1000);
+      await runRepairMatches(mkIo({ "/game/fixture-quest-chronicles/": { body: gamePageHtml({ name: "Fixture Quest Chronicles", date: isoDay(-30) }) } }, { onlyGameIds: [manual, rejected] }).io, 1000);
       expect(await extRow(manual)).toMatchObject({ external_id: "hand-picked", match_method: "manual" });
       expect(await getRejectedExternalIds(rejected, SRC)).toEqual(new Set(["fixture-quest-chronicles-reborn"]));
       const r = await extRow(rejected);
@@ -175,7 +299,9 @@ describe.skipIf(!enabled)("Metacritic（整合）", () => {
       const a = await addGame("Dupe Target Game");
       const b = await addGame("Dupe Target Game ");
       await insertSlugs([slugRow("dupe-target-game")]);
-      await runRepairMatches(mkIo({ "/game/dupe-target-game/": { body: gamePageHtml({ year: y }) } }, { onlyGameIds: [a, b] }).io, 1000);
+      await addCompany(a, "Acme Games");
+      await addCompany(b, "Acme Games");
+      await runRepairMatches(mkIo({ "/game/dupe-target-game/": { body: gamePageHtml({ name: "Dupe Target Game", date: isoDay(-30), developer: "Acme" }) } }, { onlyGameIds: [a, b] }).io, 1000);
       expect((await extRow(a))?.needs_review).toBe(true);
       expect((await extRow(b))?.needs_review).toBe(true);
     });

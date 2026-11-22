@@ -1,0 +1,1 @@
+CREATE INDEX "games_trending_rank_idx" ON "games" USING btree ("popularity_score" DESC NULLS FIRST,"id") WHERE "games"."heat_level" > 0;

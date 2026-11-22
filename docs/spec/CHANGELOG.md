@@ -1,5 +1,25 @@
 # CHANGELOG
 
+## 熱門榜查詢加索引並改寫（2026-11-22 寫回；repo 副本先改，Project 正本待使用者匯入）
+
+- 03：新增 index `games_trending_rank_idx`（popularity_score DESC NULLS FIRST, id）WHERE heat_level > 0（migration 0023）。
+- 熱門榜依 site_follows_7d 排序時，查詢拆成「有非零 7 日訊號的遊戲」與「其餘依熱度前 offset＋limit＋1 筆」兩段再合併排序，排序與分頁語意不變（06 §熱度顯示）。冷啟動時首頁、/trending 第一次查詢不再逾時。
+
+## Metacritic 頁面快取與每請求記帳（2026-11-21 寫回；repo 副本先改，Project 正本待使用者匯入）
+
+- 05：新增表 `metacritic_pages`（metacritic 模組擁有，migration 0022）；05 新增 §頁面快取與每請求記帳——讀穿／寫穿、TTL（ok 已發售 90 天、ok 未定或未發售 7 天、not_found 30 天、parse_failed 7 天）、`sync_ratings` 才強制重抓、`Budget.track`／`flush` 每 5 個請求寫入一次用量。
+- 補頁面資料與校驗頁匯出改用 `metacritic_pages`，新增 `metacritic-review.ts import-facts` 一次性匯入舊側檔（開發機工具，非 spec 模組功能）。
+
+
+## Metacritic 配對改用遊戲頁驗證（2026-11-05 寫回；repo 副本先改，Project 正本待使用者匯入）
+
+- 05：新增 §外部遊戲頁二次驗證——候選只用 slug 名稱粗篩（≥ 70），採用與否改看遊戲頁的標題、發售日（±3 天，我方任一平台／地區的日精度日期）、開發／發行商、平台；標題不符直接放棄、不佔覆核佇列；`match_method` 新增 `auto2`（已驗證）；新增每日任務 `reverify_matches_metacritic` 重驗舊的 `auto` 配對。
+- 修 `parseGamePage`：頁面有多個 `product-score` 區塊，Metascore 為 tbd 時會讀進下一區塊而誤取玩家評分。
+- 05 補充：Steam appdetails 的 Metacritic 網址當配對佐證（slug 相同＝強證據可採用、不同＝進覆核、查不到＝不影響）；覆蓋率有限，只能佐證，不取代標題＋日期比對。
+- 05 補充（2026-11-21）：追加內容頁（Season Pass／Pack／DLC 等）不當候選（候選階段與頁面驗證階段都擋）；HTTP 出口對網路逾時／連線中斷改為退避重試，仍失敗才丟 `MetacriticTransientError`（以前會讓任務整個失敗）；slug 索引讀完（314 片、約 21 萬個 slug）。
+- 新增本機每日自動抓取（`apps/web/scripts/metacritic-daily.ts`，Claude 啟動時由 SessionStart hook 觸發）；不是 spec 模組功能，僅開發機工具，說明見 `docs/handoff/2026-11-08-metacritic-review-loop.md`。
+- 無 migration（`match_method` 為 varchar(8)）。
+
 ## 彩蛋與主題調整（2026-10-31 寫回；repo 副本先改，Project 正本待使用者匯入）
 
 - 06：§彩蛋——1a／1b 改為連續點到各一次即成立（不限順序）；1c 改為十字鍵＋類比搖桿各一次（十字鍵單一符號）；背景符號必要數量 13→10。§主題——任天堂紅改用官網紅 `#e60012` 並套在標題列；深色非標題小字統一加粗。§瀏覽——分組切換改滑動色塊；熱度排序不顯示說明列。

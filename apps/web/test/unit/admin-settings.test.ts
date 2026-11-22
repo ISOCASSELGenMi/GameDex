@@ -9,7 +9,7 @@ import { selectRatings } from "@/modules/catalog/domain/rating-display";
 import { formatSettingValue } from "@/modules/admin/ui/settings-page";
 import { parseSettingsForm } from "@/modules/admin/use-cases/settings";
 import { buildSyncMonitorView, healthOf, summarizeProgress } from "@/modules/admin/use-cases/sync-monitor";
-import { middleLetters, rollDirection, shiftLetter, slotDuration } from "@/modules/catalog/ui/layout/brand-roll";
+import { middleLetters, pendingScript, rollDirection, shiftLetter, slotDuration } from "@/modules/catalog/ui/layout/brand-roll";
 
 const form = (entries: Array<[string, string]>) => {
   const f = new FormData();
@@ -135,9 +135,27 @@ describe("同步監控的合併", () => {
 });
 
 describe("品牌拉霸機的時間與捲軸", () => {
-  it("由左到右依序停下；最長品牌（後綴 8 字）約 0.9 秒內結束", () => {
+  it("hydration 前的佔位 script：會播動畫時才在 <html> 標記舊字，相同、沒記錄、reduced-motion 都不標記", () => {
+    const run = (last: string | null, text: string, reduce = false) => {
+      const attrs: Record<string, string> = {};
+      const props: Record<string, string> = {};
+      const env = {
+        sessionStorage: { getItem: () => last },
+        matchMedia: () => ({ matches: reduce }),
+        document: { documentElement: { setAttribute: (k: string, v: string) => (attrs[k] = v), style: { setProperty: (k: string, v: string) => (props[k] = v) } } },
+      };
+      new Function("sessionStorage", "matchMedia", "document", pendingScript(text))(env.sessionStorage, env.matchMedia, env.document);
+      return { attrs, props };
+    };
+    expect(run("GameTimeline", "GameBase")).toEqual({ attrs: { "data-brand-pending": "" }, props: { "--brand-from": '"GameTimeline"' } });
+    expect(run("GameBase", "GameBase").attrs).toEqual({});
+    expect(run(null, "GameBase").attrs).toEqual({});
+    expect(run("GameTimeline", "GameBase", true).attrs).toEqual({});
+    expect(pendingScript("</script>")).not.toContain("</script>");
+  });
+  it("由左到右依序停下；最長品牌（後綴 8 字）0.5 秒內結束", () => {
     for (let i = 1; i < 12; i++) expect(slotDuration(i)).toBeGreaterThan(slotDuration(i - 1));
-    expect(slotDuration(7)).toBeLessThanOrEqual(1000);
+    expect(slotDuration(7)).toBeLessThanOrEqual(500);
   });
   it("轉動方向看新舊標題在導覽下拉裡的先後：往後＝往上（1），往前＝往下（-1），不在清單裡＝往上", () => {
     expect(rollDirection("GameDex", "GameCalendar")).toBe(1);
