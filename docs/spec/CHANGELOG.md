@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 熱門榜查詢加索引並改寫（2026-11-22 寫回；repo 副本先改，Project 正本待使用者匯入）
+
+- 03：新增 index `games_trending_rank_idx`（popularity_score DESC NULLS FIRST, id）WHERE heat_level > 0（migration 0023）。
+- 熱門榜依 site_follows_7d 排序時，查詢拆成「有非零 7 日訊號的遊戲」與「其餘依熱度前 offset＋limit＋1 筆」兩段再合併排序，排序與分頁語意不變（06 §熱度顯示）。冷啟動時首頁、/trending 第一次查詢不再逾時。
+
 ## Metacritic 頁面快取與每請求記帳（2026-11-21 寫回；repo 副本先改，Project 正本待使用者匯入）
 
 - 05：新增表 `metacritic_pages`（metacritic 模組擁有，migration 0022）；05 新增 §頁面快取與每請求記帳——讀穿／寫穿、TTL（ok 已發售 90 天、ok 未定或未發售 7 天、not_found 30 天、parse_failed 7 天）、`sync_ratings` 才強制重抓、`Budget.track`／`flush` 每 5 個請求寫入一次用量。
