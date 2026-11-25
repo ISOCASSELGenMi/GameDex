@@ -54,7 +54,25 @@ export async function installFixedClock(context: BrowserContext): Promise<void> 
  * - IGDB 圖片與 Next 圖片最佳化器的請求在瀏覽器端直接回 1×1 PNG（fixture 的封面 id 是假的，也不該連外）。
  * - 避開夜貓子時段的瀏覽器時刻（auto）：預設 context 與測試中以 `browser.newContext()` 另開的 JS 啟用 context 都套用。
  */
-export const test = base.extend<{ blockImages: void; fixedClock: void }>({
+export const test = base.extend<{ blockImages: void; fixedClock: void; openFolds: void }>({
+  // 篩選面板的欄位預設折疊（玩家自己展開）：多數測試要直接操作裡面的核取方塊，所以一律自動展開；
+  // 要測折疊本身的測試先設 `window.__keepFolds = true`（page.addInitScript）。沒有 JS 的 context 不會跑這段，要自己展開。
+  openFolds: [
+    async ({ context }, use) => {
+      await context.addInitScript(() => {
+        const open = () => {
+          if ((window as unknown as { __keepFolds?: boolean }).__keepFolds) return;
+          document.querySelectorAll<HTMLDetailsElement>("details.fold:not([open])").forEach((d) => (d.open = true));
+        };
+        document.addEventListener("DOMContentLoaded", () => {
+          open();
+          new MutationObserver(open).observe(document.documentElement, { childList: true, subtree: true });
+        });
+      });
+      await use();
+    },
+    { auto: true },
+  ],
   fixedClock: [
     async ({ browser, context }, use) => {
       await installFixedClock(context);
@@ -82,13 +100,20 @@ export const test = base.extend<{ blockImages: void; fixedClock: void }>({
 });
 export { expect };
 
+/** 沒有 JS 的 context：把所有還折疊著的篩選欄位點開（原生 details）。 */
+export async function openFoldsNoJs(page: Page): Promise<void> {
+  const closed = page.locator("details.fold:not([open]) > summary");
+  while ((await closed.count()) > 0) await closed.first().click();
+}
+
 /** WCAG 2.0／2.1／2.2 的 A 與 AA 規則（06：目標 WCAG 2.2 AA）。 */
 export const WCAG_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 
 /** 跑 axe，違規 0 才通過；失敗訊息列出規則、影響程度與前幾個節點。 */
 export async function expectNoA11yViolations(page: Page, label: string, include?: string): Promise<void> {
   // 等進場動畫（側邊預覽卡淡入）跑完，否則 axe 會量到半透明的中間色
-  await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== "running"));
+  // 捲動連動動畫（animation-timeline: view()）沒有「跑完」的時候，只等時間軸動畫
+  await page.waitForFunction(() => document.getAnimations().filter((a) => a.timeline instanceof DocumentTimeline).every((a) => a.playState !== "running"));
   let builder = new AxeBuilder({ page }).withTags(WCAG_TAGS);
   if (include) builder = builder.include(include);
   const result = await builder.analyze();

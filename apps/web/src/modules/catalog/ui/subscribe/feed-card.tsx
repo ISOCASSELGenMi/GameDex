@@ -99,7 +99,7 @@ export function FeedCard({ feedId, title, description, path, siteOrigin, strings
           value={httpsUrl}
           onFocus={(e) => e.currentTarget.select()}
           aria-describedby={statusId}
-          className="min-h-11 w-full min-w-0 rounded-md border border-[var(--border)] bg-[var(--background)] px-2 text-sm"
+          className="min-h-8 text-sm w-full min-w-0 rounded-md border border-[var(--border)] bg-[var(--background)] px-2 text-sm"
         />
       </div>
       <div className="flex flex-wrap gap-2">
@@ -156,7 +156,7 @@ export function PlatformFeedCard({ pathTemplate, groups, chooseLabel, initialSlu
           id={selectId}
           value={slug}
           onChange={(e) => setSlug(e.target.value)}
-          className="min-h-11 w-full min-w-0 rounded-md border border-[var(--border)] bg-[var(--background)] px-2"
+          className="min-h-8 text-sm w-full min-w-0 rounded-md border border-[var(--border)] bg-[var(--background)] px-2"
         >
           {groups.map((g) => (
             <optgroup key={g.label} label={g.label}>

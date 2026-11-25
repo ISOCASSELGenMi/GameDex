@@ -347,5 +347,5 @@ export const RELEASE_STATE_FILTERS = ["upcoming", "released", "delayed"] as cons
 export type ReleaseStateFilter = (typeof RELEASE_STATE_FILTERS)[number];
 
 /** 瀏覽排序（D27：MVP 不開放依評分）。name 依原文 games.name。必須與 FILTER_SORTS 相同。 */
-export const BROWSE_SORTS = ["popularity", "release_date", "name"] as const;
+export const BROWSE_SORTS = ["popularity", "release_date", "name", "popularity_asc", "release_date_desc", "name_desc"] as const;
 export type BrowseSort = (typeof BROWSE_SORTS)[number];

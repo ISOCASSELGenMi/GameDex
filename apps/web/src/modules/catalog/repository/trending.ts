@@ -96,18 +96,40 @@ export function buildTrendingQuery(input: Omit<ListTrendingInput, "resolveImage"
     conds.push(sql`EXISTS (SELECT 1 FROM game_genres gg WHERE gg.game_id = g.id AND gg.genre_id = ANY(${pgArray(f.genreIds)}::int[]))`);
   }
 
-  return sql`
-    SELECT g.id, g.slug,
+  const cols = sql`g.id, g.slug,
       COALESCE(NULLIF(g.display_names ->> ${input.locale}, ''), g.name) AS name,
       g.name AS original_name, g.cover_url, g.heat_level, g.popularity_score,
       g.first_release_date::text AS first_release_date, g.first_release_precision,
-      COALESCE(g.game_type, 'main_game') AS game_type, g.game_status
-    FROM games g
-    ${input.rankBySiteFollows7d
-      ? sql`LEFT JOIN game_popularity_signals s7 ON s7.game_id = g.id AND s7.signal_name = ${SITE_FOLLOWS_7D_SIGNAL}`
-      : sql``}
-    WHERE ${sql.join(conds, sql` AND `)}
-    ORDER BY ${input.rankBySiteFollows7d ? sql`COALESCE(s7.value, 0) DESC, ` : sql``}g.popularity_score DESC, g.id ASC
+      COALESCE(g.game_type, 'main_game') AS game_type, g.game_status`;
+  const where = sql.join(conds, sql` AND `);
+
+  if (!input.rankBySiteFollows7d) {
+    return sql`
+      SELECT ${cols} FROM games g
+      WHERE ${where}
+      ORDER BY g.popularity_score DESC, g.id ASC
+      LIMIT ${input.limit + 1} OFFSET ${input.offset}
+    `;
+  }
+  // 依 site_follows_7d 排序：排序鍵含另一張表的值，不能直接走索引（原本整表掃描＋排序）。
+  // 拆成「有非零追蹤訊號的遊戲」（少量）與「其餘遊戲依熱度取前 K 筆」（走 games_trending_rank_idx）；
+  // 完整排序的前 K 筆一定落在這兩組的聯集內，合併後照原排序鍵排，結果與原查詢相同。
+  const k = input.offset + input.limit + 1;
+  return sql`
+    WITH s7 AS (
+      SELECT game_id, value FROM game_popularity_signals WHERE signal_name = ${SITE_FOLLOWS_7D_SIGNAL} AND value <> 0
+    )
+    SELECT id, slug, name, original_name, cover_url, heat_level, popularity_score,
+      first_release_date, first_release_precision, game_type, game_status
+    FROM (
+      (SELECT ${cols}, s7.value AS s7_value FROM games g JOIN s7 ON s7.game_id = g.id WHERE ${where})
+      UNION ALL
+      (SELECT ${cols}, 0 AS s7_value FROM games g
+       WHERE ${where} AND NOT EXISTS (SELECT 1 FROM s7 WHERE s7.game_id = g.id)
+       ORDER BY g.popularity_score DESC, g.id ASC
+       LIMIT ${k})
+    ) ranked
+    ORDER BY s7_value DESC, popularity_score DESC, id ASC
     LIMIT ${input.limit + 1} OFFSET ${input.offset}
   `;
 }

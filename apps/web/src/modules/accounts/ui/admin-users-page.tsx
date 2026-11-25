@@ -68,7 +68,7 @@ export async function AdminUsersPage({ searchParams, csrf }: AdminUsersPageProps
       <form method="get" action="/internal/users" role="search" className="flex flex-wrap items-end gap-2">
         <label className="flex min-w-0 flex-col gap-1">
           <span className="font-semibold">信箱（片段）或使用者 ID</span>
-          <input name="q" defaultValue={q} maxLength={200} className="min-h-11 w-72 max-w-full rounded-md border border-[var(--border)] bg-[var(--background)] px-3" />
+          <input name="q" defaultValue={q} maxLength={200} className="min-h-8 text-sm w-72 max-w-full rounded-md border border-[var(--border)] bg-[var(--background)] px-3" />
         </label>
         <button type="submit" className="btn-primary">
           搜尋

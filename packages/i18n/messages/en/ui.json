@@ -272,6 +272,10 @@
     "searchPlaceholder": "Enter a game title",
     "searchButton": "Search",
     "sortLabel": "Sort by",
+    "sortDir": {
+      "asc": "Ascending",
+      "desc": "Descending"
+    },
     "sortNote": {
       "popularity": "Heat is updated hourly, highest first.",
       "release_date": "Earliest first release date first; games without a date come last.",
@@ -295,6 +299,12 @@
     "viewAllFranchise": "View all works in “{name}”",
     "viewCompany": "View works by “{name}”",
     "groupBy": "Group by",
+    "view": {
+      "label": "Card size",
+      "cover": "Covers only",
+      "card": "Cards with details",
+      "list": "List"
+    },
     "by": {
       "none": "No grouping",
       "date": "By date",
@@ -327,6 +337,8 @@
       }
     },
     "dateNav": {
+      "prevYear": "Previous year",
+      "nextYear": "Next year",
       "earlier": "Earlier months (from {month})",
       "jumpLabel": "Jump to year and month",
       "year": "Year",

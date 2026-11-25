@@ -218,7 +218,7 @@ export async function HomePage({ locale, supportedLocales }: { locale: Locale; s
             placeholder={t.t("ui.home.searchPlaceholder")}
             labels={searchBoxLabels(t)}
             className="flex-1"
-            inputClassName="min-h-11 w-full rounded-md border border-[var(--border)] bg-[var(--background)] px-3"
+            inputClassName="min-h-8 text-sm w-full rounded-md border border-[var(--border)] bg-[var(--background)] px-3"
           />
           <button type="submit" className="btn-primary">
             {t.t("ui.home.searchButton")}

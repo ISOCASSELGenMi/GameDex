@@ -2,8 +2,23 @@
  * Metacritic 遊戲頁的測試 fixture：只保留 2026-10-29 在瀏覽器實際觀察到的與解析有關的結構（91 §Metacritic 實測），
  * 不是整頁拷貝。分數與評論則數是虛構的測試值。
  */
-export function gamePageHtml(opts: { meta?: number | "tbd"; metaCount?: number; user?: number | "tbd"; userCount?: number; name?: string; year?: number } = {}): string {
-  const { meta = 97, metaCount = 109, user = 8.9, userCount = 27453, name = "Fixture Quest", year = 2017 } = opts;
+export function gamePageHtml(
+  opts: { meta?: number | "tbd"; metaCount?: number; user?: number | "tbd"; userCount?: number; name?: string; year?: number; date?: string; developer?: string; publisher?: string; platforms?: string[] } = {},
+): string {
+  const { meta = 97, metaCount = 109, user = 8.9, userCount = 27453, name = "Fixture Quest", year = 2017, developer, publisher, platforms } = opts;
+  const date = opts.date ?? `${year}-03-03`;
+  const ld = {
+    "@context": "https://schema.org",
+    "@type": "VideoGame",
+    name,
+    dateCreated: `${date}T00:00:00.000Z`,
+    datePublished: date,
+    ...(platforms ? { gamePlatform: platforms } : {}),
+    ...(publisher ? { publisher: [{ "@type": "Organization", name: publisher }] } : {}),
+  };
+  const devBlock = developer
+    ? `<div data-testid="hero-summary-developer"><p><span>Developer:</span><!--[--><a class="x" href="/company/${developer.toLowerCase().replace(/[^a-z0-9]+/g, "-")}/" rel="follow" target="_self"><!--[-->${developer}<!--]--></a><!--]--></p></div>`
+    : "";
   const metaBlock =
     meta === "tbd"
       ? `<div data-testid="global-score-wrapper"><div data-testid="global-score-header">Metascore</div><div data-testid="global-score"><div data-testid="global-score-value-wrapper" title="Metascore tbd" aria-label="Metascore tbd"><span data-testid="global-score-value">tbd</span></div></div></div>`
@@ -13,8 +28,8 @@ export function gamePageHtml(opts: { meta?: number | "tbd"; metaCount?: number; 
       ? `<div data-testid="global-score-wrapper"><div data-testid="global-score-header">User score</div><div data-testid="global-score"><div data-testid="global-score-value-wrapper"><span data-testid="global-score-value">tbd</span></div></div></div>`
       : `<div data-testid="global-score-wrapper"><div data-testid="global-score-header">User score</div><div data-testid="global-score-review-count"><a data-testid="global-score-review-count-link" href="/game/x/user-reviews/">Based on ${userCount.toLocaleString("en-US")} User Ratings</a></div><div data-testid="global-score"><div title="User score ${user} out of 10" aria-label="User score ${user} out of 10" data-testid="global-score-value-wrapper"><span data-testid="global-score-value">${user}</span></div></div></div>`;
   return `<!DOCTYPE html><html><head><title>${name} Reviews - Metacritic</title>
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"VideoGame","name":"${name}","dateCreated":"${year}-03-03T00:00:00.000Z","datePublished":"${year}-03-03"}</script>
-</head><body><div data-testid="product-score">${metaBlock}</div>
+<script type="application/ld+json">${JSON.stringify(ld)}</script>
+</head><body>${devBlock}<div data-testid="product-score">${metaBlock}</div>
 <section data-testid="user-reviews"><h2>User Reviews</h2>${userBlock}</section></body></html>`;
 }
 

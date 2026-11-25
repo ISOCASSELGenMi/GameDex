@@ -5,7 +5,7 @@
  * - 焦點不被奪走；結果更新用 aria-live 宣告。
  */
 import type { Locator, Page } from "@playwright/test";
-import { calendarUrl, expect, expectNoA11yViolations, FIXTURE, FIXTURE_3B, msg, test } from "./support/helpers";
+import { calendarUrl, expect, expectNoA11yViolations, FIXTURE, FIXTURE_3B, msg, test, openFoldsNoJs } from "./support/helpers";
 import { FIXTURE_Z2A as Z } from "./support/fixture-z2a";
 
 const WEEK = "2037-W10";
@@ -14,7 +14,8 @@ const apply = (page: Page): Locator => panelForm(page).locator('button[type="sub
 const clearAll = (page: Page): Locator => panelForm(page).locator("[data-filter-clear]");
 
 async function openPanel(page: Page): Promise<void> {
-  await page.locator("summary.filter-summary").first().click();
+  // 浮出面板：已開著就不再點（再點會關掉）
+  if (!(await page.locator("details.filter-panel").first().evaluate((d) => (d as HTMLDetailsElement).open))) await page.locator("summary.filter-summary").first().click();
   await expect(panelForm(page)).toBeVisible();
 }
 /** 在 window 上放記號：整頁重新載入會消失，客戶端導覽不會。 */
@@ -115,6 +116,7 @@ test.describe("月曆", () => {
     const page = await ctx.newPage();
     await page.goto(calendarUrl("zh-Hant", FIXTURE.month));
     await page.locator("summary.filter-summary").first().click();
+    await openFoldsNoJs(page);
     await page.locator('input[name="platformKind"][value="console"]').check();
     const button = page.getByRole("button", { name: msg("zh-Hant", "filters.apply") }).first();
     await expect(button).toBeVisible();
@@ -159,17 +161,21 @@ test.describe("時間軸", () => {
     expect(await marked(page)).toBe(true);
     await expectScrollKept(page);
 
-    // chip 移除：week 仍是 W11
+    // chip 移除：week 仍是 W11（面板是浮出式、會蓋住下方內容：先按 Esc 收起）
+    await page.keyboard.press("Escape");
     await page.locator("a.filter-chip").first().click();
     await expect(page).not.toHaveURL(/rumored=/);
     await expect(page).toHaveURL(/week=2037-W11/);
     await expect(rumored).not.toBeChecked();
 
     // 再切到 W12，用面板的「全部清除」
+    await openPanel(page);
     await page.locator('input[name="genre"][value="shooter"]').check();
     await expect(page).toHaveURL(/genre=shooter/);
+    await page.keyboard.press("Escape");
     await page.locator("a[data-week-nav=next]").click();
     await expect(page).toHaveURL(/week=2037-W12/);
+    await openPanel(page);
     await clearAll(page).click();
     await expect(page).not.toHaveURL(/genre=/);
     await expect(page).toHaveURL(/week=2037-W12/);
@@ -190,6 +196,7 @@ test.describe("時間軸", () => {
     const page = await ctx.newPage();
     await page.goto(`/en/timeline?week=${WEEK}`);
     await page.locator("summary.filter-summary").first().click();
+    await openFoldsNoJs(page);
     await page.locator('input[name="genre"][value="shooter"]').check();
     await page.getByRole("button", { name: msg("en", "filters.apply") }).first().click();
     await expect(page).toHaveURL(/genre=shooter/);
@@ -232,8 +239,12 @@ test.describe("/games 瀏覽", () => {
 
     await page.goto(`${URL_ALL}`);
     await expect(page.locator('form[data-live="on"]').first()).toBeAttached();
-    await page.locator("select[name=sort]").selectOption("name");
+    await page.getByRole("button", { name: "Heat" }).click(); // 排序選單：點目前標的開選單
+    await page.getByRole("option", { name: "Name" }).click();
     await expect(page).toHaveURL(/sort=name/);
+    await page.getByRole("button", { name: /Name.*Ascending/ }).click(); // 再選一次目前的標的＝切換升降冪
+    await page.getByRole("option", { name: /Name/ }).click();
+    await expect(page).toHaveURL(/sort=name_desc/);
     await page.locator("input[name=yearFrom]").fill("2036");
     await expect(page).toHaveURL(/yearFrom=2036/); // debounce 400ms 後套用
     await expect(page).toHaveURL(/sort=name/);
@@ -266,6 +277,7 @@ test.describe("/games 瀏覽", () => {
     const page = await ctx.newPage();
     await page.goto(`${URL_ALL}&by=date&gfrom=2036-10`);
     await page.locator("summary.filter-summary").first().click();
+    await openFoldsNoJs(page);
     await page.locator('input[name="platformKind"][value="console"]').check();
     await page.locator(".filter-panel button.btn-primary").click();
     await expect(page).toHaveURL(/gfrom=2036-10/);

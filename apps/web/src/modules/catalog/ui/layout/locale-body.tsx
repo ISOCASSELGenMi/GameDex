@@ -5,6 +5,7 @@
 import type { ReactElement, ReactNode } from "react";
 import type { Locale } from "@sok/i18n";
 import { EggLayer, type EggLabels } from "@/kernel/ui/eggs/egg-layer";
+import { PointerFx } from "@/kernel/ui/pointer-fx";
 import { UNLOCK_ACHIEVEMENT_KEYS, UNLOCK_COLLECTIBLE_KEYS } from "@/kernel/ui/unlocks";
 import { THEME_OPTIONS } from "@/kernel/ui/theme";
 import { getTranslator } from "../labels";
@@ -44,6 +45,7 @@ export function LocaleBody({ locale, headerRight, children }: { locale: Locale; 
     <>
       <SkipLink locale={locale} />
       <EggLayer labels={eggLabels} />
+      <PointerFx />
       <ErrorStringsProvider value={errorStrings}>
         <HeaderRightProvider value={headerRight ?? null}>
           <div className="flex min-h-screen flex-col">

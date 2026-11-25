@@ -66,7 +66,8 @@ export const FILTER_SHOW_KINDS = ["releases", "events"] as const;
 export type FilterShowKind = (typeof FILTER_SHOW_KINDS)[number];
 
 /** 排序（`sort`，瀏覽用；MVP 不開放依評分，D27）。必須與 catalog domain 的 `BROWSE_SORTS` 相同（apps/web 端斷言）。 */
-export const FILTER_SORTS = ["popularity", "release_date", "name"] as const;
+/** 每個基本排序的預設方向：popularity 高到低、release_date 早到晚、name A→Z；`_asc`／`_desc` 後綴是反向（UI 的升降冪箭頭）。 */
+export const FILTER_SORTS = ["popularity", "release_date", "name", "popularity_asc", "release_date_desc", "name_desc"] as const;
 export type FilterSort = (typeof FILTER_SORTS)[number];
 
 /** 多值維度（逗號分隔、同維度 OR）。順序即 serialize 的相對順序。 */

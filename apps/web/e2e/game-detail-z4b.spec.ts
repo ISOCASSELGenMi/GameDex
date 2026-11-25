@@ -15,7 +15,7 @@ const editionBtn = (page: Page): Locator => page.locator('button[aria-controls="
 
 async function ready(page: Page): Promise<void> {
   await page.waitForLoadState("networkidle");
-  await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== "running"));
+  await page.waitForFunction(() => document.getAnimations().filter((a) => a.timeline instanceof DocumentTimeline).every((a) => a.playState !== "running"));
 }
 
 test.describe("About 區", () => {

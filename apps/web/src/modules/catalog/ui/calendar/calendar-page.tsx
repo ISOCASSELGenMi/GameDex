@@ -180,18 +180,20 @@ export async function CalendarMonthPage({ locale, supportedLocales, month, searc
       </div>
 
       <div className="cal-tools">
-        <ShowSwitches items={showItems} groupLabel={t.t("ui.calendar.showLegend")} hint={t.t("ui.calendar.showAtLeastOne")} />
+        <div className="tb-row tb-split">
+          <ShowSwitches items={showItems} groupLabel={t.t("ui.calendar.showLegend")} hint={t.t("ui.calendar.showAtLeastOne")} />
+          <FilterPanel
+            locale={locale}
+            t={t}
+            options={options}
+            spec={spec}
+            action={basePath}
+            fields={CALENDAR_FILTER_FIELDS}
+            hidden={{ show: spec.show?.join(",") }} // 篩選表單送出時保留「遊戲／活動」開關的狀態
+          />
+        </div>
         <FilterNotices notices={notices} t={t} />
         {!empty ? <AppliedFilterChips chips={chips} t={t} clearHref={basePath} /> : null}
-        <FilterPanel
-          locale={locale}
-          t={t}
-          options={options}
-          spec={spec}
-          action={basePath}
-          fields={CALENDAR_FILTER_FIELDS}
-          hidden={{ show: spec.show?.join(",") }} // 篩選表單送出時保留「遊戲／活動」開關的狀態
-        />
         {slots?.filterLinks}
         <p role="status" className="text-sm text-[var(--muted)]">
           {t.t("filters.resultsCount", { count: vm.releaseCount })}

@@ -79,7 +79,7 @@ test.describe("卡片等高：第二行固定顯示標題原文", () => {
   });
 });
 
-test.describe("依日期分組：起算月與跳到年月", () => {
+test.describe("依日期分組：起算月與月曆選擇", () => {
   test("指定 gfrom：結束月 ≥ 起算月的組由舊到新，日期未定最後；更早的組不列", async ({ page }) => {
     await page.goto(`${URL_ALL}&by=date&gfrom=2036-10`);
     await expectKeys(page, ["2036-Q4", "2037", "tbd"]);
@@ -90,56 +90,18 @@ test.describe("依日期分組：起算月與跳到年月", () => {
     await expectKeys(page, [...F.dateGroups]);
   });
 
-  test("「往前看較早的月份」連結：從起算月往前一頁（6 個月），預設（沒有 gfrom）從當月往前；點了就換起算月", async ({ page }) => {
+  test("起算月：原生年月欄位（type=month，跳出月曆），選了就換起算月", async ({ page }) => {
     await page.goto(`${URL_ALL}&by=date&gfrom=2036-10`);
-    const earlier = page.locator("[data-rc-earlier]");
-    await expect(earlier).toHaveAttribute("data-rc-earlier", "2036-04");
-    await expect(earlier).toHaveAttribute("href", `/en/games?q=${F.q}&by=date&gfrom=2036-04`);
-    await expect(earlier).toHaveText(msg("en", "ui.games.dateNav.earlier", { month: "2036-04" }));
-    await earlier.click();
-    await expect(page).toHaveURL(new RegExp(`gfrom=2036-04$`));
+    const month = page.locator("[data-rc-monthpicker] input[type=month]");
+    await expect(month).toHaveValue("2036-10");
+    await expect(month).toHaveAttribute("min", "1950-01");
+    await month.fill("2035-03");
+    await expect(page).toHaveURL(new RegExp(`gfrom=2035-03$`));
+    await expect(page.locator("[data-rc-monthpicker] input[type=month]")).toHaveValue("2035-03");
     await expectKeys(page, [...F.dateGroups]);
-    await expect(page.locator("[data-rc-earlier]")).toHaveAttribute("data-rc-earlier", "2035-10");
-
-    // 預設（沒有 gfrom）：連結從「本月」往前
+    // 預設（沒有 gfrom）：顯示當月
     await page.goto(`${URL_ALL}&by=date`);
-    const href = await page.locator("[data-rc-earlier]").getAttribute("href");
-    expect(href).toMatch(new RegExp(`^/en/games\\?q=${F.q}&by=date&gfrom=\\d{4}-\\d{2}$`));
-    // 不是第 1 頁就不顯示（分頁往後翻，不是往前看）
-    await page.goto(`${URL_ALL}&by=date&gfrom=2036-04&page=2`);
-    await expect(page.locator("[data-rc-earlier]")).toHaveCount(0);
-  });
-
-  test("跳到年月：年、月下拉＋前往（GET 表單）；起算月之後的組由舊到新", async ({ page }) => {
-    await page.goto(`${URL_ALL}&by=date`);
-    const form = page.locator("[data-rc-jump]");
-    await expect(form.getByRole("button", { name: msg("en", "ui.games.dateNav.go") })).toBeVisible();
-    await form.locator("select[name=gyear]").selectOption("2030");
-    await form.locator("select[name=gmonth]").selectOption("3");
-    await form.getByRole("button", { name: msg("en", "ui.games.dateNav.go") }).click();
-    await expect(page).toHaveURL(new RegExp(`gmonth=3&gyear=2030`));
-    await expectKeys(page, [...F.dateGroups]);
-    await expect(page.locator("select[name=gyear]")).toHaveValue("2030");
-    await expect(page.locator("select[name=gmonth]")).toHaveValue("3");
-    // 頁面自己產生的連結一律是正規的 gfrom
-    await expect(page.locator("[data-rc-earlier]")).toHaveAttribute("href", `/en/games?q=${F.q}&by=date&gfrom=2029-09`);
-    await expect(page.locator("[data-rc-datenav]")).toContainText("2030-03");
-  });
-
-  test("沒有 JS：往前看是連結、跳月是 GET 表單，都能用", async ({ browser }) => {
-    const ctx = await browser.newContext({ javaScriptEnabled: false, baseURL: test.info().project.use.baseURL });
-    const page = await ctx.newPage();
-    await page.goto(`${URL_ALL}&by=date&gfrom=2036-10`);
-    await expectKeys(page, ["2036-Q4", "2037", "tbd"]);
-    await page.locator("[data-rc-earlier]").click();
-    await expect(page).toHaveURL(/gfrom=2036-04$/);
-    await expectKeys(page, [...F.dateGroups]);
-    await page.locator("select[name=gyear]").selectOption("2031");
-    await page.locator("select[name=gmonth]").selectOption("12");
-    await page.locator("[data-rc-jump] button[type=submit]").click();
-    await expect(page).toHaveURL(/gmonth=12&gyear=2031/);
-    await expectKeys(page, [...F.dateGroups]);
-    await ctx.close();
+    await expect(page.locator("[data-rc-monthpicker] input[type=month]")).toHaveValue(/^\d{4}-\d{2}$/);
   });
 
   test("搜尋與篩選送出時保留起算月；切到其他分組不帶 gfrom", async ({ page }) => {
@@ -156,9 +118,9 @@ test.describe("依日期分組：起算月與跳到年月", () => {
 test.describe("組內順序固定、sort 不適用於分組檢視", () => {
   test("分組檢視隱藏排序欄位（不分組時有）；網址帶 sort 也不影響組內順序，顯示更多的 API 請求不帶 sort", async ({ page }) => {
     await page.goto(URL_ALL);
-    await expect(page.locator("select[name=sort]")).toHaveCount(1);
+    await expect(page.locator(".sort-menu")).toHaveCount(1);
     await page.goto(`${URL_ALL}&by=date&sort=name`);
-    await expect(page.locator("select[name=sort]")).toHaveCount(0);
+    await expect(page.locator(".sort-menu")).toHaveCount(0);
     const first = section(page, "2036-09").locator("li.rc-card");
     await expect(first.nth(0)).toContainText(F.capcom.name); // 仍是發售日由新到舊，不是名稱 A→Z
     const more = section(page, "2036-09").locator("[data-rc-more]");
@@ -175,26 +137,40 @@ test.describe("組內順序固定、sort 不適用於分組檢視", () => {
 });
 
 test.describe("依平台／依廠商的組排序", () => {
+  /** 組排序是「標的＋方向三角」一顆按鈕：點開選單；再選一次目前的標的＝切換升降冪。 */
+  const openSort = async (page: Page): Promise<void> => {
+    // 換頁（客戶端導覽）後選單會重建：重試到選單真的開著
+    const list = page.locator("[data-rc-order] .sort-list");
+    await expect(async () => {
+      if (!(await list.isVisible())) await page.locator("[data-rc-order] .sort-current").click();
+      await expect(list).toBeVisible({ timeout: 1000 });
+    }).toPass({ timeout: 15000 });
+  };
+  const dirOf = (page: Page) => page.locator("[data-rc-order] .sort-dir");
+  const flip = async (page: Page): Promise<void> => {
+    await openSort(page);
+    await page.locator('[data-rc-order] [data-rc-gsort][aria-current="true"]').click();
+  };
+
   test("依平台：預設最新發售日由新到舊；連結不寫預設值；最新／數量／名稱 × 升降冪", async ({ page }) => {
     await page.goto(`${URL_ALL}&by=platform`);
     await expectKeys(page, ["e2e-pc", "e2e-ps5", "e2e-switch"]);
-    const nav = page.locator("[data-rc-order]");
-    await expect(nav.locator('[data-rc-gsort="latest"]')).toHaveAttribute("aria-current", "true");
-    await expect(nav.locator('[data-rc-gdir="desc"]')).toHaveAttribute("aria-current", "true");
-    await expect(nav.locator('[data-rc-gsort="latest"]')).toHaveAttribute("href", `/en/games?q=${F.q}&by=platform`);
-    await expect(nav.locator('[data-rc-gdir="desc"]')).toHaveAttribute("href", `/en/games?q=${F.q}&by=platform`);
-    await expect(nav.locator('[data-rc-gsort="count"]')).toHaveAttribute("href", `/en/games?q=${F.q}&by=platform&gsort=count`);
-    await expect(nav.locator('[data-rc-gdir="asc"]')).toHaveAttribute("href", `/en/games?q=${F.q}&by=platform&gdir=asc`);
+    await expect(dirOf(page)).toHaveAttribute("data-rc-gdir-current", "desc");
+    await openSort(page);
+    await expect(page.locator('[data-rc-gsort="latest"]')).toHaveAttribute("aria-current", "true");
+    await expect(page.locator('[data-rc-gsort="latest"]')).toHaveAttribute("href", `/en/games?q=${F.q}&by=platform&gdir=asc`); // 目前標的連到反向
+    await expect(page.locator('[data-rc-gsort="count"]')).toHaveAttribute("href", `/en/games?q=${F.q}&by=platform&gsort=count`);
 
-    await nav.locator('[data-rc-gdir="asc"]').click();
+    await page.locator('[data-rc-gsort="latest"]').click(); // 再選一次目前的標的＝切換升降冪
     await expect(page).toHaveURL(new RegExp(`by=platform&gdir=asc$`));
     await expectKeys(page, ["e2e-switch", "e2e-ps5", "e2e-pc"]);
-    await expect(page.locator('[data-rc-gdir="asc"]')).toHaveAttribute("aria-current", "true");
+    await expect(dirOf(page)).toHaveAttribute("data-rc-gdir-current", "asc");
 
+    await openSort(page);
     await page.locator('[data-rc-gsort="count"]').click();
     await expect(page).toHaveURL(new RegExp(`by=platform&gdir=asc&gsort=count$`));
     expect(await groupKeys(page)).toEqual(["e2e-switch", "e2e-ps5", "e2e-pc"]); // 1、2、40 款
-    await page.locator('[data-rc-gdir="desc"]').click();
+    await flip(page);
     await expectKeys(page, ["e2e-pc", "e2e-ps5", "e2e-switch"]);
 
     // 名稱：依顯示的組名排序
@@ -209,12 +185,13 @@ test.describe("依平台／依廠商的組排序", () => {
   test("依廠商：預設最新發售日由新到舊，「獨立／其他」永遠最後；排序保留在分頁／搜尋／切換分組的網址裡", async ({ page }) => {
     await page.goto(`${URL_ALL}&by=publisher`);
     await expectKeys(page, ["capcom", "fromsoftware", "nintendo", "other"]);
-    await page.locator('[data-rc-gdir="asc"]').click();
+    await flip(page);
     await expectKeys(page, ["fromsoftware", "nintendo", "capcom", "other"]);
+    await openSort(page);
     await page.locator('[data-rc-gsort="name"]').click();
     await expect(page).toHaveURL(new RegExp(`by=publisher&gdir=asc&gsort=name$`));
     await expectKeys(page, ["capcom", "fromsoftware", "nintendo", "other"]);
-    await page.locator('[data-rc-gdir="desc"]').click();
+    await flip(page);
     await expectKeys(page, ["nintendo", "fromsoftware", "capcom", "other"]);
     // 搜尋表單送出後仍是同一個排序
     await page.locator(".filter-form button.btn-primary").first().click();
@@ -232,17 +209,19 @@ test.describe("依平台／依廠商的組排序", () => {
     await expectKeys(page, [...F.dateGroups]);
     await page.goto(`${URL_ALL}&by=publisher&gsort=bogus&gdir=up`);
     await expectKeys(page, ["capcom", "fromsoftware", "nintendo", "other"]);
+    await openSort(page);
     await expect(page.locator('[data-rc-gsort="latest"]')).toHaveAttribute("aria-current", "true");
+    await expect(dirOf(page)).toHaveAttribute("data-rc-gdir-current", "desc");
   });
 
   test("三語：組排序與跳月的標籤都有翻譯", async ({ page }) => {
     for (const locale of ["zh-Hant", "en", "ja"] as const) {
       await page.goto(`/${locale}/games?q=${F.q}&by=publisher`);
+      await page.locator("[data-rc-order] .sort-current").click();
       await expect(page.locator('[data-rc-gsort="count"]')).toHaveText(msg(locale, "ui.games.groupOrder.sort.count"));
-      await expect(page.locator('[data-rc-gdir="asc"]')).toHaveText(msg(locale, "ui.games.groupOrder.dir.asc"));
+      await expect(page.locator("[data-rc-order] .sort-current")).toContainText(msg(locale, "ui.games.groupOrder.dir.desc"));
       await page.goto(`/${locale}/games?q=${F.q}&by=date&gfrom=2036-10`);
-      await expect(page.locator("[data-rc-earlier]")).toHaveText(msg(locale, "ui.games.dateNav.earlier", { month: "2036-04" }));
-      await expect(page.locator("[data-rc-jump] button")).toHaveText(msg(locale, "ui.games.dateNav.go"));
+      await expect(page.locator("[data-rc-monthpicker]").getByLabel(msg(locale, "ui.games.dateNav.jumpLabel"))).toBeAttached();
     }
   });
 

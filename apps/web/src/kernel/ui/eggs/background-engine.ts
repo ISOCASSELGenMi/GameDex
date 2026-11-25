@@ -255,7 +255,7 @@ export class BackgroundField {
       }
     // 窄螢幕／手機優先挑「周圍整圈都空白」的格子（符號不壓到內容）；不夠再放寬
     this.good = map.wide ? (medium.length ? medium : loose) : strict.length >= 6 ? strict : medium.length ? medium : loose;
-    // 寬螢幕：依可用面積補重複符號（0～9 顆）；窄螢幕只留 13 顆必要符號
+    // 寬螢幕：依可用面積補重複符號（0～9 顆）；窄螢幕只留 10 顆必要符號
     const wantExtra = map.wide ? Math.min(9, Math.floor(this.good.length / 40)) : 0;
     const extras = this.syms.length - ALL_SYMBOL_KINDS.length;
     if (extras > wantExtra) this.syms.length = ALL_SYMBOL_KINDS.length + wantExtra;
@@ -565,6 +565,7 @@ export class BackgroundField {
     if (hit.kind === STICK_KIND) {
       this.dragging = { sym: hit, pointerId, startX: x, startY: y, moved: false };
       hit.ovx = hit.ovy = 0;
+      this.cb.onBreak(STICK_KIND); // 摸到搖桿也算彩蛋序列的一步（搖桿本身不會被點破）
       return true;
     }
     this.breakSym(hit, now);
@@ -800,10 +801,7 @@ export class BackgroundField {
         ctx.fillText(s.kind.slice(4).toUpperCase(), 0, 1);
         break;
       }
-      case "dpad-up":
-      case "dpad-down":
-      case "dpad-left":
-      case "dpad-right": {
+      case "dpad": {
         const a = r * 0.36;
         const e = r;
         ctx.moveTo(-a, -e);
@@ -820,13 +818,6 @@ export class BackgroundField {
         ctx.lineTo(-a, -a);
         ctx.closePath();
         ctx.stroke();
-        ctx.beginPath();
-        const arm = s.kind.slice(5);
-        if (arm === "up") ctx.rect(-a, -e, a * 2, e - a);
-        else if (arm === "down") ctx.rect(-a, a, a * 2, e - a);
-        else if (arm === "left") ctx.rect(-e, -a, e - a, a * 2);
-        else ctx.rect(a, -a, e - a, a * 2);
-        ctx.fill();
         break;
       }
       case "stick": {

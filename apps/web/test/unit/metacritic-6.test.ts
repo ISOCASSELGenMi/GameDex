@@ -33,6 +33,15 @@ describe("parseGamePage", () => {
   it("結構認不得（改版）→ null，不猜", () => {
     expect(parseGamePage("<html><body><h1>whatever</h1></body></html>")).toBeNull();
   });
+  it("沒有評論家分數區塊時，不把玩家評分誤當 Metascore", () => {
+    const html =
+      '<div data-testid="product-score"><span data-testid="global-score-tbd">tbd</span></div>' +
+      '<div data-testid="product-score"><span data-testid="global-score-value">5.3</span></div>' +
+      '<div data-testid="user-reviews"><span data-testid="global-score-value">5.3</span> Based on 12 User Ratings</div>';
+    const p = parseGamePage(html)!;
+    expect(p.metascore).toBeNull();
+    expect(p.userScore).toEqual({ value: 5.3, count: 12 });
+  });
   it("超出範圍的值視為無分數", () => {
     expect(parseGamePage(gamePageHtml({ meta: 187 }))!.metascore).toBeNull();
   });
@@ -68,6 +77,34 @@ function mkHttp(routes: Parameters<typeof fakeMetacriticFetch>[0], gate = async 
 }
 
 describe("MetacriticHttp", () => {
+  it("網路逾時／連線中斷：退避重試，重試後恢復就照常回應；一直失敗才丟 MetacriticTransientError（不是一般錯誤）", async () => {
+    let n = 0;
+    const flaky = {
+      get impl(): typeof fetch {
+        return (async (input: RequestInfo | URL) => {
+          if (String(input).endsWith("/robots.txt")) return new Response(ROBOTS_TXT);
+          n += 1;
+          if (n <= 2) throw new TypeError("fetch failed");
+          return new Response(gamePageHtml());
+        }) as typeof fetch;
+      },
+    };
+    const sleeps: number[] = [];
+    const ok = new MetacriticHttp({ gate: async () => true, fetchImpl: flaky.impl, sleep: async (ms) => void sleeps.push(ms), minIntervalMs: 0 });
+    expect((await ok.get("/game/a/")).status).toBe(200);
+    expect(sleeps.length).toBe(2); // 兩次失敗各退避一次
+
+    const dead = new MetacriticHttp({
+      gate: async () => true,
+      fetchImpl: (async (input: RequestInfo | URL) => {
+        if (String(input).endsWith("/robots.txt")) return new Response(ROBOTS_TXT);
+        throw new DOMException("timed out", "TimeoutError");
+      }) as typeof fetch,
+      sleep: async () => {},
+      minIntervalMs: 0,
+    });
+    await expect(dead.get("/game/a/")).rejects.toBeInstanceOf(MetacriticTransientError);
+  });
   it("gate 關閉：不發出任何請求（請求數 0）", async () => {
     const { http, calls } = mkHttp({}, async () => false);
     await expect(http.get("/game/x/")).rejects.toBeInstanceOf(MetacriticDisabledError);

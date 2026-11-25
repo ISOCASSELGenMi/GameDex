@@ -143,6 +143,9 @@ export const games = pgTable(
     index("games_parent_type_idx").on(t.parentGameId, t.gameType),
     index("games_version_parent_idx").on(t.versionParentId),
     index("games_type_popularity_idx").on(t.gameType, t.popularityScore.desc()),
+    // 熱門榜與首頁熱門區塊（repository/trending.ts）：沿 (popularity_score DESC, id) 掃到要的筆數就停。
+    // NULLS FIRST 要與 ORDER BY popularity_score DESC 的預設一致，否則用不到。沒有它時規劃器低估符合列數而整表掃描＋外部排序，冷快取下讀 ~565MB、超過 3 秒 statement_timeout（2026-11-22 實測）
+    index("games_trending_rank_idx").on(t.popularityScore.desc().nullsFirst(), t.id).where(sql`${t.heatLevel} > 0`),
     index("games_first_release_date_idx").on(t.firstReleaseDate),
     index("games_search_text_trgm_idx").using("gin", sql`${t.searchText} gin_trgm_ops`),
     // 搜尋候選的「名稱完全相同」補進候選用（repository/game-suggest.ts）；text_pattern_ops 同時支援 = 與前綴 LIKE

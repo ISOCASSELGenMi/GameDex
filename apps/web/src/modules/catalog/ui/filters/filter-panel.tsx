@@ -204,7 +204,17 @@ function CheckGroup({
   );
 }
 
-const selectClass = "min-h-11 rounded-md border border-[var(--border)] bg-[var(--background)] px-2 text-[var(--foreground)]";
+/** 可折疊的篩選欄位（原生 details：沒有 JS 也能展開）。 */
+function Fold({ title, open, children }: { title: string; open: boolean; children: ReactNode }): ReactElement {
+  return (
+    <details className="fold" open={open}>
+      <summary className="fold-summary">{title}</summary>
+      {children}
+    </details>
+  );
+}
+
+const selectClass = "tb-field";
 
 export interface FilterPanelProps {
   locale: Locale;
@@ -229,9 +239,24 @@ export function FilterPanel({ locale, t, options, spec, action, fields, hidden, 
   const others = options.platforms.filter((p) => !p.isCommon);
   const othersChecked = others.some((p) => hasFilterValue(spec, "platform", p.slug));
   const list = (values: readonly string[], label: (v: string) => string) => joinList(locale, values.map(label));
+  const foldTitle = (f: FilterField): string => (f === "dateRange" ? t.t("filters.dateRange") : filterParamLabel(t, f));
+  const foldOpen = (f: FilterField): boolean => {
+    switch (f) {
+      case "dateRange":
+        return spec.from !== undefined || spec.to !== undefined;
+      case "minHeat":
+        return spec.minHeat !== undefined;
+      case "region":
+        return spec.region !== undefined;
+      case "rumored":
+        return spec.rumored === true;
+      default:
+        return (spec[f]?.length ?? 0) > 0;
+    }
+  };
 
   return (
-    <FilterDrawer summary={summary} title={summary} closeLabel={t.t("ui.common.close")}>
+    <FilterDrawer summary={summary} title={summary} closeLabel={t.t("ui.common.close")} count={count}>
       <LiveFilterForm
         action={action}
         className="filter-form"
@@ -243,6 +268,7 @@ export function FilterPanel({ locale, t, options, spec, action, fields, hidden, 
         hiddenFields={Object.entries(hidden ?? {}).map(([k, v]) => (v ? <input key={k} type="hidden" name={k} value={v} /> : null))}
       >
         {fields.map((field) => {
+          const node = ((): ReactElement | null => {
           switch (field) {
             case "platform":
               return (
@@ -399,6 +425,13 @@ export function FilterPanel({ locale, t, options, spec, action, fields, hidden, 
             default:
               return null;
           }
+          })();
+          // 每個欄位預設折疊，由玩家自己展開（已有選值的欄位自動展開）；欄位自己的 legend／label 在摺疊標題下只留給螢幕閱讀器
+          return node ? (
+            <Fold key={field} title={foldTitle(field)} open={foldOpen(field)}>
+              {node}
+            </Fold>
+          ) : null;
         })}
         {extraFields}
       </LiveFilterForm>

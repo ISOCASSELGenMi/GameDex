@@ -198,6 +198,7 @@
 - [x] 搜尋候選兩段式（2026-10-29，PR GameDex#8 已合併）：≤ 3 字元查詢先在熱度前 3000 筆找、找滿 120 筆才用、不足退回全表；開發 DB `the` 467→10 ms、`z` 265→6 ms、`ド` 237→5 ms，中密度與稀有字不變；無 migration；新增 `game-suggest-two-stage` 整合測試；spec 06／07／CHANGELOG 已同步
 - [x] GameDex#1（第二輪 Z1～Z4）、#2（Next 16.4.1 安全修補）合併到 main（2026-10-24）
 - [x] Next.js 升到 16.4.3（latest；`next`、`eslint-config-next` 皆鎖 16.4.3）（2026-10-30）。本機 node_modules 原本停在 16.4.0（package.json 雖寫 16.4.1，未重裝），升級後 `next build` 連跑兩次都過，「每隔一次 SecurityFatalError」消失；typecheck／lint／lint:arch／npm test 1380／i18n:check 通過；test:a11y 951 通過，另 2 個失敗是本機 `.env.local` 開著 `METACRITIC_SCRAPE_ENABLED=true`（測試預期預設關），設 false 重跑 37 全過，與升級無關（跑 e2e 前要先把它關掉）
+- [x] Next.js 升到 16.4.6（2026-11-22，`next`、`eslint-config-next` 鎖 16.4.6）：16.0.0～16.4.4 有 7 個安全公告（use cache 跨使用者快取外洩／污染、圖片最佳化 SVG 繞過等），`next build` 每隔一次以 SecurityFatalError 中斷；升級後 npm audit 不再列 Next（剩 esbuild、minimatch 等 11 個 moderate，皆為開發工具鏈）。
 - [x] GameDex#3（Z6）合併到 main；修偶發失敗的 PR 開立、交接檔 `docs/handoff/2026-10-24-gamedex-z6-done.md`；開發暫停等使用者重開（2026-10-24）
 - [x] 開發 DB 重算 `display_names`：1,693 款補上 zh-Hant（例：王國之淚），未移除任何既有中文名；全庫 zh-Hant 218 → 1,911（2026-10-18）
 - [x] Z1 加做（2026-10-22 完成；`recompute_display_names` 尚未在開發 DB 執行）：搜尋候選名單（所有搜尋框共用 combobox 元件）；`recompute_display_names` 任務（規則改動時全庫重算，只動 display_names，不打 IGDB）（2026-10-18 新增）
@@ -209,8 +210,9 @@
 - [x] 第二輪收尾：spec 寫回（02、03、04、05、06、07、09、15、90、CHANGELOG；D87）、開 PR `feat/gamedex-v2` → main（2026-10-23）
 - [x] 改用公開 repo `ISOCASSELGenMi/GameDex`（舊 private repo Actions 額度用完；歷史作者 email 改寫為 noreply 後推入新 repo；舊 repo 保留為 remote `private`）（2026-10-23）
 - [x] e2e 不依賴實際時間（2026-10-29，`fix/e2e-clock`）：根因是夜貓子彩蛋在本地 02:00～03:59 掛載時自動解鎖 `night-owl` 主題，UTC 02:00～03:59 整套 e2e 有 9 項穩定失敗（eggs-z3a 7、gamedex-redesign-z1a 1、ratings-z2b 1；CI 同樣）。a11y-3b／a11y.spec 的桌機 axe 失敗是同一根因（夜貓子 toast 淡入中被 axe 量到低對比，重試後 toast 已消失所以偶發過）。修法：共用 `test` 加自動套用的 `fixedClock`（落在該時段時 init script 把 `Date` 位移到同日 01:00，其餘時間不動；`clock.install` 會假造計時器、使帳號分頁切換等測試失敗，故不用）；新增 `e2e/clock-e.spec.ts` 鎖定；產品行為不變
-- [ ] 待辦（2026-10-29 新增）：夜貓子／彩蛋 toast 淡入過程中文字對比不足（axe 量到 `.egg-toast-kind` 3.82、`button[data-egg-apply]` 2.95，低於 4.5）；真實使用者在淡入那幾百毫秒看到偏淡的字，可讓 toast 從不透明度 0.6 以上開始淡入，或淡入完成後才套用文字色
+- [x] 已修（2026-11-02，eggs.css 起始不透明度 0.6）：夜貓子／彩蛋 toast 淡入過程中文字對比不足（axe 量到 `.egg-toast-kind` 3.82、`button[data-egg-apply]` 2.95，低於 4.5）；真實使用者在淡入那幾百毫秒看到偏淡的字，可讓 toast 從不透明度 0.6 以上開始淡入，或淡入完成後才套用文字色
 - [ ] 偶發失敗觀察（2026-10-29 新增）：`behavior-3b.spec.ts:94`（/games 分頁：下一頁 → 上一頁兩頁不重疊）在整套中失敗過 1 次（回傳 1 筆而非 26 筆），單檔重複 192 次全過，疑似換頁後 hydration 前就取樣的競爭，再出現時再查
+- [x] `eggs-z3a.spec.ts:227` 偶發失敗已修（2026-11-04）：本機單檔重複 40 次可重現 21 次；原因是測試用錨點的精確座標做 `elementFromPoint`，但引擎以 24px 格中心判定空白、錨點在格內抖動 ±6px。測試改比對錨點所在格的中心並輪詢到收斂，40/40 通過、整檔 51 通過；產品程式不變
 - [x] 第三輪（2026-10-29）全部合併到 main，CI 全綠自動合併：#5 小清理（eslint 忽略 `.next-e2e-*`、actions 升 v7）、#6 e2e 時鐘修正、#7 全站 HTML 瘦身、#8 搜尋候選兩段式、#9 月曆未定日只送前 24 款、#10 分組細節 D88；使用者常設授權「CI 全綠就合併，不用再問」（動開發 DB 與破壞性操作仍要問）；交接檔 `docs/handoff/2026-10-29-gamedex-round3-done.md`；開發暫停等使用者說繼續
 
 - [x] 後台設定與 Phase 6 Metacritic（2026-10-29，分支 `feat/admin-settings`，尚未合併）：
@@ -221,6 +223,16 @@
   - [x] E spec 同步：00、02、03、05、06、12、15、16、90（D89）、91、CHANGELOG
   - [ ] 待使用者：合併 PR；對真實 metacritic.com 啟用前再觀察一次頁面結構（05）；啟用順序＝設 `METACRITIC_SCRAPE_ENABLED=true`＋重啟 → 後台勾「允許抓取」→ 手動跑 `refresh_metacritic_index`（約 40 片/次）→ `repair_matches_metacritic` → 覆核 `/internal/matches` → `sync_ratings`
   - [ ] 尚未做：「未配對遊戲」覆核佇列（12）、回報處理人欄位、`rolling_refresh_misses`（沒有對應的表）
+- [x] Metacritic 配對改用遊戲頁驗證（2026-11-05，未提交）：標題（官方原文，相似度 < 0.9 放棄）＋發售日（±3 天，我方任一平台／地區日精度日期）＋開發／發行商＋平台；自動採用須標題完全相同＋日期相符＋（公司或平台相符）；`auto2` 標記、`reverify_matches_metacritic` 每日重驗舊配對；修 `parseGamePage` 誤把玩家評分當 Metascore 的 bug；spec 05／CHANGELOG 已同步；單元 `metacritic-verify.test.ts`、整合 `metacritic-6.test.ts`；驗收：typecheck／lint／lint:arch／npm test 1426／i18n:check 通過（test:a11y 未跑，沒動 UI）
+  - [x] Steam 佐證（2026-11-05，未提交）：`provider/steam.ts`（appdetails 的 `metacritic.url` → slug，間隔 1.6 秒、快取、429 後本輪停、出錯＝未知）；`verifyExternalMatch` 加 `hint`（slug 相同＝強證據、不同＝覆核且信心 ≤ 60）；repair／reverify 在頁面驗證沒放棄且有 Steam AppID 時才問；單元 `metacritic-steam.test.ts`、`metacritic-verify.test.ts`，整合 `metacritic-6.test.ts` 增 2 案例；npm test 全過
+  - [x] 開發 DB 重驗（2026-11-05，使用者授權）：當日額度用完前處理 110 筆（維持 78、降覆核 32 含刪分數、移除 14 並記否決）；剩 473 筆 `auto` 待後續每日額度繼續重驗
+  - [x] 人工校驗循環第 1 輪（2026-11-08）：使用者在校驗頁勾 27 筆相符（manual 確認）、5 筆不相符（拒絕）；新一輪重驗 197 筆（維持 9、降覆核 10、移除 178）；流程見 `docs/handoff/2026-11-08-metacritic-review-loop.md`；校驗頁 artifact 已更新到第 2 版
+  - [x] 人工校驗循環第 2 輪（2026-11-11）：使用者勾 7 筆相符、3 筆不相符；新一輪重驗 270 筆（維持 1、降覆核 8、移除 261）、新配對 137 款、索引累計 120+40 片；校驗頁更新到第 3 版（待校驗 29 筆，新列尚無 Metacritic 日期——額度用完）
+  - [x] 追加內容頁排除與每日自動抓取（2026-11-21，未提交）：Season Pass／Pack／DLC 頁不當候選（`hasForeignSupplementary`，候選與頁面驗證兩階段）；`MetacriticHttp` 網路錯誤退避重試（修掉任務偶發整個失敗）；slug 索引讀完（314 片、約 21 萬 slug）；`scripts/metacritic-daily.ts`＋`metacritic-daily-launch.mjs`＋`.claude/settings.local.json` 的 SessionStart hook：Claude 啟動時當天（UTC）還沒抓過就在背景把 Metacritic 請求額度用到上限前 20；單元／整合測試已補
+  - [x] 人工校驗循環第 3 輪（2026-11-21）：使用者勾 16 筆相符、13 筆不相符（含 Pro Flight Simulator: Deluxe）；新確認 16＋3 款分數；校驗頁更新到第 5 版（待校驗 27 筆，Metacritic 日期待明天額度補）
+  - [x] 每日自動抓取最後一步補 Metacritic 發售日（2026-11-21，未提交）：`scripts/lib/review-facts.ts`（`fillFacts`、`slugsNeedingFacts`、`runFactsStep`、`jobBudgetLimit`）被每日腳本與手動 `facts` 共用；任務額度預留 60 給這一步；單元 `metacritic-facts.test.ts`（9 個）、整合 `metacritic-facts.test.ts`；npm test 1456 全過。尚未在新的一天（額度重置後）實際跑過
+  - [x] Metacritic 頁面快取與每請求記帳（2026-11-21，未提交）：`metacritic_pages`（migration 0022，**尚未套到開發 DB**）＋`use-cases/pages.ts` 快取包裝（讀穿／寫穿、TTL 90／7／30／7 天、`sync_ratings` 才 forceRefresh）；`MetacriticHttp.onRequest`＋`Budget.track／flush` 每請求記帳（每 5 個寫一次）；補頁面資料與校驗頁匯出改讀寫資料庫，`metacritic-review.ts import-facts` 一次性匯入舊 JSON（冪等）。單元 `metacritic-pages.test.ts`、整合 `metacritic-pages.test.ts`（12 個）；待使用者：套 migration 0022 到開發 DB、跑一次 `import-facts`
+  - [ ] 待使用者：繼續跑 `npm run job -- reverify_matches_metacritic`（或等排程）直到 `auto` 為 0；再到 `/internal/matches` 覆核留下的待覆核項目；索引只讀了 120/310 片，`refresh_metacritic_index` 要再跑
 - [x] /games 分組檢視的排序與瀏覽 D89（2026-10-29，分支 `feat/browse-sorts`）：①卡片第二行一律顯示標題原文，沒有譯名留空但保留固定高度、同列卡片等高（`.rc-orig`／`.bc-orig`；不分組清單的卡片撐滿格子）；②依日期分組加 `gfrom=YYYY-MM`（預設＝當月起不變）、第 1 頁「往前看較早的月份」連結（往前 6 個月）與年／月下拉跳月 GET 表單（無 JS 送 `gyear`＋`gmonth`）；③依平台／廠商組排序 `gsort=latest｜count｜name`、`gdir=asc｜desc`（預設 latest／desc 不寫進網址，「獨立／其他」永遠最後），組內固定首發日由新到舊、分組檢視隱藏排序欄位、`/api/v1/games/group` 忽略 `sort`；④廠商欄新增雷亞遊戲（12017、14094）、赤燭遊戲（11926）、信革數位（15108），並修 publisher-groups.ts 檔頭過時註解；⑤平台總覽 `/platforms?sort=release&dir=` 依平台發售日（platform_release_dates 最早有日期者；沒有日期最後；預設新到舊）。新增 migration 0018（三個組內排序 index）；spec 03／06／07／90（D89）／CHANGELOG 與 publisher-groups.md 已同步；單元＋整合＋e2e（`games-sorts.spec.ts` 等）已補
 - [ ] 待使用者處理（2026-10-29 新增）：開發 DB 套 migration 0018（三個 index，約數百 MB）後用 EXPLAIN 確認 `buildGroupCardsQuery` 的組內排序走這三個 index、量 `/games?by=platform|publisher|date` 冷查詢；跑 `backfill_game_groups` 讓三個新廠商欄生效
 - [x] 待回饋 IGDB 清單 D91 第 1 波（2026-10-30，worktree 分支 `worktree-agent-afd06dafaf538992d`，尚未合併）：欄位登錄表（六個欄位）、`igdb_feedback_items`（migration 0021，**未套到開發 DB**）、核可同交易建項目、`localized_title` 回報類型（核可寫 manual zh-Hant 並重算 display_names／search_text）、同步後採納偵測、`/internal/igdb-feedback`（分頁、單筆與批次動作）；單元＋整合＋e2e（`igdb-feedback-d91`）已補；spec 03／07／12／90／CHANGELOG 已同步
@@ -229,3 +241,14 @@
   - [ ] 待使用者：對照 IGDB 編輯頁，確認 24 個欄位的清單與 `igdbLocation`（全部標「推測」），不開放的欄位從形狀表／登錄表刪除；合併後把 migration 0021 套到開發 DB
   - [ ] 已知限制：`age_rating` 因我方尚未同步 `ageRatingLabel` 實務上要手動標記；公開回報表單沒有 JS 就無法送出（與既有回報類型相同）
 - [x] 篩選即時套用與位置保留（2026-10-30，分支 `feat/live-filters`）：月曆、時間軸、`/games`、評分排名、熱門榜的篩選面板勾選即更新（有 JS 時無套用按鈕、無 JS 保留表單送出；文字／數字 debounce 400 ms；`/games` 的 `q` 只在 Enter）；`router.replace` 不跳回頂端；根因＝時間軸切週是 pushState，hidden `week`／chip 連結是過期位置——改以目前網址算新網址（`ui/filters/live-filter.ts`），chip／清除／平台種類連結同樣就地更新；`/games` 頁碼超出範圍退到最後一頁；單元 `live-filter.test.ts`、e2e `live-filters.spec.ts`；spec 06／CHANGELOG 已同步；驗收：npm test 1321 過、test:a11y 949 過／1 跳過／0 失敗、lint／lint:arch／i18n:check／typecheck 皆過
+- [x] 扁平化改版與精簡工具列（2026-10-30）：①品牌拉霸機 Game 固定、只滾後綴（e2e 字格數改 8）；②全站移除背景漸層／玻璃模糊／裝飾漸層，封面文字改實色底；③`/games` 精簡工具列（搜尋＋年份＋排序一列、篩選圖示鈕＋浮出面板、分段控制縮小）；④卡片大小切換（封面／詳細／清單，`view-switch.tsx`）；⑤游標傾斜視差（`kernel/ui/pointer-fx.tsx`）＋捲動視差（CSS）；⑥e2e `flat-redesign.spec.ts`，a11y 輔助改為只等時間軸動畫（捲動連動動畫永遠 running）。設計說明見 `docs/design/ui-direction.md` 檔尾。
+  - [ ] 待使用者：確認 `/games` 的樣子後，決定要不要推廣到時間軸／月曆／平台頁／評分排名；`gd-view` 首次繪製閃一下（要不要加 head inline script）。
+- [x] 扁平化第二輪（2026-10-31）：拉霸機放慢；封面模式 `cover.medium`；排序選單＋升降冪（新增 3 個排序值）；全站篩選圖示鈕＋欄位折疊；依日期改月份選擇器；按鈕標準規格化；e2e 加 `openFolds` 自動展開（要測折疊的測試設 `window.__keepFolds`）。細節見 `docs/design/ui-direction.md` 檔尾。
+
+- [x] 扁平化第三輪（2026-10-31）：排序三角左側可點＋同框、工具列對齊、分組卡片資訊底改懸浮／輕觸顯示、詳情封面 3D。已知偶發失敗：`eggs-z3a` 手機 375 兩個測試（改動前的完整跑就出現過，單獨重跑多半通過）。
+- [x] 拉霸機改捲軸效果（2026-10-31）：依字母順序、動態模糊、依序停下、回彈；單元與 e2e 時間斷言改為約 1.2 秒；排序框左側留白加寬。
+- [x] 拉霸機只轉兩三格、方向依導覽順序（2026-10-31）：`middleLetters`／`rollDirection`，單元與 e2e 時間斷言改約 0.9 秒。
+- [x] 拉霸機縮短到 0.5 秒內（2026-11-22）：`BRAND_ROLL_BASE_MS` 260、`STEP` 30（最長約 470ms）；單元與 e2e 時間斷言改 ≤ 500ms；spec 06 同步。
+- [x] 拉霸機修閃字（2026-11-22）：JS 晚到的頁面（如 `/games`）hydration 前先露出新字、再跳回舊字開始轉；改由品牌文字後的 inline script 在 hydration 前就顯示舊字（`pendingScript`、`html[data-brand-pending]`）；單元測試補判斷條件。 驗證：test:a11y 968 過，`gamedex-redesign-x1:383` 封面高度差 2.00003px 偶發失敗一次（重跑 3 次皆過，與本改動無關）；正式 build 逐格記錄 `/games`、首頁 hydration 前皆顯示舊字、無新字閃現。
+- [x] 冷啟動逾時修正（2026-11-22）：正式 server 剛啟動或快取被洗掉時，首頁與 `/trending` 第一次載入「查詢逾時」。原因是熱門查詢（`repository/trending.ts`）整表掃描 31 萬款＋外部排序（冷讀 ~565MB），首頁同時發 4 個查詢互相拖慢、超過 3 秒。改為 migration 0023 部分索引 `games_trending_rank_idx`，並把依 7 日追蹤數排序的查詢拆兩段合併；開發 DB 實測（交易內建索引後 rollback）冷快取 380ms→0.2ms（不依追蹤數）／58ms（依追蹤數）；整合測試補逐頁翻與一次取全部一致。開發 DB 已套 0023（2026-11-22，只新增此 index）；正式 build 冷啟動（PG 重啟、首頁同時 4 查詢）實測：首頁、/trending（含 released、第 3 頁）、/en 全部正常、無查詢被取消，熱門查詢最慢 0.49 秒（修正前 1.2～1.5 秒），EXPLAIN 確認走 `games_trending_rank_idx`；剩餘時間主要是 `game_popularity_signals` 整表掃描（~20MB，單獨約 50ms）。
+- [x] 彩蛋與主題調整（2026-10-31，分支 `feat/egg-theme-tweaks`）：①1a／1b 改連續點到四顆各一次即成立（不限順序、重複就重來），1c 改為點十字鍵＋類比搖桿各一次（十字鍵合併為單一符號、不分上下左右；摸到搖桿算一步），背景符號 13→10 顆；②任天堂紅改官網紅 `#e60012`（白／淺灰底，連結 `#cc0010` 過 AA）並讓標題列整條紅底白字（列內下拉還原白底）；③深色非標題小字加粗（`font-weight:500`＋0.2px 描邊：亮色主題內文、暗色主題的 `--on-link` 深色字；標題不動）；④`/games` 分組切換改滑動色塊（transform，reduced-motion 直接到位）；⑤熱度排序時不顯示「熱度每小時更新，由高到低」說明（切分組不再跳版）。單元＋e2e 已更新；已知偶發失敗同前（`eggs-z3a` 手機 375 隨機位置測試）。

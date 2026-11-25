@@ -218,7 +218,7 @@ test.describe("評分排名頁：排序與名次升降", () => {
       expect(a.duration).toBe(150);
     }
     // 結束後沒有殘留的 transform
-    await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== "running"));
+    await page.waitForFunction(() => document.getAnimations().filter((a) => a.timeline instanceof DocumentTimeline).every((a) => a.playState !== "running"));
     expect(await rows(page).evaluateAll((els) => els.map((e) => getComputedStyle(e).transform))).toEqual(Array(5).fill("none"));
   });
 
@@ -231,7 +231,7 @@ test.describe("評分排名頁：排序與名次升降", () => {
     await expect(th(page, "players")).toHaveAttribute("aria-sort", "descending");
     const firstSort = await trAnims(page);
     expect(firstSort.filter((a) => a.props.includes("transform")).length).toBeLessThanOrEqual(5); // 結果只有 5 列
-    await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== "running"));
+    await page.waitForFunction(() => document.getAnimations().filter((a) => a.timeline instanceof DocumentTimeline).every((a) => a.playState !== "running"));
     // 反向：從 5 列換回 50 列（視窗只有 500px、列高約 70px，視窗內約 7 列）：新進的列只有視窗內（含上下各 1/4 視窗）的才淡入，其餘直接就位
     await sortBtn(page, "igdb").click();
     await expect(th(page, "igdb")).toHaveAttribute("aria-sort", "descending");
@@ -288,7 +288,7 @@ test.describe("評分排名頁：排序與名次升降", () => {
     await expect(th(page, "igdb")).toHaveAttribute("aria-sort", "descending");
     await expect(page).toHaveURL(/sort=igdb&dir=desc$/);
     await expect(rows(page)).toHaveCount(50);
-    await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== "running"));
+    await page.waitForFunction(() => document.getAnimations().filter((a) => a.timeline instanceof DocumentTimeline).every((a) => a.playState !== "running"));
     expect((await slugs(page)).slice(0, 4)).toEqual(["e2e-big-01", "e2e-big-02", "e2e-big-03", "e2e-big-04"]);
     expect(await rows(page).evaluateAll((els) => els.slice(0, 20).map((e) => getComputedStyle(e).transform))).toEqual(Array(20).fill("none"));
     expect(errors).toEqual([]);
@@ -465,8 +465,8 @@ test.describe("評分排名頁：互動細節與響應式", () => {
         const scrollable = await region.evaluate((el) => el.scrollWidth > el.clientWidth);
         expect(scrollable).toBe(true);
       }
-      // 觸控目標 ≥ 44px
-      for (const s of ["igdb", "players"]) expect((await sortBtn(page, s).boundingBox())!.height).toBeGreaterThanOrEqual(44);
+      // 標準按鈕規格：高 ≥ 32px（2rem）
+      for (const s of ["igdb", "players"]) expect((await sortBtn(page, s).boundingBox())!.height).toBeGreaterThanOrEqual(32);
     });
   }
 

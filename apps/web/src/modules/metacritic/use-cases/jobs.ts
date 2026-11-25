@@ -11,18 +11,29 @@ import { getSyncState, saveSyncProgress } from "@/kernel/db/sync-state";
 import {
   findBestMatch,
   getRejectedExternalIds,
+  hasForeignSupplementary,
+  listAutoMatchesToVerify,
+  loadGameFacts,
+  markMatchVerified,
   normalizeTitle,
   recordMatchAttempt,
+  rejectExternalMatch,
   saveExternalRatings,
   selectRatingSyncTargets,
   selectRepairCandidates,
   upsertExternalIdMatch,
+  verifyExternalMatch,
   type Candidate,
+  type ExternalFacts,
+  type OurGameFacts,
+  type VerifyVerdict,
 } from "@/modules/catalog";
 import { MetacriticBlockedError, MetacriticDisabledError, MetacriticTransientError, type MetacriticHttp } from "../provider/http";
-import { METACRITIC_SCORE_ORIGIN, METACRITIC_SCORE_TYPES, METACRITIC_SOURCE, createMetacriticProvider, gameUrl, type MetacriticProvider } from "../provider/provider";
+import { METACRITIC_SCORE_ORIGIN, METACRITIC_SCORE_TYPES, METACRITIC_SOURCE, createMetacriticProvider, gameUrl } from "../provider/provider";
 import { slugToName } from "../provider/parse";
+import { createSteamHintClient, type SteamHintClient } from "../provider/steam";
 import { insertSlugs, countSlugs, searchSlugs } from "../repository/slugs";
+import { createCachedPages } from "./pages";
 import { checkCanRun, createHttp, defaultAlert, loadBudget, markBlocked, type Budget } from "./runtime";
 
 export interface JobIo {
@@ -32,6 +43,8 @@ export interface JobIo {
   http?: MetacriticHttp;
   alert?: (message: string) => Promise<unknown>;
   dailyLimit?: number;
+  /** 測試注入：Steam 對 Metacritic 頁面的記錄（配對佐證）；預設用真實的 Steam appdetails。 */
+  steam?: SteamHintClient;
   /** 測試用：只修復這些遊戲（整合測試共用同一個資料庫，其他測試檔的遊戲不該被算進 tried）。 */
   onlyGameIds?: readonly number[];
 }
@@ -41,6 +54,8 @@ const INDEX_STATE = "metacritic_slug_index";
 const INDEX_SHARDS_PER_RUN = 40;
 export const SYNC_BATCH = 100;
 export const REPAIR_BATCH = 200;
+/** slug 比對信心低於此值就不花請求去驗證遊戲頁（實測低於這個幾乎全是別款遊戲）。 */
+export const PAGE_VERIFY_MIN = 70;
 /** 解析失敗率警戒：至少 10 次嘗試且 30% 以上失敗（改版徵兆）。 */
 export const PARSE_FAIL_ALERT = { minAttempts: 10, ratio: 0.3 } as const;
 
@@ -56,7 +71,9 @@ async function setup(io: JobIo): Promise<{ http: MetacriticHttp; budget: Budget;
     io.log("略過：今日請求額度已用完");
     return null;
   }
-  return { http: io.http ?? createHttp(), budget, now };
+  const http = io.http ?? createHttp();
+  budget.track(http); // 每個請求即時記帳（行程被殺最多少算一小批）
+  return { http, budget, now };
 }
 
 /** 被擋就記冷卻並告警；其他錯誤往外丟（任務失敗由心跳記錄）。 */
@@ -93,7 +110,7 @@ export async function refreshSlugIndex(io: JobIo): Promise<{ shards: number; add
     const state = await getSyncState(INDEX_STATE);
     let next = Number(state?.cursor ?? 0);
     if (!Number.isInteger(next) || next < 0 || next >= all.length) next = 0;
-    while (shards < INDEX_SHARDS_PER_RUN && shards < all.length && ctx.budget.remaining() - ctx.http.requests > 0) {
+    while (shards < INDEX_SHARDS_PER_RUN && shards < all.length && ctx.budget.remaining() > 0) {
       const slugs = await provider.fetchSitemapSlugs(all[next]!);
       if (slugs) added += await insertSlugs(slugs.map((slug) => ({ slug, nameNorm: normalizeTitle(slugToName(slug)) })));
       shards += 1;
@@ -104,7 +121,7 @@ export async function refreshSlugIndex(io: JobIo): Promise<{ shards: number; add
   } catch (err) {
     if (!(await handleFatal(err, io))) throw err;
   } finally {
-    await ctx.budget.spend(ctx.http.requests);
+    await ctx.budget.flush();
   }
   return { shards, added };
 }
@@ -115,10 +132,22 @@ async function candidatesFor(name: string, altNames: readonly string[], rejected
   for (const n of [name, ...altNames.slice(0, 3)]) {
     for (const row of await searchSlugs(normalizeTitle(n), 10)) {
       if (rejected.has(row.slug)) continue;
+      // Season Pass／Pack／DLC 之類的追加內容頁不是遊戲本體：我方名稱沒有同樣字樣就不當候選
+      if (hasForeignSupplementary([name, ...altNames], slugToName(row.slug))) continue;
       out.set(row.slug, { externalId: row.slug, name: slugToName(row.slug), releaseYear: null, externalUrl: gameUrl(row.slug) });
     }
   }
   return [...out.values()];
+}
+
+/**
+ * 頁面驗證＋Steam 佐證：先只看頁面；沒被拒絕且我方有 Steam AppID 才多問一次 Steam（不佔 Metacritic 額度）。
+ * Steam 記錄的 Metacritic slug 與候選相同＝強證據；不同＝進覆核；查不到＝不影響。
+ */
+async function verifyPage(ours: OurGameFacts, facts: ExternalFacts, slug: string, steam: SteamHintClient): Promise<VerifyVerdict> {
+  const base = verifyExternalMatch(ours, facts);
+  if (base.decision === "reject" || !ours.steamAppId) return base;
+  return verifyExternalMatch(ours, facts, { steamSlug: await steam.getMetacriticSlug(ours.steamAppId), candidateSlug: slug });
 }
 
 export interface RepairStats {
@@ -126,49 +155,60 @@ export interface RepairStats {
   matched: number;
   review: number;
   noCandidate: number;
-  verifiedMismatch: number;
+  /** 遊戲頁驗證不通過（標題不符或日期差太多）而放棄的候選。 */
+  rejected: number;
 }
 
+const EMPTY_FACTS = { dates: [], companies: [], platforms: [] } as const;
+
+/**
+ * 修復比對（05 §修復排程）：slug 索引找候選 → 標題粗篩（≥ PAGE_VERIFY_MIN）→ 抓遊戲頁 → 用頁面上的標題、發售日（±3 天，任一平台）、
+ * 開發／發行商、平台驗證（verifyExternalMatch）。通過才自動採用；有疑慮進覆核；明顯不是同一款就放棄，不佔覆核佇列。
+ */
 export async function runRepairMatches(io: JobIo, batch: number = REPAIR_BATCH): Promise<RepairStats> {
-  const stats: RepairStats = { tried: 0, matched: 0, review: 0, noCandidate: 0, verifiedMismatch: 0 };
+  const stats: RepairStats = { tried: 0, matched: 0, review: 0, noCandidate: 0, rejected: 0 };
   const ctx = await setup(io);
   if (!ctx) return stats;
   if ((await countSlugs()) === 0) {
     io.log("slug 索引是空的：先執行 refresh_metacritic_index");
     return stats;
   }
-  const provider = createMetacriticProvider(ctx.http);
+  const provider = createCachedPages(createMetacriticProvider(ctx.http), () => ctx.now);
+  const steam = io.steam ?? createSteamHintClient();
   const today = ctx.now.toISOString().slice(0, 10);
   try {
-    for (const game of await selectRepairCandidates(METACRITIC_SOURCE, today, batch, undefined, io.onlyGameIds)) {
+    const games = await selectRepairCandidates(METACRITIC_SOURCE, today, batch, undefined, io.onlyGameIds);
+    const facts = await loadGameFacts(games.map((g) => g.gameId));
+    for (const game of games) {
       const rejected = await getRejectedExternalIds(game.gameId, METACRITIC_SOURCE);
       const cands = await candidatesFor(game.name, game.altNames, rejected);
       const match = findBestMatch(game.name, game.altNames, game.year, cands);
-      stats.tried += 1;
-      if (!match) {
+      if (!match || match.confidencePct < PAGE_VERIFY_MIN) {
+        stats.tried += 1;
         stats.noCandidate += 1;
         await recordMatchAttempt(game.gameId, METACRITIC_SOURCE, "no_candidate");
         continue;
       }
-      let needsReview = match.needsReview;
-      // 自動採用前用遊戲頁驗證上市年份（slug 沒有年份）：差距 > 2 年 → 進覆核。額度用完就不驗證、一律進覆核。
-      if (!needsReview) {
-        if (ctx.budget.remaining() - ctx.http.requests <= 0) needsReview = true;
-        else {
-          const page = await provider.getScoreById(match.externalId);
-          if (page.kind !== "ok" || (game.year !== null && page.year !== null && Math.abs(page.year - game.year) > 2)) {
-            needsReview = true;
-            stats.verifiedMismatch += 1;
-          }
-        }
+      if (ctx.budget.remaining() <= 0) break; // 額度用完：這款留到下一輪，不記嘗試
+      const page = await provider.getScoreById(match.externalId);
+      if (page.kind === "parse_failed") continue; // 下一輪再試，不記嘗試
+      stats.tried += 1;
+      const ours = facts.get(game.gameId) ?? { names: [game.name, ...game.altNames], ...EMPTY_FACTS };
+      const verdict = page.kind === "ok" ? await verifyPage(ours, page.facts, match.externalId, steam) : null;
+      if (!verdict || verdict.decision === "reject") {
+        stats.rejected += 1;
+        await recordMatchAttempt(game.gameId, METACRITIC_SOURCE, "no_candidate");
+        continue;
       }
+      const needsReview = verdict.decision === "review";
       await upsertExternalIdMatch({
         gameId: game.gameId,
         source: METACRITIC_SOURCE,
         externalId: match.externalId,
         externalUrl: match.externalUrl,
-        confidencePct: match.confidencePct,
+        confidencePct: verdict.confidencePct,
         needsReview,
+        matchMethod: "auto2",
       });
       await recordMatchAttempt(game.gameId, METACRITIC_SOURCE, needsReview ? "low_confidence" : "matched");
       if (needsReview) stats.review += 1;
@@ -178,7 +218,58 @@ export async function runRepairMatches(io: JobIo, batch: number = REPAIR_BATCH):
   } catch (err) {
     if (!(await handleFatal(err, io))) throw err;
   } finally {
-    await ctx.budget.spend(ctx.http.requests);
+    await ctx.budget.flush();
+  }
+  return stats;
+}
+
+export interface ReverifyStats {
+  checked: number;
+  kept: number;
+  downgraded: number;
+  removed: number;
+  skipped: number;
+}
+
+/**
+ * 重新驗證既有的自動配對（match_method='auto'，舊規則只比 slug 名稱）：抓遊戲頁，用新規則重判。
+ * 通過→維持（已確認的維持已確認）；有疑慮→降為覆核並刪分數；不是同一款→刪配對、記拒絕、刪分數。manual 不動。驗證過的標成 auto2，每輪接著做。
+ */
+export async function runReverifyMatches(io: JobIo, batch: number = REPAIR_BATCH): Promise<ReverifyStats> {
+  const stats: ReverifyStats = { checked: 0, kept: 0, downgraded: 0, removed: 0, skipped: 0 };
+  const ctx = await setup(io);
+  if (!ctx) return stats;
+  const provider = createCachedPages(createMetacriticProvider(ctx.http), () => ctx.now);
+  const steam = io.steam ?? createSteamHintClient();
+  try {
+    const rows = await listAutoMatchesToVerify(METACRITIC_SOURCE, batch, io.onlyGameIds);
+    const facts = await loadGameFacts(rows.map((r) => r.gameId));
+    for (const row of rows) {
+      if (ctx.budget.remaining() <= 0) break;
+      const page = await provider.getScoreById(row.externalId);
+      if (page.kind === "parse_failed") {
+        stats.skipped += 1;
+        continue;
+      }
+      stats.checked += 1;
+      const ours = facts.get(row.gameId);
+      const verdict = page.kind === "ok" && ours ? await verifyPage(ours, page.facts, row.externalId, steam) : null;
+      if (!verdict || verdict.decision === "reject") {
+        await rejectExternalMatch(row.id, METACRITIC_SOURCE, METACRITIC_SOURCE);
+        stats.removed += 1;
+      } else if (verdict.decision === "review") {
+        await markMatchVerified(row.id, METACRITIC_SOURCE, verdict.confidencePct, true, METACRITIC_SOURCE);
+        stats.downgraded += 1;
+      } else {
+        await markMatchVerified(row.id, METACRITIC_SOURCE, verdict.confidencePct, false);
+        stats.kept += 1;
+      }
+    }
+    io.log("reverify_matches_metacritic", { ...stats, requests: ctx.http.requests });
+  } catch (err) {
+    if (!(await handleFatal(err, io))) throw err;
+  } finally {
+    await ctx.budget.flush();
   }
   return stats;
 }
@@ -195,14 +286,14 @@ export async function runSyncRatings(io: JobIo, batch: number = SYNC_BATCH): Pro
   const stats: SyncStats = { attempted: 0, saved: 0, notFound: 0, parseFailed: 0 };
   const ctx = await setup(io);
   if (!ctx) return stats;
-  const provider: MetacriticProvider = createMetacriticProvider(ctx.http);
+  const provider = createCachedPages(createMetacriticProvider(ctx.http), () => ctx.now);
   const today = ctx.now.toISOString().slice(0, 10);
   try {
     const limit = Math.min(batch, ctx.budget.remaining());
     for (const t of await selectRatingSyncTargets(METACRITIC_SOURCE, METACRITIC_SOURCE, today, limit)) {
-      if (ctx.budget.remaining() - ctx.http.requests <= 0) break;
+      if (ctx.budget.remaining() <= 0) break;
       stats.attempted += 1;
-      const page = await provider.getScoreById(t.externalId);
+      const page = await provider.getScoreById(t.externalId, { forceRefresh: true }); // 分數到了更新時間：強制重抓並更新快取
       if (page.kind === "parse_failed") {
         stats.parseFailed += 1;
         // 解析失敗不寫負向快取（結構改版時不該把整批遊戲標成「沒有分數」）；下一輪再試
@@ -231,7 +322,7 @@ export async function runSyncRatings(io: JobIo, batch: number = SYNC_BATCH): Pro
   } catch (err) {
     if (!(await handleFatal(err, io))) throw err;
   } finally {
-    await ctx.budget.spend(ctx.http.requests);
+    await ctx.budget.flush();
   }
   return stats;
 }

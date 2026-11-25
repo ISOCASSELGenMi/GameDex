@@ -17,6 +17,12 @@ export interface ParsedScore {
 export interface ParsedGamePage {
   title: string | null;
   releaseYear: number | null;
+  /** YYYY-MM-DD（ld+json datePublished，頁面上的首次上市日）。 */
+  releaseDate: string | null;
+  /** 開發商（hero 區塊）與發行商（ld+json）名稱。 */
+  companies: string[];
+  /** ld+json gamePlatform。 */
+  platforms: string[];
   metascore: ParsedScore | null;
   userScore: ParsedScore | null;
 }
@@ -46,28 +52,53 @@ function parseBlock(seg: string | null, kind: "meta" | "user"): ParsedScore | nu
   return { value, count: parseCount(seg, kind === "meta" ? /Critic Reviews?/ : /User Ratings?/) };
 }
 
-function parseLd(html: string): { title: string | null; year: number | null } {
+interface LdInfo {
+  title: string | null;
+  year: number | null;
+  date: string | null;
+  publishers: string[];
+  platforms: string[];
+}
+
+const strings = (v: unknown): string[] => (Array.isArray(v) ? v : v == null ? [] : [v]).filter((x): x is string => typeof x === "string" && x !== "");
+
+function parseLd(html: string): LdInfo {
   for (const m of html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)) {
     try {
-      const data = JSON.parse(m[1]!) as { "@type"?: string; name?: string; datePublished?: string };
+      const data = JSON.parse(m[1]!) as { "@type"?: string; name?: string; datePublished?: string; gamePlatform?: unknown; publisher?: unknown };
       if (data["@type"] === "VideoGame") {
         const y = /^(\d{4})/.exec(data.datePublished ?? "")?.[1];
-        return { title: typeof data.name === "string" ? data.name : null, year: y ? Number(y) : null };
+        const date = /^\d{4}-\d{2}-\d{2}/.exec(data.datePublished ?? "")?.[0] ?? null;
+        const pubs = (Array.isArray(data.publisher) ? data.publisher : data.publisher ? [data.publisher] : []).map((p) => (p as { name?: unknown })?.name);
+        return { title: typeof data.name === "string" ? data.name : null, year: y ? Number(y) : null, date, publishers: strings(pubs), platforms: strings(data.gamePlatform) };
       }
     } catch {
       /* 下一個 */
     }
   }
-  return { title: null, year: null };
+  return { title: null, year: null, date: null, publishers: [], platforms: [] };
+}
+
+/** 開發商：hero-summary-developer 區塊內 /company/ 連結的文字。 */
+function parseDevelopers(html: string): string[] {
+  const seg = segmentAfter(html, 'data-testid="hero-summary-developer"');
+  if (!seg) return [];
+  const end = seg.indexOf("</p>");
+  const block = end < 0 ? seg : seg.slice(0, end);
+  return [...block.matchAll(/<a [^>]*href="\/company\/[^"]*"[^>]*>(?:<!--\[-->)?([^<]+)/g)].map((m) => m[1]!.trim()).filter(Boolean);
 }
 
 /** 解析遊戲頁。認不得結構（沒有 product-score 區塊）回 null＝解析失敗。 */
 export function parseGamePage(html: string): ParsedGamePage | null {
-  const meta = segmentAfter(html, 'data-testid="product-score"');
-  if (meta === null) return null;
+  const metaAll = segmentAfter(html, 'data-testid="product-score"');
+  if (metaAll === null) return null;
+  // 頁面上有多個 product-score 區塊（第二個是玩家評分）；Metascore 為 tbd 時 6000 字元視窗會讀進下一個區塊而誤取玩家分數：截在下一個區塊標記之前
+  const next = ["data-testid=\"product-score\"", "data-testid=\"user-reviews\""].map((m) => metaAll.indexOf(m, 1)).filter((i) => i > 0);
+  const meta = next.length ? metaAll.slice(0, Math.min(...next)) : metaAll;
   const user = segmentAfter(html, 'data-testid="user-reviews"');
   const ld = parseLd(html);
-  return { title: ld.title, releaseYear: ld.year, metascore: parseBlock(meta, "meta"), userScore: parseBlock(user, "user") };
+  const companies = [...new Set([...parseDevelopers(html), ...ld.publishers])];
+  return { title: ld.title, releaseYear: ld.year, releaseDate: ld.date, companies, platforms: ld.platforms, metascore: parseBlock(meta, "meta"), userScore: parseBlock(user, "user") };
 }
 
 /** 擋頁偵測：Cloudflare／驗證碼之類的挑戰頁（不繞過，遇到就停）。 */

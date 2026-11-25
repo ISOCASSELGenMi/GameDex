@@ -81,6 +81,7 @@ test.describe("axe：深色模式對比", () => {
       expect(await page.evaluate(() => matchMedia("(prefers-color-scheme: dark)").matches)).toBe(true);
       await openAllDetails(page);
       await expectNoA11yViolations(page, `${locale} 深色月曆`);
+      await page.locator("details.filter-panel").evaluate((d) => ((d as HTMLDetailsElement).open = false)); // 浮出面板會蓋住月曆格
       await page.locator(`.cal-cell[data-date="${FIXTURE.busyDay}"] a.cal-link`).click();
       await expect(page.locator("dialog.side-sheet a.btn-primary")).toBeVisible();
       await expectNoA11yViolations(page, `${locale} 深色預覽卡`);

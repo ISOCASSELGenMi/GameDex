@@ -49,6 +49,8 @@ export interface MetacriticHttpOptions {
   fetchImpl?: typeof fetch;
   sleep?: (ms: number) => Promise<void>;
   now?: () => number;
+  /** 每發出一個請求（含重試、robots.txt）前呼叫並等待；用來即時記帳（行程被殺最多少算一小批）。 */
+  onRequest?: () => Promise<void> | void;
 }
 
 const ROBOTS_TTL_MS = 24 * 60 * 60 * 1000;
@@ -57,11 +59,14 @@ const RETRY_AFTER_CAP_MS = 60_000;
 export class MetacriticHttp {
   /** 本實例發出的請求數（含 robots.txt）；任務結束時用來扣每日額度與記 log。 */
   requests = 0;
+  /** 每個請求前呼叫（可在建立後再掛，見 Budget.track）。 */
+  onRequest: (() => Promise<void> | void) | null = null;
   private lastAt = 0;
   private robots: { at: number; disallow: string[] } | null = null;
-  private readonly o: Required<Omit<MetacriticHttpOptions, "fetchImpl">> & { fetchImpl: typeof fetch };
+  private readonly o: Required<Omit<MetacriticHttpOptions, "fetchImpl" | "onRequest">> & { fetchImpl: typeof fetch };
 
   constructor(options: MetacriticHttpOptions) {
+    this.onRequest = options.onRequest ?? null;
     this.o = {
       userAgent: DEFAULT_USER_AGENT,
       minIntervalMs: 1100,
@@ -70,7 +75,7 @@ export class MetacriticHttp {
       now: () => Date.now(),
       fetchImpl: (...a) => fetch(...a),
       ...options,
-    } as Required<Omit<MetacriticHttpOptions, "fetchImpl">> & { fetchImpl: typeof fetch };
+    } as Required<Omit<MetacriticHttpOptions, "fetchImpl" | "onRequest">> & { fetchImpl: typeof fetch };
   }
 
   private async throttle(): Promise<void> {
@@ -85,12 +90,23 @@ export class MetacriticHttp {
     for (;;) {
       await this.throttle();
       this.requests += 1;
-      const res = await this.o.fetchImpl(`${METACRITIC_ORIGIN}${path}`, {
-        headers: { "User-Agent": this.o.userAgent, Accept: accept, "Accept-Language": "en-US,en;q=0.8" },
-        redirect: "manual",
-        signal: AbortSignal.timeout(20_000),
-      });
-      const body = await res.text();
+      await this.onRequest?.();
+      let res: Response;
+      let body: string;
+      try {
+        res = await this.o.fetchImpl(`${METACRITIC_ORIGIN}${path}`, {
+          headers: { "User-Agent": this.o.userAgent, Accept: accept, "Accept-Language": "en-US,en;q=0.8" },
+          redirect: "manual",
+          signal: AbortSignal.timeout(20_000),
+        });
+        body = await res.text();
+      } catch {
+        // 逾時、連線中斷：和 5xx 一樣退避重試，仍失敗才丟暫時性錯誤（任務乾淨地結束，不是整個失敗）
+        if (attempt >= this.o.maxRetries) throw new MetacriticTransientError(0);
+        await this.o.sleep(Math.min(2000 * 2 ** attempt, RETRY_AFTER_CAP_MS));
+        attempt += 1;
+        continue;
+      }
       if (res.status === 429 || res.status >= 500) {
         if (attempt >= this.o.maxRetries) throw new MetacriticTransientError(res.status);
         const ra = Number(res.headers.get("retry-after"));

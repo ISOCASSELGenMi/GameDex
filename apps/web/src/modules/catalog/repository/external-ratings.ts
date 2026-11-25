@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import { getDb, type DbOrTx } from "@/kernel/db/client";
-import { WHITELIST_GAME_TYPES } from "../domain/entities";
+import { WHITELIST_GAME_TYPES, type OurGameFacts } from "../domain/entities";
 import { REFRESH_WINDOW_AFTER_DAYS, REFRESH_WINDOW_BEFORE_DAYS } from "../domain/rating-refresh";
 import { pgArray } from "./read-tx";
 
@@ -109,6 +109,8 @@ export interface ExternalMatchInput {
   externalUrl: string | null;
   confidencePct: number;
   needsReview: boolean;
+  /** 'auto2'＝已用遊戲頁的標題／發售日／公司／平台驗證過；預設 'auto'。 */
+  matchMethod?: "auto" | "auto2";
 }
 
 /**
@@ -127,10 +129,10 @@ export async function upsertExternalIdMatch(input: ExternalMatchInput, db: DbOrT
     const review = input.needsReview || dup.rows.length > 0;
     await tx.execute(sql`
       INSERT INTO external_ids (game_id, source, external_id, external_url, confidence_pct, needs_review, match_method, matched_at)
-      VALUES (${input.gameId}, ${input.source}, ${input.externalId}, ${input.externalUrl}, ${input.confidencePct}, ${review}, 'auto', now())
+      VALUES (${input.gameId}, ${input.source}, ${input.externalId}, ${input.externalUrl}, ${input.confidencePct}, ${review}, ${input.matchMethod ?? "auto"}, now())
       ON CONFLICT (game_id, source) DO UPDATE
         SET external_id = EXCLUDED.external_id, external_url = EXCLUDED.external_url, confidence_pct = EXCLUDED.confidence_pct,
-            needs_review = EXCLUDED.needs_review, matched_at = now()`);
+            needs_review = EXCLUDED.needs_review, match_method = EXCLUDED.match_method, matched_at = now()`);
     if (dup.rows.length > 0) {
       await tx.execute(sql`
         UPDATE external_ids SET needs_review = true
@@ -207,4 +209,67 @@ export async function setManualExternalMatch(gameId: number, source: string, ext
     ON CONFLICT (game_id, source) DO UPDATE
       SET external_id = EXCLUDED.external_id, external_url = EXCLUDED.external_url, confidence_pct = 100, needs_review = false, match_method = 'manual', matched_at = now()`);
   return true;
+}
+
+/**
+ * 驗證外部頁面用的我方資料：名稱（含別名）、所有平台／地區的日精度發售日、開發／發行商、平台名稱。
+ * 日期取 release_events 全部日精度列（各平台上架日可能不同）加上遊戲首發日（日精度時）。
+ */
+export async function loadGameFacts(gameIds: readonly number[], db: DbOrTx = getDb()): Promise<Map<number, OurGameFacts>> {
+  const out = new Map<number, OurGameFacts>();
+  if (gameIds.length === 0) return out;
+  const ids = pgArray(gameIds);
+  const res = await db.execute<{ id: number; name: string; alt: { name: string }[] | null; dates: string[] | null; companies: string[] | null; platforms: string[] | null; steam: string | null }>(sql`
+    SELECT g.id, g.name, g.alternative_names AS alt,
+      (SELECT s.external_id FROM external_ids s WHERE s.game_id = g.id AND s.source = 'steam' LIMIT 1) AS steam,
+      (SELECT array_agg(DISTINCT d::text) FROM (
+         SELECT e.release_date AS d FROM release_events e WHERE e.game_id = g.id AND e.precision = 'day' AND e.release_date IS NOT NULL AND e.source_status = 'active'
+         UNION SELECT g.first_release_date WHERE g.first_release_precision = 'day') x WHERE d IS NOT NULL) AS dates,
+      (SELECT array_agg(DISTINCT c.name) FROM game_companies gc JOIN companies c ON c.id = gc.company_id
+         WHERE gc.game_id = g.id AND gc.role IN ('developer', 'publisher')) AS companies,
+      (SELECT array_agg(DISTINCT p.name) FROM game_platforms gp JOIN platforms p ON p.id = gp.platform_id WHERE gp.game_id = g.id) AS platforms
+    FROM games g WHERE g.id = ANY(${ids}::int[])`);
+  for (const r of res.rows) {
+    out.set(Number(r.id), {
+      names: [r.name, ...(r.alt ?? []).map((a) => a.name).filter((n): n is string => typeof n === "string")],
+      dates: r.dates ?? [],
+      companies: r.companies ?? [],
+      platforms: r.platforms ?? [],
+      steamAppId: r.steam,
+    });
+  }
+  return out;
+}
+
+export interface AutoMatchToVerify {
+  id: number;
+  gameId: number;
+  externalId: string;
+}
+
+/** 還沒用遊戲頁驗證過的自動配對（match_method='auto'；manual 與已驗證的 auto2 不動）；已確認的先驗，因為它們帶著分數。 */
+export async function listAutoMatchesToVerify(source: string, limit: number, onlyGameIds?: readonly number[], db: DbOrTx = getDb()): Promise<AutoMatchToVerify[]> {
+  const scope = onlyGameIds ? sql`AND game_id = ANY(${pgArray(onlyGameIds)}::int[])` : sql``;
+  const res = await db.execute<{ id: number; gid: number; ext: string }>(sql`
+    SELECT id, game_id AS gid, external_id AS ext FROM external_ids
+    WHERE source = ${source} AND match_method = 'auto' ${scope}
+    ORDER BY needs_review ASC, id ASC
+    LIMIT ${Math.max(1, Math.min(limit, 1000))}`);
+  return res.rows.map((r) => ({ id: Number(r.id), gameId: Number(r.gid), externalId: r.ext }));
+}
+
+/**
+ * 驗證後更新信心與覆核旗標，並標成 auto2。manual 列不動。
+ * 降為覆核時（needsReview=true）一併刪掉該來源已寫入的分數列，避免未確認的配對繼續顯示分數。
+ */
+export async function markMatchVerified(id: number, source: string, confidencePct: number, needsReview: boolean, scoreProvider: string | null = null, db: DbOrTx = getDb()): Promise<boolean> {
+  return db.transaction(async (tx) => {
+    const res = await tx.execute<{ game_id: number }>(sql`
+      UPDATE external_ids SET confidence_pct = ${confidencePct}, needs_review = ${needsReview}, match_method = 'auto2', matched_at = now()
+      WHERE id = ${id} AND source = ${source} AND match_method <> 'manual' RETURNING game_id`);
+    const row = res.rows[0];
+    if (!row) return false;
+    if (needsReview && scoreProvider) await tx.execute(sql`DELETE FROM ratings WHERE game_id = ${row.game_id} AND score_provider = ${scoreProvider}::score_provider`);
+    return true;
+  });
 }

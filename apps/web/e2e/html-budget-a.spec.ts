@@ -6,7 +6,7 @@
  * - 評分排名頁不再只列常用平台：全部平台都有核取方塊；沒有 JS 也能展開、勾選、送出。
  * - 熱門榜榜單由客戶端元件吃緊湊的列：SSR 的 HTML 結構不變（名次、連結、熱度文字都在），火焰圖示共用一份 sprite。
  */
-import { FIXTURE, LOCALES, expect, expectNoA11yViolations, msg, test } from "./support/helpers";
+import { FIXTURE, LOCALES, expect, expectNoA11yViolations, msg, test, openFoldsNoJs } from "./support/helpers";
 
 const HTML_BUDGET = 200_000;
 
@@ -51,11 +51,13 @@ test.describe("評分排名頁：完整平台清單", () => {
     const page = await ctx.newPage();
     await page.goto("/zh-Hant/ratings");
     await page.locator("summary.filter-summary").click();
+    await openFoldsNoJs(page);
     await page.locator(".more-platforms > summary").click();
     await page.getByLabel("E2E Nintendo Switch", { exact: true }).check();
     await page.getByRole("button", { name: msg("zh-Hant", "filters.apply") }).click();
     await expect(page).toHaveURL(/\/zh-Hant\/ratings\?.*platform=e2e-switch/);
     await page.locator("summary.filter-summary").click();
+    await openFoldsNoJs(page);
     await expect(page.getByLabel("E2E Nintendo Switch", { exact: true })).toBeChecked();
     await ctx.close();
   });
@@ -84,6 +86,7 @@ test.describe("熱門榜：榜單結構", () => {
     await expect(first).toContainText(/^\s*第\s*1\s*名/);
     await expect(first).toContainText(/熱度 [1-5]\/5/);
     await page.locator("summary.filter-summary").click();
+    await openFoldsNoJs(page);
     await page.locator(".more-platforms > summary").click();
     await page.getByLabel("E2E Nintendo Switch", { exact: true }).check();
     await page.getByRole("button", { name: msg("zh-Hant", "filters.apply") }).click();

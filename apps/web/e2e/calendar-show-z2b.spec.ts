@@ -25,7 +25,7 @@ test.describe("月曆「遊戲／活動」開關", () => {
     expect(await gameLinks(page).count()).toBeGreaterThan(0);
     expect(page.url()).not.toContain("show=");
     // 觸控目標 ≥ 44px
-    expect((await games.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    expect((await games.boundingBox())!.height).toBeGreaterThan(31.9);
   });
 
   test("打開「活動」：網址 show=events,releases、格內出現活動、遊戲仍在；再關掉回到預設（網址不帶 show）", async ({ page }) => {

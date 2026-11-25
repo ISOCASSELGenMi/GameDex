@@ -112,7 +112,7 @@ test.describe("互動背景", () => {
     });
     expect(hit).toBe(false);
     const kinds = new Set((await egg(page).eval((e) => e.field!.symbols(), null)).map((s) => s.kind));
-    for (const k of ["triangle", "circle", "cross", "square", "btn-a", "btn-b", "btn-x", "btn-y", "dpad-up", "dpad-down", "dpad-left", "dpad-right", "stick"])
+    for (const k of ["triangle", "circle", "cross", "square", "btn-a", "btn-b", "btn-x", "btn-y", "dpad", "stick"])
       expect(kinds.has(k), k).toBe(true);
     // 按鈕照常運作
     await openHeaderMenu(page, "theme");
@@ -224,20 +224,31 @@ test.describe("背景符號避開內容欄", () => {
     await expect(toast(page, "sony-blue")).toBeVisible();
   });
 
-  test("窄螢幕（375px 手機）：符號只有 13 顆、透明度 0.07、只出現在空白背景區、不在頁首", async ({ page }) => {
+  test("窄螢幕（375px 手機）：符號只有 10 顆、透明度 0.07、只出現在空白背景區、不在頁首", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 760 });
     await open(page);
     await ready(page);
     await page.waitForTimeout(1500);
     const mode = await egg(page).eval((e) => e.field!.mode(), null);
-    expect(mode).toEqual({ wide: false, alpha: 0.07, symbols: 13 });
+    expect(mode).toEqual({ wide: false, alpha: 0.07, symbols: 10 });
     const headerBottom = await page.locator(".site-header").evaluate((el) => el.getBoundingClientRect().bottom);
-    const visible = (await egg(page).eval((e) => e.field!.symbols(), null)).filter((s) => s.visible && s.alive);
-    expect(visible.length).toBeGreaterThanOrEqual(1);
-    for (const s of visible) {
-      expect(s.ay).toBeGreaterThan(headerBottom);
-      expect(await egg(page).eval((e, a) => e.field!.isBackgroundAt(a.x, a.y), { x: s.ax, y: s.ay }), `${s.kind} 的錨點不是空白背景`).toBe(true);
-    }
+    // 引擎以 24px 格的中心判定空白，錨點在格內抖動 ±6px，所以比對錨點所在格的中心
+    const cellCenter = (v: number) => Math.floor(v / 24) * 24 + 12;
+    // 可出現區域地圖是節流重算的（版面剛變動後最多約 1 秒才追上），所以輪詢到收斂
+    await expect
+      .poll(
+        async () => {
+          const visible = (await egg(page).eval((e) => e.field!.symbols(), null)).filter((s) => s.visible && s.alive);
+          if (visible.length < 1) return "沒有可見符號";
+          for (const s of visible) {
+            if (s.ay <= headerBottom) return `${s.kind} 在頁首`;
+            if (!(await egg(page).eval((e, a) => e.field!.isBackgroundAt(a.x, a.y), { x: cellCenter(s.ax), y: cellCenter(s.ay) }))) return `${s.kind} 的錨點格不是空白背景`;
+          }
+          return "ok";
+        },
+        { timeout: 5000 },
+      )
+      .toBe("ok");
     await snap(page, "mobile-375-background.png");
   });
 
@@ -245,7 +256,7 @@ test.describe("背景符號避開內容欄", () => {
     await open(page);
     await ready(page);
     await page.waitForTimeout(1200);
-    expect(await egg(page).eval((e) => e.field!.mode(), null)).toEqual({ wide: false, alpha: 0.09, symbols: 13 });
+    expect(await egg(page).eval((e) => e.field!.mode(), null)).toEqual({ wide: false, alpha: 0.09, symbols: 10 });
   });
 
   test("每日收集物錨定在可點的空白區（手機 375px）", async ({ page }) => {
@@ -308,18 +319,18 @@ test.describe("彩蛋 1a／1b／1c：依序點破", () => {
   const cases: [string, string[], string][] = [
     ["1a △○×□", ["triangle", "circle", "cross", "square"], "sony-blue"],
     ["1b ABXY", ["btn-a", "btn-b", "btn-x", "btn-y"], "xbox-green"],
-    ["1c 十字鍵上下左右", ["dpad-up", "dpad-down", "dpad-left", "dpad-right"], "nintendo-red"],
+    ["1c 十字鍵＋搖桿", ["dpad", "stick"], "nintendo-red"],
   ];
   for (const [name, kinds, theme] of cases) {
     test(`${name} → ${theme}`, async ({ page }) => {
       await open(page);
       await ready(page);
-      // 先故意點錯順序：不解鎖，且重新來過
-      await breakSymbol(page, kinds[1]!);
+      // 先故意重複點同一顆：不解鎖，且重新來過；之後不限順序（倒著點）
+      await breakSymbol(page, kinds[0]!);
       await breakSymbol(page, kinds[0]!);
       await page.waitForTimeout(100);
       await expect(page.locator(".egg-toast")).toHaveCount(0);
-      for (const k of kinds.slice(1)) await breakSymbol(page, k);
+      for (const k of kinds.slice(1).reverse()) await breakSymbol(page, k);
       await expect(toast(page, theme)).toBeVisible();
       const recs = await egg(page).eval((e) => e.records(), null);
       expect(recs).toEqual([{ type: "theme", key: theme, at: expect.any(String) }]);

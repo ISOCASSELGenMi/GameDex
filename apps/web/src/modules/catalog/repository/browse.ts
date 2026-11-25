@@ -127,9 +127,15 @@ export function buildBrowseQuery(q: Omit<BrowseGamesQuery, "resolveImage">): SQL
   const order =
     q.sort === "name"
       ? sql`g.name ASC, g.id ASC`
-      : q.sort === "release_date"
-        ? sql`g.first_release_date ASC NULLS LAST, g.popularity_score DESC, g.id ASC`
-        : // NULLS LAST 與 games_browse_pop_idx 的排序一致（欄位 NOT NULL，結果相同；沒寫的話規劃器不會用這個 index，變成全表排序）
+      : q.sort === "name_desc"
+        ? sql`g.name DESC, g.id DESC`
+        : q.sort === "release_date"
+          ? sql`g.first_release_date ASC NULLS LAST, g.popularity_score DESC, g.id ASC`
+          : q.sort === "release_date_desc"
+            ? sql`g.first_release_date DESC NULLS LAST, g.popularity_score DESC, g.id ASC`
+            : q.sort === "popularity_asc"
+              ? sql`g.popularity_score ASC, g.name ASC, g.id ASC`
+              : // NULLS LAST 與 games_browse_pop_idx 的排序一致（欄位 NOT NULL，結果相同；沒寫的話規劃器不會用這個 index，變成全表排序）
           sql`g.popularity_score DESC NULLS LAST, g.name ASC, g.id ASC`;
 
   return sql`

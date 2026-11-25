@@ -452,7 +452,7 @@ test.describe("視覺語言 token", () => {
       expect(t.tokens.every((v) => v !== ""), scheme).toBe(true);
       expect(t.btnRadius, "按鈕圓角小於高度的一半 → 非膠囊").toBeLessThan(t.btnHeight / 2);
       expect(t.headerPosition).toBe("sticky");
-      expect(t.headerBlur).toContain("blur");
+      expect(t.headerBlur, "扁平化：header 不做模糊").toBe("none");
       // 不是米色／奶油色：藍色通道不低於紅色通道
       const hex = t.background.replace("#", "");
       const [r, , b] = [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16));

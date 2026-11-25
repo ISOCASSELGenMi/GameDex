@@ -6,6 +6,19 @@
       "runtimeExecutable": "cmd",
       "runtimeArgs": ["/c", "cd /d apps\\web && set SCHEDULER_ENABLED=false&& npx next dev -p 3100"],
       "port": 3100
+    },
+    {
+      "name": "db",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "db:start"],
+      "port": 5432
+    },
+    {
+      "name": "web-prod-3300",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "cd /d apps\\web && set SCHEDULER_ENABLED=false&& set METACRITIC_SCRAPE_ENABLED=false&& npx next start -p 3300"],
+      "port": 3300,
+      "autoPort": false
     }
   ]
 }
