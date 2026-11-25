@@ -21,6 +21,7 @@ const FLASH_ERROR: Record<string, string> = {
   cannot_apply: "無法套用：目標或提案值已不存在或不合法，請駁回或手動處理",
 };
 
+const OP_LABEL: Record<string, string> = { add: "新增", change: "修改", remove: "移除" };
 const typeLabel = (type: string) => t.t(`ui.report.type.${type}`);
 const stageLabel = (s: string) => t.t(`enums.releaseStage.${s}`);
 const statusLabel = (s: string) => (t.has(`enums.releaseStatus.${s}`) ? t.t(`enums.releaseStatus.${s}`) : s);
@@ -76,6 +77,12 @@ function CompareTable({ item }: { item: ReportQueueItem }): ReactElement | null 
   }
   else if (report.reportType === "localized_title") {
     rows.push({ label: "繁體中文標題", current: target.currentTitle ?? "（目前沒有繁中標題）", proposed: p?.title ?? "—" });
+  }
+  else if (report.reportType === "field_correction") {
+    const fc = target.fieldCorrection;
+    const op = p?.op ? OP_LABEL[p.op] : "—";
+    rows.push({ label: fc ? `${fc.label}（${op}）` : `${p?.field ?? "?"}（${op}）`, current: fc?.currentText ?? "（無法讀取目前值）", proposed: fc?.proposedText ?? "—" });
+    if (fc) rows.push({ label: "IGDB 頁面位置（推測）", current: fc.igdbLocation, proposed: "—" });
   }
   if (rows.length === 0) return null;
   return (
@@ -175,7 +182,9 @@ function ReportCard({ item, csrf, publicLocale }: { item: ReportQueueItem; csrf:
       ? "核可會寫入 manual 上市列（含改期紀錄與 sequence）。"
       : report.reportType === "localized_title"
         ? "核可會寫入 manual 的繁中標題並重算顯示名稱與搜尋字串，並建立一筆待回饋 IGDB 項目。"
-        : "核可只改狀態並記錄備註，不會自動修改資料。";
+        : report.reportType === "field_correction"
+          ? "核可只會建立一筆待回饋 IGDB 項目（不修改我方資料；我方資料由 IGDB 同步更新）。"
+          : "核可只改狀態並記錄備註，不會自動修改資料。";
   return (
     <article aria-labelledby={headingId} className="flex flex-col gap-3 rounded-lg border border-[var(--border)] p-4">
       <h3 id={headingId} className="text-lg font-semibold">

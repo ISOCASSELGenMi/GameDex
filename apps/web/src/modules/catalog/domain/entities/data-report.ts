@@ -11,6 +11,7 @@ export const REPORT_TYPES = [
   "language_support",
   "cancelled",
   "localized_title",
+  "field_correction",
   "duplicate",
   "takedown",
   "other",
@@ -23,6 +24,55 @@ export type ReportStatus = (typeof REPORT_STATUSES)[number];
 /** 審核動作；accept→accepted、reject→rejected、duplicate→duplicate。 */
 export const REPORT_ACTIONS = ["accept", "reject", "duplicate"] as const;
 export type ReportAction = (typeof REPORT_ACTIONS)[number];
+
+/**
+ * field_correction 的欄位鍵（D92）：IGDB 允許貢獻的欄位都能回報。每個鍵的值形狀與允許動作見 domain/field-corrections.ts，
+ * 登錄表（domain/igdb-feedback-fields.ts）以同一組鍵建立待回饋 IGDB 項目。
+ */
+export const FIELD_CORRECTION_KEYS = [
+  "name", "summary", "storyline", "game_type", "game_status", "alternative_name", "localized_title_other",
+  "cover", "screenshot", "video",
+  "genre", "theme", "game_mode", "player_perspective", "engine", "platform",
+  "company_developer", "company_publisher", "company_supporting",
+  "franchise", "collection", "external_link", "age_rating", "relation_parent",
+] as const;
+export type FieldCorrectionKey = (typeof FIELD_CORRECTION_KEYS)[number];
+
+export const FIELD_OPS = ["add", "change", "remove"] as const;
+export type FieldOp = (typeof FIELD_OPS)[number];
+
+/** 關聯類型（relation_parent）：本傳、版本本體，或以本作為本傳的 DLC／擴充。 */
+export const FIELD_RELATIONS = ["parent", "version_parent", "dlc", "expansion"] as const;
+export type FieldRelation = (typeof FIELD_RELATIONS)[number];
+
+/** 回報公司的角色（company_supporting 由回報者在 supporting／porting 間選）。 */
+export const FIELD_COMPANY_ROLES = ["developer", "publisher", "supporting", "porting"] as const;
+export type FieldCompanyRole = (typeof FIELD_COMPANY_ROLES)[number];
+
+/** field_correction 的值：平面物件，依欄位形狀只用其中幾個鍵（形狀見 domain/field-corrections.ts）。 */
+export interface FieldCorrectionValue {
+  /** text 形狀：新的文字，或 game_type／game_status 的字典值。 */
+  text?: string;
+  /** name／altName／localizedTitle／company 形狀的名稱。 */
+  name?: string;
+  /** altName：名稱註記。 */
+  comment?: string;
+  /** localizedTitle：BCP-47 語系代碼。 */
+  locale?: string;
+  /** company：角色。 */
+  role?: FieldCompanyRole;
+  /** link／media：http(s) 網址。 */
+  url?: string;
+  /** link：分類（例如 Official、Steam）。 */
+  label?: string;
+  /** ageRating：分級機構與分級。 */
+  organization?: string;
+  rating?: string;
+  /** relation：關聯類型與對方遊戲。 */
+  relation?: FieldRelation;
+  gameName?: string;
+  gameSlug?: string;
+}
 
 /** 提案內容（12）。所有欄位可省略；是否必填看 reportType（見 domain/report-validation.ts）。 */
 export interface ReportProposed {
@@ -39,6 +89,11 @@ export interface ReportProposed {
   /** localized_title：繁中標題（trim 後 1～200 字）；locale 目前只允許 zh-Hant。 */
   title?: string;
   locale?: "zh-Hant";
+  /** field_correction（D92）：欄位鍵、動作、新值，以及 change 時回報者指出要被取代的舊值。 */
+  field?: FieldCorrectionKey;
+  op?: FieldOp;
+  value?: FieldCorrectionValue;
+  oldValue?: FieldCorrectionValue;
 }
 
 export interface DataReport {
@@ -85,6 +140,8 @@ export interface ReportTargetView {
   currentReleases: ReportReleaseView[];
   /** 目標遊戲目前的 zh-Hant 顯示標題（localized_title 比對用）；沒有為 null。 */
   currentTitle: string | null;
+  /** field_correction（D92）：欄位標籤、動作文字、我方目前的值（核可時會存成舊值快照）與提案值；其他類型為 null。 */
+  fieldCorrection: { label: string; igdbLocation: string; currentText: string; proposedText: string } | null;
 }
 
 export interface ReportReleaseView {

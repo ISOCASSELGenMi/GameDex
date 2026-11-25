@@ -474,6 +474,7 @@
       "language_support": "語言支援有誤或缺漏",
       "cancelled": "已取消或停止開發",
       "localized_title": "繁體中文標題",
+      "field_correction": "其他資料欄位更正",
       "duplicate": "重複的資料",
       "takedown": "下架或版權請求",
       "other": "其他"
@@ -528,7 +529,81 @@
       "network": "無法連線，請檢查網路後再試。",
       "generic": "送出失敗，請稍後再試。"
     },
-    "captchaLoading": "人機驗證載入中…"
+    "captchaLoading": "人機驗證載入中…",
+    "fc": {
+      "intro": "這裡可以回報 IGDB 允許貢獻的各種欄位。核可後只會整理進「待回饋 IGDB」清單，由管理者到 IGDB 提交；不會直接修改本站資料，本站資料會隨 IGDB 同步更新。",
+      "fieldLabel": "要更正的欄位",
+      "opLabel": "動作",
+      "group": {
+        "text": "文字",
+        "media": "媒體",
+        "taxonomy": "分類",
+        "relation": "關聯",
+        "other": "其他"
+      },
+      "field": {
+        "name": "遊戲原名",
+        "summary": "簡介",
+        "storyline": "故事簡介",
+        "game_type": "遊戲類型（本傳／DLC／重製…）",
+        "game_status": "發售狀態",
+        "alternative_name": "其他稱呼",
+        "localized_title_other": "其他語系標題",
+        "cover": "封面圖",
+        "screenshot": "截圖／美術圖",
+        "video": "預告片",
+        "genre": "類型",
+        "theme": "主題",
+        "game_mode": "遊戲模式",
+        "player_perspective": "玩家視角",
+        "engine": "遊戲引擎",
+        "platform": "發行平台",
+        "company_developer": "開發商",
+        "company_publisher": "發行商",
+        "company_supporting": "協力開發／移植",
+        "franchise": "品牌",
+        "collection": "系列",
+        "external_link": "外部連結",
+        "age_rating": "年齡分級",
+        "relation_parent": "本傳／DLC／版本關聯"
+      },
+      "op": {
+        "add": "新增",
+        "change": "修改",
+        "remove": "移除"
+      },
+      "input": {
+        "text": "新的內容",
+        "name": "名稱",
+        "comment": "註記（選填）",
+        "locale": "語系代碼",
+        "role": "角色",
+        "url": "網址",
+        "label": "分類（選填，例如 Official、Steam）",
+        "organization": "分級機構",
+        "rating": "分級",
+        "relation": "關聯類型",
+        "gameName": "對方遊戲名稱",
+        "gameSlug": "對方遊戲 slug（選填）"
+      },
+      "role": {
+        "supporting": "協力開發",
+        "porting": "移植"
+      },
+      "relation": {
+        "parent": "本傳",
+        "version_parent": "版本本體",
+        "dlc": "DLC（以本作為本傳）",
+        "expansion": "擴充（以本作為本傳）"
+      },
+      "hint": {
+        "media": "請填圖片或影片的網址；這個網址就是來源。",
+        "locale": "語系代碼，例如 ja、ko、zh-Hans。",
+        "remove": "要移除時，請填要被移除的那一個值。",
+        "oldValue": "選填：修改時，指出要被取代的舊值。"
+      },
+      "oldValueLegend": "要被取代的舊值（選填）"
+    }
   },
   "subscribe": {
     "title": "訂閱行事曆",

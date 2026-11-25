@@ -6,9 +6,34 @@
  */
 import { and, asc, desc, eq, inArray, ne, sql } from "drizzle-orm";
 import { getDb, type DbOrTx } from "@/kernel/db/client";
-import type { IgdbFeedbackDraft, IgdbFeedbackItem, IgdbFeedbackStatus } from "../domain/entities";
-import { isFeedbackAdopted, type FeedbackGameInfo, type IgdbAdoptionSnapshot } from "../domain/igdb-feedback-fields";
-import { gameLanguageSupports, gameLocalizations, games, igdbFeedbackItems, languages, platforms, regions, releaseEvents } from "../schema";
+import { FIELD_CORRECTION_KEYS, type GameFacts, type IgdbFeedbackDraft, type IgdbFeedbackItem, type IgdbFeedbackStatus, type NamedFact } from "../domain/entities";
+import { emptyGameFacts, isFeedbackAdopted, type FeedbackGameInfo, type IgdbAdoptionSnapshot } from "../domain/igdb-feedback-fields";
+import {
+  companies,
+  franchises,
+  gameCompanies,
+  gameEngines,
+  gameExternalLinks,
+  gameFranchises,
+  gameGameEngines,
+  gameGameModes,
+  gameGenres,
+  gameLanguageSupports,
+  gameLocalizations,
+  gameModes,
+  gamePlatforms,
+  gamePlayerPerspectives,
+  gameThemes,
+  games,
+  genres,
+  igdbFeedbackItems,
+  languages,
+  platforms,
+  playerPerspectives,
+  regions,
+  releaseEvents,
+  themes,
+} from "../schema";
 
 /** 建立項目需要的遊戲資料（IGDB id、slug、現況、核可前的 zh-Hant 標題）。 */
 export async function getFeedbackGameInfo(gameId: number, db: DbOrTx = getDb()): Promise<FeedbackGameInfo | null> {
@@ -18,6 +43,76 @@ export async function getFeedbackGameInfo(gameId: number, db: DbOrTx = getDb()):
     .where(eq(games.id, gameId))
     .limit(1);
   return g ? { id: g.id, igdbId: g.igdbId, slug: g.slug, name: g.name, gameStatus: g.gameStatus, zhHantTitle: g.displayNames?.["zh-Hant"] ?? null } : null;
+}
+
+/**
+ * 一款遊戲目前的資料（GameFacts）：核可 field_correction 時取來做舊值快照，同步後取來做「IGDB 已採納」比對（D92）。
+ * 不寫入任何東西。外部連結與在地化名稱只取 source='igdb'。遊戲不存在回 null。
+ */
+export async function loadGameFacts(gameId: number, db: DbOrTx = getDb()): Promise<GameFacts | null> {
+  const [g] = await db.select().from(games).where(eq(games.id, gameId)).limit(1);
+  if (!g) return null;
+  const named = (rows: Array<{ name: string; slug: string | null }>): NamedFact[] => rows.map((r) => ({ name: r.name, slug: r.slug }));
+  const [genreRows, themeRows, modeRows, perspRows, engineRows, franchiseRows, companyRows, platformRows, linkRows, locRows] = [
+    await db.select({ name: genres.name, slug: genres.slug }).from(gameGenres).innerJoin(genres, eq(genres.id, gameGenres.genreId)).where(eq(gameGenres.gameId, gameId)),
+    await db.select({ name: themes.name, slug: themes.slug }).from(gameThemes).innerJoin(themes, eq(themes.id, gameThemes.themeId)).where(eq(gameThemes.gameId, gameId)),
+    await db.select({ name: gameModes.name, slug: gameModes.slug }).from(gameGameModes).innerJoin(gameModes, eq(gameModes.id, gameGameModes.gameModeId)).where(eq(gameGameModes.gameId, gameId)),
+    await db
+      .select({ name: playerPerspectives.name, slug: playerPerspectives.slug })
+      .from(gamePlayerPerspectives)
+      .innerJoin(playerPerspectives, eq(playerPerspectives.id, gamePlayerPerspectives.playerPerspectiveId))
+      .where(eq(gamePlayerPerspectives.gameId, gameId)),
+    await db.select({ name: gameEngines.name, slug: gameEngines.slug }).from(gameGameEngines).innerJoin(gameEngines, eq(gameEngines.id, gameGameEngines.gameEngineId)).where(eq(gameGameEngines.gameId, gameId)),
+    await db
+      .select({ name: franchises.name, slug: franchises.slug, kind: franchises.kind })
+      .from(gameFranchises)
+      .innerJoin(franchises, eq(franchises.id, gameFranchises.franchiseId))
+      .where(eq(gameFranchises.gameId, gameId)),
+    await db
+      .select({ name: companies.name, slug: companies.slug, role: gameCompanies.role })
+      .from(gameCompanies)
+      .innerJoin(companies, eq(companies.id, gameCompanies.companyId))
+      .where(eq(gameCompanies.gameId, gameId)),
+    await db.select({ name: platforms.name, slug: platforms.slug }).from(gamePlatforms).innerJoin(platforms, eq(platforms.id, gamePlatforms.platformId)).where(eq(gamePlatforms.gameId, gameId)),
+    await db.select({ url: gameExternalLinks.url }).from(gameExternalLinks).where(and(eq(gameExternalLinks.gameId, gameId), eq(gameExternalLinks.source, "igdb"))),
+    await db.select({ name: gameLocalizations.name }).from(gameLocalizations).where(and(eq(gameLocalizations.gameId, gameId), eq(gameLocalizations.source, "igdb"))),
+  ];
+  // parent_game_id／version_parent_id 存的是 IGDB id；DLC 等子作品＝parent_game_id 指向本作 igdb_id 的遊戲
+  const parentIds = [g.parentGameId, g.versionParentId].filter((x): x is number => x !== null);
+  const parentRows = parentIds.length > 0 ? await db.select({ igdbId: games.igdbId, name: games.name, slug: games.slug }).from(games).where(inArray(games.igdbId, parentIds)) : [];
+  const childRows = await db.select({ name: games.name, slug: games.slug, gameType: games.gameType }).from(games).where(eq(games.parentGameId, g.igdbId)).limit(200);
+  const parentOf = (igdbId: number | null): NamedFact | null => {
+    const r = igdbId === null ? undefined : parentRows.find((p) => p.igdbId === igdbId);
+    return r ? { name: r.name, slug: r.slug } : null;
+  };
+  return {
+    ...emptyGameFacts(),
+    igdbId: g.igdbId,
+    name: g.name,
+    summary: g.summary,
+    storyline: g.storyline,
+    gameType: g.gameType,
+    gameStatus: g.gameStatus,
+    coverUrl: g.coverUrl,
+    trailerUrl: g.trailerUrl,
+    screenshotUrls: g.screenshotUrls ?? [],
+    ageRatingLabel: g.ageRatingLabel,
+    alternativeNames: g.alternativeNames ?? [],
+    localizationNames: locRows.map((l) => l.name),
+    genres: named(genreRows),
+    themes: named(themeRows),
+    gameModes: named(modeRows),
+    playerPerspectives: named(perspRows),
+    engines: named(engineRows),
+    franchises: named(franchiseRows.filter((f) => f.kind === "franchise")),
+    collections: named(franchiseRows.filter((f) => f.kind === "collection")),
+    platforms: named(platformRows),
+    companies: companyRows.map((c) => ({ name: c.name, slug: c.slug, role: c.role })),
+    externalLinks: linkRows.map((l) => l.url),
+    parent: parentOf(g.parentGameId),
+    versionParent: parentOf(g.versionParentId),
+    children: childRows.map((c) => ({ name: c.name, slug: c.slug, gameType: c.gameType })),
+  };
 }
 
 /** 寫入一筆項目；同一回報已有項目時不重複建立（回 null）。 */
@@ -156,6 +251,8 @@ export async function markAdoptedFeedback(tx: DbOrTx, gameId: number): Promise<n
     languages: langRows,
     gameStatus: gameRows[0]?.gameStatus ?? null,
     names: [...(gameRows[0]?.alternativeNames ?? []).map((a) => a.name), ...locRows.map((l) => l.name)],
+    // field_correction 的項目才需要完整的遊戲資料（D92）；只有第 1 波的項目時不多查
+    facts: items.some((i) => (FIELD_CORRECTION_KEYS as readonly string[]).includes(i.field)) ? ((await loadGameFacts(gameId, tx)) ?? emptyGameFacts()) : emptyGameFacts(),
   };
 
   const adopted = items.filter((i) => isFeedbackAdopted(i, snapshot)).map((i) => i.id);

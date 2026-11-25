@@ -20,12 +20,12 @@ import type {
   ReportTargetView,
 } from "../domain/entities";
 import { DATE_REPORT_TYPES } from "../domain/report-validation";
-import { buildFeedbackDraft, type FeedbackBuildContext } from "../domain/igdb-feedback-fields";
+import { IGDB_FEEDBACK_REGISTRY, buildFeedbackDraft, feedbackSourceUrl, type FeedbackBuildContext } from "../domain/igdb-feedback-fields";
 import { planManualRelease, type ManualReleasePlan, type ManualReleasePlanInput } from "../domain/report-resolution";
 import { dataReports, releaseDateHistory } from "../schema";
 import { appendChange } from "./change-feed";
 import { applyManualZhHantTitle } from "./display-names";
-import { getFeedbackByReportIds, getFeedbackGameInfo, insertFeedbackItem } from "./igdb-feedback";
+import { getFeedbackByReportIds, getFeedbackGameInfo, insertFeedbackItem, loadGameFacts } from "./igdb-feedback";
 import { getRegionByCode, listRegions } from "./regions";
 import { upsertReleaseEvent } from "./release-events";
 import {
@@ -101,6 +101,7 @@ async function targetView(report: DataReport, db: DbOrTx): Promise<ReportTargetV
     platformName: null,
     currentReleases: [],
     currentTitle: null,
+    fieldCorrection: null,
   };
   const id = report.targetId;
   if (id === null) return view;
@@ -115,6 +116,7 @@ async function targetView(report: DataReport, db: DbOrTx): Promise<ReportTargetV
     const gameId = report.targetType === "game" ? id : (event?.gameId ?? null);
     const game = gameId ? await findGameRef({ id: gameId }, db) : null;
     if (game) Object.assign(view, { name: game.name, path: `/games/${encodeURIComponent(game.slug)}`, gameId: game.id, gameSlug: game.slug });
+    if (game && report.reportType === "field_correction") view.fieldCorrection = await fieldCorrectionView(report, game.id, db);
     if (game && report.reportType === "localized_title") view.currentTitle = (await getFeedbackGameInfo(game.id, db))?.zhHantTitle ?? null;
     // 現況：release_event＝同平台的全部列；missing_region_date＝提案平台、提案地區的列
     const platformId = event?.platformId ?? report.proposed?.platformId ?? null;
@@ -133,6 +135,30 @@ async function targetView(report: DataReport, db: DbOrTx): Promise<ReportTargetV
     }
   }
   return view;
+}
+
+/** field_correction 的審核預覽：用與核可時相同的 buildFeedbackDraft 算出「目前值 → 提案值」（核可後項目的內容就是這樣）。 */
+async function fieldCorrectionView(report: DataReport, gameId: number, db: DbOrTx): Promise<ReportTargetView["fieldCorrection"]> {
+  const [game, facts] = await Promise.all([getFeedbackGameInfo(gameId, db), loadGameFacts(gameId, db)]);
+  if (!game) return null;
+  const draft = buildFeedbackDraft({
+    report: {
+      id: report.id,
+      reportType: report.reportType,
+      targetType: report.targetType,
+      targetId: report.targetId,
+      proposed: report.proposed,
+      sourceUrl: report.sourceUrl,
+      note: report.note,
+    },
+    game,
+    facts,
+    event: null,
+    plan: null,
+  });
+  if (!draft) return null;
+  const def = IGDB_FEEDBACK_REGISTRY[draft.field];
+  return { label: def.label, igdbLocation: def.igdbLocation, currentText: def.formatValue(draft.oldValue), proposedText: def.formatValue(draft.newValue) };
 }
 
 async function planView(plan: ManualReleasePlan, db: DbOrTx): Promise<ReportReleasePlanView> {
@@ -203,6 +229,7 @@ const ACTION_STATUS: Record<ReportAction, ReportStatus> = { accept: "accepted", 
 /**
  * 審核一筆 open 的回報。核可 wrong_date／missing_region_date 時同一個 transaction 內寫入 manual 上市列。
  * localized_title 核可時同一個 transaction 寫入 manual 的 zh-Hant 標題並重算 display_names／search_text。
+ * field_correction（D92）核可只建待回饋項目（舊值＝核可當下我方資料的快照），不改任何我方資料。
  * 其他回報類型核可只改狀態與 resolutionNote（不自動改資料）。
  * 核可時（會建項目的類型）同一個 transaction 建立一筆待回饋 IGDB 項目（D91；內容由 domain/igdb-feedback-fields.ts 決定）。
  */
@@ -235,6 +262,11 @@ export async function resolveReportAtomically(
       // 先讀好建立項目需要的現況（localized_title 要在覆蓋標題之前取舊值）
       const feedbackCtx = await loadFeedbackContext(tx, report, plan);
       const title = report.proposed?.title?.trim();
+      // field_correction（D92）：只建待回饋項目，不改我方資料；遊戲不存在或提案不完整就不能核可
+      if (report.reportType === "field_correction") {
+        if (!feedbackCtx) return { kind: "cannot_apply", reason: "target_missing" } as const;
+        if (report.targetType !== "game" || !buildFeedbackDraft(feedbackCtx)) return { kind: "cannot_apply", reason: "invalid_proposal" } as const;
+      }
       if (report.reportType === "localized_title") {
         if (!feedbackCtx) return { kind: "cannot_apply", reason: "target_missing" } as const;
         if (report.targetType !== "game" || !title) return { kind: "cannot_apply", reason: "invalid_proposal" } as const;
@@ -247,7 +279,7 @@ export async function resolveReportAtomically(
       const draft = feedbackCtx ? buildFeedbackDraft(feedbackCtx) : null;
       if (feedbackCtx && draft) {
         const item = await insertFeedbackItem(
-          { reportId: report.id, game: feedbackCtx.game, draft, sourceUrl: report.sourceUrl, reporterNote: report.note },
+          { reportId: report.id, game: feedbackCtx.game, draft, sourceUrl: feedbackSourceUrl(report.sourceUrl, draft), reporterNote: report.note },
           tx,
         );
         feedbackItemId = item?.id ?? null;
@@ -269,6 +301,7 @@ async function loadFeedbackContext(tx: DbOrTx, report: DataReport, plan: ManualR
   const gameId = plan?.gameId ?? event?.gameId ?? (report.targetType === "game" ? report.targetId : null);
   const game = gameId ? await getFeedbackGameInfo(gameId, tx) : null;
   if (!game) return null;
+  const facts = report.reportType === "field_correction" ? await loadGameFacts(game.id, tx) : null;
   const codes = event || plan ? await regionCodes(tx) : new Map<number, string>();
   const codeOf = (regionId: number) => codes.get(regionId) ?? String(regionId);
   return {
@@ -282,6 +315,7 @@ async function loadFeedbackContext(tx: DbOrTx, report: DataReport, plan: ManualR
       note: report.note,
     },
     game,
+    facts,
     event: event ? { platformId: event.platformId, regionCode: codeOf(event.regionId), stage: event.releaseStage, status: event.status } : null,
     plan: plan
       ? {

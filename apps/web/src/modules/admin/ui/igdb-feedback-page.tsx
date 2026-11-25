@@ -67,6 +67,8 @@ function FeedbackCard({ item, publicLocale }: { item: IgdbFeedbackListItem; publ
         </dd>
         <dt className="font-semibold">欄位位置</dt>
         <dd>{item.igdbLocation}</dd>
+        <dt className="font-semibold">採納判斷</dt>
+        <dd>{item.adoptionRule}</dd>
         {item.locationText ? (
           <>
             <dt className="font-semibold">平台／地區／階段</dt>

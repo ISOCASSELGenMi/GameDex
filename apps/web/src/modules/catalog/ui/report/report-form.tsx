@@ -11,6 +11,30 @@ export interface Option {
   label: string;
 }
 
+/** field_correction（D92）的一個輸入欄；由 report-page 依 domain/field-corrections.ts 的形狀表預先算好。 */
+export interface FcInput {
+  key: string;
+  label: string;
+  required: boolean;
+  max: number;
+  kind: "text" | "textarea" | "url" | "select";
+  options?: Option[];
+  hint?: string;
+  lang?: string;
+}
+export interface FcField {
+  value: string;
+  label: string;
+  ops: Option[];
+  inputs: FcInput[];
+  /** 修改時可指出「要被取代的舊值」（text 形狀除外）。 */
+  oldValueAllowed: boolean;
+}
+export interface FcConfig {
+  groups: Array<{ label: string; fields: FcField[] }>;
+  strings: { intro: string; fieldLabel: string; opLabel: string; oldValueLegend: string; oldValueHint: string };
+}
+
 export interface ReportFormStrings {
   fieldType: string;
   fieldPlatform: string;
@@ -66,6 +90,8 @@ export interface ReportFormProps {
   supportTypes: Option[];
   noteMax: number;
   titleMax: number;
+  /** 「其他資料欄位更正」的設定；目標不是遊戲時為 null。 */
+  fc: FcConfig | null;
   siteKey: string | null;
   /** Turnstile widget 的語言代碼（zh-tw、en、ja）。 */
   captchaLanguage: string;
@@ -139,6 +165,10 @@ export function ReportForm(props: ReportFormProps): ReactElement {
     sourceUrl: "",
     note: "",
   });
+  const [fcField, setFcField] = useState("");
+  const [fcOp, setFcOp] = useState("");
+  const [fcValue, setFcValue] = useState<Record<string, string>>({});
+  const [fcOld, setFcOld] = useState<Record<string, string>>({});
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -204,6 +234,13 @@ export function ReportForm(props: ReportFormProps): ReactElement {
     } else if (type === "localized_title") {
       if (values.title) proposed.title = values.title;
       proposed.locale = "zh-Hant";
+    } else if (type === "field_correction") {
+      const nonEmpty = (m: Record<string, string>) => Object.fromEntries(Object.entries(m).filter(([, v]) => v.trim() !== ""));
+      if (fcField) proposed.field = fcField;
+      if (fcOp) proposed.op = fcOp;
+      proposed.value = nonEmpty(fcValue);
+      const old = nonEmpty(fcOld);
+      if (fcOp === "change" && Object.keys(old).length > 0) proposed.oldValue = old;
     }
     return {
       reportType: type,
@@ -277,6 +314,38 @@ export function ReportForm(props: ReportFormProps): ReactElement {
   const box = { uid, errors: fieldErrors, toText: errorText };
   const control = "min-h-8 text-sm rounded-md border border-[var(--border)] bg-[var(--background)] px-2";
   const isDate = DATE_TYPES.includes(type);
+  const fcSelected = props.fc?.groups.flatMap((g) => g.fields).find((f) => f.value === fcField) ?? null;
+  const pickFcField = (value: string) => {
+    const next = props.fc?.groups.flatMap((g) => g.fields).find((f) => f.value === value);
+    setFcField(value);
+    setFcOp(next?.ops.length === 1 ? next.ops[0].value : "");
+    setFcValue({});
+    setFcOld({});
+  };
+  const fcInput = (prefix: "value" | "oldValue", inp: FcInput, store: Record<string, string>, setStore: (m: Record<string, string>) => void, required: boolean) => (
+    <FieldBox key={`${prefix}-${inp.key}`} {...box} name={`fc-${prefix}-${inp.key}`} label={inp.label} errorKey={`proposed.${prefix}.${inp.key}`} hint={inp.hint}>
+      {({ id, describedBy, invalid }) => {
+        const common = { id, "aria-describedby": describedBy, "aria-invalid": invalid, "aria-required": required ? ("true" as const) : undefined };
+        const change = (e: { target: { value: string } }) => setStore({ ...store, [inp.key]: e.target.value });
+        if (inp.kind === "select")
+          return (
+            <select {...common} className={control} value={store[inp.key] ?? ""} onChange={change}>
+              <option value="">{s.choose}</option>
+              {(inp.options ?? []).map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          );
+        if (inp.kind === "textarea")
+          return <textarea {...common} rows={6} maxLength={inp.max} lang={inp.lang} className={`${control} py-2`} value={store[inp.key] ?? ""} onChange={change} />;
+        return (
+          <input {...common} type={inp.kind === "url" ? "url" : "text"} inputMode={inp.kind === "url" ? "url" : undefined} maxLength={inp.max} lang={inp.lang} autoComplete="off" className={control} value={store[inp.key] ?? ""} onChange={change} />
+        );
+      }}
+    </FieldBox>
+  );
 
   return (
     <form onSubmit={onSubmit} noValidate className="flex max-w-xl flex-col gap-4" data-report-form="">
@@ -404,6 +473,56 @@ export function ReportForm(props: ReportFormProps): ReactElement {
             <input id={id} type="text" lang="zh-Hant" maxLength={props.titleMax} autoComplete="off" className={control} value={values.title} onChange={set("title")} aria-describedby={describedBy} aria-invalid={invalid} aria-required="true" />
           )}
         </FieldBox>
+      ) : null}
+
+      {type === "field_correction" && props.fc ? (
+        <>
+          <p className="notice">{props.fc.strings.intro}</p>
+          <FieldBox {...box} name="fc-field" label={props.fc.strings.fieldLabel} errorKey="proposed.field">
+            {({ id, describedBy, invalid }) => (
+              <select id={id} className={control} value={fcField} onChange={(e) => pickFcField(e.target.value)} aria-describedby={describedBy} aria-invalid={invalid} aria-required="true">
+                <option value="">{s.choose}</option>
+                {props.fc?.groups.map((g) => (
+                  <optgroup key={g.label} label={g.label}>
+                    {g.fields.map((f) => (
+                      <option key={f.value} value={f.value}>
+                        {f.label}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+            )}
+          </FieldBox>
+          {fcSelected ? (
+            <>
+              <FieldBox {...box} name="fc-op" label={props.fc.strings.opLabel} errorKey="proposed.op">
+                {({ id, describedBy, invalid }) => (
+                  <select id={id} className={control} value={fcOp} onChange={(e) => setFcOp(e.target.value)} aria-describedby={describedBy} aria-invalid={invalid} aria-required="true">
+                    <option value="">{s.choose}</option>
+                    {fcSelected.ops.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </FieldBox>
+              {fcOp ? (
+                <>
+                  {fcSelected.inputs.map((inp) => fcInput("value", inp, fcValue, setFcValue, inp.required))}
+                  {fcOp === "change" && fcSelected.oldValueAllowed ? (
+                    <fieldset className="flex flex-col gap-3 rounded-md border border-[var(--border)] p-3">
+                      <legend className="px-1 font-semibold">{props.fc.strings.oldValueLegend}</legend>
+                      <p className="text-sm text-[var(--muted)]">{props.fc.strings.oldValueHint}</p>
+                      {fcSelected.inputs.map((inp) => fcInput("oldValue", inp, fcOld, setFcOld, false))}
+                    </fieldset>
+                  ) : null}
+                </>
+              ) : null}
+            </>
+          ) : null}
+        </>
       ) : null}
 
       <FieldBox {...box} name="sourceUrl" label={s.fieldSourceUrl} errorKey="sourceUrl" hint={isDate ? `${s.hintSourceUrlRequired} ${s.hintSourceUrl}` : s.hintSourceUrl}>

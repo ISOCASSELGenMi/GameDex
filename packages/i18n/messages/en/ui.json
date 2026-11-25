@@ -474,6 +474,7 @@
       "language_support": "Language support is wrong or missing",
       "cancelled": "Cancelled or no longer in development",
       "localized_title": "Traditional Chinese title",
+      "field_correction": "Correct another data field",
       "duplicate": "Duplicate entry",
       "takedown": "Takedown or copyright request",
       "other": "Something else"
@@ -528,7 +529,81 @@
       "network": "Could not connect. Check your network and try again.",
       "generic": "Submission failed. Please try again later."
     },
-    "captchaLoading": "Loading human verification…"
+    "captchaLoading": "Loading human verification…",
+    "fc": {
+      "intro": "Report any field that IGDB lets people contribute. An approved report is only added to our \"to send to IGDB\" list for an administrator to submit there; it does not change this site's data directly. Our data follows IGDB's next sync.",
+      "fieldLabel": "Field to correct",
+      "opLabel": "Action",
+      "group": {
+        "text": "Text",
+        "media": "Media",
+        "taxonomy": "Categories",
+        "relation": "Relations",
+        "other": "Other"
+      },
+      "field": {
+        "name": "Name",
+        "summary": "Summary",
+        "storyline": "Storyline",
+        "game_type": "Game type (main game, DLC, remake…)",
+        "game_status": "Release status",
+        "alternative_name": "Alternative name",
+        "localized_title_other": "Title in another language",
+        "cover": "Cover image",
+        "screenshot": "Screenshot / artwork",
+        "video": "Trailer",
+        "genre": "Genre",
+        "theme": "Theme",
+        "game_mode": "Game mode",
+        "player_perspective": "Player perspective",
+        "engine": "Game engine",
+        "platform": "Platform",
+        "company_developer": "Developer",
+        "company_publisher": "Publisher",
+        "company_supporting": "Supporting developer / porting",
+        "franchise": "Franchise",
+        "collection": "Series (collection)",
+        "external_link": "External link",
+        "age_rating": "Age rating",
+        "relation_parent": "Parent game / DLC / version relation"
+      },
+      "op": {
+        "add": "Add",
+        "change": "Change",
+        "remove": "Remove"
+      },
+      "input": {
+        "text": "New content",
+        "name": "Name",
+        "comment": "Note (optional)",
+        "locale": "Language code",
+        "role": "Role",
+        "url": "URL",
+        "label": "Category (optional, e.g. Official, Steam)",
+        "organization": "Rating organization",
+        "rating": "Rating",
+        "relation": "Relation type",
+        "gameName": "Other game's name",
+        "gameSlug": "Other game's slug (optional)"
+      },
+      "role": {
+        "supporting": "Supporting developer",
+        "porting": "Porting"
+      },
+      "relation": {
+        "parent": "Parent game",
+        "version_parent": "Version parent",
+        "dlc": "DLC (this game is its parent)",
+        "expansion": "Expansion (this game is its parent)"
+      },
+      "hint": {
+        "media": "Enter the URL of the image or video; that URL is the source.",
+        "locale": "A language code such as ja, ko or zh-Hans.",
+        "remove": "To remove something, enter the one value to remove.",
+        "oldValue": "Optional: when changing, tell us the old value to replace."
+      },
+      "oldValueLegend": "Old value to replace (optional)"
+    }
   },
   "subscribe": {
     "title": "Subscribe to the calendar",

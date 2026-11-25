@@ -35,6 +35,7 @@ function toListItem({ item, gameName, platformName }: FeedbackRow): IgdbFeedback
     locationText: feedbackLocationText({ platformName, regionCode: item.regionCode, stage: item.stage }),
     fieldLabel: def.label,
     igdbLocation: def.igdbLocation,
+    adoptionRule: def.adoptionRule,
     igdbUrl: igdbGameUrl(item.gameSlug, item.igdbGameId),
     oldText: def.formatValue(item.oldValue),
     newText: def.formatValue(item.newValue),

@@ -14,6 +14,7 @@ import {
   type ReportTargetType,
   type ReportType,
 } from "./entities";
+import { validateFieldCorrection } from "./field-corrections";
 
 export const REPORT_NOTE_MAX = 1000;
 export const REPORT_URL_MAX = 2000;
@@ -28,6 +29,7 @@ export const REPORT_TYPE_RULES: Readonly<Record<ReportType, { targets: readonly 
   language_support: { targets: ["game"], targetRequired: true },
   cancelled: { targets: ["release_event", "game"], targetRequired: true },
   localized_title: { targets: ["game"], targetRequired: true },
+  field_correction: { targets: ["game"], targetRequired: true },
   duplicate: { targets: ["game", "release_event", "platform", "event"], targetRequired: true },
   takedown: { targets: ["game", "release_event", "platform", "event"], targetRequired: false },
   other: { targets: ["game", "release_event", "platform", "event"], targetRequired: false },
@@ -217,6 +219,9 @@ export function validateReportRequest(raw: unknown): ReportValidation {
     else if (title.length > REPORT_TITLE_MAX) errors["proposed.title"] = "too_long";
     if (!blank(p.locale) && p.locale !== "zh-Hant") errors["proposed.locale"] = "invalid";
     proposed = { title, locale: "zh-Hant" };
+  } else if (reportType === "field_correction") {
+    // D92：欄位、動作、值的規則在 domain/field-corrections.ts（錯誤鍵 proposed.field／proposed.op／proposed.value.*）
+    proposed = validateFieldCorrection(p, errors);
   }
 
   if (Object.keys(errors).length > 0 || !reportType || !targetType) return { ok: false, fields: errors };

@@ -30,6 +30,13 @@
 - 06：§篩選——篩選欄位預設折疊；§瀏覽——`sort` 新增 `popularity_asc`／`release_date_desc`／`name_desc`（升降冪反向變體，預設方向不變）；依日期分組以月份選擇器取代往前看連結與年月表單。
 - 無 migration；api-contract `FILTER_SORTS` 擴充；新增 i18n 鍵 `ui.games.sortDir.*`、`ui.games.dateNav.prevYear／nextYear`、`filters.sortValues` 三個變體。
 
+## 待回饋 IGDB 清單第 2 波 D92（2026-10-30 寫回；repo 副本先改，Project 正本待使用者匯入）
+
+- 03：`igdb_feedback_items` 註記（無新欄位，`field` 容納 24 個新鍵）。
+- 07：`POST /api/v1/reports` 新增回報類型 `field_correction`（targetType=game、`proposed.{field, op, value, oldValue?}`、錯誤鍵 `proposed.field`／`proposed.op`／`proposed.value.*`）。
+- 12：§待回饋 IGDB 清單新增「第 2 波：通用欄位更正」（24 欄位表：鍵、形狀、允許動作、IGDB 位置提示〔推測〕、偵測規則；值的形狀、驗證、核可只建項目不改資料、自動偵測、公開表單）；回報類型與核可說明同步。
+- 90：新增 D92。無環境變數變更、無 migration。
+
 ## 扁平化改版與精簡工具列（2026-10-30 寫回；repo 副本先改，Project 正本待使用者匯入）
 
 - 06：§UI——視覺語言由「Spatial UI 玻璃」改為極簡扁平（實色表面、無漸層／模糊）；`/games` 篩選改圖示鈕＋浮出面板、新增卡片大小切換（封面／詳細／清單）；品牌拉霸機只滾「Game」之後的後綴。

@@ -6,13 +6,15 @@ import { notFound } from "next/navigation";
 import type { ReactElement } from "react";
 import { formatReleaseLabel, type Locale } from "@sok/i18n";
 import { DATE_PRECISIONS, LANGUAGE_SUPPORT_TYPES, RELEASE_STAGES, REPORT_TYPES, type ReportType } from "../../domain/entities";
+import { FIELD_RELATIONS, type FieldCorrectionKey } from "../../domain/entities";
+import { FIELD_CORRECTION_SPECS, fieldKeysByGroup, valueInputs } from "../../domain/field-corrections";
 import { REPORT_NOTE_MAX, REPORT_TITLE_MAX } from "../../domain/report-validation";
 import { getReportFormContext, type ReportFormContext } from "../../use-cases/reports";
 import { getTranslator, regionLabel, stageLabel } from "../labels";
 import { localeHref } from "../links";
 import { PageShell } from "../layout/page-shell";
 import { parseReportTarget } from "./links";
-import { ReportForm, type ReportFormStrings } from "./report-form";
+import { ReportForm, type FcConfig, type FcInput, type ReportFormStrings } from "./report-form";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -27,6 +29,38 @@ export async function loadReportContext(searchParams: SearchParams): Promise<{ c
   const requested = (REPORT_TYPES as readonly string[]).includes(raw ?? "") ? (raw as ReportType) : null;
   const type = requested && ctx.reportTypes.includes(requested) ? requested : (ctx.reportTypes[0] ?? "other");
   return { ctx, type };
+}
+
+/** 「其他資料欄位更正」的表單設定：欄位、允許動作、輸入欄都由 domain/field-corrections.ts 的形狀表決定（D92）。 */
+function buildFcConfig(t: ReturnType<typeof getTranslator>): FcConfig {
+  const f = (key: string) => t.t(`ui.report.fc.${key}`);
+  const inputsOf = (key: FieldCorrectionKey): FcInput[] => {
+    const spec = FIELD_CORRECTION_SPECS[key];
+    return valueInputs(key).map((i) => {
+      const base = { key: i.key, label: f(`input.${i.key}`), required: i.required, max: i.max };
+      if (i.key === "text" && spec.choices)
+        return { ...base, kind: "select" as const, options: spec.choices.map((v) => ({ value: v, label: t.t(`enums.${key === "game_type" ? "gameType" : "gameStatus"}.${v}`) })) };
+      if (i.key === "text") return { ...base, kind: key === "name" ? ("text" as const) : ("textarea" as const) };
+      if (i.key === "role") return { ...base, kind: "select" as const, options: (spec.roles ?? []).map((v) => ({ value: v, label: f(`role.${v}`) })) };
+      if (i.key === "relation") return { ...base, kind: "select" as const, options: FIELD_RELATIONS.map((v) => ({ value: v, label: f(`relation.${v}`) })) };
+      if (i.key === "url") return { ...base, kind: "url" as const, ...(spec.shape === "media" ? { hint: f("hint.media") } : {}) };
+      if (i.key === "locale") return { ...base, kind: "text" as const, hint: f("hint.locale") };
+      return { ...base, kind: "text" as const };
+    });
+  };
+  return {
+    groups: fieldKeysByGroup().map(({ group, keys }) => ({
+      label: f(`group.${group}`),
+      fields: keys.map((key) => ({
+        value: key,
+        label: f(`field.${key}`),
+        ops: FIELD_CORRECTION_SPECS[key].ops.map((o) => ({ value: o, label: f(`op.${o}`) })),
+        inputs: inputsOf(key),
+        oldValueAllowed: FIELD_CORRECTION_SPECS[key].shape !== "text",
+      })),
+    })),
+    strings: { intro: f("intro"), fieldLabel: f("fieldLabel"), opLabel: f("opLabel"), oldValueLegend: f("oldValueLegend"), oldValueHint: f("hint.oldValue") },
+  };
 }
 
 export function reportTitle(locale: Locale): string {
@@ -129,6 +163,7 @@ export async function ReportPage({
           supportTypes={LANGUAGE_SUPPORT_TYPES.map((v) => ({ value: v, label: t.t(`enums.languageSupportType.${v}`) }))}
           noteMax={REPORT_NOTE_MAX}
           titleMax={REPORT_TITLE_MAX}
+          fc={ctx.reportTypes.includes("field_correction") ? buildFcConfig(t) : null}
           siteKey={siteKey}
           captchaLanguage={CAPTCHA_LANGUAGE[locale] ?? "auto"}
         />
